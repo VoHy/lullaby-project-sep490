@@ -16,6 +16,14 @@ module.exports = {
           '100%': { opacity: 1 },
         },
       },
+      colors: {
+        'soft-mint-green':'#C2F5E9',
+        'warm-white': '#F8F9FA',
+        'mint-green': '#aed9a7',
+        'sky-blue': '#B3E5FC',
+        'charcoal': '#333333',	
+        'blue-pink':'#FFD9E6',		
+      },
     }
   },
   plugins: [],
