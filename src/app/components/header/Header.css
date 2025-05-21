@@ -1,4 +1,32 @@
-#logo-icon {
-    box-shadow: 10px 20px;
-    font-size: 200px;
+/* Logo styling with smaller size */
+.logo-icon {
+    font-size: 20px;
+    font-weight: 800;
+    background: linear-gradient(135deg, #76c168, #00a1ff);
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    position: relative;
+    padding: 4px 0;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
+    letter-spacing: 0.5px;
+    transition: transform 0.3s ease;
+}
+
+.logo-icon:hover {
+    transform: scale(1.05);
+}
+
+/* Add a bottom border animation for navigation links */
+header nav a {
+    position: relative;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-weight: 500;
+}
+
+/* Main content padding to accommodate fixed header */
+body {
+    padding-top: 64px;
+    /* Matches the header height */
 }
