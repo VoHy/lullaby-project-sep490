@@ -4,6 +4,10 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import authService from '@/services/auth/authService';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import { Pagination, Autoplay } from 'swiper/modules';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
@@ -23,45 +27,50 @@ export default function Home() {
 
   return (
     <div className="opacity-0 animate-fade-in">
-      {/* Hero Section */}
-      <div className="relative bg-blue-50 rounded-2xl overflow-hidden mb-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative pt-12 pb-20 sm:pt-16 sm:pb-24 lg:pb-28">
-            <div className="mt-8">
-              <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">
-                Chăm sóc sức khỏe <br />
-                <span className="text-blue-600">tận tâm cho người thân yêu</span>
-              </h1>
-              <p className="mt-6 text-xl text-gray-500 max-w-3xl">
-                Lullaby kết nối bạn với đội ngũ y tá chuyên nghiệp để chăm sóc người thân tại nhà. 
-                Chúng tôi cung cấp dịch vụ chăm sóc sức khỏe chất lượng cao, phù hợp với từng nhu cầu cụ thể.
-              </p>
-              <div className="mt-8 flex space-x-4">
-                {isLoggedIn ? (
-                  <Link 
-                    href="/dashboard" 
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium shadow-md transition-colors">
-                    Đi đến Dashboard
-                  </Link>
-                ) : (
-                  <>
-                    <Link 
-                      href="/auth/login" 
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium shadow-md transition-colors">
-                      Đăng nhập
-                    </Link>
-                    <Link 
-                      href="/auth/register" 
-                      className="bg-white hover:bg-gray-50 text-blue-600 border border-blue-600 px-6 py-3 rounded-lg font-medium shadow-sm transition-colors">
-                      Đăng ký
-                    </Link>
-                  </>
-                )}
+      {/* Banner dịch vụ - Swiper full màn hình */}
+      <section className="w-full min-h-screen flex items-center justify-center bg-white">
+        <Swiper
+          modules={[Pagination, Autoplay]}
+          pagination={{ clickable: true }}
+          autoplay={{ delay: 4000, disableOnInteraction: false }}
+          loop={true}
+          className="w-full h-screen"
+        >
+          {/* Slide 1 */}
+          <SwiperSlide>
+            <div className="relative w-full h-full">
+              <img src="/images/hero-bg.jpg" alt="Chăm sóc người cao tuổi" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center items-center text-center p-8">
+                <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Chăm sóc người cao tuổi</h2>
+                <p className="text-white mb-6 text-lg md:text-2xl">Dịch vụ chăm sóc tận tâm cho người lớn tuổi tại nhà.</p>
+                <button className="bg-pink-500 hover:bg-pink-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg transition text-lg">Tìm hiểu thêm</button>
               </div>
             </div>
-          </div>
-        </div>
-      </div>
+          </SwiperSlide>
+          {/* Slide 2 */}
+          <SwiperSlide>
+            <div className="relative w-full h-full">
+              <img src="/images/hero-bg.jpg" alt="Phục hồi chức năng" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center items-center text-center p-8">
+                <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Phục hồi chức năng</h2>
+                <p className="text-white mb-6 text-lg md:text-2xl">Hỗ trợ tập luyện phục hồi chức năng chuyên nghiệp.</p>
+                <button className="bg-pink-500 hover:bg-pink-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg transition text-lg">Tìm hiểu thêm</button>
+              </div>
+            </div>
+          </SwiperSlide>
+          {/* Slide 3 */}
+          <SwiperSlide>
+            <div className="relative w-full h-full">
+              <img src="/images/hero-bg.jpg" alt="Giám sát sức khỏe" className="w-full h-full object-cover" />
+              <div className="absolute inset-0 bg-black bg-opacity-40 flex flex-col justify-center items-center text-center p-8">
+                <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Giám sát sức khỏe</h2>
+                <p className="text-white mb-6 text-lg md:text-2xl">Theo dõi sức khỏe và báo cáo định kỳ cho gia đình.</p>
+                <button className="bg-pink-500 hover:bg-pink-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg transition text-lg">Tìm hiểu thêm</button>
+              </div>
+            </div>
+          </SwiperSlide>
+        </Swiper>
+      </section>
 
       {/* Features Section */}
       <div className="py-12 bg-white">
@@ -154,7 +163,7 @@ export default function Home() {
       </div>
 
       {/* CTA Section */}
-      <div className="bg-blue-600 rounded-xl">
+      <div className="bg-gradient-to-r from-pink-50 to-rose-100 rounded-xl">
         <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
           <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
             <span className="block">Sẵn sàng trải nghiệm?</span>
