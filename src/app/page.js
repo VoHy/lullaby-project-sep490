@@ -25,51 +25,54 @@ export default function Home() {
     <div className="opacity-0 animate-fade-in">
       {/* Hero Section */}
       <div className="relative rounded-2xl overflow-hidden mb-12">
-        {/* Background image with gradient overlay */}
+        {/* Background image with vibrant gradient overlay */}
         <div className="absolute inset-0 z-0">
           <Image
             src="/Hpage.jpg"
             alt="Background"
             fill
-            className="object-cover object-center"
-            quality={90}
+            className="object-cover object-center brightness-105 contrast-105"
+            quality={100}
             priority
           />
-          <div className="absolute inset-0 bg-gradient-to-r from-blue-50/85 to-white/75"></div>
+          {/* Multi-color gradient overlay for vibrancy */}
+          <div className="absolute inset-0 bg-gradient-to-r from-white/40 via-[#ff9fc1]/30 to-sky-blue/30 mix-blend-soft-light dark:mix-blend-normal"></div>
+          {/* Light overlay to ensure brightness in dark mode */}
+          <div className="absolute inset-0 bg-white/40 dark:bg-white/60 mix-blend-overlay"></div>
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="relative pt-12 pb-20 sm:pt-16 sm:pb-24 lg:pb-28 z-10">
-            <div className="mt-8">
-              <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl">
+          <div className="relative pt-16 pb-24 sm:pt-20 sm:pb-32 lg:pb-36 z-10">
+            <div className="mt-8 max-w-3xl">
+              <h1 className="text-4xl font-extrabold text-gray-900 tracking-tight sm:text-5xl md:text-6xl">
                 Chăm sóc sức khỏe <br />
-                <span className="text-blue-600">
+                <span className="text-[#ff9fc1] dark:text-[#ff9fc1] drop-shadow-sm">
                   tận tâm cho người thân yêu
                 </span>
               </h1>
-              <p className="mt-6 text-xl text-gray-500 max-w-3xl">
+              <p className="mt-6 text-xl text-gray-800 max-w-3xl drop-shadow-sm">
                 Lullaby kết nối bạn với đội ngũ y tá chuyên nghiệp để
                 chăm sóc người thân tại nhà. Chúng tôi cung cấp dịch
                 vụ chăm sóc sức khỏe chất lượng cao, phù hợp với từng
                 nhu cầu cụ thể.
               </p>
-              <div className="mt-8 flex space-x-4">
+              <div className="mt-10 flex flex-wrap gap-4">
                 {isLoggedIn ? (
                   <Link
                     href="/dashboard"
-                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium shadow-md transition-colors">
+                    className="bg-[#ff9fc1] hover:bg-[#ff9fc1]/90 text-white px-8 py-4 rounded-lg font-medium shadow-md transition-all hover:shadow-lg text-lg">
                     Đi đến Dashboard
                   </Link>
                 ) : (
                   <>
                     <Link
                       href="/auth/login"
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-lg font-medium shadow-md transition-colors">
+                      className="bg-[#ff9fc1] hover:bg-[#ff9fc1]/90 text-white px-8 py-4 rounded-lg font-medium shadow-md transition-all hover:shadow-lg text-lg">
                       Đăng nhập
                     </Link>
                     <Link
                       href="/auth/register"
-                      className="bg-white hover:bg-gray-50 text-blue-600 border border-blue-600 px-6 py-3 rounded-lg font-medium shadow-sm transition-colors">
+                      className="bg-sky-blue hover:bg-sky-blue/90 text-gray-800 px-8 py-4 rounded-lg font-medium shadow-md transition-all hover:shadow-lg text-lg">
                       Đăng ký
                     </Link>
                   </>
@@ -80,24 +83,26 @@ export default function Home() {
         </div>
       </div>
 
-      {/* Features Section */}
-      <div className="py-12 bg-white">
+      {/* Features Section - Updated styles for more vibrancy */}
+      <div className="py-16 bg-warm-white dark:bg-warm-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
+            <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl lg:text-5xl">
               Dịch vụ của chúng tôi
             </h2>
-            <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
+            <p className="mt-4 max-w-2xl mx-auto text-xl text-gray-700 sm:mt-5">
               Lullaby cung cấp nhiều dịch vụ chăm sóc y tế tại nhà
             </p>
           </div>
 
-          <div className="mt-10">
+          <div className="mt-12">
             <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 lg:grid-cols-3">
-              <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                <div className="rounded-md bg-blue-50 w-12 h-12 flex items-center justify-center">
+              {/* Keep the same feature cards but with enhanced styling */}
+              {/* Feature 1 */}
+              <div className="p-6 bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow border border-gray-100">
+                <div className="rounded-full bg-[#ff9fc1]/10 w-14 h-14 flex items-center justify-center">
                   <svg
-                    className="h-6 w-6 text-blue-600"
+                    className="h-7 w-7 text-[#ff9fc1]"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -109,19 +114,21 @@ export default function Home() {
                     />
                   </svg>
                 </div>
-                <h3 className="mt-4 text-lg font-medium text-gray-900">
+                <h3 className="mt-5 text-xl font-semibold text-gray-900">
                   Chăm sóc người cao tuổi
                 </h3>
-                <p className="mt-3 text-base text-gray-500">
+                <p className="mt-3 text-base text-gray-600">
                   Dịch vụ chăm sóc toàn diện cho người cao tuổi, từ hỗ
                   trợ sinh hoạt hàng ngày đến theo dõi sức khỏe.
                 </p>
               </div>
 
-              <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                <div className="rounded-md bg-blue-50 w-12 h-12 flex items-center justify-center">
+              {/* Continue with other feature cards with similar styling updates */}
+              {/* Feature 2 */}
+              <div className="p-6 bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow border border-gray-100">
+                <div className="rounded-full bg-sky-blue/10 w-14 h-14 flex items-center justify-center">
                   <svg
-                    className="h-6 w-6 text-blue-600"
+                    className="h-7 w-7 text-sky-blue"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -133,19 +140,20 @@ export default function Home() {
                     />
                   </svg>
                 </div>
-                <h3 className="mt-4 text-lg font-medium text-gray-900">
+                <h3 className="mt-5 text-xl font-semibold text-gray-900">
                   Phục hồi chức năng
                 </h3>
-                <p className="mt-3 text-base text-gray-500">
+                <p className="mt-3 text-base text-gray-600">
                   Hỗ trợ tập luyện phục hồi chức năng chuyên nghiệp
                   tại nhà cho bệnh nhân sau phẫu thuật hoặc tai biến.
                 </p>
               </div>
 
-              <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                <div className="rounded-md bg-blue-50 w-12 h-12 flex items-center justify-center">
+              {/* Feature 3 */}
+              <div className="p-6 bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow border border-gray-100">
+                <div className="rounded-full bg-[#ff9fc1]/10 w-14 h-14 flex items-center justify-center">
                   <svg
-                    className="h-6 w-6 text-blue-600"
+                    className="h-7 w-7 text-[#ff9fc1]"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -157,19 +165,20 @@ export default function Home() {
                     />
                   </svg>
                 </div>
-                <h3 className="mt-4 text-lg font-medium text-gray-900">
+                <h3 className="mt-5 text-xl font-semibold text-gray-900">
                   Giám sát sức khỏe
                 </h3>
-                <p className="mt-3 text-base text-gray-500">
+                <p className="mt-3 text-base text-gray-600">
                   Theo dõi các chỉ số sức khỏe quan trọng và cung cấp
                   báo cáo định kỳ cho gia đình và bác sĩ điều trị.
                 </p>
               </div>
 
-              <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                <div className="rounded-md bg-blue-50 w-12 h-12 flex items-center justify-center">
+              {/* Feature 4 */}
+              <div className="p-6 bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow border border-gray-100">
+                <div className="rounded-full bg-sky-blue/10 w-14 h-14 flex items-center justify-center">
                   <svg
-                    className="h-6 w-6 text-blue-600"
+                    className="h-7 w-7 text-sky-blue"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -181,20 +190,21 @@ export default function Home() {
                     />
                   </svg>
                 </div>
-                <h3 className="mt-4 text-lg font-medium text-gray-900">
+                <h3 className="mt-5 text-xl font-semibold text-gray-900">
                   Y tá chuyên nghiệp
                 </h3>
-                <p className="mt-3 text-base text-gray-500">
+                <p className="mt-3 text-base text-gray-600">
                   Đội ngũ y tá được đào tạo chuyên nghiệp, có chứng
                   chỉ hành nghề và kinh nghiệm trong chăm sóc người
                   bệnh.
                 </p>
               </div>
 
-              <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                <div className="rounded-md bg-blue-50 w-12 h-12 flex items-center justify-center">
+              {/* Feature 5 */}
+              <div className="p-6 bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow border border-gray-100">
+                <div className="rounded-full bg-[#ff9fc1]/10 w-14 h-14 flex items-center justify-center">
                   <svg
-                    className="h-6 w-6 text-blue-600"
+                    className="h-7 w-7 text-[#ff9fc1]"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -206,19 +216,20 @@ export default function Home() {
                     />
                   </svg>
                 </div>
-                <h3 className="mt-4 text-lg font-medium text-gray-900">
+                <h3 className="mt-5 text-xl font-semibold text-gray-900">
                   Linh hoạt lịch trình
                 </h3>
-                <p className="mt-3 text-base text-gray-500">
+                <p className="mt-3 text-base text-gray-600">
                   Dễ dàng đặt lịch và điều chỉnh thời gian, tần suất
                   chăm sóc theo nhu cầu gia đình.
                 </p>
               </div>
 
-              <div className="p-6 bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow">
-                <div className="rounded-md bg-blue-50 w-12 h-12 flex items-center justify-center">
+              {/* Feature 6 */}
+              <div className="p-6 bg-white rounded-xl shadow-md hover:shadow-xl transition-shadow border border-gray-100">
+                <div className="rounded-full bg-sky-blue/10 w-14 h-14 flex items-center justify-center">
                   <svg
-                    className="h-6 w-6 text-blue-600"
+                    className="h-7 w-7 text-sky-blue"
                     fill="none"
                     viewBox="0 0 24 24"
                     stroke="currentColor">
@@ -230,10 +241,10 @@ export default function Home() {
                     />
                   </svg>
                 </div>
-                <h3 className="mt-4 text-lg font-medium text-gray-900">
+                <h3 className="mt-5 text-xl font-semibold text-gray-900">
                   Tư vấn y tế 24/7
                 </h3>
-                <p className="mt-3 text-base text-gray-500">
+                <p className="mt-3 text-base text-gray-600">
                   Dịch vụ tư vấn y tế từ xa với các chuyên gia y tế,
                   sẵn sàng hỗ trợ 24/7 trong trường hợp khẩn cấp.
                 </p>
@@ -243,27 +254,27 @@ export default function Home() {
         </div>
       </div>
 
-      {/* CTA Section */}
-      <div className="bg-blue-600 rounded-xl">
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
-          <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
+      {/* CTA Section - Make more vibrant with the brand colors */}
+      <div className="bg-gradient-to-r from-[#ff9fc1] to-sky-blue rounded-xl shadow-xl">
+        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-20 lg:px-8 lg:flex lg:items-center lg:justify-between">
+          <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl lg:text-5xl drop-shadow-sm">
             <span className="block">Sẵn sàng trải nghiệm?</span>
-            <span className="block text-blue-100">
+            <span className="block text-white/90">
               Đăng ký ngay hôm nay.
             </span>
           </h2>
-          <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
+          <div className="mt-8 flex flex-wrap gap-4 lg:mt-0 lg:flex-shrink-0">
             <div className="inline-flex rounded-md shadow">
               <Link
                 href="/auth/register"
-                className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50">
+                className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-lg font-medium rounded-md text-[#ff9fc1] bg-white hover:bg-gray-50 transition-colors">
                 Bắt đầu ngay
               </Link>
             </div>
-            <div className="ml-3 inline-flex rounded-md shadow">
+            <div className="inline-flex rounded-md shadow">
               <Link
                 href="/booking/new"
-                className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-700 hover:bg-blue-800">
+                className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-lg font-medium rounded-md text-white bg-[#ff9fc1]/80 hover:bg-[#ff9fc1]/70 transition-colors">
                 Đặt lịch
               </Link>
             </div>
