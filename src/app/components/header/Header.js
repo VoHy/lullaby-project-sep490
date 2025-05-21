@@ -27,7 +27,7 @@ export default function Header() {
     checkAuth();
     // Đăng ký listener cho thay đổi localStorage (đăng nhập/đăng xuất)
     window.addEventListener('storage', checkAuth);
-    
+
     return () => {
       window.removeEventListener('storage', checkAuth);
     };
@@ -46,43 +46,40 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-white shadow-sm">
+    <header className="bg-gradient-to-r from-pink-50 to-rose-100 shadow-sm text font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="font-bold text-xl text-blue-600" id="logo-icon">
+              <Link href="/" className="font-bold text-2xl bg-gradient-to-r from-purple-500 to-pink-500 text-transparent bg-clip-text hover:from-purple-600 hover:to-pink-600 transition-all duration-300 hover:scale-105 tracking-wide" id="logo-icon">
                 Lullaby
               </Link>
             </div>
             <nav className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <Link
                 href="/"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  pathname === '/'
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${pathname === '/'
                     ? 'border-blue-500 text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                }`}
+                  }`}
               >
                 Trang chủ
               </Link>
               <Link
                 href="/nurse"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  pathname.startsWith('/nurse')
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${pathname.startsWith('/nurse')
                     ? 'border-blue-500 text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                }`}
+                  }`}
               >
                 Y tá
               </Link>
               <Link
                 href="/news"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                  pathname.startsWith('/news')
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${pathname.startsWith('/news')
                     ? 'border-blue-500 text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                }`}
+                  }`}
               >
                 Tin tức
               </Link>
@@ -92,24 +89,22 @@ export default function Header() {
                 <>
                   <Link
                     href="/appointments"
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                      pathname.startsWith('/appointments')
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${pathname.startsWith('/appointments')
                         ? 'border-blue-500 text-gray-900'
                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                    }`}
+                      }`}
                   >
                     Lịch hẹn
                   </Link>
-                  
+
                   {/* Menu điều hướng dành riêng cho y tá/admin */}
                   {(userRole === 'nurse' || userRole === 'admin' || userRole === 'specialist') && (
                     <Link
                       href="/dashboard"
-                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
-                        pathname.startsWith('/dashboard')
+                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${pathname.startsWith('/dashboard')
                           ? 'border-blue-500 text-gray-900'
                           : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                      }`}
+                        }`}
                     >
                       Quản lý
                     </Link>
@@ -118,7 +113,7 @@ export default function Header() {
               )}
             </nav>
           </div>
-          
+
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
             {isLoggedIn ? (
               <div className="relative ml-3">
@@ -135,7 +130,7 @@ export default function Header() {
                     </div>
                   </button>
                 </div>
-                
+
                 {isMenuOpen && (
                   <div
                     className="origin-top-right absolute right-0 mt-2 w-48 rounded-md shadow-lg py-1 bg-white ring-1 ring-black ring-opacity-5 focus:outline-none"
@@ -192,14 +187,14 @@ export default function Header() {
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-soft-mint-green hover:bg-blue-700"
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-black hover:bg-gray-700"
                 >
                   Đăng ký
                 </Link>
               </div>
             )}
           </div>
-          
+
           {/* Mobile menu button */}
           <div className="flex items-center sm:hidden">
             <button
@@ -230,84 +225,78 @@ export default function Header() {
           </div>
         </div>
       </div>
-      
+
       {/* Mobile menu */}
       <div className={`${isMenuOpen ? 'block' : 'hidden'} sm:hidden`}>
         <div className="pt-2 pb-3 space-y-1">
           <Link
             href="/"
-            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-              pathname === '/'
+            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname === '/'
                 ? 'border-blue-500 text-blue-700 bg-blue-50'
                 : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-            }`}
+              }`}
             onClick={() => setIsMenuOpen(false)}
           >
             Trang chủ
           </Link>
           <Link
             href="/nurse"
-            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-              pathname.startsWith('/nurse')
+            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/nurse')
                 ? 'border-blue-500 text-blue-700 bg-blue-50'
                 : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-            }`}
+              }`}
             onClick={() => setIsMenuOpen(false)}
           >
             Y tá
           </Link>
           <Link
             href="/news"
-            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-              pathname.startsWith('/news')
+            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/news')
                 ? 'border-blue-500 text-blue-700 bg-blue-50'
                 : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-            }`}
+              }`}
             onClick={() => setIsMenuOpen(false)}
           >
             Tin tức
           </Link>
-          
+
           {isLoggedIn ? (
             <>
               <Link
                 href="/appointments"
-                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-                  pathname.startsWith('/appointments')
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/appointments')
                     ? 'border-blue-500 text-blue-700 bg-blue-50'
                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                }`}
+                  }`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 Lịch hẹn
               </Link>
-              
+
               {(userRole === 'nurse' || userRole === 'admin' || userRole === 'specialist') && (
                 <Link
                   href="/dashboard"
-                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-                    pathname.startsWith('/dashboard')
+                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/dashboard')
                       ? 'border-blue-500 text-blue-700 bg-blue-50'
                       : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                  }`}
+                    }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
                   Quản lý
                 </Link>
               )}
-              
+
               <Link
                 href="/profile"
-                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-                  pathname.startsWith('/profile')
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/profile')
                     ? 'border-blue-500 text-blue-700 bg-blue-50'
                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                }`}
+                  }`}
                 onClick={() => setIsMenuOpen(false)}
               >
                 Hồ sơ
               </Link>
-              
+
               <button
                 className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
                 onClick={() => {

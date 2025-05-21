@@ -1,4 +1,12 @@
 #logo-icon {
-    box-shadow: 10px 20px;
-    font-size: 200px;
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    transition: all 0.3s ease;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+#logo-icon:hover {
+    transform: scale(1.05);
+    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.15);
 }
