@@ -114,7 +114,7 @@ export default function Header() {
             </nav>
           </div>
 
-          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+          <div className="hidden sm:ml-6 sm:flex sm:items-center z-10">
             {isLoggedIn ? (
               <div className="relative ml-3">
                 <div>

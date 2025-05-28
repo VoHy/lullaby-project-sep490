@@ -7,6 +7,7 @@ import AdminDashboard from './components/AdminDashboard';
 import NurseDashboard from './components/NurseDashboard';
 import RelativeDashboard from './components/RelativeDashboard';
 import SpecialistDashboard from './components/SpecialistDashboard';
+import Sidebar from './components/Sidebar';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -61,13 +62,18 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="container mx-auto px-4 py-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-gray-600">Xin chào, {user?.name}!</p>
+    <div className="flex h-screen bg-gray-100">
+      <Sidebar user={user} />
+      <div className="flex-1 overflow-auto">
+        <div className="container mx-auto px-6 py-8">
+          <div className="mb-6">
+            <h1 className="text-2xl font-bold">Dashboard</h1>
+            <p className="text-gray-600">Xin chào, {user?.name}!</p>
+          </div>
+          
+          {renderDashboardByRole()}
+        </div>
       </div>
-      
-      {renderDashboardByRole()}
     </div>
   );
 } 

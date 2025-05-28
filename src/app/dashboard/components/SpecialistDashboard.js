@@ -237,24 +237,6 @@ const SpecialistDashboard = ({ user }) => {
       </div>
 
       {/* Các tính năng */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Link href="/dashboard/cases" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold mb-2">Quản lý ca bệnh</h3>
-          <p className="text-gray-600 text-sm">Xem và quản lý các ca bệnh được chuyển đến</p>
-        </Link>
-        <Link href="/dashboard/appointments/schedule" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold mb-2">Quản lý lịch tư vấn</h3>
-          <p className="text-gray-600 text-sm">Thiết lập thời gian tư vấn sẵn có</p>
-        </Link>
-        <Link href="/dashboard/patients" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold mb-2">Bệnh nhân</h3>
-          <p className="text-gray-600 text-sm">Xem thông tin và lịch sử bệnh nhân</p>
-        </Link>
-        <Link href="/dashboard/reports" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold mb-2">Báo cáo y tế</h3>
-          <p className="text-gray-600 text-sm">Quản lý và tạo báo cáo tư vấn</p>
-        </Link>
-      </div>
     </div>
   );
 };
