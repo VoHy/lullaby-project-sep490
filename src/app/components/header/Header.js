@@ -27,7 +27,7 @@ export default function Header() {
 
     checkAuth();
     // Đăng ký listener cho thay đổi localStorage (đăng nhập/đăng xuất)
-    window.addEventListener("storage", checkAuth);
+    window.addEventListener('storage', checkAuth);
 
     return () => {
       window.removeEventListener("storage", checkAuth);
@@ -47,44 +47,41 @@ export default function Header() {
   };
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-[#ff9fc1] shadow-md">
+    <header className="bg-gradient-to-r from-pink-50 to-rose-100 shadow-sm text font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link
-                href="/"
-                className="logo-icon font-bold text-xl text-charcoal"
-                id="logo-icon">
+              <Link href="/" className="font-bold text-2xl bg-gradient-to-r from-purple-500 to-pink-500 text-transparent bg-clip-text hover:from-purple-600 hover:to-pink-600 transition-all duration-300 hover:scale-105 tracking-wide" id="logo-icon">
                 Lullaby
               </Link>
             </div>
             <nav className="hidden sm:ml-6 sm:flex sm:space-x-8">
               <Link
                 href="/"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${
-                  pathname === "/"
-                    ? "border-[#ff9fc1] text-charcoal"
-                    : "border-transparent text-charcoal hover:border-sky-blue hover:text-[#ff9fc1]"
-                }`}>
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${pathname === '/'
+                    ? 'border-blue-500 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+              >
                 Trang chủ
               </Link>
               <Link
                 href="/nurse"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${
-                  pathname.startsWith("/nurse")
-                    ? "border-[#ff9fc1] text-charcoal"
-                    : "border-transparent text-charcoal hover:border-sky-blue hover:text-[#ff9fc1]"
-                }`}>
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${pathname.startsWith('/nurse')
+                    ? 'border-blue-500 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+              >
                 Y tá
               </Link>
               <Link
                 href="/news"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${
-                  pathname.startsWith("/news")
-                    ? "border-[#ff9fc1] text-charcoal"
-                    : "border-transparent text-charcoal hover:border-sky-blue hover:text-[#ff9fc1]"
-                }`}>
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${pathname.startsWith('/news')
+                    ? 'border-blue-500 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+              >
                 Tin tức
               </Link>
 
@@ -93,11 +90,11 @@ export default function Header() {
                 <>
                   <Link
                     href="/appointments"
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${
-                      pathname.startsWith("/appointments")
-                        ? "border-[#ff9fc1] text-charcoal"
-                        : "border-transparent text-charcoal hover:border-sky-blue hover:text-[#ff9fc1]"
-                    }`}>
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${pathname.startsWith('/appointments')
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                  >
                     Lịch hẹn
                   </Link>
 
@@ -107,11 +104,11 @@ export default function Header() {
                     userRole === "specialist") && (
                     <Link
                       href="/dashboard"
-                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors duration-200 ${
-                        pathname.startsWith("/dashboard")
-                          ? "border-[#ff9fc1] text-charcoal"
-                          : "border-transparent text-charcoal hover:border-sky-blue hover:text-[#ff9fc1]"
-                      }`}>
+                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${pathname.startsWith('/dashboard')
+                          ? 'border-blue-500 text-gray-900'
+                          : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                        }`}
+                    >
                       Quản lý
                     </Link>
                   )}
@@ -120,7 +117,7 @@ export default function Header() {
             </nav>
           </div>
 
-          <div className="hidden sm:ml-6 sm:flex sm:items-center">
+          <div className="hidden sm:ml-6 sm:flex sm:items-center z-10">
             {isLoggedIn ? (
               <div className="relative ml-3">
                 <div>
@@ -192,7 +189,8 @@ export default function Header() {
                 </Link>
                 <Link
                   href="/auth/register"
-                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-charcoal bg-sky-blue hover:bg-sky-blue/80 shadow-sm transition-colors duration-200">
+                  className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-black hover:bg-gray-700"
+                >
                   Đăng ký
                 </Link>
               </div>
@@ -249,32 +247,32 @@ export default function Header() {
         <div className="pt-2 pb-3 space-y-1">
           <Link
             href="/"
-            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-              pathname === "/"
-                ? "border-[#ff9fc1] text-charcoal bg-sky-blue/30"
-                : "border-transparent text-charcoal hover:bg-sky-blue/20 hover:border-sky-blue hover:text-[#ff9fc1]"
-            }`}
-            onClick={() => setIsMenuOpen(false)}>
+            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname === '/'
+                ? 'border-blue-500 text-blue-700 bg-blue-50'
+                : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+              }`}
+            onClick={() => setIsMenuOpen(false)}
+          >
             Trang chủ
           </Link>
           <Link
             href="/nurse"
-            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-              pathname.startsWith("/nurse")
-                ? "border-[#ff9fc1] text-charcoal bg-sky-blue/30"
-                : "border-transparent text-charcoal hover:bg-sky-blue/20 hover:border-sky-blue hover:text-[#ff9fc1]"
-            }`}
-            onClick={() => setIsMenuOpen(false)}>
+            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/nurse')
+                ? 'border-blue-500 text-blue-700 bg-blue-50'
+                : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+              }`}
+            onClick={() => setIsMenuOpen(false)}
+          >
             Y tá
           </Link>
           <Link
             href="/news"
-            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-              pathname.startsWith("/news")
-                ? "border-[#ff9fc1] text-charcoal bg-sky-blue/30"
-                : "border-transparent text-charcoal hover:bg-sky-blue/20 hover:border-sky-blue hover:text-[#ff9fc1]"
-            }`}
-            onClick={() => setIsMenuOpen(false)}>
+            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/news')
+                ? 'border-blue-500 text-blue-700 bg-blue-50'
+                : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+              }`}
+            onClick={() => setIsMenuOpen(false)}
+          >
             Tin tức
           </Link>
 
@@ -282,38 +280,36 @@ export default function Header() {
             <>
               <Link
                 href="/appointments"
-                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-                  pathname.startsWith("/appointments")
-                    ? "border-[#ff9fc1] text-charcoal bg-sky-blue/30"
-                    : "border-transparent text-charcoal hover:bg-sky-blue/20 hover:border-sky-blue hover:text-[#ff9fc1]"
-                }`}
-                onClick={() => setIsMenuOpen(false)}>
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/appointments')
+                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Lịch hẹn
               </Link>
 
-              {(userRole === "nurse" ||
-                userRole === "admin" ||
-                userRole === "specialist") && (
+              {(userRole === 'nurse' || userRole === 'admin' || userRole === 'specialist') && (
                 <Link
                   href="/dashboard"
-                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-                    pathname.startsWith("/dashboard")
-                      ? "border-[#ff9fc1] text-charcoal bg-sky-blue/30"
-                      : "border-transparent text-charcoal hover:bg-sky-blue/20 hover:border-sky-blue hover:text-[#ff9fc1]"
-                  }`}
-                  onClick={() => setIsMenuOpen(false)}>
+                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/dashboard')
+                      ? 'border-blue-500 text-blue-700 bg-blue-50'
+                      : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
                   Quản lý
                 </Link>
               )}
 
               <Link
                 href="/profile"
-                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${
-                  pathname.startsWith("/profile")
-                    ? "border-[#ff9fc1] text-charcoal bg-sky-blue/30"
-                    : "border-transparent text-charcoal hover:bg-sky-blue/20 hover:border-sky-blue hover:text-[#ff9fc1]"
-                }`}
-                onClick={() => setIsMenuOpen(false)}>
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/profile')
+                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
                 Hồ sơ
               </Link>
 

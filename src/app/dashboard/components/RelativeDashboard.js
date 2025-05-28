@@ -224,22 +224,7 @@ const RelativeDashboard = ({ user }) => {
           </div>
         </div>
       </div>
-
       {/* Các tính năng chính */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/booking/new" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold mb-2">Đặt lịch y tá</h3>
-          <p className="text-gray-600 text-sm">Tìm và đặt lịch với y tá phù hợp</p>
-        </Link>
-        <Link href="/nurse/search" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold mb-2">Tìm y tá</h3>
-          <p className="text-gray-600 text-sm">Tìm kiếm y tá theo kỹ năng và đánh giá</p>
-        </Link>
-        <Link href="/payments/history" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold mb-2">Lịch sử thanh toán</h3>
-          <p className="text-gray-600 text-sm">Xem lịch sử và quản lý thanh toán</p>
-        </Link>
-      </div>
     </div>
   );
 };

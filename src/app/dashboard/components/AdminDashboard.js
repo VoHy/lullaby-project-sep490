@@ -133,24 +133,6 @@ const AdminDashboard = ({ user }) => {
       </div>
 
       {/* Các tính năng quản trị */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Link href="/dashboard/users" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold mb-2">Quản lý người dùng</h3>
-          <p className="text-gray-600 text-sm">Xem và quản lý tất cả tài khoản người dùng</p>
-        </Link>
-        <Link href="/dashboard/nurses" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold mb-2">Quản lý y tá</h3>
-          <p className="text-gray-600 text-sm">Phê duyệt, quản lý y tá và xem đánh giá</p>
-        </Link>
-        <Link href="/dashboard/reports" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold mb-2">Báo cáo</h3>
-          <p className="text-gray-600 text-sm">Xem báo cáo doanh thu và thống kê sử dụng</p>
-        </Link>
-        <Link href="/dashboard/settings" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold mb-2">Cài đặt hệ thống</h3>
-          <p className="text-gray-600 text-sm">Quản lý cài đặt và cấu hình hệ thống</p>
-        </Link>
-      </div>
     </div>
   );
 };
