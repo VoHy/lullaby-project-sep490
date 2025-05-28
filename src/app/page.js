@@ -156,25 +156,39 @@ export default function Home() {
 
       {/* CTA Section */}
       <motion.div
-        className="bg-pink-100 rounded-xl"
+        className="relative rounded-xl overflow-hidden my-12"
+        style={{ minHeight: 320 }}
         variants={{ hidden: { opacity: 0, y: 40 }, show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' } } }}
       >
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
-          <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-            <span className="block">Sẵn sàng trải nghiệm?</span>
-            <span className="block">Đăng ký ngay hôm nay.</span>
+        {/* Hình nền */}
+        <img
+          src="/images/hero-bg.jpg"
+          alt="CTA Background"
+          className="absolute inset-0 w-full h-full object-cover z-0"
+          style={{ objectPosition: 'center' }}
+        />
+        {/* Lớp phủ màu */}
+        <div className="absolute inset-0 bg-pink-400/40 z-10 rounded-xl"></div>
+        {/* Nội dung */}
+        <div className="relative z-20 flex flex-col items-center justify-center text-center h-full py-16 px-4">
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+            Sẵn sàng trải nghiệm?
+            <br />
+            <span className="block text-2xl md:text-4xl font-semibold mt-2">Đăng ký ngay hôm nay.</span>
           </h2>
-          <div className="mt-8 flex lg:mt-0 lg:flex-shrink-0">
-            <div className="inline-flex rounded-md shadow">
-              <Link href="/auth/register" className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-blue-600 bg-white hover:bg-blue-50">
-                Bắt đầu ngay
-              </Link>
-            </div>
-            <div className="ml-3 inline-flex rounded-md shadow">
-              <Link href="/booking/new" className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-base font-medium rounded-md text-white bg-blue-700 hover:bg-blue-800">
-                Đặt lịch
-              </Link>
-            </div>
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/auth/register"
+              className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-lg font-semibold rounded-full text-pink-700 bg-white hover:bg-pink-50 shadow-lg transition"
+            >
+              Bắt đầu ngay
+            </Link>
+            <Link
+              href="/booking/new"
+              className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-lg font-semibold rounded-full text-white bg-pink-600 hover:bg-pink-700 shadow-lg transition"
+            >
+              Đặt lịch
+            </Link>
           </div>
         </div>
       </motion.div>
