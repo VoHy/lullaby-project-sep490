@@ -190,72 +190,98 @@ export default function Home() {
 
       {/* CTA Section */}
       <motion.div
-        className="bg-black rounded-xl"
-        variants={{
-          hidden: { opacity: 0, y: 40 },
-          show: {
-            opacity: 1,
-            y: 0,
-            transition: { duration: 0.7, ease: "easeOut" },
-          },
-        }}>
-        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:py-16 lg:px-8 lg:flex lg:items-center lg:justify-between">
-          <h2 className="text-3xl font-extrabold tracking-tight text-white sm:text-4xl">
-            <span className="block">Sẵn sàng trải nghiệm?</span>
-            <span className="block text-white/90">
-              Đăng ký ngay hôm nay.
-            </span>
+        className="relative rounded-xl overflow-hidden my-12"
+        style={{ minHeight: 320 }}
+        variants={{ hidden: { opacity: 0, y: 40 }, show: { opacity: 1, y: 0, transition: { duration: 0.2, ease: 'easeOut' } } }}
+      >
+        {/* Hình nền */}
+        <img
+          src="/images/hero-bg.jpg"
+          alt="CTA Background"
+          className="absolute inset-0 w-full h-full object-cover z-0"
+          style={{ objectPosition: 'center' }}
+        />
+        {/* Lớp phủ màu */}
+        <div className="absolute inset-0 bg-pink-400/40 z-10 rounded-xl"></div>
+        {/* Nội dung */}
+        <div className="relative z-20 flex flex-col items-center justify-center text-center h-full py-16 px-4">
+          <h2 className="text-3xl md:text-5xl font-bold text-white mb-4 drop-shadow-lg">
+            Sẵn sàng trải nghiệm?
+            <br />
+            <span className="block text-2xl md:text-4xl font-semibold mt-2">Đăng ký ngay hôm nay.</span>
           </h2>
-          <div className="mt-8 flex flex-wrap gap-4 lg:mt-0 lg:flex-shrink-0">
-            <div className="inline-flex rounded-md shadow">
-              <Link
-                href="/auth/register"
-                className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-lg font-medium rounded-md text-[#ff9fc1] bg-white hover:bg-gray-50 transition-colors">
-                Bắt đầu ngay
-              </Link>
-            </div>
-            <div className="inline-flex rounded-md shadow">
-              <Link
-                href="/booking/new"
-                className="inline-flex items-center justify-center px-5 py-3 border border-transparent text-lg font-medium rounded-md text-white bg-[#ff9fc1]/80 hover:bg-[#ff9fc1]/70 transition-colors">
-                Đặt lịch
-              </Link>
-            </div>
+          <div className="mt-8 flex flex-col sm:flex-row gap-4 justify-center">
+            <Link
+              href="/auth/register"
+              className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-lg font-semibold rounded-full text-pink-700 bg-white hover:bg-pink-50 shadow-lg transition"
+            >
+              Bắt đầu ngay
+            </Link>
+            <Link
+              href="/booking/new"
+              className="inline-flex items-center justify-center px-8 py-3 border border-transparent text-lg font-semibold rounded-full text-white bg-pink-600 hover:bg-pink-700 shadow-lg transition"
+            >
+              Đặt lịch
+            </Link>
           </div>
         </div>
       </motion.div>
 
       {/* Footer */}
       <motion.footer
-        className="w-full bg-gray-100 border-t mt-12"
-        variants={{
-          hidden: { opacity: 0, y: 40 },
-          show: {
-            opacity: 1,
-            y: 0,
-            transition: { duration: 0.7, ease: "easeOut" },
-          },
-        }}>
-        <div className="max-w-7xl mx-auto px-4 py-8 flex flex-col md:flex-row items-center justify-between">
-          <div className="text-gray-600 text-sm">
-            © {new Date().getFullYear()} Lullaby. All rights reserved.
+        className="w-full bg-gradient-to-r from-pink-50 to-rose-100 border-t mt-12"
+        variants={{ hidden: { opacity: 0, y: 40 }, show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: 'easeOut' } } }}
+      >
+        <div className="max-w-7xl mx-auto px-4 py-14">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-8">
+            {/* Logo & mô tả */}
+            <div className="md:col-span-2 flex flex-col items-center md:items-start text-center md:text-left">
+              <div className="flex items-center mb-4">
+                <img src="/images/logo-eldora.png" alt="Lullaby" className="h-12 w-12 mr-2" />
+                <span className="text-2xl font-bold text-[#2d3a4e] tracking-wide">Lullaby</span>
+              </div>
+              <p className="text-gray-700 mb-4">
+                Cung cấp tình yêu thương, sự ấm áp và dịch vụ tận tâm để mang đến cho người cao tuổi một gia đình thực sự.<br />
+                <br />
+                Để biết thêm chi tiết, vui lòng liên hệ theo các liên kết sau.
+              </p>
+              <div className="flex space-x-4 mt-2">
+                <a href="#" aria-label="Facebook" className="text-gray-800 hover:text-blue-600">
+                  <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24"><path d="M22.675 0h-21.35C.595 0 0 .592 0 1.326v21.348C0 23.408.595 24 1.325 24h11.495v-9.294H9.692v-3.622h3.128V8.413c0-3.1 1.893-4.788 4.659-4.788 1.325 0 2.463.099 2.797.143v3.24l-1.918.001c-1.504 0-1.797.715-1.797 1.763v2.313h3.587l-.467 3.622h-3.12V24h6.116C23.406 24 24 23.408 24 22.674V1.326C24 .592 23.406 0 22.675 0"/></svg>
+                </a>
+                <a href="#" aria-label="LinkedIn" className="text-gray-800 hover:text-blue-600">
+                  <svg width="32" height="32" fill="currentColor" viewBox="0 0 24 24"><path d="M19 0h-14c-2.76 0-5 2.24-5 5v14c0 2.76 2.24 5 5 5h14c2.76 0 5-2.24 5-5v-14c0-2.76-2.24-5-5-5zm-11 19h-3v-9h3v9zm-1.5-10.28c-.966 0-1.75-.79-1.75-1.76s.784-1.76 1.75-1.76 1.75.79 1.75 1.76-.784 1.76-1.75 1.76zm13.5 10.28h-3v-4.5c0-1.08-.02-2.47-1.5-2.47-1.5 0-1.73 1.17-1.73 2.38v4.59h-3v-9h2.89v1.23h.04c.4-.76 1.38-1.56 2.84-1.56 3.04 0 3.6 2 3.6 4.59v4.74z"/></svg>
+                </a>
+              </div>
+            </div>
+            {/* Các cột liên kết */}
+            <div>
+              <h3 className="font-semibold text-lg mb-3">Các Gói</h3>
+              <ul className="space-y-2 text-gray-800">
+                <li><a href="#" className="bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text hover:from-purple-600 hover:to-pink-600 transition-all duration-300 hover:scale-105 tracking-wide">Chăm sóc tại nhà</a></li>
+                <li><a href="#" className="bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text hover:from-purple-600 hover:to-pink-600 transition-all duration-300 hover:scale-105 tracking-wide">Điều dưỡng tại nhà</a></li>
+                <li><a href="#" className="bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text hover:from-purple-600 hover:to-pink-600 transition-all duration-300 hover:scale-105 tracking-wide">Liệu pháp tại nhà</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-3">Chăm sóc Pro</h3>
+              <ul className="space-y-2 text-gray-800">
+                <li><a href="#" className="bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text hover:from-purple-600 hover:to-pink-600 transition-all duration-300 hover:scale-105 tracking-wide">Chuyên làm y tá</a></li>
+                <li><a href="#" className="bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text hover:from-purple-600 hover:to-pink-600 transition-all duration-300 hover:scale-105 tracking-wide">Chuyên gia trị liệu</a></li>
+                <li><a href="#" className="bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text hover:from-purple-600 hover:to-pink-600 transition-all duration-300 hover:scale-105 tracking-wide">Công việc chăm sóc</a></li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-semibold text-lg mb-3">Kết nối</h3>
+              <ul className="space-y-2 text-gray-800">
+                <li><a href="#" className="bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text hover:from-purple-600 hover:to-pink-600 transition-all duration-300 hover:scale-105 tracking-wide">Trung tâm trợ giúp</a></li>
+                <li><a href="#" className="bg-gradient-to-r from-purple-400 to-pink-400 text-transparent bg-clip-text hover:from-purple-600 hover:to-pink-600 transition-all duration-300 hover:scale-105 tracking-wide">Nghề nghiệp</a></li>
+              </ul>
+            </div>
           </div>
-          <div className="flex space-x-4 mt-4 md:mt-0">
-            <Link
-              href="/about"
-              className="text-gray-500 hover:text-blue-600 text-sm">
-              Về chúng tôi
-            </Link>
-            <Link
-              href="/contact"
-              className="text-gray-500 hover:text-blue-600 text-sm">
-              Liên hệ
-            </Link>
-            <Link
-              href="/policy"
-              className="text-gray-500 hover:text-blue-600 text-sm">
-              Chính sách
-            </Link>
+          {/* Bản quyền */}
+          <div className="text-center text-gray-700 text-base mt-10">
+            Bản quyền {new Date().getFullYear()}. United Software Solutions, Mọi quyền được bảo lưu
           </div>
         </div>
       </motion.footer>
