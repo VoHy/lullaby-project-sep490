@@ -197,20 +197,6 @@ const NurseDashboard = ({ user }) => {
       </div>
 
       {/* Các tính năng */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Link href="/profile" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold mb-2">Hồ sơ của tôi</h3>
-          <p className="text-gray-600 text-sm">Cập nhật thông tin và kỹ năng cá nhân</p>
-        </Link>
-        <Link href="/dashboard/patients" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold mb-2">Bệnh nhân của tôi</h3>
-          <p className="text-gray-600 text-sm">Xem danh sách và hồ sơ bệnh nhân</p>
-        </Link>
-        <Link href="/dashboard/reports" className="bg-white rounded-lg shadow p-6 hover:shadow-md transition-shadow">
-          <h3 className="text-lg font-semibold mb-2">Báo cáo y tế</h3>
-          <p className="text-gray-600 text-sm">Tạo và quản lý báo cáo y tế cho bệnh nhân</p>
-        </Link>
-      </div>
     </div>
   );
 };
