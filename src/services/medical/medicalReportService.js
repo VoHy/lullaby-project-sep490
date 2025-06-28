@@ -10,6 +10,11 @@ const MEDICAL_REPORT_ENDPOINTS = {
 export const medicalReportService = {
   // Tạo báo cáo y tế mới
   createMedicalReport: async (reportData) => {
+    // Đảm bảo truyền đủ các trường: BookingServiceID, Note, CreatedAt, Status
+    const requiredFields = ['BookingServiceID', 'Note', 'CreatedAt', 'Status'];
+    requiredFields.forEach(field => {
+      if (!reportData[field]) throw new Error(`Thiếu trường ${field} khi tạo báo cáo y tế`);
+    });
     const response = await axiosInstance.post(MEDICAL_REPORT_ENDPOINTS.CREATE, reportData);
     return response.data;
   },
