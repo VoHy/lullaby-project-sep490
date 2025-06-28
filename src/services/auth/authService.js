@@ -8,88 +8,201 @@ const AUTH_ENDPOINTS = {
   CHANGE_PASSWORD: '/api/auth/change-password',
   LOGOUT: '/api/auth/logout',
   VERIFY_EMAIL: '/api/auth/verify-email',
+  REFRESH_TOKEN: '/api/auth/refresh-token',
 };
 
 // Hỗ trợ cho cả browser và server-side rendering
 const isBrowser = typeof window !== 'undefined';
 
+// Validation helpers
+const validateEmail = (email) => {
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  return emailRegex.test(email);
+};
+
+const validatePassword = (password) => {
+  return password && password.length >= 6;
+};
+
 export const authService = {
   // Đăng nhập
   login: async (credentials) => {
     try {
+      // Validation
+      if (!credentials.email || !credentials.password) {
+        throw new Error('Email và mật khẩu là bắt buộc');
+      }
+      
+      if (!validateEmail(credentials.email)) {
+        throw new Error('Email không hợp lệ');
+      }
+
       const response = await axiosInstance.post(AUTH_ENDPOINTS.LOGIN, credentials);
+      
       if (isBrowser && response.data.token) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        if (response.data.refreshToken) {
+          localStorage.setItem('refreshToken', response.data.refreshToken);
+        }
       }
+      
       return response.data;
     } catch (error) {
       console.error('Login error:', error);
-      throw error;
+      const message = error.response?.data?.message || error.message || 'Đăng nhập thất bại';
+      throw new Error(message);
     }
   },
 
   // Đăng nhập với Google
   loginWithGoogle: async (token) => {
     try {
+      if (!token) {
+        throw new Error('Token Google là bắt buộc');
+      }
+
       const response = await axiosInstance.post(AUTH_ENDPOINTS.GOOGLE_LOGIN, { token });
+      
       if (isBrowser && response.data.token) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        if (response.data.refreshToken) {
+          localStorage.setItem('refreshToken', response.data.refreshToken);
+        }
       }
+      
       return response.data;
     } catch (error) {
       console.error('Google login error:', error);
-      throw error;
+      const message = error.response?.data?.message || error.message || 'Đăng nhập Google thất bại';
+      throw new Error(message);
     }
   },
 
   // Đăng ký
   register: async (userData) => {
     try {
+      // Validation
+      if (!userData.email || !userData.password || !userData.name) {
+        throw new Error('Email, mật khẩu và tên là bắt buộc');
+      }
+      
+      if (!validateEmail(userData.email)) {
+        throw new Error('Email không hợp lệ');
+      }
+      
+      if (!validatePassword(userData.password)) {
+        throw new Error('Mật khẩu phải có ít nhất 6 ký tự');
+      }
+
       const response = await axiosInstance.post(AUTH_ENDPOINTS.REGISTER, userData);
+      
       // Tự động đăng nhập sau khi đăng ký
       if (isBrowser && response.data.token) {
         localStorage.setItem('token', response.data.token);
         localStorage.setItem('user', JSON.stringify(response.data.user));
+        if (response.data.refreshToken) {
+          localStorage.setItem('refreshToken', response.data.refreshToken);
+        }
       }
+      
       return response.data;
     } catch (error) {
       console.error('Register error:', error);
-      throw error;
+      const message = error.response?.data?.message || error.message || 'Đăng ký thất bại';
+      throw new Error(message);
     }
   },
 
   // Quên mật khẩu
   forgotPassword: async (email) => {
     try {
+      if (!email) {
+        throw new Error('Email là bắt buộc');
+      }
+      
+      if (!validateEmail(email)) {
+        throw new Error('Email không hợp lệ');
+      }
+
       const response = await axiosInstance.post(AUTH_ENDPOINTS.FORGOT_PASSWORD, { email });
       return response.data;
     } catch (error) {
       console.error('Forgot password error:', error);
-      throw error;
+      const message = error.response?.data?.message || error.message || 'Gửi email khôi phục thất bại';
+      throw new Error(message);
     }
   },
 
   // Thay đổi mật khẩu
   changePassword: async (passwordData) => {
     try {
+      if (!passwordData.oldPassword || !passwordData.newPassword) {
+        throw new Error('Mật khẩu cũ và mới là bắt buộc');
+      }
+      
+      if (!validatePassword(passwordData.newPassword)) {
+        throw new Error('Mật khẩu mới phải có ít nhất 6 ký tự');
+      }
+
       const response = await axiosInstance.post(AUTH_ENDPOINTS.CHANGE_PASSWORD, passwordData);
       return response.data;
     } catch (error) {
       console.error('Change password error:', error);
-      throw error;
+      const message = error.response?.data?.message || error.message || 'Thay đổi mật khẩu thất bại';
+      throw new Error(message);
     }
   },
 
   // Đăng xuất
-  logout: () => {
-    if (isBrowser) {
-      localStorage.removeItem('token');
-      localStorage.removeItem('user');
+  logout: async () => {
+    try {
+      // Gọi API logout nếu có token
+      const token = isBrowser ? localStorage.getItem('token') : null;
+      if (token) {
+        await axiosInstance.post(AUTH_ENDPOINTS.LOGOUT);
+      }
+    } catch (error) {
+      console.error('Logout API error:', error);
+      // Vẫn xóa localStorage ngay cả khi API fail
+    } finally {
+      if (isBrowser) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        localStorage.removeItem('refreshToken');
+      }
     }
-    // Bạn có thể gọi endpoint logout nếu cần
-    // return axiosInstance.post(AUTH_ENDPOINTS.LOGOUT);
+  },
+
+  // Refresh token
+  refreshToken: async () => {
+    try {
+      if (!isBrowser) return null;
+      
+      const refreshToken = localStorage.getItem('refreshToken');
+      if (!refreshToken) {
+        throw new Error('Không có refresh token');
+      }
+
+      const response = await axiosInstance.post(AUTH_ENDPOINTS.REFRESH_TOKEN, { 
+        refreshToken 
+      });
+      
+      if (response.data.token) {
+        localStorage.setItem('token', response.data.token);
+        if (response.data.refreshToken) {
+          localStorage.setItem('refreshToken', response.data.refreshToken);
+        }
+      }
+      
+      return response.data;
+    } catch (error) {
+      console.error('Refresh token error:', error);
+      // Nếu refresh token fail, logout user
+      authService.logout();
+      throw error;
+    }
   },
 
   // Kiểm tra người dùng đã đăng nhập
@@ -102,18 +215,34 @@ export const authService = {
   // Lấy thông tin người dùng hiện tại
   getCurrentUser: () => {
     if (!isBrowser) return null;
-    const user = localStorage.getItem('user');
-    return user ? JSON.parse(user) : null;
+    try {
+      const user = localStorage.getItem('user');
+      return user ? JSON.parse(user) : null;
+    } catch (error) {
+      console.error('Error parsing user data:', error);
+      return null;
+    }
+  },
+
+  // Lấy token hiện tại
+  getToken: () => {
+    if (!isBrowser) return null;
+    return localStorage.getItem('token');
   },
 
   // Xác minh email
   verifyEmail: async (token) => {
     try {
+      if (!token) {
+        throw new Error('Token xác minh là bắt buộc');
+      }
+
       const response = await axiosInstance.post(AUTH_ENDPOINTS.VERIFY_EMAIL, { token });
       return response.data;
     } catch (error) {
       console.error('Verify email error:', error);
-      throw error;
+      const message = error.response?.data?.message || error.message || 'Xác minh email thất bại';
+      throw new Error(message);
     }
   },
 };
