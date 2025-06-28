@@ -11,6 +11,11 @@ const PAYMENT_ENDPOINTS = {
 export const paymentService = {
   // Tạo thanh toán mới
   createPayment: async (paymentData) => {
+    // Đảm bảo truyền đủ các trường: BookingID, PaymentMethod, Amount, Status
+    const requiredFields = ['BookingID', 'PaymentMethod', 'Amount', 'Status'];
+    requiredFields.forEach(field => {
+      if (!paymentData[field]) throw new Error(`Thiếu trường ${field} khi tạo payment`);
+    });
     const response = await axiosInstance.post(PAYMENT_ENDPOINTS.CREATE, paymentData);
     return response.data;
   },
