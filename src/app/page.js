@@ -64,7 +64,9 @@ export default function Home() {
               />
               <div className="absolute inset-0 bg-opacity-40 flex flex-col justify-center items-center text-center p-8">
                 <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Chăm sóc người cao tuổi</h2>
-                <p className="text-white mb-6 text-lg md:text-2xl">Dịch vụ chăm sóc tận tâm cho người lớn tuổi tại nhà.</p>
+                <div className="text-white mb-6 text-lg md:text-2xl">
+                  Dịch vụ chăm sóc tận tâm cho người lớn tuổi tại nhà.
+                </div>
                 <button className="bg-pink-500 hover:bg-pink-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg transition text-lg">Tìm hiểu thêm</button>
               </div>
             </div>
@@ -81,7 +83,9 @@ export default function Home() {
               />
               <div className="absolute inset-0 bg-opacity-40 flex flex-col justify-center items-center text-center p-8">
                 <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Phục hồi chức năng</h2>
-                <p className="text-white mb-6 text-lg md:text-2xl">Hỗ trợ tập luyện phục hồi chức năng chuyên nghiệp.</p>
+                <div className="text-white mb-6 text-lg md:text-2xl">
+                  Hỗ trợ tập luyện phục hồi chức năng chuyên nghiệp.
+                </div>
                 <button className="bg-pink-500 hover:bg-pink-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg transition text-lg">Tìm hiểu thêm</button>
               </div>
             </div>
@@ -98,7 +102,9 @@ export default function Home() {
               />
               <div className="absolute inset-0 bg-opacity-40 flex flex-col justify-center items-center text-center p-8">
                 <h2 className="text-3xl md:text-5xl font-bold text-white mb-4">Giám sát sức khỏe</h2>
-                <p className="text-white mb-6 text-lg md:text-2xl">Theo dõi sức khỏe và báo cáo định kỳ cho gia đình.</p>
+                <div className="text-white mb-6 text-lg md:text-2xl">
+                  Theo dõi sức khỏe và báo cáo định kỳ cho gia đình.
+                </div>
                 <button className="bg-pink-500 hover:bg-pink-600 text-white font-semibold px-8 py-3 rounded-full shadow-lg transition text-lg">Tìm hiểu thêm</button>
               </div>
             </div>
@@ -116,9 +122,9 @@ export default function Home() {
             <h2 className="text-3xl font-extrabold text-gray-900 sm:text-4xl">
               Dịch vụ của chúng tôi
             </h2>
-            <p className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
+            <div className="mt-3 max-w-2xl mx-auto text-xl text-gray-500 sm:mt-4">
               Lullaby cung cấp nhiều dịch vụ chăm sóc y tế tại nhà
-            </p>
+            </div>
           </div>
           <motion.div
             className="mt-10"
@@ -146,7 +152,7 @@ export default function Home() {
                 >
                   {feature.icon}
                   <h3 className="mt-4 text-lg font-medium text-gray-900">{feature.title}</h3>
-                  <p className="mt-3 text-base text-gray-500">{feature.desc}</p>
+                  <div className="mt-3 text-base text-gray-500">{feature.desc}</div>
                 </motion.div>
               ))}
             </div>
