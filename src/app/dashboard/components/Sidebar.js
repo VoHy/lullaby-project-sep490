@@ -3,6 +3,11 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faChartBar, faUsers, faUserNurse, faFileAlt, faCog, faCalendarAlt,
+  faUser, faMoneyBill, faHospital, faNotesMedical
+} from '@fortawesome/free-solid-svg-icons';
 
 const Sidebar = ({ user }) => {
   const pathname = usePathname();
@@ -10,36 +15,53 @@ const Sidebar = ({ user }) => {
 
   const menuItems = {
     admin: [
-      { name: 'Tổng quan', path: '/dashboard', icon: '📊' },
-      { name: 'Quản lý người dùng', path: '/dashboard/users', icon: '👥' },
-      { name: 'Quản lý y tá', path: '/dashboard/nurses', icon: '👨‍⚕️' },
-      { name: 'Báo cáo', path: '/dashboard/reports', icon: '📈' },
-      { name: 'Cài đặt', path: '/dashboard/settings', icon: '⚙️' },
+      { name: 'Tổng quan', path: '/dashboard', icon: '' },
+      { name: 'Quản lý người dùng', path: '/dashboard/users', icon: '' },
+      { name: 'Quản lý y tá', path: '/dashboard/nurses', icon: '' },
+      { name: 'Báo cáo', path: '/dashboard/reports', icon: '' },
+      { name: 'Cài đặt', path: '/dashboard/settings', icon: '' },
     ],
     nurse: [
-      { name: 'Tổng quan', path: '/dashboard', icon: '📊' },
-      { name: 'Bệnh nhân', path: '/dashboard/patients', icon: '👥' },
-      { name: 'Lịch hẹn', path: '/dashboard/appointments', icon: '📅' },
-      { name: 'Báo cáo y tế', path: '/dashboard/reports', icon: '📝' },
-      { name: 'Hồ sơ', path: '/dashboard/profile', icon: '👤' },
+      { name: 'Tổng quan', path: '/dashboard', icon: '' },
+      { name: 'Bệnh nhân', path: '/dashboard/patients', icon: '' },
+      { name: 'Lịch hẹn', path: '/dashboard/appointments', icon: '' },
+      { name: 'Báo cáo y tế', path: '/dashboard/reports', icon: '' },
+      { name: 'Hồ sơ', path: '/dashboard/profile', icon: '' },
     ],
     relative: [
-      { name: 'Tổng quan', path: '/dashboard', icon: '📊' },
-      { name: 'Bệnh nhân', path: '/dashboard/patients', icon: '👥' },
-      { name: 'Đặt lịch', path: '/dashboard/bookings', icon: '📅' },
-      { name: 'Báo cáo y tế', path: '/dashboard/medical-reports', icon: '📝' },
-      { name: 'Thanh toán', path: '/dashboard/payments', icon: '💰' },
+      { name: 'Tổng quan', path: '/dashboard', icon: '' },
+      { name: 'Bệnh nhân', path: '/dashboard/patients', icon: '' },
+      { name: 'Đặt lịch', path: '/dashboard/bookings', icon: '' },
+      { name: 'Báo cáo y tế', path: '/dashboard/medical-reports', icon: '' },
+      { name: 'Thanh toán', path: '/dashboard/payments', icon: '' },
     ],
     specialist: [
-      { name: 'Tổng quan', path: '/dashboard', icon: '📊' },
-      { name: 'Ca bệnh', path: '/dashboard/cases', icon: '🏥' },
-      { name: 'Lịch tư vấn', path: '/dashboard/appointments', icon: '📅' },
-      { name: 'Bệnh nhân', path: '/dashboard/patients', icon: '👥' },
-      { name: 'Báo cáo', path: '/dashboard/reports', icon: '📝' },
+      { name: 'Tổng quan', path: '/dashboard', icon: '' },
+      { name: 'Ca bệnh', path: '/dashboard/cases', icon: '' },
+      { name: 'Lịch tư vấn', path: '/dashboard/appointments', icon: '' },
+      { name: 'Bệnh nhân', path: '/dashboard/patients', icon: '' },
+      { name: 'Báo cáo', path: '/dashboard/reports', icon: '' },
     ],
   };
 
   const currentMenuItems = menuItems[user?.role] || [];
+
+  const iconMap = {
+    'Tổng quan': faChartBar,
+    'Quản lý người dùng': faUsers,
+    'Quản lý y tá': faUserNurse,
+    'Báo cáo': faFileAlt,
+    'Cài đặt': faCog,
+    'Bệnh nhân': faUsers,
+    'Lịch hẹn': faCalendarAlt,
+    'Báo cáo y tế': faNotesMedical,
+    'Hồ sơ': faUser,
+    'Đặt lịch': faCalendarAlt,
+    'Thanh toán': faMoneyBill,
+    'Ca bệnh': faHospital,
+    'Lịch tư vấn': faCalendarAlt,
+    'Báo cáo': faFileAlt,
+  };
 
   return (
     <div className={`bg-white h-screen shadow-lg transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} relative`}>
@@ -67,7 +89,9 @@ const Sidebar = ({ user }) => {
               pathname === item.path ? 'bg-blue-50 text-blue-600' : ''
             }`}
           >
-            <span className="text-xl mr-3">{item.icon}</span>
+            <span className="text-xl mr-3">
+              <FontAwesomeIcon icon={iconMap[item.name]} />
+            </span>
             {!isCollapsed && <span>{item.name}</span>}
           </Link>
         ))}
