@@ -13,6 +13,11 @@ const BOOKING_ENDPOINTS = {
 export const bookingService = {
   // Tạo đặt lịch mới
   createBooking: async (bookingData) => {
+    // Đảm bảo truyền đủ các trường: RelativeID, PackageID, CreatedAt, UpdatedAt, Amount, Workdate, Status
+    const requiredFields = ['RelativeID', 'PackageID', 'CreatedAt', 'UpdatedAt', 'Amount', 'Workdate', 'Status'];
+    requiredFields.forEach(field => {
+      if (!bookingData[field]) throw new Error(`Thiếu trường ${field} khi tạo booking`);
+    });
     const response = await axiosInstance.post(BOOKING_ENDPOINTS.CREATE, bookingData);
     return response.data;
   },
