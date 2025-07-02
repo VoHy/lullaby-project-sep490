@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import apiService from '@/services/api/apiService';
+import Image from 'next/image';
+import { motion } from "framer-motion";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -14,7 +16,7 @@ export default function RegisterPage() {
     confirmPassword: '',
   });
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -40,31 +42,18 @@ export default function RegisterPage() {
       return;
     }
 
-    setLoading(true);
+    setIsLoading(true);
 
     try {
-      // Loại bỏ confirmPassword trước khi gửi lên server
-      const { confirmPassword, ...dataToSend } = formData;
-      
-      const response = await apiService.auth.register(dataToSend);
-      console.log('Đăng ký thành công:', response);
-      
-      if (response && response.user) {
-        // Chuyển hướng dựa trên vai trò của người dùng
-        const role = response.user.role;
-        if (role === 'admin') {
-          router.push('/dashboard');
-        } else if (role === 'nurse') {
-          router.push('/dashboard');
-        } else {
-          router.push('/');
-        }
-      } else {
-        throw new Error('Không nhận được thông tin người dùng từ server');
-      }
+      await apiService.auth.register({
+        name: formData.name,
+        email: formData.email,
+        password: formData.password,
+      });
+      router.push('/auth/login');
     } catch (err) {
       console.error('Lỗi đăng ký:', err);
-      let errorMessage = 'Đăng ký thất bại. Vui lòng thử lại sau.';
+      let errorMessage = 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.';
       
       if (err.response?.data?.message) {
         errorMessage = err.response.data.message;
@@ -74,14 +63,14 @@ export default function RegisterPage() {
       
       setError(errorMessage);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   // Xử lý đăng nhập với Google
   const handleGoogleLogin = async () => {
     setError('');
-    setLoading(true);
+    setIsLoading(true);
 
     try {
       const fakeGoogleToken = 'fake-google-token-' + Date.now();
@@ -114,154 +103,100 @@ export default function RegisterPage() {
       
       setError(errorMessage);
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Đăng ký tài khoản</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Đã có tài khoản?{' '}
-            <Link
-              href="/auth/login"
-              className="font-medium text-indigo-600 hover:text-indigo-500"
-            >
-              Đăng nhập
-            </Link>
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="flex min-h-screen items-center justify-center"
+    >
+      <div className="flex shadow-md rounded-2xl overflow-hidden w-full max-w-4xl bg-white/80">
+        {/* Register form */}
+        <div className="flex flex-col justify-center px-10 py-12 w-full md:w-1/2">
+          <h1 className="text-3xl font-bold mb-2 text-rose-600">Đăng ký tài khoản</h1>
+          <small className="text-gray-400 mb-6">Vui lòng nhập thông tin để đăng ký</small>
+          <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label htmlFor="name" className="sr-only">
-                Họ và tên
-              </label>
+              <label className="mb-2 block text-xs font-semibold">Họ tên</label>
               <input
-                id="name"
-                name="name"
                 type="text"
-                autoComplete="name"
-                required
+                name="name"
+                placeholder="Nhập họ tên"
+                className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
                 value={formData.name}
                 onChange={handleChange}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Họ và tên"
+                required
               />
             </div>
             <div>
-              <label htmlFor="email" className="sr-only">
-                Email
-              </label>
+              <label className="mb-2 block text-xs font-semibold">Email</label>
               <input
-                id="email"
-                name="email"
                 type="email"
-                autoComplete="email"
-                required
+                name="email"
+                placeholder="Nhập email của bạn"
+                className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
                 value={formData.email}
                 onChange={handleChange}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Email"
+                required
               />
             </div>
             <div>
-              <label htmlFor="password" className="sr-only">
-                Mật khẩu
-              </label>
+              <label className="mb-2 block text-xs font-semibold">Mật khẩu</label>
               <input
-                id="password"
-                name="password"
                 type="password"
-                autoComplete="new-password"
-                required
+                name="password"
+                placeholder="Nhập mật khẩu"
+                className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
                 value={formData.password}
                 onChange={handleChange}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Mật khẩu"
+                required
               />
             </div>
             <div>
-              <label htmlFor="confirmPassword" className="sr-only">
-                Nhập lại mật khẩu
-              </label>
+              <label className="mb-2 block text-xs font-semibold">Xác nhận mật khẩu</label>
               <input
-                id="confirmPassword"
-                name="confirmPassword"
                 type="password"
-                autoComplete="new-password"
-                required
+                name="confirmPassword"
+                placeholder="Nhập lại mật khẩu"
+                className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
                 value={formData.confirmPassword}
                 onChange={handleChange}
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 focus:z-10 sm:text-sm"
-                placeholder="Nhập lại mật khẩu"
+                required
               />
             </div>
-          </div>
-
-          {error && <div className="text-red-500 text-sm text-center">{error}</div>}
-
-          <div>
+            {error && <div className="text-red-500 text-sm text-center">{error}</div>}
             <button
               type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+              className="mb-1.5 block w-full text-center text-white bg-pink-500 hover:bg-pink-600 px-2 py-2 rounded-md font-semibold"
+              disabled={isLoading}
             >
-              {loading ? 'Đang xử lý...' : 'Đăng ký'}
+              {isLoading ? "..." : "Đăng ký"}
             </button>
+          </form>
+          <div className="text-center mt-6">
+            <span className="text-xs text-gray-400 font-semibold">Đã có tài khoản?</span>
+            <Link href="/auth/login" className="text-xs font-semibold text-pink-600 ml-1">Đăng nhập</Link>
           </div>
-        </form>
-
-        <div className="mt-6">
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-2 bg-gray-50 text-gray-500">Hoặc đăng ký với</span>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <button
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              type="button"
-              className="w-full flex justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm bg-white text-sm font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              <svg
-                className="h-5 w-5 mr-2"
-                xmlns="http://www.w3.org/2000/svg"
-                viewBox="0 0 24 24"
-                width="24"
-                height="24"
-              >
-                <g transform="matrix(1, 0, 0, 1, 27.009001, -39.238998)">
-                  <path
-                    fill="#4285F4"
-                    d="M -3.264 51.509 C -3.264 50.719 -3.334 49.969 -3.454 49.239 L -14.754 49.239 L -14.754 53.749 L -8.284 53.749 C -8.574 55.229 -9.424 56.479 -10.684 57.329 L -10.684 60.329 L -6.824 60.329 C -4.564 58.239 -3.264 55.159 -3.264 51.509 Z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M -14.754 63.239 C -11.514 63.239 -8.804 62.159 -6.824 60.329 L -10.684 57.329 C -11.764 58.049 -13.134 58.489 -14.754 58.489 C -17.884 58.489 -20.534 56.379 -21.484 53.529 L -25.464 53.529 L -25.464 56.619 C -23.494 60.539 -19.444 63.239 -14.754 63.239 Z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M -21.484 53.529 C -21.734 52.809 -21.864 52.039 -21.864 51.239 C -21.864 50.439 -21.724 49.669 -21.484 48.949 L -21.484 45.859 L -25.464 45.859 C -26.284 47.479 -26.754 49.299 -26.754 51.239 C -26.754 53.179 -26.284 54.999 -25.464 56.619 L -21.484 53.529 Z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M -14.754 43.989 C -12.984 43.989 -11.404 44.599 -10.154 45.789 L -6.734 42.369 C -8.804 40.429 -11.514 39.239 -14.754 39.239 C -19.444 39.239 -23.494 41.939 -25.464 45.859 L -21.484 48.949 C -20.534 46.099 -17.884 43.989 -14.754 43.989 Z"
-                  />
-                </g>
-              </svg>
-              Google
-            </button>
+        </div>
+        {/* Banner */}
+        <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-white">
+          <div className="w-full h-full flex items-center justify-center">
+            <Image
+              src="/images/hero-bg.jpg"
+              alt="Banner Register"
+              width={384}
+              height={512}
+              className="object-cover w-full h-[32rem] rounded-r-2xl"
+              priority
+            />
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 } 
