@@ -158,14 +158,7 @@ export const authService = {
   // Đăng xuất
   logout: async () => {
     try {
-      // Gọi API logout nếu có token
-      const token = isBrowser ? localStorage.getItem('token') : null;
-      if (token) {
-        await axiosInstance.post(AUTH_ENDPOINTS.LOGOUT);
-      }
-    } catch (error) {
-      console.error('Logout API error:', error);
-      // Vẫn xóa localStorage ngay cả khi API fail
+      // Không cần gọi API logout, chỉ xóa localStorage
     } finally {
       if (isBrowser) {
         localStorage.removeItem('token');

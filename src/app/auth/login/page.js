@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from "react";
+import { useState, useContext } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import apiService from '@/services/api/apiService';
 import Image from "next/image";
 import { motion } from "framer-motion";
+import { AuthContext } from "../../../context/AuthContext";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -16,6 +17,7 @@ export default function LoginPage() {
   });
   const [error, setError] = useState('');
   const router = useRouter();
+  const { login } = useContext(AuthContext);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -33,6 +35,7 @@ export default function LoginPage() {
     try {
       const response = await apiService.auth.login(formData);
       if (response.user) {
+        login(response.user);
         // Chuyển hướng dựa trên vai trò của người dùng
         const role = response.user.role;
         if (role === 'admin') {
@@ -64,6 +67,7 @@ export default function LoginPage() {
       const response = await apiService.auth.loginWithGoogle(fakeGoogleToken);
       
       if (response.user) {
+        login(response.user);
         // Chuyển hướng dựa trên vai trò của người dùng
         const role = response.user.role;
         if (role === 'admin') {
