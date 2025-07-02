@@ -1,36 +1,57 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Lullaby - Home Healthcare Platform
 
-## Getting Started
+Lullaby là nền tảng chăm sóc sức khỏe tại nhà hiện đại, hỗ trợ đặt lịch dịch vụ, quản lý y tá, báo cáo y tế, thanh toán và nhiều tiện ích khác cho người cao tuổi và gia đình.
 
-First, run the development server:
+## 🚀 Tính năng nổi bật
+- Đăng ký, đăng nhập, quên mật khẩu với giao diện hiện đại, hiệu ứng chuyển động mượt mà
+- Đặt lịch dịch vụ chăm sóc tại nhà, phục hồi chức năng, chăm sóc sau phẫu thuật
+- Xem danh sách y tá, tin tức, báo cáo y tế, lịch sử thanh toán
+- Dashboard cho từng vai trò: Admin, Y tá, Người thân, Chuyên gia
+- Responsive UI, tối ưu cho cả desktop và mobile
+- Tích hợp hiệu ứng animation, slider, xác thực token, API giả lập
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## 🛠️ Công nghệ sử dụng
+- **Next.js 15 (App Router)**
+- **React 19**
+- **TailwindCSS 4** (tùy biến theme, responsive)
+- **Framer Motion** (animation chuyển trang, hiệu ứng động)
+- **Swiper** (slider dịch vụ, banner)
+- **Axios** (giao tiếp API, xác thực token)
+- **Radix UI** (UI primitives)
+- **Lucide React** (icon hiện đại)
+- **PostCSS, Autoprefixer**
+
+## 📂 Cấu trúc thư mục chính
+```
+lullaby/
+  ├─ src/
+  │   ├─ app/
+  │   │   ├─ api/           # API routes (Next.js)
+  │   │   ├─ auth/          # Đăng nhập, đăng ký, quên mật khẩu
+  │   │   ├─ booking/       # Đặt lịch dịch vụ
+  │   │   ├─ nurse/         # Trang y tá, chi tiết y tá
+  │   │   ├─ news/          # Tin tức
+  │   │   ├─ dashboard/     # Dashboard các vai trò
+  │   │   ├─ components/    # Header, Footer, UI components
+  │   │   └─ ...
+  │   ├─ services/          # Giao tiếp API, logic nghiệp vụ
+  │   ├─ lib/, utils/, helper/ # Tiện ích, thư viện phụ trợ
+  │   └─ public/images/     # Ảnh minh họa, banner
+  ├─ tailwind.config.js
+  ├─ package.json
+  └─ README.md
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## ⚡ Hướng dẫn khởi động
+```bash
+npm install
+npm run dev
+```
+Truy cập [http://localhost:3000](http://localhost:3000) để trải nghiệm giao diện.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+## 📞 Liên hệ & đóng góp
+- Email: support@lullaby.com (demo)
+- Đóng góp, báo lỗi: tạo issue hoặc pull request trên repo này.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+> Dự án xây dựng với mục tiêu nâng cao chất lượng chăm sóc sức khỏe tại nhà cho người cao tuổi Việt Nam.
