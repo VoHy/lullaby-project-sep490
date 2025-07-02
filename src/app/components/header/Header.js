@@ -46,7 +46,7 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-gradient-to-r from-pink-50 to-rose-100 shadow-sm text font-sans">
+    <header className="bg-gradient-to-r from-pink-50 to-rose-100 shadow-2xl text font-sans">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-24">
           <div className="flex">

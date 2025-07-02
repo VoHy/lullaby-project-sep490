@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import apiService from '@/services/api/apiService';
+import { motion } from "framer-motion";
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('');
@@ -42,57 +43,48 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">Quên mật khẩu</h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
-            Hãy nhập email của bạn. Chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu đến email của bạn.
-          </p>
-        </div>
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="flex min-h-screen items-center justify-center"
+    >
+      <div className="w-full max-w-md bg-white/90 rounded-2xl shadow-xl p-10">
+        <h2 className="text-3xl font-bold mb-2 text-rose-600 text-center">Quên mật khẩu</h2>
+        <p className="mb-6 text-center text-gray-500 text-sm">
+          Hãy nhập email của bạn. Chúng tôi sẽ gửi hướng dẫn đặt lại mật khẩu đến email của bạn.
+        </p>
+        <form className="space-y-4" onSubmit={handleSubmit}>
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-              Địa chỉ email
-            </label>
-            <div className="mt-1">
-              <input
-                id="email"
-                name="email"
-                type="email"
-                autoComplete="email"
-                required
-                value={email}
-                onChange={handleChange}
-                className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                placeholder="your.email@example.com"
-              />
-            </div>
+            <label className="mb-2 block text-xs font-semibold">Địa chỉ email</label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={handleChange}
+              className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
+              placeholder="your.email@example.com"
+            />
           </div>
-
           {error && <div className="text-red-500 text-sm text-center">{error}</div>}
           {success && <div className="text-green-500 text-sm text-center">{success}</div>}
-
-          <div>
-            <button
-              type="submit"
-              disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-            >
-              {loading ? 'Đang xử lý...' : 'Gửi'}
-            </button>
-          </div>
-        </form>
-
-        <div className="mt-4 text-center">
-          <Link
-            href="/auth/login"
-            className="font-medium text-indigo-600 hover:text-indigo-500"
+          <button
+            type="submit"
+            disabled={loading}
+            className="mb-1.5 block w-full text-center text-white bg-pink-500 hover:bg-pink-600 px-2 py-2 rounded-md font-semibold"
           >
-            Quay lại đăng nhập
-          </Link>
+            {loading ? 'Đang xử lý...' : 'Gửi'}
+          </button>
+        </form>
+        <div className="text-center mt-6">
+          <span className="text-xs text-gray-400 font-semibold">Đã nhớ mật khẩu?</span>
+          <Link href="/auth/login" className="text-xs font-semibold text-pink-600 ml-1">Đăng nhập</Link>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 } 
