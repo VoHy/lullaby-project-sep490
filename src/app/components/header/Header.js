@@ -35,13 +35,22 @@ export default function Header() {
                 Trang chủ
               </Link>
               <Link
-                href="/nurse"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/nurse')
+                href="/team"
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/team')
                     ? 'border-blue-500 text-gray-900'
                     : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                   }`}
               >
-                Y tá
+                Đội Ngũ
+              </Link>
+              <Link
+                href="/services"
+                className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/services')
+                    ? 'border-blue-500 text-gray-900'
+                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+              >
+                Dịch vụ
               </Link>
               <Link
                 href="/news"
@@ -204,14 +213,24 @@ export default function Header() {
             Trang chủ
           </Link>
           <Link
-            href="/nurse"
-            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/nurse')
+            href="/team"
+            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/team')
                 ? 'border-blue-500 text-blue-700 bg-blue-50'
                 : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
               }`}
             onClick={() => setIsMenuOpen(false)}
           >
-            Y tá
+            Đội Ngũ
+          </Link>
+          <Link
+            href="/services"
+            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/services')
+                ? 'border-blue-500 text-blue-700 bg-blue-50'
+                : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+              }`}
+            onClick={() => setIsMenuOpen(false)}
+          >
+            Dịch vụ
           </Link>
           <Link
             href="/news"
