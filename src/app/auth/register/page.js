@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useContext } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import apiService from '@/services/api/apiService';
 import Image from 'next/image';
 import { motion } from "framer-motion";
+import { AuthContext } from "../../../context/AuthContext";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -17,6 +18,7 @@ export default function RegisterPage() {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { login } = useContext(AuthContext);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -45,12 +47,25 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      await apiService.auth.register({
+      const response = await apiService.auth.register({
         name: formData.name,
         email: formData.email,
         password: formData.password,
       });
-      router.push('/auth/login');
+      if (response.user) {
+        login(response.user);
+        // Chuyển hướng dựa trên vai trò của người dùng
+        const role = response.user.role;
+        if (role === 'admin') {
+          router.push('/dashboard');
+        } else if (role === 'nurse') {
+          router.push('/dashboard');
+        } else {
+          router.push('/');
+        }
+      } else {
+        router.push('/auth/login');
+      }
     } catch (err) {
       console.error('Lỗi đăng ký:', err);
       let errorMessage = 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.';

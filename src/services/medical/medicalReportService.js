@@ -5,6 +5,7 @@ const MEDICAL_REPORT_ENDPOINTS = {
   LIST: '/medical-reports',
   DETAIL: '/medical-reports', // + /{id}
   PATIENT: '/medical-reports/patient', // + /{patientId}
+  USER: '/medical-reports/user', // + /{userId}
 };
 
 export const medicalReportService = {
@@ -34,6 +35,14 @@ export const medicalReportService = {
   // Lấy báo cáo y tế theo bệnh nhân
   getMedicalReportsByPatient: async (patientId, params = {}) => {
     const response = await axiosInstance.get(`${MEDICAL_REPORT_ENDPOINTS.PATIENT}/${patientId}`, {
+      params,
+    });
+    return response.data;
+  },
+
+  // Lấy báo cáo y tế của user theo userId
+  getUserMedicalReports: async (userId, params = {}) => {
+    const response = await axiosInstance.get(`${MEDICAL_REPORT_ENDPOINTS.USER}/${userId}`, {
       params,
     });
     return response.data;

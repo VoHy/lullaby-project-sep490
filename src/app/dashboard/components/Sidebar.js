@@ -3,6 +3,11 @@
 import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import {
+  faChartBar, faUsers, faUserNurse, faFileAlt, faCog, faCalendarAlt,
+  faUser, faMoneyBill, faHospital, faNotesMedical
+} from '@fortawesome/free-solid-svg-icons';
 
 const Sidebar = ({ user }) => {
   const pathname = usePathname();
@@ -10,36 +15,42 @@ const Sidebar = ({ user }) => {
 
   const menuItems = {
     admin: [
-      { name: 'Tổng quan', path: '/dashboard', icon: '📊' },
-      { name: 'Quản lý người dùng', path: '/dashboard/users', icon: '👥' },
-      { name: 'Quản lý y tá', path: '/dashboard/nurses', icon: '👨‍⚕️' },
-      { name: 'Báo cáo', path: '/dashboard/reports', icon: '📈' },
-      { name: 'Cài đặt', path: '/dashboard/settings', icon: '⚙️' },
+      { name: 'Tổng quan', path: '/dashboard', icon: '' },
+      { name: 'Quản lý người dùng', path: '/dashboard/users', icon: '' },
+      { name: 'Quản lý y tá', path: '/dashboard/nurses', icon: '' },
+      { name: 'Báo cáo', path: '/dashboard/reports', icon: '' },
+      { name: 'Cài đặt', path: '/dashboard/settings', icon: '' },
     ],
     nurse: [
-      { name: 'Tổng quan', path: '/dashboard', icon: '📊' },
-      { name: 'Bệnh nhân', path: '/dashboard/patients', icon: '👥' },
-      { name: 'Lịch hẹn', path: '/dashboard/appointments', icon: '📅' },
-      { name: 'Báo cáo y tế', path: '/dashboard/reports', icon: '📝' },
-      { name: 'Hồ sơ', path: '/dashboard/profile', icon: '👤' },
-    ],
-    relative: [
-      { name: 'Tổng quan', path: '/dashboard', icon: '📊' },
-      { name: 'Bệnh nhân', path: '/dashboard/patients', icon: '👥' },
-      { name: 'Đặt lịch', path: '/dashboard/bookings', icon: '📅' },
-      { name: 'Báo cáo y tế', path: '/dashboard/medical-reports', icon: '📝' },
-      { name: 'Thanh toán', path: '/dashboard/payments', icon: '💰' },
+      { name: 'Tổng quan', path: '/dashboard', icon: '' },
+      { name: 'Hồ sơ cá nhân', path: '/profile', icon: '' },
+      { name: 'Hồ sơ bệnh nhân', path: '/profile/patient', icon: '' },
+      { name: 'Đặt lịch', path: '/booking', icon: '' },
+      { name: 'Lịch hẹn', path: '/dashboard/appointments', icon: '' },
     ],
     specialist: [
-      { name: 'Tổng quan', path: '/dashboard', icon: '📊' },
-      { name: 'Ca bệnh', path: '/dashboard/cases', icon: '🏥' },
-      { name: 'Lịch tư vấn', path: '/dashboard/appointments', icon: '📅' },
-      { name: 'Bệnh nhân', path: '/dashboard/patients', icon: '👥' },
-      { name: 'Báo cáo', path: '/dashboard/reports', icon: '📝' },
+      { name: 'Tổng quan', path: '/dashboard', icon: '' },
+      { name: 'Hồ sơ cá nhân', path: '/profile', icon: '' },
+      { name: 'Hồ sơ bệnh nhân', path: '/profile/patient', icon: '' },
+      { name: 'Đặt lịch', path: '/booking', icon: '' },
+      { name: 'Ca bệnh', path: '/dashboard/cases', icon: '' },
     ],
   };
 
   const currentMenuItems = menuItems[user?.role] || [];
+
+  const iconMap = {
+    'Tổng quan': faChartBar,
+    'Quản lý người dùng': faUsers,
+    'Quản lý y tá': faUserNurse,
+    'Báo cáo': faFileAlt,
+    'Cài đặt': faCog,
+    'Hồ sơ cá nhân': faUser,
+    'Hồ sơ bệnh nhân': faNotesMedical,
+    'Đặt lịch': faCalendarAlt,
+    'Lịch hẹn': faCalendarAlt,
+    'Ca bệnh': faHospital,
+  };
 
   return (
     <div className={`bg-white h-screen shadow-lg transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'} relative`}>
@@ -67,7 +78,9 @@ const Sidebar = ({ user }) => {
               pathname === item.path ? 'bg-blue-50 text-blue-600' : ''
             }`}
           >
-            <span className="text-xl mr-3">{item.icon}</span>
+            <span className="text-xl mr-3">
+              <FontAwesomeIcon icon={iconMap[item.name]} />
+            </span>
             {!isCollapsed && <span>{item.name}</span>}
           </Link>
         ))}
@@ -116,11 +129,18 @@ const UserDropdown = ({ user, isCollapsed }) => {
       {open && !isCollapsed && (
         <div className="absolute left-0 bottom-12 w-48 bg-white shadow-lg rounded-lg py-2 z-20 border">
           <Link
-            href="/dashboard/profile"
+            href="/profile"
             className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
             onClick={() => setOpen(false)}
           >
             Thông tin tài khoản
+          </Link>
+          <Link
+            href="/profile/patient"
+            className="block px-4 py-2 text-gray-700 hover:bg-gray-100"
+            onClick={() => setOpen(false)}
+          >
+            Hồ sơ bệnh nhân
           </Link>
           <button
             className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-100"

@@ -3,6 +3,7 @@ import axiosInstance from '../http/axios';
 const USER_ENDPOINTS = {
   PROFILE: '/users/profile',
   UPDATE_PROFILE: '/users/profile',
+  USER_PROFILE: '/users',
   PATIENT_PROFILES: '/users/patient-profiles',
   PATIENT_PROFILE: '/users/patient-profiles',
 };
@@ -14,9 +15,21 @@ export const userService = {
     return response.data;
   },
 
+  // Lấy thông tin profile của user theo ID
+  getUserProfile: async (userId) => {
+    const response = await axiosInstance.get(`${USER_ENDPOINTS.USER_PROFILE}/${userId}/profile`);
+    return response.data;
+  },
+
   // Cập nhật thông tin profile
   updateProfile: async (profileData) => {
     const response = await axiosInstance.put(USER_ENDPOINTS.UPDATE_PROFILE, profileData);
+    return response.data;
+  },
+
+  // Cập nhật thông tin profile của user theo ID
+  updateUserProfile: async (userId, profileData) => {
+    const response = await axiosInstance.put(`${USER_ENDPOINTS.USER_PROFILE}/${userId}/profile`, profileData);
     return response.data;
   },
 
