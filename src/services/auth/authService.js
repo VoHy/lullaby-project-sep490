@@ -223,6 +223,16 @@ export const authService = {
     return localStorage.getItem('token');
   },
 
+  // Cập nhật thông tin người dùng hiện tại
+  updateCurrentUser: (userData) => {
+    if (!isBrowser) return;
+    try {
+      localStorage.setItem('user', JSON.stringify(userData));
+    } catch (error) {
+      console.error('Error updating user data:', error);
+    }
+  },
+
   // Xác minh email
   verifyEmail: async (token) => {
     try {
