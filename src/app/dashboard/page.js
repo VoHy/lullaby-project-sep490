@@ -5,8 +5,8 @@ import { useRouter } from 'next/navigation';
 import authService from '@/services/auth/authService';
 import AdminDashboard from './components/AdminDashboard';
 import NurseDashboard from './components/NurseDashboard';
-import RelativeDashboard from './components/RelativeDashboard';
 import SpecialistDashboard from './components/SpecialistDashboard';
+import PatientProfile from './components/PatientProfile';
 import Sidebar from './components/Sidebar';
 
 export default function Dashboard() {
@@ -46,18 +46,11 @@ export default function Dashboard() {
       case 'admin':
         return <AdminDashboard user={user} />;
       case 'nurse':
-        return <NurseDashboard user={user} />;
-      case 'relative':
-        return <RelativeDashboard user={user} />;
+        return <PatientProfile user={user} />;
       case 'specialist':
-        return <SpecialistDashboard user={user} />;
+        return <PatientProfile user={user} />;
       default:
-        return (
-          <div className="text-center py-10">
-            <h2 className="text-xl font-semibold mb-4">Không tìm thấy vai trò phù hợp</h2>
-            <p>Vui lòng liên hệ quản trị viên để được hỗ trợ.</p>
-          </div>
-        );
+        return <PatientProfile user={user} />;
     }
   };
 
