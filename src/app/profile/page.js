@@ -51,7 +51,7 @@ export default function ProfilePage() {
 
   const loadUserProfile = async (userId) => {
     try {
-      const profileData = await userService.getUserProfile(userId);
+      const profileData = await userService.getAccount(userId);
       setFormData({
         name: profileData.name || '',
         email: profileData.email || '',
@@ -118,7 +118,7 @@ export default function ProfilePage() {
         // Nếu chỉ demo, lưu base64 vào localStorage:
         avatarUrl = avatarPreview;
       }
-      await userService.updateUserProfile(user.id, { ...formData, avatar: avatarUrl });
+      await userService.updateAccount(user.id, { ...formData, avatar: avatarUrl });
       setMessage({ type: 'success', text: 'Cập nhật thông tin thành công!' });
       
       // Update current user in auth service

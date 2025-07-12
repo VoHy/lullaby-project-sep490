@@ -1,65 +1,32 @@
 import axiosInstance from '../http/axios';
 
-const USER_ENDPOINTS = {
-  PROFILE: '/users/profile',
-  UPDATE_PROFILE: '/users/profile',
-  USER_PROFILE: '/users',
-  PATIENT_PROFILES: '/users/patient-profiles',
-  PATIENT_PROFILE: '/users/patient-profiles',
+const ACCOUNT_ENDPOINTS = {
+  GET: '/api/accounts/get', // + /{id}
+  GET_ALL: '/api/accounts/getall',
+  UPDATE: '/api/accounts/update', // + /{id}
+  REMOVE: '/api/accounts/remove', // + /{id}
+  DELETE: '/api/accounts/delete', // + /{id}
 };
 
 export const userService = {
-  // Lấy thông tin profile
-  getProfile: async () => {
-    const response = await axiosInstance.get(USER_ENDPOINTS.PROFILE);
+  getAccount: async (id) => {
+    const response = await axiosInstance.get(`${ACCOUNT_ENDPOINTS.GET}/${id}`);
     return response.data;
   },
-
-  // Lấy thông tin profile của user theo ID
-  getUserProfile: async (userId) => {
-    const response = await axiosInstance.get(`${USER_ENDPOINTS.USER_PROFILE}/${userId}/profile`);
+  getAllAccounts: async () => {
+    const response = await axiosInstance.get(ACCOUNT_ENDPOINTS.GET_ALL);
     return response.data;
   },
-
-  // Cập nhật thông tin profile
-  updateProfile: async (profileData) => {
-    const response = await axiosInstance.put(USER_ENDPOINTS.UPDATE_PROFILE, profileData);
+  updateAccount: async (id, data) => {
+    const response = await axiosInstance.put(`${ACCOUNT_ENDPOINTS.UPDATE}/${id}`, data);
     return response.data;
   },
-
-  // Cập nhật thông tin profile của user theo ID
-  updateUserProfile: async (userId, profileData) => {
-    const response = await axiosInstance.put(`${USER_ENDPOINTS.USER_PROFILE}/${userId}/profile`, profileData);
+  removeAccount: async (id) => {
+    const response = await axiosInstance.delete(`${ACCOUNT_ENDPOINTS.REMOVE}/${id}`);
     return response.data;
   },
-
-  // Lấy danh sách hồ sơ bệnh nhân
-  getPatientProfiles: async () => {
-    const response = await axiosInstance.get(USER_ENDPOINTS.PATIENT_PROFILES);
-    return response.data;
-  },
-
-  // Lấy chi tiết hồ sơ bệnh nhân theo ID
-  getPatientProfile: async (patientId) => {
-    const response = await axiosInstance.get(`${USER_ENDPOINTS.PATIENT_PROFILE}/${patientId}`);
-    return response.data;
-  },
-
-  // Tạo hồ sơ bệnh nhân mới
-  createPatientProfile: async (patientData) => {
-    const response = await axiosInstance.post(USER_ENDPOINTS.PATIENT_PROFILES, patientData);
-    return response.data;
-  },
-
-  // Cập nhật hồ sơ bệnh nhân
-  updatePatientProfile: async (patientId, patientData) => {
-    const response = await axiosInstance.put(`${USER_ENDPOINTS.PATIENT_PROFILE}/${patientId}`, patientData);
-    return response.data;
-  },
-
-  // Xóa hồ sơ bệnh nhân
-  deletePatientProfile: async (patientId) => {
-    const response = await axiosInstance.delete(`${USER_ENDPOINTS.PATIENT_PROFILE}/${patientId}`);
+  deleteAccount: async (id) => {
+    const response = await axiosInstance.delete(`${ACCOUNT_ENDPOINTS.DELETE}/${id}`);
     return response.data;
   },
 };

@@ -1,14 +1,15 @@
 import axiosInstance from '../http/axios';
 
 const AUTH_ENDPOINTS = {
-  LOGIN: '/api/auth/login',
-  REGISTER: '/api/auth/register',
-  GOOGLE_LOGIN: '/api/auth/google',
-  FORGOT_PASSWORD: '/api/auth/forgot-password',
-  CHANGE_PASSWORD: '/api/auth/change-password',
-  LOGOUT: '/api/auth/logout',
-  VERIFY_EMAIL: '/api/auth/verify-email',
-  REFRESH_TOKEN: '/api/auth/refresh-token',
+  LOGIN: '/api/accounts/login',
+  REGISTER_NURSING_SPECIALIST: '/api/accounts/register/nursing-specialist',
+  REGISTER_MANAGER: '/api/accounts/register/manager',
+  REGISTER_RELATIVE: '/api/accounts/register/relative', 
+  GET: '/api/accounts/get', // dùng cho get/{id}
+  GET_ALL: '/api/accounts/getall',
+  UPDATE: '/api/accounts/update', // dùng cho update/{id}
+  REMOVE: '/api/accounts/remove', // dùng cho remove/{id}
+  DELETE: '/api/accounts/delete', // dùng cho delete/{id}
 };
 
 // Hỗ trợ cho cả browser và server-side rendering
@@ -29,15 +30,14 @@ export const authService = {
   login: async (credentials) => {
     try {
       // Validation
-      if (!credentials.email || !credentials.password) {
-        throw new Error('Email và mật khẩu là bắt buộc');
-      }
-      
-      if (!validateEmail(credentials.email)) {
-        throw new Error('Email không hợp lệ');
+      if (!credentials.emailOrPhoneNumber || !credentials.password) {
+        throw new Error('Email/SĐT và mật khẩu là bắt buộc');
       }
 
-      const response = await axiosInstance.post(AUTH_ENDPOINTS.LOGIN, credentials);
+      const response = await axiosInstance.post(AUTH_ENDPOINTS.LOGIN, {
+        emailOrPhoneNumber: credentials.emailOrPhoneNumber,
+        password: credentials.password,
+      });
       
       if (isBrowser && response.data.token) {
         localStorage.setItem('token', response.data.token);
