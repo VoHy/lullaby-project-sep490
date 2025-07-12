@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
+    emailOrPhoneNumber: '',
     password: '',
   });
   const [error, setError] = useState('');
@@ -33,7 +33,10 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await apiService.auth.login(formData);
+      const response = await apiService.auth.login({
+        emailOrPhoneNumber: formData.emailOrPhoneNumber,
+        password: formData.password,
+      });
       if (response.user) {
         login(response.user);
         // Chuyển hướng dựa trên vai trò của người dùng
@@ -102,13 +105,13 @@ export default function LoginPage() {
           <small className="text-gray-400 mb-6">Please login to continue</small>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-2 block text-xs font-semibold">Email</label>
+              <label className="mb-2 block text-xs font-semibold">Email hoặc Số điện thoại</label>
               <input
-                type="email"
-                name="email"
-                placeholder="Nhập email của bạn"
+                type="text"
+                name="emailOrPhoneNumber"
+                placeholder="Nhập email hoặc số điện thoại của bạn"
                 className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
-                value={formData.email}
+                value={formData.emailOrPhoneNumber}
                 onChange={handleChange}
                 required
               />

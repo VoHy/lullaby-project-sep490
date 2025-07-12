@@ -6,7 +6,7 @@ const isBrowser = typeof window !== 'undefined';
 // Đường dẫn API
 // Vì API route tích hợp trong Next.js App Router là /api/...
 // baseURL được để trống để request tự động sử dụng domain hiện tại 
-const baseURL = '';
+const baseURL = 'https://lullaby-gze5f9dneyena3gb.eastasia-01.azurewebsites.net';
 
 const axiosInstance = axios.create({
   baseURL,

@@ -46,11 +46,11 @@ export default function Dashboard() {
       case 'admin':
         return <AdminDashboard user={user} />;
       case 'nurse':
-        return <PatientProfile user={user} />;
+        return <NurseDashboard user={user} />;
       case 'specialist':
-        return <PatientProfile user={user} />;
+        return <SpecialistDashboard user={user} />; 
       default:
-        return <PatientProfile user={user} />;
+        return <AdminDashboard user={user} />;
     }
   };
 
