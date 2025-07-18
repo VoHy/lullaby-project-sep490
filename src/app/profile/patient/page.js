@@ -3,71 +3,219 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import authService from '@/services/auth/authService';
-import medicalReportService from '@/services/medical/medicalReportService';
+import relativesService from '@/services/api/relativesService';
+import zoneService from '@/services/api/zoneService';
+import careProfileService from '@/services/api/careProfileService';
 
-export default function MedicalReportPage() {
+export default function RelativesProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [medicalReports, setMedicalReports] = useState([]);
-  const [selectedReport, setSelectedReport] = useState(null);
-  const [showModal, setShowModal] = useState(false);
+  const [relativesList, setRelativesList] = useState([]);
+  const [showForm, setShowForm] = useState(false);
+  const [editRelative, setEditRelative] = useState(null);
+  const [currentCareID, setCurrentCareID] = useState(null);
+  const [showCareProfileForm, setShowCareProfileForm] = useState(false);
+  const [careProfileForm, setCareProfileForm] = useState({
+    ProfileName: '',
+    DateOfBirth: '',
+    PhoneNumber: '',
+    Address: '',
+    ZoneDetailID: 1,
+    Note: '',
+    Status: 'active',
+    Image: '',
+  });
+  const [careProfileAvatar, setCareProfileAvatar] = useState('');
+  const [careProfileAvatarFile, setCareProfileAvatarFile] = useState(null);
+  const [formData, setFormData] = useState({
+    Relative_Name: '',
+    DateOfBirth: '',
+    Gender: '',
+    Note: '',
+    Status: 'active',
+    Image: '',
+  });
+  const [avatarPreview, setAvatarPreview] = useState('');
+  const [avatarFile, setAvatarFile] = useState(null);
+  const [confirmDelete, setConfirmDelete] = useState(null);
+  const [zones, setZones] = useState([]);
+  const [careProfiles, setCareProfiles] = useState([]);
 
   useEffect(() => {
-    const checkAuth = () => {
-      if (!authService.isAuthenticated()) {
-        router.push('/auth/login');
-        return;
-      }
-      
-      const currentUser = authService.getCurrentUser();
-      setUser(currentUser);
-      loadMedicalReports(currentUser.id);
-    };
-
-    checkAuth();
+    if (!authService.isAuthenticated()) {
+      router.push('/auth/login');
+      return;
+    }
+    const currentUser = authService.getCurrentUser();
+    setUser(currentUser);
+    careProfileService.getCareProfiles().then(careProfiles => {
+      // Lấy các care profile thuộc account này
+      const myCareProfiles = careProfiles.filter(c => c.AccountID === currentUser.AccountID);
+      setCareProfiles(myCareProfiles);
+      relativesService.getRelatives().then(relatives => {
+        setRelativesList(relatives);
+      });
+    });
+    zoneService.getZones().then(setZones);
+    setLoading(false);
   }, [router]);
 
-  const loadMedicalReports = async (userId) => {
-    try {
-      const reports = await medicalReportService.getUserMedicalReports(userId);
-      setMedicalReports(reports);
-    } catch (error) {
-      console.error('Error loading medical reports:', error);
-    } finally {
-      setLoading(false);
+  const handleOpenForm = (relative = null, careProfileID = null) => {
+    setEditRelative(relative);
+    setShowForm(true);
+    setCurrentCareID(careProfileID);
+    if (relative) {
+      setFormData({
+        Relative_Name: relative.Relative_Name || '',
+        DateOfBirth: relative.DateOfBirth || '',
+        Gender: relative.Gender || '',
+        Note: relative.Note || '',
+        Status: relative.Status || 'active',
+        Image: relative.Image || '',
+      });
+      setAvatarPreview(relative.Image || '');
+    } else {
+      setFormData({
+        Relative_Name: '',
+        DateOfBirth: '',
+        Gender: '',
+        Note: '',
+        Status: 'active',
+        Image: '',
+      });
+      setAvatarPreview('');
+    }
+    setAvatarFile(null);
+  };
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('vi-VN');
+  const handleSave = (e) => {
+    e.preventDefault();
+    let newList = [...relativesList];
+    let image = avatarFile ? avatarPreview : formData.Image;
+    const now = new Date().toISOString();
+    if (editRelative) {
+      // Sửa
+      newList = newList.map(r =>
+        r.RelativeID === editRelative.RelativeID
+          ? { ...r, ...formData, Image: image }
+          : r
+      );
+    } else {
+      // Thêm mới
+      const newRelative = {
+        ...formData,
+        Image: image,
+        RelativeID: Math.max(0, ...newList.map(r => r.RelativeID || 0)) + 1,
+        CareProfileID: currentCareID,
+        CreateAt: now,
+      };
+      newList.push(newRelative);
+    }
+    setRelativesList(newList);
+    setShowForm(false);
+    setEditRelative(null);
+    setCurrentCareID(null);
+    setFormData({
+      Relative_Name: '',
+      DateOfBirth: '',
+      Gender: '',
+      Note: '',
+      Status: 'active',
+      Image: '',
+    });
+    setAvatarPreview('');
+    setAvatarFile(null);
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'completed':
-        return 'bg-green-100 text-green-800';
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'cancelled':
-        return 'bg-red-100 text-red-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  const handleDelete = (relativeId) => {
+    setRelativesList(relativesList.filter(r => r.relative_id !== relativeId));
+    setConfirmDelete(null);
+  };
+
+  const handleOpenCareProfileForm = () => {
+    setShowCareProfileForm(true);
+    setCareProfileForm({
+      ProfileName: '',
+      DateOfBirth: '',
+      PhoneNumber: '',
+      Address: '',
+      ZoneDetailID: 1,
+      Note: '',
+      Status: 'active',
+      Image: '',
+    });
+    setCareProfileAvatar('');
+    setCareProfileAvatarFile(null);
+  };
+
+  const handleCareProfileInputChange = (e) => {
+    const { name, value } = e.target;
+    setCareProfileForm(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleCareProfileAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setCareProfileAvatarFile(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCareProfileAvatar(reader.result);
+      };
+      reader.readAsDataURL(file);
     }
   };
 
-  const getStatusText = (status) => {
-    switch (status) {
-      case 'completed':
-        return 'Hoàn thành';
-      case 'pending':
-        return 'Đang chờ';
-      case 'cancelled':
-        return 'Đã hủy';
-      default:
-        return 'Không xác định';
-    }
+  const handleSaveCareProfile = (e) => {
+    e.preventDefault();
+    let newList = [...careProfiles];
+    let image = careProfileAvatarFile ? careProfileAvatar : careProfileForm.Image;
+    const now = new Date().toISOString();
+    const newCareProfile = {
+      ...careProfileForm,
+      Image: image,
+      CareProfileID: Math.max(0, ...newList.map(c => c.CareProfileID || 0)) + 1,
+      AccountID: user.AccountID,
+      CreateAt: now,
+    };
+    newList.push(newCareProfile);
+    setCareProfiles(newList);
+    setShowCareProfileForm(false);
+    setCareProfileForm({
+      ProfileName: '',
+      DateOfBirth: '',
+      PhoneNumber: '',
+      Address: '',
+      ZoneDetailID: 1,
+      Note: '',
+      Status: 'active',
+      Image: '',
+    });
+    setCareProfileAvatar('');
+    setCareProfileAvatarFile(null);
   };
+
+  function getZoneName(zone_id) {
+    const z = zones.find(z => z.zone_id === zone_id);
+    return z ? z.name : 'N/A';
+  }
 
   if (loading) {
     return (
@@ -79,182 +227,205 @@ export default function MedicalReportPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Hồ sơ bệnh nhân</h1>
-          <p className="text-gray-600 mt-2">Quản lý thông tin y tế và báo cáo khám bệnh</p>
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Button thêm hồ sơ người thân */}
+        <div className="mb-4 flex justify-end">
+          <button
+            className="px-4 py-2 rounded bg-gradient-to-r from-purple-100 to-pink-200 text-black font-semibold hover:bg-blue-700"
+            onClick={handleOpenCareProfileForm}
+          >
+            + Thêm Hồ Sơ Người Thân
+          </button>
         </div>
-
-        {/* Patient Info Card */}
-        <div className="bg-white rounded-lg shadow mb-8">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Thông tin bệnh nhân</h2>
-          </div>
-          <div className="px-6 py-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-500">Họ và tên</label>
-                <p className="mt-1 text-sm text-gray-900">{user?.name}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-500">Mã bệnh nhân</label>
-                <p className="mt-1 text-sm text-gray-900">{user?.patientId || 'N/A'}</p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-500">Ngày sinh</label>
-                <p className="mt-1 text-sm text-gray-900">{user?.dateOfBirth ? formatDate(user.dateOfBirth) : 'N/A'}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Medical Reports */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-xl font-semibold text-gray-900">Lịch sử khám bệnh</h2>
-          </div>
-          
-          {medicalReports.length === 0 ? (
-            <div className="px-6 py-12 text-center">
-              <div className="text-gray-400 mb-4">
-                <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Chưa có báo cáo y tế</h3>
-              <p className="text-gray-500">Bạn chưa có lịch sử khám bệnh nào.</p>
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Ngày khám
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Bác sĩ
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Chẩn đoán
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Trạng thái
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Thao tác
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {medicalReports.map((report) => (
-                    <tr key={report.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {formatDate(report.examinationDate)}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {report.doctorName}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        <div className="max-w-xs truncate">
-                          {report.diagnosis}
+        {/* Hiển thị hồ sơ chăm sóc và người thân liên kết */}
+        {careProfiles.length === 0 ? (
+          <div className="text-gray-500">Bạn chưa có hồ sơ chăm sóc nào.</div>
+        ) : (
+          <div className="flex flex-col gap-6">
+            {careProfiles.map(care => (
+              <div key={care.CareID} className="bg-white shadow rounded-lg p-6 mb-8">
+                <div className="flex gap-6 items-center mb-4">
+                  <img src={care.Image || '/default-avatar.png'} alt={care.Care_Name} className="w-24 h-24 rounded-full object-cover border-2 border-blue-200" />
+                  <div>
+                    <div className="font-bold text-2xl text-blue-700 mb-1">{care.Care_Name}</div>
+                    <div className="text-gray-500 text-sm mb-1">Ngày sinh: {care.DateOfBirth || 'N/A'}</div>
+                    <div className="text-gray-500 text-sm mb-1">Địa chỉ: {care.Address || 'N/A'}</div>
+                    <div className="text-gray-500 text-sm mb-1">Zone: {(() => {
+                      const z = zones.find(z => z.ZoneID === care.ZoneDetailID);
+                      return z ? z.Zone_name : 'N/A';
+                    })()}</div>
+                    <div className="text-gray-500 text-sm mb-1">Ghi chú: {care.Notes || 'Không có'}</div>
+                    <div className="text-xs text-gray-400">Ngày tạo: {care.CreatedAt ? new Date(care.CreatedAt).toLocaleDateString('vi-VN') : 'N/A'}</div>
+                    <div className="text-xs text-gray-400">Trạng thái: {care.Status}</div>
+                  </div>
+                </div>
+                {/* Button thêm người thân */}
+                <div className="mb-2">
+                  <button
+                    className="px-4 py-2 rounded bg-gradient-to-r from-pink-100 to-rose-200 text-black font-semibold hover:bg-blue-700"
+                    onClick={() => handleOpenForm(null, care.CareID)}
+                  >
+                    + Thêm người thân
+                  </button>
+                </div>
+                {/* Danh sách người thân của CareProfile này */}
+                <div className="mt-4">
+                  <div className="font-semibold text-base mb-2">Người thân:</div>
+                  {relativesList.filter(r => r.CareID === care.CareID).length === 0 ? (
+                    <div className="text-gray-500 text-sm">Không có người thân nào.</div>
+                  ) : (
+                    relativesList.filter(r => r.CareID === care.CareID).map(r => (
+                      <div key={r.RelativeID} className="border rounded p-2 mb-2 bg-gray-50 flex gap-4 items-center">
+                        <img src={r.Image || '/default-avatar.png'} alt={r.Relative_Name} className="w-16 h-16 rounded-full object-cover border-2 border-blue-200" />
+                        <div>
+                          <div className="font-bold text-blue-600">{r.Relative_Name}</div>
+                          <div className="text-xs text-gray-500">Ngày sinh: {r.DateOfBirth || 'N/A'}</div>
+                          <div className="text-xs text-gray-500">Địa chỉ: {r.Address || 'N/A'}</div>
+                          <div className="text-xs text-gray-500">Trạng thái: {r.Status}</div>
                         </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${getStatusColor(report.status)}`}>
-                          {getStatusText(report.status)}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button
-                          onClick={() => {
-                            setSelectedReport(report);
-                            setShowModal(true);
-                          }}
-                          className="text-blue-600 hover:text-blue-900"
-                        >
-                          Xem chi tiết
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
+                      </div>
+                    ))
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
 
-      {/* Modal for detailed report */}
-      {showModal && selectedReport && (
-        <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-          <div className="relative top-20 mx-auto p-5 border w-11/12 md:w-3/4 lg:w-1/2 shadow-lg rounded-md bg-white">
-            <div className="mt-3">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-medium text-gray-900">Chi tiết báo cáo y tế</h3>
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-              
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
+        {/* Form thêm/sửa người thân */}
+        {showForm && (
+          <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-200 animate-fadeIn">
+            <div className="bg-white rounded-2xl shadow-2xl p-0 w-full max-w-2xl relative scale-95 animate-popup-open">
+              <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl" onClick={() => setShowForm(false)}>&times;</button>
+              <h2 className="text-2xl font-bold mb-2 text-center pt-8">{editRelative ? 'Sửa thông tin người thân' : 'Thêm người thân mới'}</h2>
+              <form onSubmit={handleSave} className="grid grid-cols-1 md:grid-cols-2 gap-6 px-8 py-6">
+                <div className="col-span-1 flex flex-col gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Ngày khám</label>
-                    <p className="mt-1 text-sm text-gray-900">{formatDate(selectedReport.examinationDate)}</p>
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Họ và tên *</label>
+                    <input type="text" name="Relative_Name" value={formData.Relative_Name} onChange={handleInputChange} required className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm" />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-500">Bác sĩ</label>
-                    <p className="mt-1 text-sm text-gray-900">{selectedReport.doctorName}</p>
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Ngày sinh</label>
+                    <input type="date" name="DateOfBirth" value={formData.DateOfBirth} onChange={handleInputChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Giới tính</label>
+                    <select name="Gender" value={formData.Gender} onChange={handleInputChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm">
+                      <option value="">Chọn giới tính</option>
+                      <option value="Nam">Nam</option>
+                      <option value="Nữ">Nữ</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Ghi chú</label>
+                    <input type="text" name="Note" value={formData.Note} onChange={handleInputChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm" />
                   </div>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-500">Triệu chứng</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedReport.symptoms}</p>
+                <div className="col-span-1 flex flex-col gap-4 justify-between">
+                  <div className="flex flex-col items-center gap-2 mb-2">
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Ảnh đại diện</label>
+                    <div className="relative w-24 h-24">
+                      <img src={avatarPreview || '/default-avatar.png'} alt="avatar" className="w-24 h-24 rounded-full object-cover border-2 border-blue-200 mx-auto" />
+                      <label className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-1 cursor-pointer shadow-md hover:bg-blue-700 transition" title="Đổi ảnh">
+                        <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.25 2.25 0 1 1 3.182 3.182M6.75 21h10.5A2.25 2.25 0 0 0 19.5 18.75V8.25A2.25 2.25 0 0 0 17.25 6H6.75A2.25 2.25 0 0 0 4.5 8.25v10.5A2.25 2.25 0 0 0 6.75 21z" />
+                        </svg>
+                      </label>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Trạng thái</label>
+                    <select name="Status" value={formData.Status} onChange={handleInputChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm">
+                      <option value="active">active</option>
+                      <option value="inactive">inactive</option>
+                    </select>
+                  </div>
+                  <button type="submit" className="mt-4 px-4 py-2 rounded bg-gradient-to-r from-pink-100 to-rose-200 text-black font-semibold hover:bg-blue-700">Lưu</button>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-500">Chẩn đoán</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedReport.diagnosis}</p>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Form thêm hồ sơ người thân */}
+        {showCareProfileForm && (
+          <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-200 animate-fadeIn">
+            <div className="bg-white rounded-2xl shadow-2xl p-0 w-full max-w-2xl relative scale-95 animate-popup-open">
+              <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl" onClick={() => setShowCareProfileForm(false)}>&times;</button>
+              <h2 className="text-2xl font-bold mb-2 text-center pt-8">Thêm Hồ Sơ Người Thân</h2>
+              <form onSubmit={handleSaveCareProfile} className="grid grid-cols-1 md:grid-cols-2 gap-6 px-8 py-6">
+                <div className="col-span-1 flex flex-col gap-4">
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Tên hồ sơ *</label>
+                    <input type="text" name="ProfileName" value={careProfileForm.ProfileName} onChange={handleCareProfileInputChange} required className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Ngày sinh</label>
+                    <input type="date" name="DateOfBirth" value={careProfileForm.DateOfBirth} onChange={handleCareProfileInputChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Số điện thoại</label>
+                    <input type="text" name="PhoneNumber" value={careProfileForm.PhoneNumber} onChange={handleCareProfileInputChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Địa chỉ</label>
+                    <input type="text" name="Address" value={careProfileForm.Address} onChange={handleCareProfileInputChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Zone</label>
+                    <select name="ZoneDetailID" value={careProfileForm.ZoneDetailID} onChange={handleCareProfileInputChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm">
+                      {zones.map(z => (
+                        <option key={z.ZoneID} value={z.ZoneID}>{z.Zone_name}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-500">Điều trị</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedReport.treatment}</p>
+                <div className="col-span-1 flex flex-col gap-4 justify-between">
+                  <div className="flex flex-col items-center gap-2 mb-2">
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Ảnh đại diện</label>
+                    <div className="relative w-24 h-24">
+                      <img src={careProfileAvatar || '/default-avatar.png'} alt="avatar" className="w-24 h-24 rounded-full object-cover border-2 border-blue-200 mx-auto" />
+                      <label className="absolute bottom-0 right-0 bg-blue-600 text-white rounded-full p-1 cursor-pointer shadow-md hover:bg-blue-700 transition" title="Đổi ảnh">
+                        <input type="file" accept="image/*" onChange={handleCareProfileAvatarChange} className="hidden" />
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.25 2.25 0 1 1 3.182 3.182M6.75 21h10.5A2.25 2.25 0 0 0 19.5 18.75V8.25A2.25 2.25 0 0 0 17.25 6H6.75A2.25 2.25 0 0 0 4.5 8.25v10.5A2.25 2.25 0 0 0 6.75 21z" />
+                        </svg>
+                      </label>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Ghi chú</label>
+                    <input type="text" name="Note" value={careProfileForm.Note} onChange={handleCareProfileInputChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm" />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium mb-1 text-gray-600">Trạng thái</label>
+                    <select name="Status" value={careProfileForm.Status} onChange={handleCareProfileInputChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm">
+                      <option value="active">active</option>
+                      <option value="inactive">inactive</option>
+                    </select>
+                  </div>
+                  <button type="submit" className="mt-4 px-4 py-2 rounded bg-gradient-to-r from-purple-200 to-pink-300 text-black font-semibold hover:bg-blue-700">Lưu</button>
                 </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-500">Ghi chú</label>
-                  <p className="mt-1 text-sm text-gray-900">{selectedReport.notes || 'Không có'}</p>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-500">Trạng thái</label>
-                  <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full mt-1 ${getStatusColor(selectedReport.status)}`}>
-                    {getStatusText(selectedReport.status)}
-                  </span>
-                </div>
-              </div>
-              
-              <div className="flex justify-end mt-6">
-                <button
-                  onClick={() => setShowModal(false)}
-                  className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400"
-                >
-                  Đóng
-                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {/* Popup xác nhận xóa */}
+        {confirmDelete && (
+          <div className="fixed inset-0 bg-opacity-30 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg shadow-lg p-8 w-full max-w-xs relative animate-fadeIn">
+              <h2 className="text-lg font-bold mb-4">Xác nhận xóa</h2>
+              <p>Bạn có chắc chắn muốn xóa người thân này?</p>
+              <div className="flex justify-end gap-2 mt-6">
+                <button className="px-4 py-2 rounded bg-gray-200 text-gray-700 hover:bg-gray-300" onClick={() => setConfirmDelete(null)}>Hủy</button>
+                <button className="px-4 py-2 rounded bg-red-600 text-white font-semibold hover:bg-red-700" onClick={() => handleDelete(confirmDelete)}>Xóa</button>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 } 

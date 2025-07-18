@@ -4,10 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import authService from '@/services/auth/authService';
 import AdminDashboard from './components/AdminDashboard';
-import NurseDashboard from './components/NurseDashboard';
-import SpecialistDashboard from './components/SpecialistDashboard';
-import PatientProfile from './components/PatientProfile';
+import NursingSpecialistDashboard from './components/NursingSpecialistDashboard';
 import Sidebar from './components/Sidebar';
+import ManagerDashboard from './manager';
 
 export default function Dashboard() {
   const router = useRouter();
@@ -43,14 +42,16 @@ export default function Dashboard() {
     if (!user) return null;
 
     switch (user.role) {
-      case 'admin':
+      case 'Admin':
         return <AdminDashboard user={user} />;
-      case 'nurse':
-        return <NurseDashboard user={user} />;
-      case 'specialist':
-        return <SpecialistDashboard user={user} />; 
+      case 'Nurse':
+        return <NursingSpecialistDashboard user={user} />;
+      case 'Specialist':
+        return <NursingSpecialistDashboard user={user} />;
+      case 'Manager':
+        return <ManagerDashboard user={user} />;
       default:
-        return <AdminDashboard user={user} />;
+        return;
     }
   };
 

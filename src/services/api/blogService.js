@@ -1,31 +1,51 @@
-import axiosInstance from '../http/axios';
+import blogs from '../../mock/Blog';
 
-const BLOG_ENDPOINTS = {
-  LIST: '/api/Blog',
-  DETAIL: '/api/Blog', // + /{id}
-};
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 
 const blogService = {
-  getBlogs: async (params = {}) => {
-    const response = await axiosInstance.get(BLOG_ENDPOINTS.LIST, { params });
-    return response.data;
+  getBlogs: async () => {
+    if (USE_MOCK) {
+      return Promise.resolve(blogs);
+    }
+    const res = await fetch('/api/blogs');
+    return res.json();
   },
   getBlogById: async (id) => {
-    const response = await axiosInstance.get(`${BLOG_ENDPOINTS.DETAIL}/${id}`);
-    return response.data;
+    if (USE_MOCK) {
+      return Promise.resolve(blogs.find(b => b.BlogID === id));
+    }
+    const res = await fetch(`/api/blogs/${id}`);
+    return res.json();
   },
   createBlog: async (data) => {
-    const response = await axiosInstance.post(BLOG_ENDPOINTS.LIST, data);
-    return response.data;
+    if (USE_MOCK) {
+      return Promise.resolve({ ...data, BlogID: blogs.length + 1 });
+    }
+    const res = await fetch('/api/blogs', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return res.json();
   },
   updateBlog: async (id, data) => {
-    const response = await axiosInstance.put(`${BLOG_ENDPOINTS.DETAIL}/${id}`, data);
-    return response.data;
+    if (USE_MOCK) {
+      return Promise.resolve({ ...blogs.find(b => b.BlogID === id), ...data });
+    }
+    const res = await fetch(`/api/blogs/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return res.json();
   },
   deleteBlog: async (id) => {
-    const response = await axiosInstance.delete(`${BLOG_ENDPOINTS.DETAIL}/${id}`);
-    return response.data;
-  },
+    if (USE_MOCK) {
+      return Promise.resolve(true);
+    }
+    const res = await fetch(`/api/blogs/${id}`, { method: 'DELETE' });
+    return res.ok;
+  }
 };
 
 export default blogService; 
