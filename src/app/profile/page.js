@@ -19,7 +19,7 @@ export default function ProfilePage() {
         // Lấy các care profile thuộc account này
         const myCareProfiles = careProfiles.filter(c => c.AccountID === currentAccountId);
         setCareProfiles(myCareProfiles);
-        relativesService.getRelatives().then(relatives => {
+      relativesService.getRelatives().then(relatives => {
           setRelativesList(relatives);
         });
       });
@@ -46,7 +46,7 @@ export default function ProfilePage() {
               <div className="text-gray-500 text-sm mb-1">SĐT: {profile.phone_number}</div>
               <div className="text-gray-500 text-sm mb-1">Email: {profile.email}</div>
               <div className="text-gray-500 text-sm mb-1">Trạng thái: {profile.status === "active" ? "Đang hoạt động" : "Ngừng hoạt động"}</div>
-              <div className="text-gray-500 text-sm mb-1">Vai trò: {profile.role_id === 3 ? "Người thân" : profile.role_id === 1 ? "Admin" : profile.role_id === 2 ? "Y tá/Chuyên gia" : profile.role_id === 4 ? "Quản lý" : "Khác"}</div>
+              <div className="text-gray-500 text-sm mb-1">Vai trò: {profile.role_id === 3 ? "Con" : profile.role_id === 1 ? "Admin" : profile.role_id === 2 ? "Y tá/Chuyên gia" : profile.role_id === 4 ? "Quản lý" : "Khác"}</div>
             </div>
             {/* Có thể thêm nút sửa thông tin tài khoản ở đây nếu muốn */}
           </div>
@@ -64,16 +64,16 @@ export default function ProfilePage() {
                     <div className="font-bold text-lg text-blue-700 mb-1">{care.Care_Name}</div>
                     <div className="text-sm text-gray-500 mb-1">Ngày sinh: {care.DateOfBirth || 'N/A'}</div>
                     <div className="text-sm text-gray-500 mb-1">Địa chỉ: {care.Address || 'N/A'}</div>
-                    <div className="text-sm text-gray-500 mb-1">Zone: {(() => {
+                      <div className="text-sm text-gray-500 mb-1">Zone: {(() => {
                       const z = zones.find(z => z.ZoneID === care.ZoneDetailID);
                       return z ? z.Zone_name : 'N/A';
-                    })()}</div>
+                      })()}</div>
                     <div className="text-sm text-gray-500 mb-1">Ghi chú: {care.Notes || 'Không có'}</div>
-                    <div className="text-xs text-gray-400">Ngày tạo: {care.CreatedAt ? new Date(care.CreatedAt).toLocaleDateString('vi-VN') : 'N/A'}</div>
-                    <div className="text-xs text-gray-400">Trạng thái: {care.Status}</div>
+                  
+                    <div className="text-sm text-gray-500 mb-1">Trạng thái: {care.Status}</div>
                     {/* Danh sách người thân của CareProfile này */}
                     <div className="mt-4">
-                      <div className="font-semibold text-base mb-2">Người thân:</div>
+                      <div className="font-semibold text-base mb-2">Con:</div>
                       {relativesList.filter(r => r.CareID === care.CareID).length === 0 ? (
                         <div className="text-gray-500 text-sm">Không có người thân nào.</div>
                       ) : (

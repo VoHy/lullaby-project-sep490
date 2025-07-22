@@ -19,7 +19,7 @@ const accounts = [
     password: "hashedpassword2",
     avatar_url: "avatar2.jpg",
     created_at: "2024-02-01T09:00:00Z",
-    status: "inactive",
+    status: "active",
     role_id: 1, // Admin
     delete_at: null
   },

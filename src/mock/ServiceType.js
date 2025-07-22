@@ -6,7 +6,8 @@ const serviceTypes = [
     Price: 500000,
     Duration: "2h",
     Description: "Dịch vụ chăm sóc tại nhà cho người cao tuổi",
-    Status: "active"
+    Status: "active",
+    Discount: ""
   },
   {
     ServiceID: 2,
@@ -15,7 +16,8 @@ const serviceTypes = [
     Price: 300000,
     Duration: "1h",
     Description: "Dịch vụ chăm sóc y tế cơ bản",
-    Status: "active"
+    Status: "active",
+    Discount: ""
   }
 ];
 

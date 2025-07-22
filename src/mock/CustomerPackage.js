@@ -7,7 +7,8 @@ const customerPackages = [
     Price: 1000000,
     Discount: 100000,
     Quantity: 1,
-    Total: 900000
+    Total: 900000,
+    BookingID: ""
   },
   {
     CustomerPackageID: 2,
@@ -17,7 +18,8 @@ const customerPackages = [
     Price: 2000000,
     Discount: 200000,
     Quantity: 1,
-    Total: 1800000
+    Total: 1800000,
+    BookingID: ""
   }
 ];
 
