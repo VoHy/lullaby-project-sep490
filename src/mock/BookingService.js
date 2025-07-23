@@ -12,7 +12,28 @@ const bookingServices = [
     Package_ServiceID: 2,
     BookingID: 2,
     Status: "inactive"
-  }
+  },
+  {
+    BookingServiceID: 3,
+    NurseID: 3,
+    Package_ServiceID: 3,
+    BookingID: 3,
+    Status: "active"
+  },  
+  {
+    BookingServiceID: 4,
+    NurseID: 4,
+    Package_ServiceID: 4,
+    BookingID: 4,
+    Status: "inactive"
+  },
+  {
+    BookingServiceID: 5,
+    NurseID: 5,
+    Package_ServiceID: 5,
+    BookingID: 5,
+    Status: "active"
+  },
 ];
 
 export default bookingServices; 

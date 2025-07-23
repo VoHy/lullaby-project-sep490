@@ -26,44 +26,123 @@ export default function Header() {
               </Link>
             </div>
             <nav className="hidden sm:ml-8 sm:flex sm:space-x-10">
-              <Link
-                href="/"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname === '/'
-                    ? 'border-blue-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  }`}
-              >
-                Trang chủ
-              </Link>
-              <Link
-                href="/team"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/team')
-                    ? 'border-blue-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  }`}
-              >
-                Điều Dưỡng Viên
-              </Link>
-              <Link
-                href="/services"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/services')
-                    ? 'border-blue-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  }`}
-              >
-                Dịch vụ
-              </Link>
-              <Link
-                href="/news"
-                className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/news')
-                    ? 'border-blue-500 text-gray-900'
-                    : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                  }`}
-              >
-                Tin tức
-              </Link>
-              {/* Menu điều hướng cho người dùng đã đăng nhập */}
-              {user && (
+              {/* Menu cho Admin - giống Relative nhưng có "Quản lý" thay vì "Hồ sơ Người Thân" */}
+              {user && user.role_id === 1 && (
+                <>
+                  <Link
+                    href="/"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname === '/'
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                  >
+                    Trang chủ
+                  </Link>
+                  <Link
+                    href="/team"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/team')
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                  >
+                    Điều Dưỡng Viên
+                  </Link>
+                  <Link
+                    href="/services"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/services')
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                  >
+                    Dịch vụ
+                  </Link>
+                  <Link
+                    href="/news"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/news')
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                  >
+                    Tin tức
+                  </Link>
+                  <Link
+                    href="/appointments"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/appointments')
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                  >
+                    Lịch hẹn
+                  </Link>
+                  <Link
+                    href="/dashboard"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/dashboard')
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                  >
+                    Quản lý
+                  </Link>
+                </>
+              )}
+
+              {/* Menu cho Staff (Manager, Nurse, Specialist) */}
+              {user && (user.role_id === 2 || user.role_id === 4 || user.role_id === 5) && (
+                <Link
+                  href="/dashboard"
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/dashboard')
+                      ? 'border-blue-500 text-gray-900'
+                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                    }`}
+                >
+                  Quản Lý
+                </Link>
+              )}
+
+              {/* Menu công khai cho Relative hoặc chưa login */}
+              {(!user || user.role_id === 3) && (
+                <>
+                  <Link
+                    href="/"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname === '/'
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                  >
+                    Trang chủ
+                  </Link>
+                  <Link
+                    href="/team"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/team')
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                  >
+                    Điều Dưỡng Viên
+                  </Link>
+                  <Link
+                    href="/services"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/services')
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                  >
+                    Dịch vụ
+                  </Link>
+                  <Link
+                    href="/news"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/news')
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                  >
+                    Tin tức
+                  </Link>
+                </>
+              )}
+
+              {/* Menu điều hướng cho người dùng đã đăng nhập (Relative) */}
+              {user && user.role_id === 3 && (
                 <>
                   <Link
                     href="/appointments"
@@ -74,29 +153,15 @@ export default function Header() {
                   >
                     Lịch hẹn
                   </Link>
-                  {user.role_id === 3 && (
-                    <Link
-                      href="/profile/patient"
-                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/profile/patient')
-                          ? 'border-blue-500 text-gray-900'
-                          : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                        }`}
-                    >
-                      Hồ sơ Người Thân
-                    </Link>
-                  )}
-                  {/* Menu điều hướng dành riêng cho y tá/admin */}
-                  {(user.role === 'Nurse' || user.role === 'Admin' || user.role === 'Specialist' || user.role === 'Manager') && (
-                    <Link
-                      href="/dashboard"
-                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/dashboard')
-                          ? 'border-blue-500 text-gray-900'
-                          : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                        }`}
-                    >
-                      Quản lý
-                    </Link>
-                  )}
+                  <Link
+                    href="/profile/patient"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/profile/patient')
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                  >
+                    Hồ sơ Người Thân
+                  </Link>
                 </>
               )}
             </nav>
@@ -109,12 +174,15 @@ export default function Header() {
                 </button>
                 {isMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded shadow-lg z-50">
-                    <button
-                      className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                      onClick={() => { setIsMenuOpen(false); router.push('/profile'); }}
-                    >
-                      Tài Khoản
-                    </button>
+                    {/* Chỉ hiển thị cho Relative và Staff, không cho Admin */}
+                    {user.role_id !== 1 && (
+                      <button
+                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
+                        onClick={() => { setIsMenuOpen(false); router.push('/profile'); }}
+                      >
+                        Tài Khoản
+                      </button>
+                    )}
                     {user.role_id === 3 && (
                       <button
                         className="block w-full text-left px-4 py-2 hover:bg-gray-100"
@@ -125,7 +193,10 @@ export default function Header() {
                     )}
                     <button
                       className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                      onClick={() => { setIsMenuOpen(false); logout(); }}
+                      onClick={() => { 
+                        setIsMenuOpen(false); 
+                        logout(); 
+                      }}
                     >
                       Đăng xuất
                     </button>
@@ -145,48 +216,134 @@ export default function Header() {
       {/* Mobile menu */}
       <div className={`${isMenuOpen ? 'block' : 'hidden'} sm:hidden`}>
         <div className="pt-2 pb-3 space-y-1">
-          <Link
-            href="/"
-            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname === '/'
-                ? 'border-blue-500 text-blue-700 bg-blue-50'
-                : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-              }`}
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Trang chủ
-          </Link>
-          <Link
-            href="/team"
-            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/team')
-                ? 'border-blue-500 text-blue-700 bg-blue-50'
-                : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-              }`}
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Điều Dưỡng Viên
-          </Link>
-          <Link
-            href="/services"
-            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/services')
-                ? 'border-blue-500 text-blue-700 bg-blue-50'
-                : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-              }`}
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Dịch vụ
-          </Link>
-          <Link
-            href="/news"
-            className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/news')
-                ? 'border-blue-500 text-blue-700 bg-blue-50'
-                : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-              }`}
-            onClick={() => setIsMenuOpen(false)}
-          >
-            Tin tức
-          </Link>
+          {/* Menu cho Admin - giống Relative nhưng có "Quản lý" thay vì "Hồ sơ Người Thân" */}
+          {user && user.role_id === 1 && (
+            <>
+              <Link
+                href="/"
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname === '/'
+                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Trang chủ
+              </Link>
+              <Link
+                href="/team"
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/team')
+                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Điều Dưỡng Viên
+              </Link>
+              <Link
+                href="/services"
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/services')
+                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dịch vụ
+              </Link>
+              <Link
+                href="/news"
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/news')
+                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Tin tức
+              </Link>
+              <Link
+                href="/appointments"
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/appointments')
+                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Lịch hẹn
+              </Link>
+              <Link
+                href="/dashboard"
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/dashboard')
+                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Quản lý
+              </Link>
+            </>
+          )}
 
-          {user && (
+          {/* Menu cho Staff (Manager, Nurse, Specialist) */}
+          {user && (user.role_id === 2 || user.role_id === 4 || user.role_id === 5) && (
+            <Link
+              href="/dashboard"
+              className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/dashboard')
+                  ? 'border-blue-500 text-blue-700 bg-blue-50'
+                  : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Quản Lý
+            </Link>
+          )}
+
+          {/* Menu công khai cho Relative hoặc chưa login */}
+          {(!user || user.role_id === 3) && (
+            <>
+              <Link
+                href="/"
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname === '/'
+                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Trang chủ
+              </Link>
+              <Link
+                href="/team"
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/team')
+                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Điều Dưỡng Viên
+              </Link>
+              <Link
+                href="/services"
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/services')
+                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Dịch vụ
+              </Link>
+              <Link
+                href="/news"
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/news')
+                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Tin tức
+              </Link>
+            </>
+          )}
+
+          {/* Menu cho User role Relative */}
+          {user && user.role_id === 3 && (
             <>
               <Link
                 href="/appointments"
@@ -198,32 +355,16 @@ export default function Header() {
               >
                 Lịch hẹn
               </Link>
-              {user.role_id === 3 && (
-                <Link
-                  href="/profile/patient"
-                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/profile/patient')
-                      ? 'border-blue-500 text-blue-700 bg-blue-50'
-                      : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                    }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Hồ sơ Người Thân
-                </Link>
-              )}
-
-              {(user.role === 'Nurse' || user.role === 'Admin' || user.role === 'Specialist' || user.role === 'Manager') && (
-                <Link
-                  href="/dashboard"
-                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/dashboard')
-                      ? 'border-blue-500 text-blue-700 bg-blue-50'
-                      : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                    }`}
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Quản lý
-                </Link>
-              )}
-
+              <Link
+                href="/profile/patient"
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/profile/patient')
+                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Hồ sơ Người Thân
+              </Link>
               <Link
                 href="/profile"
                 className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/profile')
@@ -234,18 +375,34 @@ export default function Header() {
               >
                 Hồ sơ
               </Link>
-
-              <button
-                className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
-                onClick={() => {
-                  logout();
-                  setIsMenuOpen(false);
-                  router.push('/');
-                }}
-              >
-                Đăng xuất
-              </button>
             </>
+          )}
+
+          {/* Common profile menu cho Staff (không cho Admin) */}
+          {user && (user.role_id === 2 || user.role_id === 4 || user.role_id === 5) && (
+            <Link
+              href="/profile"
+              className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/profile')
+                  ? 'border-blue-500 text-blue-700 bg-blue-50'
+                  : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Hồ sơ
+            </Link>
+          )}
+
+          {/* Logout button for all logged in users */}
+          {user && (
+            <button
+              className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
+              onClick={() => {
+                setIsMenuOpen(false);
+                logout();
+              }}
+            >
+              Đăng xuất
+            </button>
           )}
         </div>
       </div>

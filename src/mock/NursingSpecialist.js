@@ -1,7 +1,7 @@
 const nursingSpecialists = [
   {
     NursingID: 1,
-    AccountID: 1,
+    AccountID: 8,
     ZoneID: 1,
     Gender: "Nam",
     DateOfBirth: "1985-03-10",
@@ -14,7 +14,7 @@ const nursingSpecialists = [
   },
   {
     NursingID: 2,
-    AccountID: 2,
+    AccountID: 9,
     ZoneID: 2,
     Gender: "Nữ",
     DateOfBirth: "1990-07-15",
@@ -24,7 +24,85 @@ const nursingSpecialists = [
     Slogan: "Chuyên nghiệp và tận tình",
     Major: "Y tá",
     Status: "inactive"
-  }
+  },
+  {
+    SpecialistID: 1,
+    AccountID: 10,
+    ZoneID: 1,
+    Gender: "Nam",
+    DateOfBirth: "1980-05-20",
+    Specialist_Name: "Nguyen Van E",
+    Address: "Hà Nội",
+    Experience: 15,
+    Slogan: "Chuyên nghiệp và tận tình",
+    Major: "Chuyên gia",
+    Status: "active"
+  },
+  {
+    SpecialistID: 2,
+    AccountID: 11,
+    ZoneID: 2,
+    Gender: "Nữ",
+    DateOfBirth: "1985-03-10",
+    Specialist_Name: "Nguyen Van F",
+    Address: "Hồ Chí Minh",
+    Experience: 10,
+    Slogan: "Tận tâm chăm sóc",
+    Major: "Chăm sóc sức khỏe",
+    Status: "active"
+  },
+  {
+    NursingID: 3,
+    AccountID: 12,
+    ZoneID: 1,
+    Gender: "Nam",
+    DateOfBirth: "1985-03-10",
+    Nurse_Name: "Nguyen Van G",
+    Address: "Hà Nội",
+    Experience: 10,
+    Slogan: "Tận tâm chăm sóc",
+    Major: "Chăm sóc sức khỏe",
+    Status: "active"
+  },  
+  {
+    NursingID: 4,
+    AccountID: 13,
+    ZoneID: 2,
+    Gender: "Nữ",
+    DateOfBirth: "1985-03-10",
+    Nurse_Name: "Nguyen Van H",
+    Address: "Hồ Chí Minh",
+    Experience: 10,
+    Slogan: "Tận tâm chăm sóc",
+    Major: "Chăm sóc sức khỏe",
+    Status: "active"
+  },
+  {
+    SpecialistID: 3,
+    AccountID: 14,
+    ZoneID: 1,
+    Gender: "Nam",
+    DateOfBirth: "1985-03-10",
+    Specialist_Name: "Nguyen Van I",
+    Address: "Hà Nội",
+    Experience: 10,
+    Slogan: "Tận tâm chăm sóc",
+    Major: "Chăm sóc sức khỏe",
+    Status: "active"
+  },
+  {
+    SpecialistID: 4,
+    AccountID: 15,
+    ZoneID: 2,
+    Gender: "Nữ",
+    DateOfBirth: "1985-03-10",
+    Specialist_Name: "Nguyen Van J",
+    Address: "Hồ Chí Minh",
+    Experience: 10,
+    Slogan: "Tận tâm chăm sóc",
+    Major: "Chăm sóc sức khỏe",
+    Status: "active"
+  },
 ];
 
 export default nursingSpecialists; 

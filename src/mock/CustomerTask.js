@@ -1,22 +1,148 @@
 const customerTasks = [
   {
     CustomerTaskID: 1,
+    CustomizePackageID: 1,
     ServiceID: 1,
+    NurseID: 1,
     TaskOrder: 1,
     Status: "active",
     Price: 50000,
     Quantity: 1,
-    Total: 50000
+    Total: 50000,
+    ServiceTaskID: 1,
+    BookingID: 1
   },
   {
     CustomerTaskID: 2,
+    CustomizePackageID: 2,
     ServiceID: 2,
+    NurseID: 1,
     TaskOrder: 1,
     Status: "inactive",
     Price: 70000,
     Quantity: 1,
-    Total: 70000
-  }
+    Total: 70000,
+    ServiceTaskID: 2,
+    BookingID: 1
+  },
+  {
+    CustomerTaskID: 3,
+    CustomizePackageID: 3,
+    ServiceID: 3,
+    NurseID: 2,
+    TaskOrder: 1,
+    Status: "active",
+    Price: 50000,
+    Quantity: 1,
+    Total: 50000,
+    ServiceTaskID: 3,
+    BookingID: 1
+  },
+  {
+    CustomerTaskID: 4,
+    CustomizePackageID: 4,
+    ServiceID: 4,
+    NurseID: 3,
+    TaskOrder: 1,
+    Status: "active",
+    Price: 50000,
+    Quantity: 1,
+    Total: 50000,
+    ServiceTaskID: 4,
+    BookingID: 2
+  },
+
+  {
+    CustomerTaskID: 5,
+    CustomizePackageID: 5,
+    ServiceID: 5,
+    NurseID: 4,
+    TaskOrder: 1,
+    Status: "active",
+    Price: 50000,
+    Quantity: 1,
+    Total: 50000,
+    ServiceTaskID: 5,
+    BookingID: 2
+  },
+  {
+    CustomerTaskID: 6,
+    CustomizePackageID: 6,
+    ServiceID: 6,
+    NurseID: 4,
+    TaskOrder: 1,
+    Status: "active",
+    Price: 50000,
+    Quantity: 1,
+    Total: 50000,
+    ServiceTaskID: 6,
+    BookingID: 3
+  },
+  {
+    CustomerTaskID: 7,
+    CustomizePackageID: 6,
+    ServiceID: 6,
+    NurseID: 1,
+    TaskOrder: 1,
+    Status: "active",
+    Price: 50000,
+    Quantity: 1,
+    Total: 50000,
+    ServiceTaskID: 7,
+    BookingID: 4
+  },
+  {
+    CustomerTaskID: 8,
+    CustomizePackageID: 1,
+    ServiceID: 1,
+    NurseID: 4,
+    TaskOrder: 1,
+    Status: "active",
+    Price: 50000,
+    Quantity: 1,
+    Total: 50000,
+    ServiceTaskID: 8,
+    BookingID: 5
+  },
+  {
+    CustomerTaskID: 9,
+    CustomizePackageID: 1,
+    ServiceID: 1,
+    NurseID: 4,
+    TaskOrder: 1,
+    Status: "active",
+    Price: 50000,
+    Quantity: 1,
+    Total: 50000,
+    ServiceTaskID: 9,
+    BookingID: 5
+  },
+  {
+    CustomerTaskID: 10,
+    CustomizePackageID: 1,
+    ServiceID: 1,
+    NurseID: 4,
+    TaskOrder: 1,
+    Status: "active",
+    Price: 50000,
+    Quantity: 1,
+    Total: 50000,
+    ServiceTaskID: 10,
+    BookingID: 5
+  },
+  {
+    CustomerTaskID: 11,
+    CustomizePackageID: 1,
+    ServiceID: 1,
+    NurseID: 4,
+    TaskOrder: 1,
+    Status: "active",
+    Price: 50000,
+    Quantity: 1,
+    Total: 50000,
+    ServiceTaskID: 11,
+    BookingID: 5
+  },
 ];
 
 export default customerTasks; 

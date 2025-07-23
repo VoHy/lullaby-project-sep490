@@ -5,7 +5,7 @@ const roles = [
   },
   {
     RoleID: 2,
-    RoleName: "Nurse/Specialist"
+    RoleName: "Nurse"
   },
   {
     RoleID: 3,
@@ -14,6 +14,10 @@ const roles = [
   {
     RoleID: 4,
     RoleName: "Manager"
+  },
+  {
+    RoleID: 5,
+    RoleName: "Specialist"
   }
 ];
 

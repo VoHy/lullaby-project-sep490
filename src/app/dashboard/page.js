@@ -1,15 +1,17 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import authService from '@/services/auth/authService';
-import AdminDashboard from './components/AdminDashboard';
-import NursingSpecialistDashboard from './components/NursingSpecialistDashboard';
+import AdminDashboard from './components/admin/AdminDashboard';
+import NurseDashboard from './components/nurse/NurseDashboard';
+import ManagerDashboard from './components/manager/ManagerDashboard';
+import SpecialistDashboard from './components/specialist/SpecialistDashboard';
 import Sidebar from './components/Sidebar';
-import ManagerDashboard from './manager';
 
 export default function Dashboard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -40,18 +42,22 @@ export default function Dashboard() {
   // Hiển thị dashboard phù hợp theo vai trò
   const renderDashboardByRole = () => {
     if (!user) return null;
-
-    switch (user.role) {
-      case 'Admin':
-        return <AdminDashboard user={user} />;
-      case 'Nurse':
-        return <NursingSpecialistDashboard user={user} />;
-      case 'Specialist':
-        return <NursingSpecialistDashboard user={user} />;
-      case 'Manager':
+    const tabParam = searchParams.get('tab');
+    switch (user.role_id) {
+      case 1: // Admin
+        return <AdminDashboard user={user} initialTab={tabParam} />;
+      case 2: // Nurse
+        return <NurseDashboard user={user} />;
+      case 4: // Manager
         return <ManagerDashboard user={user} />;
+      case 5: // Specialist
+        return <SpecialistDashboard user={user} />;
       default:
-        return;
+        return (
+          <div className="text-center py-10">
+            <p className="text-gray-500">Không có quyền truy cập dashboard</p>
+          </div>
+        );
     }
   };
 
@@ -59,14 +65,7 @@ export default function Dashboard() {
     <div className="flex h-screen bg-gray-100">
       <Sidebar user={user} />
       <div className="flex-1 overflow-auto">
-        <div className="container mx-auto px-6 py-8">
-          <div className="mb-6">
-            <h1 className="text-2xl font-bold">Dashboard</h1>
-            <p className="text-gray-600">Xin chào, {user?.name}!</p>
-          </div>
-          
-          {renderDashboardByRole()}
-        </div>
+        {renderDashboardByRole()}
       </div>
     </div>
   );
