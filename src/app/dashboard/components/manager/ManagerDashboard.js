@@ -3,12 +3,16 @@ import { useState, useEffect } from 'react';
 import ManagerNurseTab from './ManagerNurseTab';
 import ManagerSpecialistTab from './ManagerSpecialistTab';
 import ManagerBookingTab from './ManagerBookingTab';
+import ManagerZoneTab from './ManagerZoneTab';
 import { useRouter, useSearchParams } from 'next/navigation';
+import zoneService from '@/services/api/zoneService';
+import nursingSpecialists from '@/mock/NursingSpecialist';
 
 const TABS = [
   { id: 'nurse', label: 'Quản lý Nurse' },
   { id: 'specialist', label: 'Quản lý Specialist' },
   { id: 'booking', label: 'Quản lý Booking' },
+  { id: 'zone', label: 'Quản lý Khu vực' }, // Thêm tab mới
 ];
 
 const ManagerDashboard = ({ user }) => {
@@ -21,6 +25,28 @@ const ManagerDashboard = ({ user }) => {
     return 'nurse';
   };
   const [activeTab, setActiveTab] = useState(getInitialTab());
+  const [zones, setZones] = useState([]);
+  const [selectedZone, setSelectedZone] = useState('');
+  const [zoneNurses, setZoneNurses] = useState([]);
+  const [zoneSpecialists, setZoneSpecialists] = useState([]);
+
+  useEffect(() => {
+    zoneService.getZones().then(setZones);
+  }, []);
+
+  useEffect(() => {
+    if (!selectedZone) {
+      setZoneNurses([]);
+      setZoneSpecialists([]);
+      return;
+    }
+    // Lọc nurse
+    const nurses = nursingSpecialists.filter(n => n.NursingID && n.ZoneID == selectedZone);
+    // Lọc specialist
+    const specialists = nursingSpecialists.filter(s => s.SpecialistID && s.ZoneID == selectedZone);
+    setZoneNurses(nurses);
+    setZoneSpecialists(specialists);
+  }, [selectedZone]);
 
   // Khi URL query string thay đổi thì cập nhật tab
   useEffect(() => {
@@ -56,6 +82,7 @@ const ManagerDashboard = ({ user }) => {
         {activeTab === 'nurse' && <ManagerNurseTab />}
         {activeTab === 'specialist' && <ManagerSpecialistTab />}
         {activeTab === 'booking' && <ManagerBookingTab />}
+        {activeTab === 'zone' && <ManagerZoneTab />}
       </div>
     </div>
   );

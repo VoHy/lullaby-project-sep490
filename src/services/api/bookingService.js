@@ -1,25 +1,25 @@
-import bookingServices from '../../mock/BookingService';
+import bookings from '../../mock/Booking';
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 
 const bookingService = {
   getBookingServices: async () => {
     if (USE_MOCK) {
-      return Promise.resolve(bookingServices);
+      return Promise.resolve(bookings);
     }
     const res = await fetch('/api/booking-services');
     return res.json();
   },
   getBookingServiceById: async (id) => {
     if (USE_MOCK) {
-      return Promise.resolve(bookingServices.find(b => b.BookingServiceID === id));
+      return Promise.resolve(bookings.find(b => b.BookingID === id));
     }
     const res = await fetch(`/api/booking-services/${id}`);
     return res.json();
   },
   createBookingService: async (data) => {
     if (USE_MOCK) {
-      return Promise.resolve({ ...data, BookingServiceID: bookingServices.length + 1 });
+      return Promise.resolve({ ...data, BookingID: bookings.length + 1 });
     }
     const res = await fetch('/api/booking-services', {
       method: 'POST',
@@ -30,7 +30,7 @@ const bookingService = {
   },
   updateBookingService: async (id, data) => {
     if (USE_MOCK) {
-      return Promise.resolve({ ...bookingServices.find(b => b.BookingServiceID === id), ...data });
+      return Promise.resolve({ ...bookings.find(b => b.BookingID === id), ...data });
     }
     const res = await fetch(`/api/booking-services/${id}`, {
       method: 'PUT',

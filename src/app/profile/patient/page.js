@@ -384,7 +384,7 @@ export default function RelativesProfilePage() {
           return (
             <div className="flex flex-col gap-6">
               {filtered.map(care => (
-                <div key={care.CareID} className="bg-white shadow rounded-lg p-6 mb-8">
+                <div key={care.CareProfileID} className="bg-white shadow rounded-lg p-6 mb-8">
                   <div className="flex gap-6 items-center mb-4">
                     <img src={care.Image || '/default-avatar.png'} alt={care.Care_Name} className="w-24 h-24 rounded-full object-cover border-2 border-blue-200" />
                     <div>
@@ -426,8 +426,8 @@ export default function RelativesProfilePage() {
                       Con:
                       <select
                         className="ml-2 px-2 py-1 rounded border border-gray-300 text-xs focus:outline-pink-500"
-                        value={relativesFilter[care.CareID] || 'all'}
-                        onChange={e => setRelativesFilter(f => ({...f, [care.CareID]: e.target.value}))}
+                        value={relativesFilter[care.CareProfileID] || 'all'}
+                        onChange={e => setRelativesFilter(f => ({...f, [care.CareProfileID]: e.target.value}))}
                       >
                         <option value="all">Tất cả</option>
                         <option value="active">Hoạt động</option>
@@ -435,8 +435,8 @@ export default function RelativesProfilePage() {
                       </select>
                     </div>
                     {(() => {
-                      let rels = relativesList.filter(r => r.CareID === care.CareID);
-                      const filter = relativesFilter[care.CareID] || 'all';
+                      let rels = relativesList.filter(r => r.CareProfileID === care.CareProfileID);
+                      const filter = relativesFilter[care.CareProfileID] || 'all';
                       if (filter === 'active') rels = rels.filter(r => r.Status === 'active');
                       if (filter === 'inactive') rels = rels.filter(r => r.Status === 'inactive');
                       if (rels.length === 0) return <div className="text-gray-500 text-sm">Không có người thân nào.</div>;

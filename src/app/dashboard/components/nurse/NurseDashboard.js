@@ -18,9 +18,9 @@ const NurseDashboard = ({ user }) => {
 
   // Filter data for current nurse
   const nurseBookings = bookings.filter(b => b.NurseID === user.AccountID);
-  const patients = careProfiles.filter(p => nurseBookings.some(b => b.CareID === p.CareID));
+  const patients = careProfiles.filter(p => nurseBookings.some(b => b.CareProfileID === p.CareProfileID));
   const nurseFeedbacks = feedbacks.filter(f => f.NurseID === user.AccountID);
-  const averageRating = nurseFeedbacks.length > 0 
+  const averageRating = nurseFeedbacks.length > 0
     ? (nurseFeedbacks.reduce((sum, f) => sum + (f.Rating || 5), 0) / nurseFeedbacks.length).toFixed(1)
     : 'N/A';
 
@@ -68,7 +68,7 @@ const NurseDashboard = ({ user }) => {
         <h3 className="text-xl font-semibold mb-4">Lịch hẹn hôm nay</h3>
         <div className="space-y-2">
           {nurseBookings.slice(0, 5).map(booking => {
-            const patient = patients.find(p => p.CareID === booking.CareID);
+            const patient = patients.find(p => p.CareProfileID === booking.CareProfileID);
             return (
               <div key={booking.BookingServiceID} className="flex justify-between items-center p-3 bg-gray-50 rounded">
                 <div>

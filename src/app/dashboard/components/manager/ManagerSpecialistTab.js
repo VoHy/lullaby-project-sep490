@@ -14,10 +14,13 @@ const ManagerSpecialistTab = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
+  const [specialistList, setSpecialistList] = useState(specialists);
+  const [editStatus, setEditStatus] = useState('');
 
   const handleView = (specialist) => {
     const detail = nursingSpecialists.find(n => n.AccountID === specialist.AccountID);
     setDetailData({ ...specialist, ...detail });
+    setEditStatus(specialist.status);
     setShowDetail(true);
   };
 
@@ -50,6 +53,18 @@ const ManagerSpecialistTab = () => {
     e.preventDefault();
     alert('Tạo specialist thành công (giả lập)');
     handleCloseCreateModal();
+  };
+
+  // Đổi trạng thái specialist
+  const handleToggleStatus = (accountId) => {
+    setSpecialistList(prev => prev.map(s => s.AccountID === accountId ? { ...s, status: s.status === 'active' ? 'inactive' : 'active' } : s));
+  };
+
+  // Xác nhận đổi trạng thái trong popup
+  const handleConfirmStatus = () => {
+    setSpecialistList(prev => prev.map(s => s.AccountID === detailData.AccountID ? { ...s, status: editStatus } : s));
+    setShowDetail(false);
+    setDetailData(null);
   };
 
   return (
@@ -118,7 +133,14 @@ const ManagerSpecialistTab = () => {
                 <img src={detailData.avatar_url || '/images/avatar1.jpg'} alt="avatar" className="object-cover w-full h-full" />
               </div>
               <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 mb-1">{detailData.full_name || 'Không có'}</h3>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${detailData.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{detailData.status || 'Không có'}</span>
+              <div className="flex items-center gap-2 mt-2">
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${editStatus === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{editStatus === 'active' ? 'Đang hoạt động' : 'Vô hiệu hóa'}</span>
+                <select value={editStatus} onChange={e => setEditStatus(e.target.value)} className="ml-2 px-2 py-1 rounded border focus:ring-2 focus:ring-purple-400">
+                  <option value="active">Đang hoạt động</option>
+                  <option value="inactive">Vô hiệu hóa</option>
+                </select>
+                <button onClick={handleConfirmStatus} className="ml-2 px-3 py-1 rounded bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs hover:shadow-lg">Xác nhận</button>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
               <div className="font-medium text-gray-600">Email:</div>
@@ -151,11 +173,13 @@ const ManagerSpecialistTab = () => {
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-200">
-          {specialists.map(specialist => (
+          {specialistList.map(specialist => (
             <tr key={specialist.AccountID} className="hover:bg-gray-50">
               <td className="px-6 py-4">{specialist.full_name}</td>
               <td className="px-6 py-4">{specialist.email}</td>
-              <td className="px-6 py-4">{specialist.status}</td>
+              <td className="px-6 py-4">
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${specialist.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{specialist.status}</span>
+              </td>
               <td className="px-6 py-4">
                 <button onClick={() => handleView(specialist)} className="bg-pink-500 text-white px-3 py-1 rounded hover:bg-pink-600">Xem chi tiết</button>
               </td>

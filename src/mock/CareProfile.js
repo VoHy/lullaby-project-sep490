@@ -1,9 +1,9 @@
 const careProfiles = [
   {
-    CareID: 1,
+    CareProfileID: 1,
     AccountID: 1,
     ZoneDetailID: 1,
-    Care_Name: "Nguyen Van G",
+    ProfileName: "Nguyen Van G",
     DateOfBirth: "05-05-1950",
     Gender: "Nam",
     Address: "Hà Nội",
@@ -14,10 +14,10 @@ const careProfiles = [
     Image: "care1.jpg"
   },
   {
-    CareID: 2,
+    CareProfileID: 2,
     AccountID: 1,
     ZoneDetailID: 1,
-    Care_Name: "Nguyen Van H",
+    ProfileName: "Nguyen Van H",
     DateOfBirth: "05-05-1950",
     Gender: "Nam",
     Address: "Hà Nội",
@@ -28,10 +28,10 @@ const careProfiles = [
     Image: "care1.jpg"
   },
   {
-    CareID: 3,
+    CareProfileID: 3,
     AccountID: 2,
     ZoneDetailID: 2,
-    Care_Name: "Tran Thi H",
+    ProfileName: "Tran Thi H",
     DateOfBirth: "20-12-1980",
     Gender: "Nữ",
     Address: "Hồ Chí Minh",
@@ -42,10 +42,10 @@ const careProfiles = [
     Image: "care2.jpg"
   },
   {
-    CareID: 4,
+    CareProfileID: 4,
     AccountID: 3,
     ZoneDetailID: 3,
-    Care_Name: "Nguyen Van I",
+    ProfileName: "Nguyen Van I",
     DateOfBirth: "05-05-1950",
     Gender: "Nam",
     Address: "Hà Nội",
@@ -56,10 +56,10 @@ const careProfiles = [
     Image: "care1.jpg"
   },
   {
-    CareID: 5,
+    CareProfileID: 5,
     AccountID: 4,
     ZoneDetailID: 4,
-    Care_Name: "Nguyen Van J",
+    ProfileName: "Nguyen Van J",
     DateOfBirth: "05-05-1950",
     Gender: "Nữ",
     Address: "Hồ Chí Minh",

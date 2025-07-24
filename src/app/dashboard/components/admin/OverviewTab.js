@@ -2,8 +2,53 @@
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faUsers, faCalendar, faMoneyBill, faUserCheck } from '@fortawesome/free-solid-svg-icons';
+import { useState } from 'react';
+import careProfiles from '@/mock/CareProfile';
+import accounts from '@/mock/Account';
+import serviceTypes from '@/mock/ServiceType';
+import customerPackages from '@/mock/CustomerPackage';
+
+function getBookingDetail(booking) {
+  const careProfile = careProfiles.find(c => c.CareID === booking.CareProfileID);
+  const account = accounts.find(a => a.AccountID === careProfile?.AccountID);
+  let service = null;
+  let packageInfo = null;
+  if (booking.CustomizePackageID) {
+    packageInfo = customerPackages.find(p => p.CustomizePackageID === booking.CustomizePackageID);
+    service = serviceTypes.find(s => s.ServiceID === packageInfo?.ServiceID);
+  } else if (booking.CareProfileID) {
+    service = serviceTypes.find(s => s.ServiceID === booking.CareProfileID);
+  }
+  return { careProfile, account, service, packageInfo };
+}
+
+const BookingDetailModal = ({ booking, onClose }) => {
+  if (!booking) return null;
+  const { careProfile, account, service, packageInfo } = getBookingDetail(booking);
+  return (
+    <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
+      <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-xl relative">
+        <button className="absolute top-2 right-2 text-gray-500 hover:text-pink-500 text-xl" onClick={onClose}>&times;</button>
+        <h3 className="text-xl font-bold mb-4">Chi tiết Booking #{booking.BookingID}</h3>
+        <div className="mb-2"><b>Khách hàng:</b> {careProfile?.Care_Name} ({account?.full_name})</div>
+        <div className="mb-2"><b>Điện thoại:</b> {careProfile?.PhoneNumber}</div>
+        <div className="mb-2"><b>Địa chỉ:</b> {careProfile?.Address}</div>
+        <div className="mb-2"><b>Dịch vụ:</b> {packageInfo ? packageInfo.Name : (service?.ServiceName || '-')}</div>
+        {packageInfo && <div className="mb-2"><b>Chi tiết gói:</b> {packageInfo.Description}</div>}
+        <div className="mb-2"><b>Ngày đặt:</b> {booking.booking_date ? new Date(booking.booking_date).toLocaleString('vi-VN') : '-'}</div>
+        <div className="mb-2"><b>Ngày thực hiện:</b> {booking.work_date ? new Date(booking.work_date).toLocaleString('vi-VN') : '-'}</div>
+        <div className="mb-2"><b>Giá tiền:</b> {booking.total_price?.toLocaleString('vi-VN') || '-'} VND</div>
+        <div className="mb-2"><b>Trạng thái:</b> <span className={`px-2 py-1 rounded text-xs font-bold ${booking.status === 'completed' ? 'bg-green-100 text-green-700' : booking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{booking.status === 'completed' ? 'Hoàn thành' : booking.status === 'pending' ? 'Đang xử lý' : 'Đã hủy'}</span></div>
+        <div className="mt-4 text-right">
+          <button className="px-4 py-2 rounded bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow" onClick={onClose}>Đóng</button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 const OverviewTab = ({ accounts, bookings, revenue }) => {
+  const [selectedBooking, setSelectedBooking] = useState(null);
   const statsCards = [
     {
       title: 'Tổng số người dùng',
@@ -38,7 +83,7 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6 text-gray-800">Tổng quan hệ thống</h2>
-      
+
       {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         {statsCards.map((stat, index) => (
@@ -62,16 +107,33 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
           <h3 className="text-lg font-semibold mb-4 text-blue-800">Booking gần đây</h3>
           <div className="space-y-3">
             {bookings && bookings.length > 0 ? bookings.slice(0, 5).map((booking, index) => (
-              <div key={booking.booking_id || index} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+              <button key={booking.BookingID || index} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm w-full text-left hover:bg-blue-100 transition" onClick={() => setSelectedBooking(booking)}>
                 <div>
-                  <p className="font-medium text-gray-800">{booking.customer_name}</p>
-                  <p className="text-sm text-gray-600">{booking.service_name}</p>
+                  <p className="font-medium text-gray-800">{
+                    (() => {
+                      const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
+                      return careProfile?.Care_Name || '-';
+                    })()
+                  }</p>
+                  <p className="text-sm text-gray-600">{
+                    (() => {
+                      if (booking.CustomizePackageID) {
+                        const pkg = customerPackages.find(p => p.CustomizePackageID === booking.CustomizePackageID);
+                        return pkg ? pkg.Name : '-';
+                      } else if (booking.CareProfileID) {
+                        const service = serviceTypes.find(s => s.ServiceID === booking.CareProfileID);
+                        return service ? service.ServiceName : '-';
+                      }
+                      return '-';
+                    })()
+                  }</p>
                 </div>
-                <span className="text-blue-600 font-semibold">{booking.total_price?.toLocaleString()} VND</span>
-              </div>
+                <span className="text-blue-600 font-semibold">{booking.total_price?.toLocaleString('vi-VN') || '-'} VND</span>
+              </button>
             )) : (
               <p className="text-gray-500 text-center">Chưa có booking nào</p>
             )}
+            <BookingDetailModal booking={selectedBooking} onClose={() => setSelectedBooking(null)} />
           </div>
         </div>
 
@@ -79,19 +141,18 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
           <h3 className="text-lg font-semibold mb-4 text-purple-800">Người dùng mới</h3>
           <div className="space-y-3">
             {accounts && accounts.length > 0 ? accounts.slice(0, 5).map((account, index) => (
-              <div key={account.account_id || index} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
+              <div key={account.AccountID || index} className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm">
                 <div className="flex items-center">
                   <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold mr-3">
                     {account.full_name?.charAt(0)}
                   </div>
                   <div>
                     <p className="font-medium text-gray-800">{account.full_name}</p>
-                    <p className="text-sm text-gray-600">{account.email}</p>
+                    <p className="text-sm text-gray-600">{account.Email}</p>
                   </div>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                  account.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                }`}>
+                <span className={`px-2 py-1 rounded-full text-xs font-medium ${account.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
                   {account.status === 'active' ? 'Hoạt động' : 'Tạm khóa'}
                 </span>
               </div>

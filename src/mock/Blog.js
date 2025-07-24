@@ -7,7 +7,7 @@ const blogs = [
     CreatedAt: "2024-05-20T09:00:00Z",
     Status: "published",
     Image: "logo.png",
-    CreatedBy: "admin"
+    CreatedByID: 1
   },
   {
     BlogID: 2,
@@ -17,7 +17,27 @@ const blogs = [
     CreatedAt: "2024-05-22T10:00:00Z",
     Status: "draft",
     Image: "blog2.jpg",
-    CreatedBy: "editor"
+    CreatedByID: 1
+  },
+  {
+    BlogID: 3,
+    Title: "Chăm sóc sức khỏe người cao tuổi",
+    Category: "Sức khỏe",
+    Content: "Nội dung bài viết về chăm sóc sức khỏe...",
+    CreatedAt: "2024-05-20T09:00:00Z",
+    Status: "published",
+    Image: "logo.png",
+    CreatedByID: 1
+  },
+  {
+    BlogID: 4,
+    Title: "Chăm sóc sức khỏe người cao tuổi",
+    Category: "Sức khỏe",
+    Content: "Nội dung bài viết về chăm sóc sức khỏe...",
+    CreatedAt: "2024-05-20T09:00:00Z",
+    Status: "published",
+    Image: "logo.png",
+    CreatedByID: 1
   }
 ];
 
