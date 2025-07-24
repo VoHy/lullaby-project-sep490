@@ -1,0 +1,108 @@
+const nursingSpecialists = [
+  {
+    NursingID: 1,
+    AccountID: 8,
+    ZoneID: 1,
+    Gender: "Nam",
+    DateOfBirth: "1985-03-10",
+    Nurse_Name: "Nguyen Van C",
+    Address: "Số 12, Ngõ 34, Đường Láng, Phường Láng Thượng, Quận Đống Đa, Hà Nội",
+    Experience: 10,
+    Slogan: "Tận tâm chăm sóc",
+    Major: "Chăm sóc sức khỏe",
+    Status: "active"
+  },
+  {
+    NursingID: 2,
+    AccountID: 9,
+    ZoneID: 2,
+    Gender: "Nữ",
+    DateOfBirth: "1990-07-15",
+    Nurse_Name: "Tran Thi D",
+    Address: "Số 45, Đường Nguyễn Thị Minh Khai, Phường Bến Nghé, Quận 1, Hồ Chí Minh",
+    Experience: 7,
+    Slogan: "Chuyên nghiệp và tận tình",
+    Major: "Y tá",
+    Status: "inactive"
+  },
+  {
+    SpecialistID: 1,
+    AccountID: 10,
+    ZoneID: 1,
+    Gender: "Nam",
+    DateOfBirth: "1980-05-20",
+    Specialist_Name: "Nguyen Van E",
+    Address: "Số 23, Đường Trần Duy Hưng, Phường Trung Hòa, Quận Cầu Giấy, Hà Nội",
+    Experience: 15,
+    Slogan: "Chuyên nghiệp và tận tình",
+    Major: "Chuyên gia",
+    Status: "active"
+  },
+  {
+    SpecialistID: 2,
+    AccountID: 11,
+    ZoneID: 2,
+    Gender: "Nữ",
+    DateOfBirth: "1985-03-10",
+    Specialist_Name: "Nguyen Van F",
+    Address: "Số 78, Đường Lê Lợi, Phường Bến Thành, Quận 1, Hồ Chí Minh",
+    Experience: 10,
+    Slogan: "Tận tâm chăm sóc",
+    Major: "Chăm sóc sức khỏe",
+    Status: "active"
+  },
+  {
+    NursingID: 3,
+    AccountID: 12,
+    ZoneID: 1,
+    Gender: "Nam",
+    DateOfBirth: "1985-03-10",
+    Nurse_Name: "Nguyen Van G",
+    Address: "Số 56, Đường Kim Mã, Phường Kim Mã, Quận Ba Đình, Hà Nội",
+    Experience: 10,
+    Slogan: "Tận tâm chăm sóc",
+    Major: "Chăm sóc sức khỏe",
+    Status: "active"
+  },  
+  {
+    NursingID: 4,
+    AccountID: 13,
+    ZoneID: 2,
+    Gender: "Nữ",
+    DateOfBirth: "1985-03-10",
+    Nurse_Name: "Nguyen Van H",
+    Address: "Số 90, Đường Cách Mạng Tháng 8, Phường 7, Quận 3, Hồ Chí Minh",
+    Experience: 10,
+    Slogan: "Tận tâm chăm sóc",
+    Major: "Chăm sóc sức khỏe",
+    Status: "active"
+  },
+  {
+    SpecialistID: 3,
+    AccountID: 14,
+    ZoneID: 1,
+    Gender: "Nam",
+    DateOfBirth: "1985-03-10",
+    Specialist_Name: "Nguyen Van I",
+    Address: "Số 101, Đường Giải Phóng, Phường Đồng Tâm, Quận Hai Bà Trưng, Hà Nội",
+    Experience: 10,
+    Slogan: "Tận tâm chăm sóc",
+    Major: "Chăm sóc sức khỏe",
+    Status: "active"
+  },
+  {
+    SpecialistID: 4,
+    AccountID: 15,
+    ZoneID: 2,
+    Gender: "Nữ",
+    DateOfBirth: "1985-03-10",
+    Specialist_Name: "Nguyen Van J",
+    Address: "Số 222, Đường Nguyễn Văn Cừ, Phường Nguyễn Cư Trinh, Quận 1, Hồ Chí Minh",
+    Experience: 10,
+    Slogan: "Tận tâm chăm sóc",
+    Major: "Chăm sóc sức khỏe",
+    Status: "active"
+  },
+];
+
+export default nursingSpecialists; 

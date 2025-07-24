@@ -11,10 +11,12 @@ import { AuthContext } from "../../../context/AuthContext";
 export default function RegisterPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
+    phoneNumber: '',
     email: '',
     password: '',
     confirmPassword: '',
+    avatarUrl: '',
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -48,17 +50,19 @@ export default function RegisterPage() {
 
     try {
       const response = await apiService.auth.register({
-        name: formData.name,
+        fullName: formData.fullName,
+        phoneNumber: formData.phoneNumber,
         email: formData.email,
         password: formData.password,
+        avatarUrl: formData.avatarUrl,
       });
-      if (response.user) {
-        login(response.user);
+      if (response.account) {
+        login(response.account);
         // Chuyển hướng dựa trên vai trò của người dùng
-        const role = response.user.role;
-        if (role === 'admin') {
+        const role = response.account.roleName;
+        if (role === 'Admin') {
           router.push('/dashboard');
-        } else if (role === 'nurse') {
+        } else if (role === 'Nurse') {
           router.push('/dashboard');
         } else {
           router.push('/');
@@ -140,10 +144,22 @@ export default function RegisterPage() {
               <label className="mb-2 block text-xs font-semibold">Họ tên</label>
               <input
                 type="text"
-                name="name"
+                name="fullName"
                 placeholder="Nhập họ tên"
                 className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
-                value={formData.name}
+                value={formData.fullName}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-xs font-semibold">Số điện thoại</label>
+              <input
+                type="text"
+                name="phoneNumber"
+                placeholder="Nhập số điện thoại"
+                className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
+                value={formData.phoneNumber}
                 onChange={handleChange}
                 required
               />
@@ -182,6 +198,17 @@ export default function RegisterPage() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 required
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-xs font-semibold">Avatar URL (tuỳ chọn)</label>
+              <input
+                type="text"
+                name="avatarUrl"
+                placeholder="Nhập link avatar (nếu có)"
+                className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
+                value={formData.avatarUrl}
+                onChange={handleChange}
               />
             </div>
             {error && <div className="text-red-500 text-sm text-center">{error}</div>}

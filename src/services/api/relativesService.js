@@ -1,31 +1,37 @@
-import axiosInstance from '../http/axios';
+import relatives from '../../mock/Relatives';
 
-const RELATIVES_ENDPOINTS = {
-  LIST: '/api/Relatives',
-  DETAIL: '/api/Relatives', // + /{id}
-};
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 
 const relativesService = {
-  getRelatives: async (params = {}) => {
-    const response = await axiosInstance.get(RELATIVES_ENDPOINTS.LIST, { params });
-    return response.data;
+  getRelatives: async () => {
+    if (USE_MOCK) return Promise.resolve(relatives);
+    const res = await fetch('/api/relatives');
+    return res.json();
   },
   getRelativeById: async (id) => {
-    const response = await axiosInstance.get(`${RELATIVES_ENDPOINTS.DETAIL}/${id}`);
-    return response.data;
+    if (USE_MOCK) return Promise.resolve(relatives.find(r => r.RelativeID === id));
+    const res = await fetch(`/api/relatives/${id}`);
+    return res.json();
   },
   createRelative: async (data) => {
-    const response = await axiosInstance.post(RELATIVES_ENDPOINTS.LIST, data);
-    return response.data;
+    if (USE_MOCK) return Promise.resolve({ ...data, RelativeID: relatives.length + 1 });
+    const res = await fetch('/api/relatives', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    });
+    return res.json();
   },
   updateRelative: async (id, data) => {
-    const response = await axiosInstance.put(`${RELATIVES_ENDPOINTS.DETAIL}/${id}`, data);
-    return response.data;
+    if (USE_MOCK) return Promise.resolve({ ...relatives.find(r => r.RelativeID === id), ...data });
+    const res = await fetch(`/api/relatives/${id}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    });
+    return res.json();
   },
   deleteRelative: async (id) => {
-    const response = await axiosInstance.delete(`${RELATIVES_ENDPOINTS.DETAIL}/${id}`);
-    return response.data;
-  },
+    if (USE_MOCK) return Promise.resolve(true);
+    const res = await fetch(`/api/relatives/${id}`, { method: 'DELETE' });
+    return res.ok;
+  }
 };
 
 export default relativesService; 

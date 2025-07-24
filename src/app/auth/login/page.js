@@ -41,9 +41,13 @@ export default function LoginPage() {
         login(response.user);
         // Chuyển hướng dựa trên vai trò của người dùng
         const role = response.user.role;
-        if (role === 'admin') {
+        if (role === 'Admin') {
           router.push('/dashboard');
-        } else if (role === 'nurse') {
+        } else if (role === 'Nurse') {
+          router.push('/dashboard');
+        } else if (role === 'Specialist') {
+          router.push('/dashboard');
+        } else if (role === 'Manager') {
           router.push('/dashboard');
         } else {
           router.push('/');
@@ -66,16 +70,20 @@ export default function LoginPage() {
     try {
       // Giả lập việc lấy token từ Google OAuth
       const fakeGoogleToken = 'fake-google-token-' + Date.now();
-      
+
       const response = await apiService.auth.loginWithGoogle(fakeGoogleToken);
-      
+
       if (response.user) {
         login(response.user);
         // Chuyển hướng dựa trên vai trò của người dùng
         const role = response.user.role;
-        if (role === 'admin') {
+        if (role === 'Admin') {
           router.push('/dashboard');
-        } else if (role === 'nurse') {
+        } else if (role === 'Nurse') {
+          router.push('/dashboard');
+        } else if (role === 'Specialist') {
+          router.push('/dashboard');
+        } else if (role === 'Manager') {
           router.push('/dashboard');
         } else {
           router.push('/');
@@ -91,13 +99,13 @@ export default function LoginPage() {
   };
 
   return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.85 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="flex min-h-screen items-center justify-center"
-      >
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.85 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="flex min-h-screen items-center justify-center"
+    >
       <div className="flex shadow-md rounded-2xl overflow-hidden w-full max-w-4xl bg-white/80">
         {/* Login form */}
         <div className="flex flex-col justify-center px-10 py-12 w-full md:w-1/2">

@@ -1,31 +1,11 @@
-import axiosInstance from '../http/axios';
+import { bookings } from '../../mock/Booking';
 
-const BOOKING_ENDPOINTS = {
-  CREATE: '/api/Booking',
-  LIST: '/api/Booking',
-  DETAIL: '/api/Booking', // + /{id}
-};
 export const bookingService = {
-  createBooking: async (bookingData) => {
-    const response = await axiosInstance.post(BOOKING_ENDPOINTS.CREATE, bookingData);
-    return response.data;
-  },
-  getBookings: async (params = {}) => {
-    const response = await axiosInstance.get(BOOKING_ENDPOINTS.LIST, { params });
-    return response.data;
-  },
-  getBookingById: async (bookingId) => {
-    const response = await axiosInstance.get(`${BOOKING_ENDPOINTS.DETAIL}/${bookingId}`);
-    return response.data;
-  },
-  updateBooking: async (bookingId, data) => {
-    const response = await axiosInstance.put(`${BOOKING_ENDPOINTS.DETAIL}/${bookingId}`, data);
-    return response.data;
-  },
-  deleteBooking: async (bookingId) => {
-    const response = await axiosInstance.delete(`${BOOKING_ENDPOINTS.DETAIL}/${bookingId}`);
-    return response.data;
-  },
+  createBooking: async (bookingData) => Promise.resolve({ ...bookingData, booking_id: bookings.length + 1 }),
+  getBookings: async () => Promise.resolve(bookings),
+  getBookingById: async (bookingId) => Promise.resolve(bookings.find(b => b.booking_id === bookingId)),
+  updateBooking: async (bookingId, data) => Promise.resolve({ ...bookings.find(b => b.booking_id === bookingId), ...data }),
+  deleteBooking: async (bookingId) => Promise.resolve(true),
 };
 
 export default bookingService; 

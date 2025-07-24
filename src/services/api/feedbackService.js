@@ -1,31 +1,51 @@
-import axiosInstance from '../http/axios';
+import feedbacks from '../../mock/Feedback';
 
-const FEEDBACK_ENDPOINTS = {
-  LIST: '/api/FeedBack',
-  DETAIL: '/api/FeedBack', // + /{id}
-};
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 
 const feedbackService = {
-  getFeedbacks: async (params = {}) => {
-    const response = await axiosInstance.get(FEEDBACK_ENDPOINTS.LIST, { params });
-    return response.data;
+  getFeedbacks: async () => {
+    if (USE_MOCK) {
+      return Promise.resolve(feedbacks);
+    }
+    const res = await fetch('/api/feedbacks');
+    return res.json();
   },
   getFeedbackById: async (id) => {
-    const response = await axiosInstance.get(`${FEEDBACK_ENDPOINTS.DETAIL}/${id}`);
-    return response.data;
+    if (USE_MOCK) {
+      return Promise.resolve(feedbacks.find(f => f.FeedbackID === id));
+    }
+    const res = await fetch(`/api/feedbacks/${id}`);
+    return res.json();
   },
   createFeedback: async (data) => {
-    const response = await axiosInstance.post(FEEDBACK_ENDPOINTS.LIST, data);
-    return response.data;
+    if (USE_MOCK) {
+      return Promise.resolve({ ...data, FeedbackID: feedbacks.length + 1 });
+    }
+    const res = await fetch('/api/feedbacks', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return res.json();
   },
   updateFeedback: async (id, data) => {
-    const response = await axiosInstance.put(`${FEEDBACK_ENDPOINTS.DETAIL}/${id}`, data);
-    return response.data;
+    if (USE_MOCK) {
+      return Promise.resolve({ ...feedbacks.find(f => f.FeedbackID === id), ...data });
+    }
+    const res = await fetch(`/api/feedbacks/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return res.json();
   },
   deleteFeedback: async (id) => {
-    const response = await axiosInstance.delete(`${FEEDBACK_ENDPOINTS.DETAIL}/${id}`);
-    return response.data;
-  },
+    if (USE_MOCK) {
+      return Promise.resolve(true);
+    }
+    const res = await fetch(`/api/feedbacks/${id}`, { method: 'DELETE' });
+    return res.ok;
+  }
 };
 
 export default feedbackService; 

@@ -1,34 +1,51 @@
-import axiosInstance from '../http/axios';
+import roles from '../../mock/Role';
 
-const ROLE_ENDPOINTS = {
-  GET: '/api/roles/get', // + /{id}
-  GET_ALL: '/api/roles/getall',
-  CREATE: '/api/roles/create',
-  UPDATE: '/api/roles/update', // + /{id}
-  DELETE: '/api/roles/delete', // + /{id}
-};
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 
 const roleService = {
-  getRole: async (id) => {
-    const response = await axiosInstance.get(`${ROLE_ENDPOINTS.GET}/${id}`);
-    return response.data;
-  },
   getAllRoles: async () => {
-    const response = await axiosInstance.get(ROLE_ENDPOINTS.GET_ALL);
-    return response.data;
+    if (USE_MOCK) {
+      return Promise.resolve(roles);
+    }
+    const res = await fetch('/api/roles');
+    return res.json();
+  },
+  getRole: async (id) => {
+    if (USE_MOCK) {
+      return Promise.resolve(roles.find(r => r.RoleID === id));
+    }
+    const res = await fetch(`/api/roles/${id}`);
+    return res.json();
   },
   createRole: async (data) => {
-    const response = await axiosInstance.post(ROLE_ENDPOINTS.CREATE, data);
-    return response.data;
+    if (USE_MOCK) {
+      return Promise.resolve({ ...data, RoleID: roles.length + 1 });
+    }
+    const res = await fetch('/api/roles', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return res.json();
   },
   updateRole: async (id, data) => {
-    const response = await axiosInstance.put(`${ROLE_ENDPOINTS.UPDATE}/${id}`, data);
-    return response.data;
+    if (USE_MOCK) {
+      return Promise.resolve({ ...roles.find(r => r.RoleID === id), ...data });
+    }
+    const res = await fetch(`/api/roles/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    return res.json();
   },
   deleteRole: async (id) => {
-    const response = await axiosInstance.delete(`${ROLE_ENDPOINTS.DELETE}/${id}`);
-    return response.data;
-  },
+    if (USE_MOCK) {
+      return Promise.resolve(true);
+    }
+    const res = await fetch(`/api/roles/${id}`, { method: 'DELETE' });
+    return res.ok;
+  }
 };
 
 export default roleService; 

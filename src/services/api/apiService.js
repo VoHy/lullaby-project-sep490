@@ -1,44 +1,31 @@
 import authService from '../auth/authService';
-import userService from '../user/userService';
-import nurseService from '../nurse/nurseService';
-import bookingService from '../booking/bookingService';
-import paymentService from '../payment/paymentService';
-import medicalReportService from '../medical/medicalReportService';
+import accountService from './accountService';
+import walletService from './walletService';
+import bookingService from './bookingService';
 import blogService from './blogService';
 import feedbackService from './feedbackService';
-import managerService from './managerService';
-import relativesService from './relativesService';
 import roleService from './roleService';
 import serviceTypeService from './serviceTypeService';
-import holidayService from './holidayService';
-import invoiceService from './invoiceService';
-import notificationService from './notificationService';
-import packageService from './packageService';
-import packageServiceTypeService from './packageServiceTypeService';
-import workScheduleService from './workScheduleService';
 import zoneService from './zoneService';
+import notificationService from './notificationService';
+import invoiceService from './invoiceService';
+import holidayService from './holidayService';
+import workScheduleService from './workScheduleService';
 
-// Tập hợp tất cả các service để dễ dàng import
 const apiService = {
   auth: authService,
-  user: userService,
-  nurse: nurseService,
+  account: accountService,
+  wallet: walletService,
   booking: bookingService,
-  payment: paymentService,
-  medicalReport: medicalReportService,
   blog: blogService,
   feedback: feedbackService,
-  manager: managerService,
-  relatives: relativesService,
   role: roleService,
   serviceType: serviceTypeService,
-  holiday: holidayService,
-  invoice: invoiceService,
-  notification: notificationService,
-  package: packageService,
-  packageServiceType: packageServiceTypeService,
-  workSchedule: workScheduleService,
   zone: zoneService,
+  notification: notificationService,
+  invoice: invoiceService,
+  holiday: holidayService,
+  workSchedule: workScheduleService,
 };
 
 export default apiService; 
