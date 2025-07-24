@@ -5,7 +5,7 @@ const relatives = [
     Relative_Name: "Nguyen Van B",
     DateOfBirth: "01-01-1970",
     Gender: "Nam",
-    Address: "Hà Nội",
+    Address: "Số 15, Đường Nguyễn Thị Minh Khai, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
     CreatedAt: "2024-06-01T10:00:00Z",
     Status: "active",
     Image: "relative1.jpg"
@@ -16,7 +16,7 @@ const relatives = [
     Relative_Name: "Tran Thi C",
     DateOfBirth: "02-02-1980",
     Gender: "Nữ",
-    Address: "Hồ Chí Minh",
+    Address: "Số 120, Đường Nguyễn Thị Minh Khai, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
     CreatedAt: "2024-06-02T11:00:00Z",
     Status: "inactive",
     Image: "relative2.jpg"
@@ -27,7 +27,7 @@ const relatives = [
     Relative_Name: "Nguyen Van D",
     DateOfBirth: "01-01-1979",
     Gender: "Nam",
-    Address: "Hà Nội",
+    Address: "Số 45, Đường Trần Hưng Đạo, Phường Cầu Kho, Quận 1, TP. Hồ Chí Minh",
     CreatedAt: "2024-06-01T10:00:00Z",
     Status: "active",
     Image: "relative1.jpg"
@@ -38,7 +38,7 @@ const relatives = [
     Relative_Name: "Tran Thi K",
     DateOfBirth: "02-02-1980",
     Gender: "Nữ",
-    Address: "Hồ Chí Minh",
+    Address: "Số 200, Đường Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh",
     CreatedAt: "2024-06-02T11:00:00Z",
     Status: "inactive",
     Image: "relative2.jpg"
@@ -49,7 +49,7 @@ const relatives = [
     Relative_Name: "Nguyen Van L",
     DateOfBirth: "01-01-1979",
     Gender: "Nam",
-    Address: "Hà Nội",
+    Address: "Số 100, Đường Nguyễn Thị Minh Khai, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
     CreatedAt: "2024-06-01T10:00:00Z",
     Status: "active",
     Image: "relative1.jpg"
@@ -60,7 +60,7 @@ const relatives = [
     Relative_Name: "Nguyen Van M",
     DateOfBirth: "01-01-1979",
     Gender: "Nam",
-    Address: "Hà Nội",
+    Address: "Số 8, Đường Lý Tự Trọng, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
     CreatedAt: "2024-06-01T10:00:00Z",
     Status: "active",
     Image: "relative1.jpg"
@@ -71,7 +71,7 @@ const relatives = [
     Relative_Name: "Nguyen Van N",
     DateOfBirth: "01-01-1979",
     Gender: "Nam",
-    Address: "Hà Nội",
+    Address: "Số 12, Đường Nguyễn Văn Cừ, Phường Nguyễn Cư Trinh, Quận 1, TP. Hồ Chí Minh",
     CreatedAt: "2024-06-01T10:00:00Z",
     Status: "active",
     Image: "relative1.jpg"

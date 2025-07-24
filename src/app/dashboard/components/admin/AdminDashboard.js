@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faUsers, faCalendar, faMoneyBill, faCog, faChartLine, faStethoscope, faUserMd, faFileAlt, faCalendarAlt
+  faUsers, faCalendar, faMoneyBill, faCog, faChartLine, faStethoscope, faUserMd, faFileAlt, faCalendarAlt, faMapMarkerAlt
 } from '@fortawesome/free-solid-svg-icons';
 import accountService from '@/services/api/accountService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
@@ -21,6 +21,7 @@ import RevenueTab from './revenue/RevenueTab';
 import SettingsTab from './settings/SettingsTab';
 import BlogTab from './blog/BlogTab';
 import HolidayTab from './holiday/HolidayTab';
+import AdminZoneTab from './zone/AdminZoneTab';
 
 const AdminDashboard = ({ user, initialTab }) => {
   const router = useRouter();
@@ -29,6 +30,7 @@ const AdminDashboard = ({ user, initialTab }) => {
     { id: 'overview', label: 'Tổng quan', icon: faChartLine },
     { id: 'users', label: 'Quản lý User', icon: faUsers },
     { id: 'managers', label: 'Quản lý Manager', icon: faUserMd },
+    { id: 'zone', label: 'Quản lý Khu vực', icon: faMapMarkerAlt },
     { id: 'bookings', label: 'Quản lý Booking', icon: faCalendar },
     { id: 'services', label: 'Quản lý Dịch vụ', icon: faStethoscope },
     { id: 'revenue', label: 'Doanh thu', icon: faMoneyBill },
@@ -167,6 +169,7 @@ const AdminDashboard = ({ user, initialTab }) => {
           {activeTab === 'managers' && (
             <ManagerTab />
           )}
+          {activeTab === 'zone' && <AdminZoneTab />}
           {activeTab === 'bookings' && <BookingsTab bookings={bookings} />}
           {activeTab === 'services' && <ServicesTab />}
           {activeTab === 'revenue' && <RevenueTab revenue={revenue} bookings={bookings} />}

@@ -1,10 +1,10 @@
 const nursingServices = [
   {
-    NurseID: 1,
+    NursingID: 1,
     ServiceID: 1
   },
   {
-    NurseID: 2,
+    NursingID: 2,
     ServiceID: 2
   }
 ];

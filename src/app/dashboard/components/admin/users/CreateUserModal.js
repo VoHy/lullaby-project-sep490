@@ -1,0 +1,258 @@
+import { useState } from 'react';
+import zoneDetails from '@/mock/Zone_Detail';
+import zones from '@/mock/Zone';
+
+const CreateUserModal = ({ show, onClose, onSubmit }) => {
+  const [avatarUrl, setAvatarUrl] = useState('');
+  const [fullName, setFullName] = useState('');
+  const [email, setEmail] = useState('');
+  const [phone, setPhone] = useState('');
+  const [role, setRole] = useState('');
+  const [avatarPreview, setAvatarPreview] = useState('');
+  // Thông tin chuyên môn
+  const [zoneId, setZoneId] = useState('');
+  const [gender, setGender] = useState('');
+  const [dob, setDob] = useState('');
+  const [major, setMajor] = useState('');
+  const [experience, setExperience] = useState('');
+  const [slogan, setSlogan] = useState('');
+  const [address, setAddress] = useState('');
+
+  if (!show) return null;
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setAvatarPreview(reader.result);
+        setAvatarUrl('');
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+  const handleAvatarUrlChange = (e) => {
+    setAvatarUrl(e.target.value);
+    setAvatarPreview('');
+  };
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    const accountData = {
+      full_name: fullName,
+      email,
+      phone_number: phone,
+      avatar_url: avatarUrl || avatarPreview,
+      role_id: role === 'nurse' ? 2 : 5,
+      role_name: role === 'nurse' ? 'Y tá' : 'Chuyên gia',
+      status: 'active',
+    };
+    let nursingSpecialistData = null;
+    if (role === 'nurse' || role === 'specialist') {
+      nursingSpecialistData = {
+        ZoneID: zoneId,
+        Gender: gender,
+        DateOfBirth: dob,
+        Major: major,
+        Experience: experience,
+        Slogan: slogan,
+        Address: address,
+        Status: 'active',
+      };
+    }
+    if (onSubmit) onSubmit(accountData, nursingSpecialistData);
+    // Reset form
+    setAvatarUrl(''); setFullName(''); setEmail(''); setPhone(''); setRole(''); setAvatarPreview('');
+    setZoneId(''); setGender(''); setDob(''); setMajor(''); setExperience(''); setSlogan(''); setAddress('');
+    if (onClose) onClose();
+  };
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm overflow-auto">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-4 md:p-6 relative my-6 mx-2">
+        {/* Nút đóng */}
+        <button
+          className="absolute top-2 right-2 text-gray-400 hover:text-pink-500 text-2xl font-bold z-10"
+          onClick={onClose}
+          aria-label="Đóng"
+          type="button"
+        >
+          &times;
+        </button>
+        {/* Tiêu đề modal */}
+        <h3 className="text-xl font-bold mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">Tạo tài khoản mới</h3>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-400"
+                  placeholder="Nhập họ và tên"
+                  value={fullName}
+                  onChange={e => setFullName(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <input
+                  type="email"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-400"
+                  placeholder="Nhập email"
+                  value={email}
+                  onChange={e => setEmail(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
+                <input
+                  type="text"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-400"
+                  placeholder="Nhập số điện thoại"
+                  value={phone}
+                  onChange={e => setPhone(e.target.value)}
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
+                <select
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-400"
+                  value={role}
+                  onChange={e => setRole(e.target.value)}
+                >
+                  <option value="" hidden>Chọn vai trò</option>
+                  <option value="nurse">Y tá</option>
+                  <option value="specialist">Chuyên gia</option>
+                </select>
+              </div>
+            </div>
+            {/* Avatar */}
+            <div className="flex flex-col items-center gap-2 bg-purple-50 border border-purple-100 rounded-lg p-4 shadow-sm">
+              <label className="block text-xs font-medium mb-1 text-gray-600">Ảnh đại diện</label>
+              <div className="relative w-20 h-20 mb-1">
+                <img src={avatarPreview || avatarUrl || "/images/avatar1.jpg"} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-pink-200 mx-auto" />
+                <label className="absolute bottom-0 right-0 bg-pink-500 text-white rounded-full p-1 cursor-pointer shadow-md hover:bg-pink-600 transition" title="Đổi ảnh">
+                  <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.25 2.25 0 1 1 3.182 3.182M6.75 21h10.5A2.25 2.25 0 0 0 19.5 18.75V8.25A2.25 2.25 0 0 0 17.25 6H6.75A2.25 2.25 0 0 0 4.5 8.25v10.5A2.25 2.25 0 0 0 6.75 21z" />
+                  </svg>
+                </label>
+              </div>
+              <input
+                type="text"
+                className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-400"
+                placeholder="Dán URL ảnh đại diện"
+                value={avatarUrl}
+                onChange={handleAvatarUrlChange}
+              />
+            </div>
+          </div>
+          {/* Card chuyên môn full width */}
+          {(role === 'nurse' || role === 'specialist') && (
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mt-2 space-y-2 shadow-sm">
+              <div className="font-semibold text-purple-700 mb-1 text-base">Thông tin chuyên môn</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Khu vực làm việc (Quận)</label>
+                  <select
+                    required
+                    className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-300"
+                    value={zoneId}
+                    onChange={e => setZoneId(e.target.value)}
+                  >
+                    <option value="" hidden>Chọn khu vực</option>
+                    {zones.map(z => (
+                      <option key={z.ZoneID} value={z.ZoneID}>{z.Zone_name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Giới tính</label>
+                  <select
+                    required
+                    className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-300"
+                    value={gender}
+                    onChange={e => setGender(e.target.value)}
+                  >
+                    <option value="" hidden>Chọn giới tính</option>
+                    <option value="Nam">Nam</option>
+                    <option value="Nữ">Nữ</option>
+                    <option value="Khác">Khác</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Ngày sinh</label>
+                  <input
+                    type="date"
+                    required
+                    className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-300"
+                    value={dob}
+                    onChange={e => setDob(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Chuyên ngành</label>
+                  <input
+                    type="text"
+                    required
+                    className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-300"
+                    placeholder="Nhập chuyên ngành"
+                    value={major}
+                    onChange={e => setMajor(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Kinh nghiệm (năm)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    required
+                    className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-300"
+                    placeholder="Nhập số năm kinh nghiệm"
+                    value={experience}
+                    onChange={e => setExperience(e.target.value)}
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Slogan</label>
+                  <input
+                    type="text"
+                    className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-300"
+                    placeholder="Nhập slogan"
+                    value={slogan}
+                    onChange={e => setSlogan(e.target.value)}
+                  />
+                </div>
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Địa chỉ</label>
+                  <input
+                    type="text"
+                    className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-300"
+                    placeholder="Nhập địa chỉ làm việc"
+                    value={address}
+                    onChange={e => setAddress(e.target.value)}
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+          {/* Nút lưu */}
+          <div className="pt-2 flex flex-col md:flex-row md:justify-end">
+            <button
+              type="submit"
+              className="w-full md:w-auto px-6 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg mt-2 md:mt-0"
+            >
+              Lưu
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  );
+};
+
+export default CreateUserModal; 

@@ -8,7 +8,7 @@ const ManagerTab = () => {
   const [zones, setZones] = useState(zonesData);
   const [saving, setSaving] = useState(false);
 
-  // Lấy zone đang quản lý của manager (theo AccountID)
+  // Lấy ZoneID mà manager đang quản lý (theo AccountID)
   const getZoneIdByManager = (managerId) => {
     const zone = zones.find(z => z.ManagerID === managerId);
     return zone ? zone.ZoneID : '';
@@ -20,32 +20,49 @@ const ManagerTab = () => {
     return zone ? zone.Zone_name : '';
   };
 
-  // Khi đổi zone cho manager
+  // Khi đổi zone cho manager: cập nhật ManagerID của zone cũ và mới
   const handleZoneChange = (managerId, newZoneId) => {
-    setZones(prev => prev.map(z =>
-      z.AccountID === managerId ? { ...z, ZoneID: Number(newZoneId) } : z
-    ));
+    setZones(prevZones => {
+      // Tìm zone hiện tại của manager (nếu có)
+      const currentZone = prevZones.find(z => z.ManagerID === managerId);
+      // Nếu manager đã quản lý zone nào thì bỏ quản lý zone đó
+      let updatedZones = prevZones.map(z => {
+        if (z.ManagerID === managerId) {
+          return { ...z, ManagerID: null };
+        }
+        return z;
+      });
+      // Gán managerId cho zone mới (nếu chọn)
+      updatedZones = updatedZones.map(z => {
+        if (z.ZoneID === Number(newZoneId)) {
+          return { ...z, ManagerID: managerId };
+        }
+        return z;
+      });
+      return updatedZones;
+    });
   };
 
   const handleSave = () => {
     setSaving(true);
     setTimeout(() => {
       setSaving(false);
-      alert('Cập nhật zone cho manager thành công!');
+      alert('Cập nhật quận cho Manager thành công!');
     }, 800);
   };
 
   return (
     <div>
-      <h2 className="text-2xl font-bold mb-6 text-gray-800">Quản lý Manager theo Khu Vực</h2>
+      <h2 className="text-2xl font-bold mb-6 text-gray-800">Quản lý theo Quận (Zone)</h2>
+      <p className="mb-4 text-gray-600">Có thể thay đổi quận cho các Manager bằng cách chọn các quận.</p>
       <div className="overflow-x-auto">
         <table className="w-full bg-white rounded-lg overflow-hidden shadow-lg">
           <thead className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
             <tr>
               <th className="px-6 py-3 text-left">Tên Manager</th>
               <th className="px-6 py-3 text-left">Email</th>
-              <th className="px-6 py-3 text-left">Khu vực quản lý</th>
-              <th className="px-6 py-3 text-left">Thao tác</th>
+              <th className="px-6 py-3 text-left">Quận đang quản lý</th>
+              <th className="px-6 py-3 text-left">Thay đổi quận</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
@@ -62,9 +79,12 @@ const ManagerTab = () => {
                     onChange={e => handleZoneChange(manager.AccountID, e.target.value)}
                     className="px-3 py-1 rounded-lg border border-gray-300"
                   >
-                    <option value="">Chọn zone</option>
+                    <option value="">Chọn quận</option>
                     {zones.map(zone => (
-                      <option key={zone.ZoneID} value={zone.ZoneID}>{zone.Zone_name}</option>
+                      <option key={zone.ZoneID} value={zone.ZoneID}>
+                        {zone.Zone_name}
+                        {zone.ManagerID && zone.ManagerID !== manager.AccountID ? ' (Đã có Manager)' : ''}
+                      </option>
                     ))}
                   </select>
                 </td>
@@ -86,4 +106,4 @@ const ManagerTab = () => {
   );
 };
 
-export default ManagerTab; 
+export default ManagerTab;

@@ -23,6 +23,7 @@ const Sidebar = ({ user }) => {
       { name: 'Tổng quan', path: '/dashboard?tab=overview', icon: faChartBar, color: 'text-purple-500', tab: 'overview' },
       { name: 'Quản lý người dùng', path: '/dashboard?tab=users', icon: faUsers, color: 'text-blue-500', tab: 'users' },
       { name: 'Quản lý Manager', path: '/dashboard?tab=managers', icon: faUserMd, color: 'text-indigo-500', tab: 'managers' },
+      { name: 'Quản lý Khu vực', path: '/dashboard?tab=zone', icon: faMapLocationDot, color: 'text-red-500', tab: 'zone' },
       { name: 'Quản lý Booking', path: '/dashboard?tab=bookings', icon: faCalendarAlt, color: 'text-green-500', tab: 'bookings' },
       { name: 'Quản lý Dịch vụ', path: '/dashboard?tab=services', icon: faStethoscope, color: 'text-pink-500', tab: 'services' },
       { name: 'Báo cáo Doanh thu', path: '/dashboard?tab=revenue', icon: faMoneyBill, color: 'text-yellow-500', tab: 'revenue' },

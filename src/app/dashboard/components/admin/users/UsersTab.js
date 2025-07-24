@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faSearch, faEye, faEdit, faTrash } from '@fortawesome/free-solid-svg-icons';
+import CreateUserModal from './CreateUserModal';
+import UserDetailModal from './UserDetailModal';
 
 const UsersTab = ({ accounts, searchTerm, setSearchTerm, statusFilter, setStatusFilter, onStatusChange }) => {
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -12,6 +14,17 @@ const UsersTab = ({ accounts, searchTerm, setSearchTerm, statusFilter, setStatus
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState('');
   const [avatarPreview, setAvatarPreview] = useState('');
+  // Thông tin chuyên môn
+  const [zoneId, setZoneId] = useState('');
+  const [gender, setGender] = useState('');
+  const [dob, setDob] = useState('');
+  const [major, setMajor] = useState('');
+  const [experience, setExperience] = useState('');
+  const [slogan, setSlogan] = useState('');
+  const [address, setAddress] = useState('');
+  const [showDetailModal, setShowDetailModal] = useState(false);
+  const [detailAccount, setDetailAccount] = useState(null);
+  const [accountsState, setAccountsState] = useState(accounts);
 
   const filteredAccounts = accounts.filter(account => {
     const matchesSearch = account.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -29,41 +42,7 @@ const UsersTab = ({ accounts, searchTerm, setSearchTerm, statusFilter, setStatus
   const handleCloseModal = () => {
     setShowCreateModal(false);
     setAvatarUrl(''); setFullName(''); setEmail(''); setPhone(''); setRole(''); setAvatarPreview('');
-  };
-
-  // Hàm xử lý thay đổi input form
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  // Hàm submit tạo tài khoản (giả lập)
-  const handleCreateAccountSubmit = (e) => {
-    e.preventDefault();
-    alert('Tạo tài khoản thành công (giả lập)');
-    setShowCreateModal(false);
-    setAvatarUrl(''); setFullName(''); setEmail(''); setPhone(''); setRole('');
-  };
-
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result);
-        setAvatarUrl(''); // Nếu chọn file thì bỏ URL
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  // Khi nhập URL thì preview luôn
-  const handleAvatarUrlChange = (e) => {
-    setAvatarUrl(e.target.value);
-    setAvatarPreview(''); // Nếu nhập URL thì bỏ preview file
+    setZoneId(''); setGender(''); setDob(''); setMajor(''); setExperience(''); setSlogan(''); setAddress('');
   };
 
   return (
@@ -81,95 +60,13 @@ const UsersTab = ({ accounts, searchTerm, setSearchTerm, statusFilter, setStatus
 
       {/* Modal tạo tài khoản */}
       {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-8 relative">
-            <button
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl"
-              onClick={handleCloseModal}
-              aria-label="Đóng"
-            >
-              &times;
-            </button>
-            <h3 className="text-2xl font-bold mb-6 text-center">Tạo tài khoản mới</h3>
-            <form onSubmit={handleCreateAccountSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
-                  <input
-                    type="text"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                    placeholder="Nhập họ và tên"
-                    value={fullName}
-                    onChange={e => setFullName(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input
-                    type="email"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                    placeholder="Nhập email"
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
-                  <input
-                    type="text"
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                    placeholder="Nhập số điện thoại"
-                    value={phone}
-                    onChange={e => setPhone(e.target.value)}
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
-                  <select
-                    required
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                    value={role}
-                    onChange={e => setRole(e.target.value)}
-                  >
-                    <option value="" hidden>Chọn vai trò</option>
-                    <option value="nurse">Y tá</option>
-                    <option value="specialist">Chuyên gia</option>
-                  </select>
-                </div>
-              </div>
-              <div className="flex flex-col items-center gap-2 mb-2">
-                <label className="block text-xs font-medium mb-1 text-gray-600">Ảnh đại diện</label>
-                <div className="relative w-24 h-24">
-                  <img src={avatarPreview || avatarUrl || "/images/avatar1.jpg"} alt="avatar" className="w-24 h-24 rounded-full object-cover border-2 border-pink-200 mx-auto" />
-                  <label className="absolute bottom-0 right-0 bg-pink-500 text-white rounded-full p-1 cursor-pointer shadow-md hover:bg-pink-600 transition" title="Đổi ảnh">
-                    <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.25 2.25 0 1 1 3.182 3.182M6.75 21h10.5A2.25 2.25 0 0 0 19.5 18.75V8.25A2.25 2.25 0 0 0 17.25 6H6.75A2.25 2.25 0 0 0 4.5 8.25v10.5A2.25 2.25 0 0 0 6.75 21z" />
-                    </svg>
-                  </label>
-                </div>
-                <input
-                  type="text"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"
-                  placeholder="Dán URL ảnh đại diện"
-                  value={avatarUrl}
-                  onChange={handleAvatarUrlChange}
-                />
-              </div>
-              <div className="md:col-span-2 flex justify-end mt-4">
-                <button
-                  type="submit"
-                  className="px-8 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg"
-                >
-                  Lưu
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <CreateUserModal
+          show={showCreateModal}
+          onClose={handleCloseModal}
+          onSubmit={(accountData, nursingSpecialistData) => {
+            alert('Tạo tài khoản thành công (giả lập):\n' + JSON.stringify(accountData, null, 2) + (nursingSpecialistData ? ('\n---\nThông tin chuyên môn:\n' + JSON.stringify(nursingSpecialistData, null, 2)) : ''));
+          }}
+        />
       )}
 
       {/* Search and Filter */}
@@ -235,33 +132,18 @@ const UsersTab = ({ accounts, searchTerm, setSearchTerm, statusFilter, setStatus
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <select
-                    value={account.status || 'active'}
-                    onChange={(e) => onStatusChange(account.AccountID, e.target.value)}
-                    className={`px-3 py-1 rounded-full text-xs font-medium border-0 ${account.status === 'active'
-                        ? 'bg-green-100 text-green-800'
-                        : 'bg-red-100 text-red-800'
-                      }`}
-                  >
-                    <option value="active">Hoạt động</option>
-                    <option value="inactive">Tạm khóa</option>
-                  </select>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${account.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{account.status === 'active' ? 'Hoạt động' : 'Tạm khóa'}</span>
                 </td>
                 <td className="px-6 py-4 text-gray-600">
                   {new Date(account.created_at).toLocaleDateString('vi-VN')}
                 </td>
                 <td className="px-6 py-4 text-center">
-                  <div className="flex justify-center space-x-2">
-                    <button className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg transition-all duration-200">
-                      <FontAwesomeIcon icon={faEye} />
-                    </button>
-                    <button className="text-green-600 hover:text-green-800 p-2 hover:bg-green-50 rounded-lg transition-all duration-200">
-                      <FontAwesomeIcon icon={faEdit} />
-                    </button>
-                    <button className="text-red-600 hover:text-red-800 p-2 hover:bg-red-50 rounded-lg transition-all duration-200">
-                      <FontAwesomeIcon icon={faTrash} />
-                    </button>
-                  </div>
+                  <button
+                    className="px-4 py-1 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all duration-200"
+                    onClick={() => { setDetailAccount(account); setShowDetailModal(true); }}
+                  >
+                    Xem chi tiết
+                  </button>
                 </td>
               </tr>
             )) : (
@@ -272,6 +154,18 @@ const UsersTab = ({ accounts, searchTerm, setSearchTerm, statusFilter, setStatus
           </tbody>
         </table>
       </div>
+      {/* Modal chi tiết tài khoản */}
+      {showDetailModal && detailAccount && (
+        <UserDetailModal
+          show={showDetailModal}
+          account={detailAccount}
+          onClose={() => setShowDetailModal(false)}
+          onSave={(accountId, newStatus) => {
+            setAccountsState(prev => prev.map(acc => acc.AccountID === accountId ? { ...acc, status: newStatus } : acc));
+            setShowDetailModal(false);
+          }}
+        />
+      )}
     </div>
   );
 };

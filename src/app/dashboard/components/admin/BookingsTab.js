@@ -8,8 +8,10 @@ import serviceTypes from '@/mock/ServiceType';
 import customerPackages from '@/mock/CustomerPackage';
 
 function getBookingDetail(booking) {
-  const careProfile = careProfiles.find(c => c.CareID === booking.CareProfileID);
-  const account = accounts.find(a => a.AccountID === careProfile?.AccountID);
+  // booking.CareProfileID có thể là undefined hoặc null, cần kiểm tra kỹ
+  const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
+  // Nếu careProfile không có, trả về null cho account
+  const account = careProfile ? accounts.find(a => a.AccountID === careProfile.AccountID) : null;
   let service = null;
   let packageInfo = null;
   if (booking.CustomizePackageID) {
@@ -29,18 +31,16 @@ const BookingDetailModal = ({ booking, onClose }) => {
       <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-xl relative">
         <button className="absolute top-2 right-2 text-gray-500 hover:text-pink-500 text-xl" onClick={onClose}>&times;</button>
         <h3 className="text-xl font-bold mb-4">Chi tiết Booking #{booking.BookingID}</h3>
-        <div className="mb-2"><b>Khách hàng:</b> {careProfile?.Care_Name} ({account?.full_name})</div>
-        <div className="mb-2"><b>Điện thoại:</b> {careProfile?.PhoneNumber}</div>
-        <div className="mb-2"><b>Địa chỉ:</b> {careProfile?.Address}</div>
+        <div className="mb-2"><b>Khách hàng:</b> {careProfile ? careProfile.ProfileName : '-'} {account ? `(${account.full_name})` : ''}</div>
+        <div className="mb-2"><b>Điện thoại:</b> {account?.phone_number || careProfile?.PhoneNumber || '-'}</div>
+        <div className="mb-2"><b>Địa chỉ:</b> {careProfile?.Address || '-'}</div>
         <div className="mb-2"><b>Dịch vụ:</b> {packageInfo ? packageInfo.Name : (service?.ServiceName || '-')}</div>
         {packageInfo && <div className="mb-2"><b>Chi tiết gói:</b> {packageInfo.Description}</div>}
         <div className="mb-2"><b>Ngày đặt:</b> {booking.booking_date ? new Date(booking.booking_date).toLocaleString('vi-VN') : '-'}</div>
         <div className="mb-2"><b>Ngày thực hiện:</b> {booking.work_date ? new Date(booking.work_date).toLocaleString('vi-VN') : '-'}</div>
         <div className="mb-2"><b>Giá tiền:</b> {booking.total_price?.toLocaleString('vi-VN') || '-'} VND</div>
         <div className="mb-2"><b>Trạng thái:</b> <span className={`px-2 py-1 rounded text-xs font-bold ${booking.status === 'completed' ? 'bg-green-100 text-green-700' : booking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{booking.status === 'completed' ? 'Hoàn thành' : booking.status === 'pending' ? 'Đang xử lý' : 'Đã hủy'}</span></div>
-        <div className="mt-4 text-right">
-          <button className="px-4 py-2 rounded bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow" onClick={onClose}>Đóng</button>
-        </div>
+        <button className="px-4 py-2 rounded bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow" onClick={onClose}>Đóng</button>
       </div>
     </div>
   );
@@ -79,48 +79,47 @@ const BookingsTab = ({ bookings }) => {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
-            {bookings && bookings.length > 0 ? bookings.map((booking, index) => (
-              <tr key={booking.BookingID || index} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium">#{booking.BookingID}</td>
-                <td className="px-6 py-4">{
-                  (() => {
-                    const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
-                    return careProfile?.Care_Name || '-';
-                  })()
-                }</td>
-                <td className="px-6 py-4">{
-                  (() => {
-                    if (booking.CustomizePackageID) {
-                      const pkg = customerPackages.find(p => p.CustomizePackageID === booking.CustomizePackageID);
-                      return pkg ? pkg.Name : '-';
-                    } else if (booking.CareProfileID) {
-                      const service = serviceTypes.find(s => s.ServiceID === booking.CareProfileID);
-                      return service ? service.ServiceName : '-';
-                    }
-                    return '-';
-                  })()
-                }</td>
-                <td className="px-6 py-4">{booking.booking_date ? new Date(booking.booking_date).toLocaleDateString('vi-VN') : '-'}</td>
-                <td className="px-6 py-4 font-semibold text-green-600">{booking.total_price?.toLocaleString('vi-VN') || '-'} VND</td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    booking.status === 'completed' ? 'bg-green-100 text-green-800' :
-                    booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    {booking.status === 'completed' ? 'Hoàn thành' :
-                     booking.status === 'pending' ? 'Đang xử lý' : 'Đã hủy'}
-                  </span>
-                </td>
-                <td className="px-6 py-4 text-center">
-                  <div className="flex justify-center space-x-2">
-                    <button className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg" onClick={() => setSelectedBooking(booking)}>
-                      <FontAwesomeIcon icon={faEye} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            )) : (
+            {bookings && bookings.length > 0 ? bookings.map((booking, index) => {
+              const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
+              const account = careProfile ? accounts.find(a => a.AccountID === careProfile.AccountID) : null;
+              return (
+                <tr key={booking.BookingID || index} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 font-medium">#{booking.BookingID}</td>
+                  <td className="px-6 py-4">{careProfile ? careProfile.ProfileName : '-'}</td>
+                  <td className="px-6 py-4">{
+                    (() => {
+                      if (booking.CustomizePackageID) {
+                        const pkg = customerPackages.find(p => p.CustomizePackageID === booking.CustomizePackageID);
+                        return pkg ? pkg.Name : '-';
+                      } else if (booking.CareProfileID) {
+                        const service = serviceTypes.find(s => s.ServiceID === booking.CareProfileID);
+                        return service ? service.ServiceName : '-';
+                      }
+                      return '-';
+                    })()
+                  }</td>
+                  <td className="px-6 py-4">{booking.booking_date ? new Date(booking.booking_date).toLocaleDateString('vi-VN') : '-'}</td>
+                  <td className="px-6 py-4 font-semibold text-green-600">{booking.total_price?.toLocaleString('vi-VN') || '-'} VND</td>
+                  <td className="px-6 py-4">
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                      booking.status === 'completed' ? 'bg-green-100 text-green-800' :
+                      booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-700'
+                    }`}>
+                      {booking.status === 'completed' ? 'Hoàn thành' :
+                       booking.status === 'pending' ? 'Đang xử lý' : 'Đã hủy'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex justify-center space-x-2">
+                      <button className="text-blue-600 hover:text-blue-800 p-2 hover:bg-blue-50 rounded-lg" onClick={() => setSelectedBooking(booking)}>
+                        <FontAwesomeIcon icon={faEye} />
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              );
+            }) : (
               <tr>
                 <td colSpan="7" className="text-center py-8 text-gray-500">Không có dữ liệu booking</td>
               </tr>

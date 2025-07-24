@@ -5,9 +5,11 @@ import careProfiles from '@/mock/CareProfile';
 import serviceTypes from '@/mock/ServiceType';
 import customerPackages from '@/mock/CustomerPackage';
 import serviceTasks from '@/mock/ServiceTask';
+import zoneDetails from '@/mock/Zone_Detail';
+import nursingSpecialists from '@/mock/NursingSpecialist';
 
-const nurses = accounts.filter(acc => acc.role_id === 2);
-const specialists = accounts.filter(acc => acc.role_id === 5);
+const allNurses = accounts.filter(acc => acc.role_id === 2 && nursingSpecialists.find(n => n.AccountID === acc.AccountID));
+const allSpecialists = accounts.filter(acc => acc.role_id === 5 && nursingSpecialists.find(s => s.AccountID === acc.AccountID));
 
 const statusOptions = [
   { value: 'pending', label: 'Chờ xử lý' },
@@ -39,6 +41,24 @@ const ManagerBookingTab = () => {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [taskAssignments, setTaskAssignments] = useState({}); // { [ServiceTaskID]: { nurse: '', specialist: '' } }
 
+  // Lọc nurse/specialist theo khu vực của khách hàng booking (join Account với NursingSpecialist để lấy ZoneID)
+  function getFilteredNursesSpecialists(careProfile) {
+    if (!careProfile) return { nurses: [], specialists: [] };
+    const zoneDetail = zoneDetails.find(z => z.ZoneDetailID === careProfile.ZoneDetailID);
+    if (!zoneDetail) return { nurses: [], specialists: [] };
+    const zoneId = zoneDetail.ZoneID;
+    // Join Account với NursingSpecialist để lấy đúng ZoneID
+    const nurses = allNurses.filter(acc => {
+      const n = nursingSpecialists.find(n => n.AccountID === acc.AccountID);
+      return n && n.ZoneID === zoneId;
+    });
+    const specialists = allSpecialists.filter(acc => {
+      const s = nursingSpecialists.find(s => s.AccountID === acc.AccountID);
+      return s && s.ZoneID === zoneId;
+    });
+    return { nurses, specialists };
+  }
+
   const handleViewDetail = (booking) => {
     setDetailData(booking);
     setSelectedNurse('');
@@ -59,18 +79,16 @@ const ManagerBookingTab = () => {
   };
   const handleAccept = () => {
     if (detailData && detailData.CustomizePackageID) {
-      // Là package, alert danh sách nurse/specialist cho từng task
       const tasks = serviceTasks.filter(task => task.Package_ServiceID === detailData.package_id);
       const result = tasks.map(task => {
-        const nurse = nurses.find(n => n.AccountID === Number(taskAssignments[task.ServiceTaskID]?.nurse));
-        const specialist = specialists.find(s => s.AccountID === Number(taskAssignments[task.ServiceTaskID]?.specialist));
+        const nurse = allNurses.find(n => n.AccountID === Number(taskAssignments[task.ServiceTaskID]?.nurse));
+        const specialist = allSpecialists.find(s => s.AccountID === Number(taskAssignments[task.ServiceTaskID]?.specialist));
         return `- ${task.Description}: Nurse: ${nurse ? nurse.full_name : 'Chưa chọn'}, Specialist: ${specialist ? specialist.full_name : 'Chưa chọn'}`;
       }).join('\n');
       alert(`Gán cho từng dịch vụ:\n${result}`);
     } else {
-      // Không phải package, giữ logic cũ
-      const nurse = nurses.find(n => n.AccountID === Number(selectedNurse));
-      const specialist = specialists.find(s => s.AccountID === Number(selectedSpecialist));
+      const nurse = allNurses.find(n => n.AccountID === Number(selectedNurse));
+      const specialist = allSpecialists.find(s => s.AccountID === Number(selectedSpecialist));
       alert(`Đã gán:\nNurse: ${nurse ? nurse.full_name : 'Chưa chọn'}\nSpecialist: ${specialist ? specialist.full_name : 'Chưa chọn'}\nStatus: ${selectedStatus}`);
     }
     setShowDetail(false);
@@ -126,6 +144,8 @@ const ManagerBookingTab = () => {
       {showDetail && detailData && (() => {
         const { careProfile, account, service, packageInfo } = getBookingDetail(detailData);
         const isPackage = !!detailData.CustomizePackageID;
+        // Lọc nurse/specialist cùng khu vực
+        const { nurses, specialists } = getFilteredNursesSpecialists(careProfile);
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-8 relative max-h-[90vh] overflow-y-auto">
@@ -133,7 +153,7 @@ const ManagerBookingTab = () => {
               <h3 className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 mb-4">Chi tiết Booking #{detailData.BookingID}</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm mb-6">
                 <div className="font-medium text-gray-600">Khách hàng:</div>
-                <div>{careProfile?.Care_Name || '-'}</div>
+                <div>{careProfile?.ProfileName || '-'}</div>
                 <div className="font-medium text-gray-600">SĐT:</div>
                 <div>{careProfile?.PhoneNumber || '-'}</div>
                 <div className="font-medium text-gray-600">Địa chỉ:</div>

@@ -9,7 +9,7 @@ import serviceTypes from '@/mock/ServiceType';
 import customerPackages from '@/mock/CustomerPackage';
 
 function getBookingDetail(booking) {
-  const careProfile = careProfiles.find(c => c.CareID === booking.CareProfileID);
+  const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
   const account = accounts.find(a => a.AccountID === careProfile?.AccountID);
   let service = null;
   let packageInfo = null;
@@ -30,7 +30,7 @@ const BookingDetailModal = ({ booking, onClose }) => {
       <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-xl relative">
         <button className="absolute top-2 right-2 text-gray-500 hover:text-pink-500 text-xl" onClick={onClose}>&times;</button>
         <h3 className="text-xl font-bold mb-4">Chi tiết Booking #{booking.BookingID}</h3>
-        <div className="mb-2"><b>Khách hàng:</b> {careProfile?.Care_Name} ({account?.full_name})</div>
+        <div className="mb-2"><b>Khách hàng:</b> {careProfile?.ProfileName} ({account?.full_name})</div>
         <div className="mb-2"><b>Điện thoại:</b> {careProfile?.PhoneNumber}</div>
         <div className="mb-2"><b>Địa chỉ:</b> {careProfile?.Address}</div>
         <div className="mb-2"><b>Dịch vụ:</b> {packageInfo ? packageInfo.Name : (service?.ServiceName || '-')}</div>
@@ -112,7 +112,7 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
                   <p className="font-medium text-gray-800">{
                     (() => {
                       const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
-                      return careProfile?.Care_Name || '-';
+                      return careProfile?.ProfileName || '-';
                     })()
                   }</p>
                   <p className="text-sm text-gray-600">{

@@ -1,25 +1,25 @@
 const medicalNotes = [
   {
-    RecordID: 1,
-    BookingServiceID: 1,
-    NurseID: 1,
-    CareID: 1,
+    MedicalNoteID: 1,
+    CustomerTaskID: 1,
+    NursingID: 1,
+    CareProfileID: 1,
     Image: "note1.jpg",
     Note: "Bệnh nhân hồi phục tốt",
     CreatedAt: "2024-06-01T14:00:00Z",
-    Suggest: "Tiếp tục theo dõi huyết áp",
-    RelatedID: null
+    Advice: "Tiếp tục theo dõi huyết áp",
+    RelatedID: 1
   },
   {
-    RecordID: 2,
-    BookingServiceID: 2,
-    NurseID: 2,
-    CareID: 2,
+    MedicalNoteID: 2,
+    CustomerTaskID: 2,
+    NursingID: 2,
+    CareProfileID: 2,
     Image: "note2.jpg",
     Note: "Cần bổ sung dinh dưỡng",
     CreatedAt: "2024-06-02T15:00:00Z",
-    Suggest: "Bổ sung vitamin và khoáng chất",
-    RelatedID: 1
+    Advice: "Bổ sung vitamin và khoáng chất",
+    RelatedID: 2
   }
 ];
 
