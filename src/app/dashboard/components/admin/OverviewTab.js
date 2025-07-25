@@ -7,6 +7,9 @@ import careProfiles from '@/mock/CareProfile';
 import accounts from '@/mock/Account';
 import serviceTypes from '@/mock/ServiceType';
 import customerPackages from '@/mock/CustomerPackage';
+import customerTasks from '@/mock/CustomerTask';
+import serviceTasks from '@/mock/ServiceTask';
+import nursingSpecialists from '@/mock/NursingSpecialist';
 
 function getBookingDetail(booking) {
   const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
@@ -19,12 +22,27 @@ function getBookingDetail(booking) {
   } else if (booking.CareProfileID) {
     service = serviceTypes.find(s => s.ServiceID === booking.CareProfileID);
   }
-  return { careProfile, account, service, packageInfo };
+  // Lấy các dịch vụ con/lẻ thực tế từ CustomerTask
+  const customerTasksOfBooking = customerTasks.filter(t => t.BookingID === booking.BookingID);
+  const serviceTasksOfBooking = customerTasksOfBooking.map(task => {
+    const serviceTask = serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
+    const nurse = nursingSpecialists.find(n => n.NursingID === task.NursingID);
+    return {
+      ...serviceTask,
+      price: task.Price,
+      quantity: task.Quantity,
+      total: task.Total,
+      status: task.Status,
+      nurseName: nurse?.FullName,
+      nurseRole: nurse?.Major
+    };
+  });
+  return { careProfile, account, service, packageInfo, serviceTasksOfBooking };
 }
 
 const BookingDetailModal = ({ booking, onClose }) => {
   if (!booking) return null;
-  const { careProfile, account, service, packageInfo } = getBookingDetail(booking);
+  const { careProfile, account, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(booking);
   return (
     <div className="fixed inset-0 bg-black/30 flex items-center justify-center z-50">
       <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-xl relative">
@@ -34,11 +52,25 @@ const BookingDetailModal = ({ booking, onClose }) => {
         <div className="mb-2"><b>Điện thoại:</b> {careProfile?.PhoneNumber}</div>
         <div className="mb-2"><b>Địa chỉ:</b> {careProfile?.Address}</div>
         <div className="mb-2"><b>Dịch vụ:</b> {packageInfo ? packageInfo.Name : (service?.ServiceName || '-')}</div>
-        {packageInfo && <div className="mb-2"><b>Chi tiết gói:</b> {packageInfo.Description}</div>}
-        <div className="mb-2"><b>Ngày đặt:</b> {booking.booking_date ? new Date(booking.booking_date).toLocaleString('vi-VN') : '-'}</div>
-        <div className="mb-2"><b>Ngày thực hiện:</b> {booking.work_date ? new Date(booking.work_date).toLocaleString('vi-VN') : '-'}</div>
-        <div className="mb-2"><b>Giá tiền:</b> {booking.total_price?.toLocaleString('vi-VN') || '-'} VND</div>
-        <div className="mb-2"><b>Trạng thái:</b> <span className={`px-2 py-1 rounded text-xs font-bold ${booking.status === 'completed' ? 'bg-green-100 text-green-700' : booking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{booking.status === 'completed' ? 'Hoàn thành' : booking.status === 'pending' ? 'Đang xử lý' : 'Đã hủy'}</span></div>
+        {packageInfo && <div className="mb-2"><b>Mô tả gói:</b> {packageInfo.Description}</div>}
+        <div className="mb-2"><b>Ngày đặt:</b> {booking.CreatedAt ? new Date(booking.CreatedAt).toLocaleString('vi-VN') : '-'}</div>
+        <div className="mb-2"><b>Ngày thực hiện:</b> {booking.WorkDate ? new Date(booking.WorkDate).toLocaleString('vi-VN') : '-'}</div>
+        <div className="mb-2"><b>Trạng thái:</b> <span className={`px-2 py-1 rounded text-xs font-bold ${booking.Status === 'completed' ? 'bg-green-100 text-green-700' : booking.Status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'}`}>{booking.Status === 'completed' ? 'Hoàn thành' : booking.Status === 'pending' ? 'Đang xử lý' : 'Đã hủy'}</span></div>
+        <div className="mb-2"><b>Danh sách dịch vụ:</b></div>
+        <ul className="list-disc ml-6 mt-1">
+          {serviceTasksOfBooking.length === 0 && <li className="text-gray-400 text-xs">Không có dịch vụ.</li>}
+          {serviceTasksOfBooking.map((task, idx) => (
+            <li key={idx} className="text-sm">
+              {task?.Description} <span className="text-xs text-gray-500">({task?.price?.toLocaleString()}đ)</span>
+              {task.nurseName && (
+                <span className="ml-2 text-xs text-blue-700">- {task.nurseName} ({task.nurseRole})</span>
+              )}
+              {task.status && (
+                <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${task.status === 'active' ? 'bg-blue-100 text-blue-700' : task.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{task.status}</span>
+              )}
+            </li>
+          ))}
+        </ul>
         <div className="mt-4 text-right">
           <button className="px-4 py-2 rounded bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow" onClick={onClose}>Đóng</button>
         </div>
@@ -128,7 +160,7 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
                     })()
                   }</p>
                 </div>
-                <span className="text-blue-600 font-semibold">{booking.total_price?.toLocaleString('vi-VN') || '-'} VND</span>
+                <span className="text-blue-600 font-semibold">{booking.Amount?.toLocaleString('vi-VN') || '-'} VND</span>
               </button>
             )) : (
               <p className="text-gray-500 text-center">Chưa có booking nào</p>

@@ -18,39 +18,19 @@ const NurseMedicalNoteTab = ({ medicalNotes, patients }) => {
 
   // Hàm tìm booking gần nhất cho ghi chú (nếu MedicalNote không có BookingID)
   const findBookingForNote = (note) => {
-    // Lọc các booking của bệnh nhân này
-    const patientBookings = bookings.filter(b => b.CareProfileID === note.CareProfileID);
-    if (!patientBookings.length) return null;
-    // Tìm booking có work_date gần nhất trước hoặc bằng CreatedAt
-    if (!note.CreatedAt) return patientBookings[0];
-    const noteTime = new Date(note.CreatedAt).getTime();
-    let closest = null;
-    let minDiff = Infinity;
-    for (let b of patientBookings) {
-      if (!b.work_date) continue;
-      const bTime = new Date(b.work_date).getTime();
-      const diff = noteTime - bTime;
-      if (diff >= 0 && diff < minDiff) {
-        minDiff = diff;
-        closest = b;
-      }
-    }
-    return closest;
+    // Tìm booking gần nhất cho ghi chú (theo CareProfileID và thời gian)
+    return bookings
+      .filter(b => b.CareProfileID === note.CareProfileID)
+      .sort((a, b) => Math.abs(new Date(note.CreatedAt) - new Date(a.WorkDate)) - Math.abs(new Date(note.CreatedAt) - new Date(b.WorkDate)))[0];
   };
 
   // Hàm tìm dịch vụ con (ServiceTask) từ booking và CustomerTask
   const findServiceTaskForNote = (note, booking) => {
+    // Tìm dịch vụ con (ServiceTask) từ booking và CustomerTask
     if (!booking) return null;
-    // Lấy các customerTask của booking này
-    const tasks = customerTasks.filter(t => t.BookingID === booking.BookingID);
-    if (!tasks.length) return null;
-    // Nếu MedicalNote có ServiceTaskID thì tìm đúng, không thì lấy task đầu tiên
-    if (note.ServiceTaskID) {
-      const task = tasks.find(t => t.ServiceTaskID === note.ServiceTaskID);
-      if (task) return serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
-    }
-    // Nếu không có ServiceTaskID, lấy task đầu tiên
-    return serviceTasks.find(st => st.ServiceTaskID === tasks[0].ServiceTaskID);
+    const task = customerTasks.find(t => t.BookingID === booking.BookingID && t.CareProfileID === note.CareProfileID);
+    if (!task) return null;
+    return serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
   };
 
   return (
@@ -82,7 +62,7 @@ const NurseMedicalNoteTab = ({ medicalNotes, patients }) => {
                 <div className="mb-1 text-gray-700"><span className="font-semibold">Nội dung:</span> {note.Note}</div>
                 <div className="mb-1 text-gray-700"><span className="font-semibold">Lời khuyên:</span> {note.Advice}</div>
                 {booking && (
-                  <div className="mb-1 text-gray-600 text-sm"><span className="font-semibold">Booking:</span> #{booking.BookingID} ({booking.work_date ? new Date(booking.work_date).toLocaleString('vi-VN') : '-'})</div>
+                  <div className="mb-1 text-gray-600 text-sm"><span className="font-semibold">Booking:</span> #{booking.BookingID} ({booking.WorkDate ? new Date(booking.WorkDate).toLocaleString('vi-VN') : '-'})</div>
                 )}
                 {packageObj && (
                   <div className="mb-1 text-gray-600 text-sm"><span className="font-semibold">Gói dịch vụ:</span> {packageObj.Name}</div>
@@ -118,7 +98,7 @@ const NurseMedicalNoteTab = ({ medicalNotes, patients }) => {
               <div className="mb-2"><span className="font-semibold">Nội dung:</span> {selectedNote.Note}</div>
               <div className="mb-2"><span className="font-semibold">Lời khuyên:</span> {selectedNote.Advice}</div>
               {booking && (
-                <div className="mb-2"><span className="font-semibold">Booking:</span> #{booking.BookingID} ({booking.work_date ? new Date(booking.work_date).toLocaleString('vi-VN') : '-'})</div>
+                <div className="mb-2"><span className="font-semibold">Booking:</span> #{booking.BookingID} ({booking.WorkDate ? new Date(booking.WorkDate).toLocaleString('vi-VN') : '-'})</div>
               )}
               {packageObj && (
                 <div className="mb-2"><span className="font-semibold">Gói dịch vụ:</span> {packageObj.Name}</div>

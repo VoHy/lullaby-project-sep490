@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import careProfiles from '@/mock/CareProfile';
 import customerPackages from '@/mock/CustomerPackage';
+import customerTasks from '@/mock/CustomerTask';
 import serviceTasks from '@/mock/ServiceTask';
 
 const NurseBookingsTab = ({ nurseBookings }) => {
@@ -10,10 +11,21 @@ const NurseBookingsTab = ({ nurseBookings }) => {
   const getBookingDetail = (booking) => {
     const patient = careProfiles.find(p => p.CareProfileID === booking.CareProfileID);
     const customerPackage = customerPackages.find(pkg => pkg.CustomizePackageID === booking.CustomizePackageID);
-    const tasks = serviceTasks.filter(
-      t => t.Package_ServiceID === customerPackage?.ServiceID
+    // Lấy các dịch vụ con thực tế từ CustomerTask
+    const customerTasksOfBooking = customerTasks.filter(
+      t => t.BookingID === booking.BookingID
     );
-    return { patient, customerPackage, tasks };
+    const serviceTasksOfBooking = customerTasksOfBooking.map(task => {
+      const serviceTask = serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
+      return {
+        ...serviceTask,
+        price: task.Price,
+        quantity: task.Quantity,
+        total: task.Total,
+        status: task.Status
+      };
+    });
+    return { patient, customerPackage, serviceTasksOfBooking };
   };
 
   return (
@@ -44,11 +56,32 @@ const NurseBookingsTab = ({ nurseBookings }) => {
                 <tr key={b.BookingID} className="border-t hover:bg-purple-50 transition">
                   <td className="px-4 py-2 text-center font-semibold">#{b.BookingID}</td>
                   <td className="px-4 py-2 text-center">{patient?.ProfileName || '-'}</td>
-                  <td className="px-4 py-2 text-center">{customerPackage?.Name || '-'}</td>
-                  <td className="px-4 py-2 text-center">{b.booking_date ? new Date(b.booking_date).toLocaleDateString('vi-VN') : '-'}</td>
                   <td className="px-4 py-2 text-center">
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${b.status === 'completed' ? 'bg-green-100 text-green-700' : b.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>
-                      {b.status === 'completed' ? 'Hoàn thành' : b.status === 'pending' ? 'Chờ xác nhận' : 'Đã hủy'}
+                    {customerPackage?.Name
+                      ? customerPackage.Name
+                      : (
+                        (() => {
+                          const { serviceTasksOfBooking } = getBookingDetail(b);
+                          return serviceTasksOfBooking && serviceTasksOfBooking.length > 1
+                            ? (
+                              <ul className="space-y-1 inline-block text-left">
+                                {serviceTasksOfBooking.map((task, idx) => (
+                                  <li key={idx} className="flex items-center text-xs text-gray-800">
+                                    <span className="inline-block w-2 h-2 rounded-full bg-purple-400 mr-2"></span>
+                                    {task.Description}
+                                  </li>
+                                ))}
+                              </ul>
+                            )
+                            : (serviceTasksOfBooking[0]?.Description || '-');
+                        })()
+                      )
+                    }
+                  </td>
+                  <td className="px-4 py-2 text-center">{b.CreatedAt ? new Date(b.CreatedAt).toLocaleDateString('vi-VN') : '-'}</td>
+                  <td className="px-4 py-2 text-center">
+                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${b.Status === 'completed' ? 'bg-green-100 text-green-700' : b.Status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>
+                      {b.Status === 'completed' ? 'Hoàn thành' : b.Status === 'pending' ? 'Chờ xác nhận' : 'Đã hủy'}
                     </span>
                   </td>
                   <td className="px-4 py-2 text-center">
@@ -68,7 +101,7 @@ const NurseBookingsTab = ({ nurseBookings }) => {
 
       {/* Modal chi tiết booking */}
       {selectedBooking && (() => {
-        const { patient, customerPackage, tasks } = getBookingDetail(selectedBooking);
+        const { patient, customerPackage, serviceTasksOfBooking } = getBookingDetail(selectedBooking);
         return (
           <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-lg shadow-lg relative animate-fade-in">
@@ -83,32 +116,32 @@ const NurseBookingsTab = ({ nurseBookings }) => {
                 <span className="font-semibold">Địa chỉ:</span> {patient?.Address}
               </div>
               <div className="mb-3">
-                <span className="font-semibold">Gói dịch vụ:</span> {customerPackage?.Name}<br />
+                <span className="font-semibold">Gói dịch vụ:</span> {customerPackage?.Name || '-'}<br />
                 <span className="text-xs text-gray-500">{customerPackage?.Description}</span>
               </div>
               <div className="mb-3">
                 <span className="font-semibold">Dịch vụ chi tiết:</span>
                 <ul className="list-disc ml-6 mt-1">
-                  {tasks.length === 0 && <li className="text-gray-400 text-xs">Không có dịch vụ chi tiết.</li>}
-                  {tasks.map(task => (
-                    <li key={task.ServiceTaskID} className="text-sm">
-                      {task.Description} <span className="text-xs text-gray-500">({task.Price?.toLocaleString()}đ)</span>
+                  {serviceTasksOfBooking.length === 0 && <li className="text-gray-400 text-xs">Không có dịch vụ chi tiết.</li>}
+                  {serviceTasksOfBooking.map((task, idx) => (
+                    <li key={idx} className="text-sm">
+                      {task?.Description} <span className="text-xs text-gray-500">({task?.price?.toLocaleString()}đ)</span>
                     </li>
                   ))}
                 </ul>
               </div>
               <div className="mb-2">
-                <span className="font-semibold">Tổng tiền:</span> <span className="text-pink-600 font-bold">{selectedBooking.total_price?.toLocaleString()}đ</span>
+                <span className="font-semibold">Tổng tiền:</span> <span className="text-pink-600 font-bold">{selectedBooking.Amount?.toLocaleString()}đ</span>
               </div>
               <div className="mb-2">
-                <span className="font-semibold">Ngày đặt:</span> {selectedBooking.booking_date ? new Date(selectedBooking.booking_date).toLocaleString('vi-VN') : '-'}
+                <span className="font-semibold">Ngày đặt:</span> {selectedBooking.CreatedAt ? new Date(selectedBooking.CreatedAt).toLocaleString('vi-VN') : '-'}
               </div>
               <div className="mb-2">
-                <span className="font-semibold">Ngày làm việc:</span> {selectedBooking.work_date ? new Date(selectedBooking.work_date).toLocaleString('vi-VN') : '-'}
+                <span className="font-semibold">Ngày làm việc:</span> {selectedBooking.WorkDate ? new Date(selectedBooking.WorkDate).toLocaleString('vi-VN') : '-'}
               </div>
               <div>
-                <span className="font-semibold">Trạng thái:</span> <span className={`px-2 py-1 rounded-full text-xs font-semibold ${selectedBooking.status === 'completed' ? 'bg-green-100 text-green-700' : selectedBooking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>
-                  {selectedBooking.status === 'completed' ? 'Hoàn thành' : selectedBooking.status === 'pending' ? 'Chờ xác nhận' : 'Đã hủy'}
+                <span className="font-semibold">Trạng thái:</span> <span className={`px-2 py-1 rounded-full text-xs font-semibold ${selectedBooking.Status === 'completed' ? 'bg-green-100 text-green-700' : selectedBooking.Status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>
+                  {selectedBooking.Status === 'completed' ? 'Hoàn thành' : selectedBooking.Status === 'pending' ? 'Chờ xác nhận' : 'Đã hủy'}
                 </span>
               </div>
             </div>

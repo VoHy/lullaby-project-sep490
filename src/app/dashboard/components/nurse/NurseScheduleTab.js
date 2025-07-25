@@ -38,7 +38,8 @@ const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
 
   const days = getDaysInMonthGrid(currentMonth);
   const workDates = workSchedules.map(ws => ws.WorkDate.split('T')[0]);
-  const bookingDates = nurseBookings.map(b => b.work_date?.split('T')[0]).filter(Boolean);
+  // Sửa: lấy ngày booking từ WorkDate (theo mock mới)
+  const bookingDates = nurseBookings.map(b => b.WorkDate?.split('T')[0]).filter(Boolean);
 
   // Highlight ngày có ca trực, lịch hẹn, hoặc ngày nghỉ
   const isWork = (dStr) => workDates.includes(dStr);
@@ -60,13 +61,12 @@ const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
       });
     });
     // Lịch hẹn (Booking) chỉ lấy từ nurseBookings
-    nurseBookings.filter(b => b.work_date?.startsWith(selectedDate)).forEach(b => {
+    nurseBookings.filter(b => b.WorkDate?.startsWith(selectedDate)).forEach(b => {
       eventsOfDay.push({
         type: 'booking',
-        time: `${new Date(b.work_date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`,
+        time: b.WorkDate ? new Date(b.WorkDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '',
         label: `Lịch hẹn #${b.BookingID}`,
-        status: b.status,
-        patient: b.CareProfileID,
+        status: b.Status,
         bookingObj: b,
       });
     });
@@ -159,7 +159,7 @@ const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
                 `}
                 onClick={() => setSelectedEvent(ev)}
               >
-                <div>
+  <div>
                   {ev.type === 'work' ? (
                     <FaRegClock className="text-blue-500 text-lg" />
                   ) : ev.type === 'booking' ? (
@@ -202,8 +202,8 @@ const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
                   <div className="mb-2"><span className="font-semibold">Bệnh nhân:</span> {patient?.ProfileName}</div>
                   <div className="mb-2"><span className="font-semibold">Địa chỉ:</span> {patient?.Address}</div>
                   <div className="mb-2"><span className="font-semibold">Gói dịch vụ:</span> {customerPackage?.Name}</div>
-                  <div className="mb-2"><span className="font-semibold">Thời gian:</span> {b.work_date ? new Date(b.work_date).toLocaleString('vi-VN') : '-'}</div>
-                  <div className="mb-2"><span className="font-semibold">Trạng thái:</span> {b.status}</div>
+                  <div className="mb-2"><span className="font-semibold">Thời gian:</span> {b.WorkDate ? new Date(b.WorkDate).toLocaleString('vi-VN') : '-'}</div>
+                  <div className="mb-2"><span className="font-semibold">Trạng thái:</span> {b.Status}</div>
                 </div>
               );
             })()}

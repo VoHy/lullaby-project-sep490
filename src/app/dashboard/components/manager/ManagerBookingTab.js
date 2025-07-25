@@ -4,6 +4,7 @@ import accounts from '@/mock/Account';
 import careProfiles from '@/mock/CareProfile';
 import serviceTypes from '@/mock/ServiceType';
 import customerPackages from '@/mock/CustomerPackage';
+import customerTasks from '@/mock/CustomerTask';
 import serviceTasks from '@/mock/ServiceTask';
 import zoneDetails from '@/mock/Zone_Detail';
 import nursingSpecialists from '@/mock/NursingSpecialist';
@@ -26,10 +27,25 @@ function getBookingDetail(booking) {
   if (booking.CustomizePackageID) {
     packageInfo = customerPackages.find(p => p.CustomizePackageID === booking.CustomizePackageID);
     service = serviceTypes.find(s => s.ServiceID === packageInfo?.ServiceID);
-  } else if (booking.care_id) {
-    service = serviceTypes.find(s => s.ServiceID === booking.care_id);
+  } else if (booking.CareProfileID) {
+    service = serviceTypes.find(s => s.ServiceID === booking.CareProfileID);
   }
-  return { careProfile, account, service, packageInfo };
+  // Lấy các dịch vụ con/lẻ thực tế từ CustomerTask
+  const customerTasksOfBooking = customerTasks.filter(t => t.BookingID === booking.BookingID);
+  const serviceTasksOfBooking = customerTasksOfBooking.map(task => {
+    const serviceTask = serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
+    const nurse = nursingSpecialists.find(n => n.NursingID === task.NursingID);
+    return {
+      ...serviceTask,
+      price: task.Price,
+      quantity: task.Quantity,
+      total: task.Total,
+      status: task.Status,
+      nurseName: nurse?.FullName,
+      nurseRole: nurse?.Major
+    };
+  });
+  return { careProfile, account, service, packageInfo, serviceTasksOfBooking };
 }
 
 const ManagerBookingTab = () => {
@@ -63,7 +79,7 @@ const ManagerBookingTab = () => {
     setDetailData(booking);
     setSelectedNurse('');
     setSelectedSpecialist('');
-    setSelectedStatus(booking.status);
+    setSelectedStatus(booking.Status);
     setTaskAssignments({});
     setShowDetail(true);
   };
@@ -78,20 +94,24 @@ const ManagerBookingTab = () => {
     }));
   };
   const handleAccept = () => {
-    if (detailData && detailData.CustomizePackageID) {
-      const tasks = serviceTasks.filter(task => task.Package_ServiceID === detailData.package_id);
-      const result = tasks.map(task => {
-        const nurse = allNurses.find(n => n.AccountID === Number(taskAssignments[task.ServiceTaskID]?.nurse));
-        const specialist = allSpecialists.find(s => s.AccountID === Number(taskAssignments[task.ServiceTaskID]?.specialist));
-        return `- ${task.Description}: Nurse: ${nurse ? nurse.full_name : 'Chưa chọn'}, Specialist: ${specialist ? specialist.full_name : 'Chưa chọn'}`;
+    if (detailData) {
+      // Lấy các dịch vụ con thực tế của booking
+      const { serviceTasksOfBooking } = getBookingDetail(detailData);
+      const result = serviceTasksOfBooking.map(task => {
+        // Ưu tiên lấy nhân sự đã có, nếu chưa có thì lấy từ taskAssignments
+        const nurseName = task.nurseName
+          || (taskAssignments[task.ServiceTaskID]?.nurse
+            ? allNurses.find(n => n.AccountID === Number(taskAssignments[task.ServiceTaskID]?.nurse))?.full_name
+            : 'Chưa chọn');
+        const specialistName = task.nurseRole
+          || (taskAssignments[task.ServiceTaskID]?.specialist
+            ? allSpecialists.find(s => s.AccountID === Number(taskAssignments[task.ServiceTaskID]?.specialist))?.full_name
+            : 'Chưa chọn');
+        return `- ${task.Description}: Nurse: ${nurseName}, Specialist: ${specialistName}`;
       }).join('\n');
       alert(`Gán cho từng dịch vụ:\n${result}`);
-    } else {
-      const nurse = allNurses.find(n => n.AccountID === Number(selectedNurse));
-      const specialist = allSpecialists.find(s => s.AccountID === Number(selectedSpecialist));
-      alert(`Đã gán:\nNurse: ${nurse ? nurse.full_name : 'Chưa chọn'}\nSpecialist: ${specialist ? specialist.full_name : 'Chưa chọn'}\nStatus: ${selectedStatus}`);
+      setShowDetail(false);
     }
-    setShowDetail(false);
   };
 
   return (
@@ -109,7 +129,7 @@ const ManagerBookingTab = () => {
         </thead>
         <tbody className="divide-y divide-gray-200">
           {bookings.map(booking => {
-            const { careProfile, account, service, packageInfo } = getBookingDetail(booking);
+            const { careProfile, account, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(booking);
             return (
               <tr key={booking.BookingID} className="hover:bg-gray-50">
                 <td className="px-6 py-4">#{booking.BookingID}</td>
@@ -120,20 +140,36 @@ const ManagerBookingTab = () => {
                   <div className="text-xs text-gray-500">Email: {account?.email || '-'}</div>
                 </td>
                 <td className="px-6 py-4">
-                  {packageInfo ? packageInfo.Name : (service?.ServiceName || '-')}
+                  {packageInfo
+                    ? packageInfo.Name
+                    : (
+                      serviceTasksOfBooking && serviceTasksOfBooking.length > 1
+                        ? (
+                          <ul className="space-y-1">
+                            {serviceTasksOfBooking.map((task, idx) => (
+                              <li key={idx} className="flex items-center text-sm text-gray-800">
+                                <span className="inline-block w-2 h-2 rounded-full bg-purple-400 mr-2"></span>
+                                {task.Description}
+                              </li>
+                            ))}
+                          </ul>
+                        )
+                        : (serviceTasksOfBooking[0]?.Description || service?.ServiceName || '-')
+                    )
+                  }
                 </td>
                 <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                    booking.status === 'completed' ? 'bg-green-100 text-green-800' :
-                    booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                    booking.status === 'accepted' ? 'bg-blue-100 text-blue-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {statusOptions.find(opt => opt.value === booking.status)?.label || booking.status}
+                  <span className={` inline-block min-w-[80px] px-2 py-0.5 rounded-full text-xs font-semibold text-center shadow-sm 
+                  ${booking.Status === 'completed' ? 'bg-green-100 text-green-800' :
+                      booking.Status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                        booking.Status === 'accepted' ? 'bg-blue-100 text-blue-800' :
+                          'bg-red-100 text-red-800'
+                    }`}>
+                    {statusOptions.find(opt => opt.value === booking.Status)?.label || booking.Status}
                   </span>
                 </td>
                 <td className="px-6 py-4">
-                  <button onClick={() => handleViewDetail(booking)} className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded hover:shadow-lg">Xem chi tiết</button>
+                  <button onClick={() => handleViewDetail(booking)} className="min-w-[80px] px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded hover:shadow-sm">Xem chi tiết</button>
                 </td>
               </tr>
             );
@@ -142,7 +178,7 @@ const ManagerBookingTab = () => {
       </table>
       {/* Popup chi tiết booking */}
       {showDetail && detailData && (() => {
-        const { careProfile, account, service, packageInfo } = getBookingDetail(detailData);
+        const { careProfile, account, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(detailData);
         const isPackage = !!detailData.CustomizePackageID;
         // Lọc nurse/specialist cùng khu vực
         const { nurses, specialists } = getFilteredNursesSpecialists(careProfile);
@@ -162,17 +198,17 @@ const ManagerBookingTab = () => {
                 <div>{account?.email || '-'}</div>
                 <div className="font-medium text-gray-600">Dịch vụ:</div>
                 <div>{packageInfo ? packageInfo.Name : (service?.ServiceName || '-')}</div>
-                {packageInfo && <><div className="font-medium text-gray-600">Chi tiết gói:</div><div>{packageInfo.Description}</div></>}
+                {packageInfo && <><div className="font-medium text-gray-600">Mô tả gói:</div><div>{packageInfo.Description}</div></>}
                 <div className="font-medium text-gray-600">Ngày đặt:</div>
-                <div>{detailData.booking_date ? new Date(detailData.booking_date).toLocaleString('vi-VN') : '-'}</div>
+                <div>{detailData.CreatedAt ? new Date(detailData.CreatedAt).toLocaleString('vi-VN') : '-'}</div>
                 <div className="font-medium text-gray-600">Ngày làm việc:</div>
-                <div>{detailData.work_date ? new Date(detailData.work_date).toLocaleString('vi-VN') : '-'}</div>
+                <div>{detailData.WorkDate ? new Date(detailData.WorkDate).toLocaleString('vi-VN') : '-'}</div>
                 <div className="font-medium text-gray-600">Giá tiền:</div>
-                <div>{detailData.total_price?.toLocaleString('vi-VN') || '-'} VND</div>
+                <div>{detailData.Amount?.toLocaleString('vi-VN') || '-'} VND</div>
                 <div className="font-medium text-gray-600">Trạng thái:</div>
                 <div>
                   <select
-                    value={selectedStatus}
+                    value={selectedStatus || detailData.Status}
                     onChange={e => setSelectedStatus(e.target.value)}
                     className="px-2 py-1 rounded border"
                   >
@@ -182,6 +218,23 @@ const ManagerBookingTab = () => {
                   </select>
                 </div>
               </div>
+              <div className="mb-4">
+                <span className="font-semibold">Dịch vụ chi tiết:</span>
+                <ul className="list-disc ml-6 mt-1">
+                  {serviceTasksOfBooking.length === 0 && <li className="text-gray-400 text-xs">Không có dịch vụ chi tiết.</li>}
+                  {serviceTasksOfBooking.map((task, idx) => (
+                    <li key={idx} className="text-sm">
+                      {task?.Description} <span className="text-xs text-gray-500">({task?.price?.toLocaleString()}đ)</span>
+                      {task.nurseName && (
+                        <span className="ml-2 text-xs text-blue-700">- {task.nurseName} ({task.nurseRole})</span>
+                      )}
+                      {task.Status && (
+                        <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${task.Status === 'active' ? 'bg-blue-100 text-blue-700' : task.Status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{task.Status}</span>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
               {isPackage ? (
                 <div className="mb-6">
                   <h4 className="font-semibold mb-2">Danh sách dịch vụ trong gói:</h4>
@@ -189,45 +242,54 @@ const ManagerBookingTab = () => {
                     <thead>
                       <tr className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700">
                         <th className="p-2 text-left">Dịch vụ</th>
-                        <th className="p-2 text-left">Mô tả</th>
-                        <th className="p-2 text-left">Chọn Nurse</th>
-                        <th className="p-2 text-left">Chọn Specialist</th>
+                        <th className="p-2 text-left">Giá</th>
+                        <th className="p-2 text-left">Nhân sự</th>
+                        <th className="p-2 text-left">Vai trò</th>
+                        <th className="p-2 text-left">Trạng thái</th>
                       </tr>
                     </thead>
                     <tbody>
-                      {serviceTasks.filter(task => task.Package_ServiceID === detailData.package_id).map(task => {
-                        const childService = serviceTypes.find(s => s.ServiceID === task.Child_ServiceID);
-                        return (
-                          <tr key={task.ServiceTaskID}>
-                            <td className="p-2">{childService?.ServiceName || '-'}</td>
-                            <td className="p-2">{task.Description}</td>
-                            <td className="p-2">
-                              <select
-                                value={taskAssignments[task.ServiceTaskID]?.nurse || ''}
-                                onChange={e => handleTaskAssign(task.ServiceTaskID, 'nurse', e.target.value)}
-                                className="px-2 py-1 rounded border"
-                              >
-                                <option value="">Chọn nurse</option>
-                                {nurses.map(n => (
-                                  <option key={n.AccountID} value={n.AccountID}>{n.full_name}</option>
-                                ))}
-                              </select>
-                            </td>
-                            <td className="p-2">
-                              <select
-                                value={taskAssignments[task.ServiceTaskID]?.specialist || ''}
-                                onChange={e => handleTaskAssign(task.ServiceTaskID, 'specialist', e.target.value)}
-                                className="px-2 py-1 rounded border"
-                              >
-                                <option value="">Chọn specialist</option>
-                                {specialists.map(s => (
-                                  <option key={s.AccountID} value={s.AccountID}>{s.full_name}</option>
-                                ))}
-                              </select>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                      {serviceTasksOfBooking.map((task, idx) => (
+                        <tr key={task.ServiceTaskID}>
+                          <td className="p-2">{task?.Description}</td>
+                          <td className="p-2">{task?.price?.toLocaleString()}đ</td>
+                          <td className="p-2">
+                            {task.nurseName
+                              ? task.nurseName
+                              : (
+                                <select
+                                  value={taskAssignments[task.ServiceTaskID]?.nurse || ''}
+                                  onChange={e => handleTaskAssign(task.ServiceTaskID, 'nurse', e.target.value)}
+                                  className="px-2 py-1 rounded border"
+                                >
+                                  <option value="">Chọn nurse</option>
+                                  {nurses.map(n => (
+                                    <option key={n.AccountID} value={n.AccountID}>{n.full_name}</option>
+                                  ))}
+                                </select>
+                              )
+                            }
+                          </td>
+                          <td className="p-2">
+                            {task.nurseRole
+                              ? task.nurseRole
+                              : (
+                                <select
+                                  value={taskAssignments[task.ServiceTaskID]?.specialist || ''}
+                                  onChange={e => handleTaskAssign(task.ServiceTaskID, 'specialist', e.target.value)}
+                                  className="px-2 py-1 rounded border"
+                                >
+                                  <option value="">Chọn specialist</option>
+                                  {specialists.map(s => (
+                                    <option key={s.AccountID} value={s.AccountID}>{s.full_name}</option>
+                                  ))}
+                                </select>
+                              )
+                            }
+                          </td>
+                          <td className="p-2">{task.status}</td>
+                        </tr>
+                      ))}
                     </tbody>
                   </table>
                 </div>
