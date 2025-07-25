@@ -22,7 +22,7 @@ export default function Dashboard() {
         router.push('/auth/login');
         return;
       }
-      
+
       const currentUser = authService.getCurrentUser();
       setUser(currentUser);
       setLoading(false);
@@ -47,11 +47,11 @@ export default function Dashboard() {
       case 1: // Admin
         return <AdminDashboard user={user} initialTab={tabParam} />;
       case 2: // Nurse
-        return <NurseDashboard user={user} />;
+        return <NurseDashboard user={user} initialTab={tabParam} />;
       case 4: // Manager
         return <ManagerDashboard user={user} />;
       case 5: // Specialist
-        return <SpecialistDashboard user={user} />;
+        return <NurseDashboard user={user} initialTab={tabParam} />;
       default:
         return (
           <div className="text-center py-10">

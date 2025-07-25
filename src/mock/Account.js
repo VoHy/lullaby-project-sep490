@@ -144,7 +144,7 @@ const accounts = [
   },
   {
     AccountID: 12,
-    full_name: "Nurse User",
+    full_name: "Nurse User3",
     phone_number: "0933444555",
     email: "nurse3@example.com",
     password: "hashedpassword4",
@@ -157,7 +157,7 @@ const accounts = [
   },
   {
     AccountID: 13,
-    full_name: "Nurse User2",
+    full_name: "Nurse User4",
     phone_number: "0933444555",
     email: "nurse4@example.com",
     password: "hashedpassword4",

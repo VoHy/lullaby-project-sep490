@@ -2,26 +2,32 @@ const holidays = [
   {
     HolidayID: 1,
     HolidayName: "Tết Nguyên Đán",
-    StartDate: "2024-02-08T00:00:00Z",
-    EndDate: "2024-02-14T23:59:59Z"
+    StartDate: "2025-01-28",
+    EndDate: "2025-02-04" // nghỉ đến hết mùng 4
   },
   {
     HolidayID: 2,
-    HolidayName: "Lễ Quốc Khánh",
-    StartDate: "2024-09-02T00:00:00Z",
-    EndDate: "2024-09-02T23:59:59Z"
+    HolidayName: "Giỗ Tổ Hùng Vương",
+    StartDate: "2025-04-01",
+    EndDate: "2025-04-01"
   },
   {
     HolidayID: 3,
-    HolidayName: "Tết Nguyên Đán",
-    StartDate: "2024-02-08T00:00:00Z",
-    EndDate: "2024-02-14T23:59:59Z"
+    HolidayName: "Ngày Giải phóng miền Nam",
+    StartDate: "2025-04-30",
+    EndDate: "2025-05-01" // nghỉ 2 ngày 30/4 và 1/5
   },
   {
     HolidayID: 4,
-    HolidayName: "Tết Nguyên Đán",
-    StartDate: "2024-02-08T00:00:00Z",
-    EndDate: "2024-02-14T23:59:59Z"
+    HolidayName: "Ngày Quốc tế Lao động",
+    StartDate: "2025-05-01",
+    EndDate: "2025-05-01"
+  },
+  {
+    HolidayID: 5,
+    HolidayName: "Lễ Quốc Khánh",
+    StartDate: "2025-09-02",
+    EndDate: "2025-09-03" // nghỉ 2 ngày 2/9 và 3/9
   }
 ];
 

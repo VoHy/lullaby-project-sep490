@@ -16,7 +16,7 @@ export default function TeamPage() {
   }, []);
 
   const nurses = nursingSpecialists.filter(m => m.NursingID);
-  const specialists = nursingSpecialists.filter(m => m.SpecialistID);
+  const specialists = nursingSpecialists.filter(m => m.NursingID);
 
   // Map Address hoặc ZoneID sang Zone_name
   const getZoneName = (addressOrZoneID) => {
@@ -97,7 +97,7 @@ export default function TeamPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-8">
           {filteredSpecialists.map((member, idx) => (
             <motion.div
-              key={`specialist-${member.SpecialistID}`}
+              key={`specialist-${member.NursingID}`}
               className="bg-white rounded-xl shadow p-6 flex flex-col items-center hover:shadow-lg transition"
               initial={{ opacity: 0, y: 40 }}
               animate={{ opacity: 1, y: 0 }}
@@ -105,10 +105,10 @@ export default function TeamPage() {
             >
               <img
                 src={member.avatar_url || '/default-avatar.png'}
-                alt={member.Specialist_Name}
+                alt={member.FullName}
                 className="w-24 h-24 rounded-full object-cover mb-4 border-4 border-pink-200"
               />
-              <h3 className="text-xl font-semibold text-pink-700 mb-1">{member.Specialist_Name}</h3>
+              <h3 className="text-xl font-semibold bg-gradient-to-r from-purple-500 to-pink-500 mb-1">{member.FullName}</h3>
               <p className="text-gray-500 text-sm mb-2">{member.Major}</p>
               <p className="text-gray-600 text-center text-sm mb-2">Kinh nghiệm: {member.Experience} năm</p>
               <p className="text-gray-500 text-xs mb-2">{member.Slogan}</p>
@@ -125,7 +125,7 @@ export default function TeamPage() {
                 <div className="w-24 h-24 rounded-full border-4 border-pink-300 overflow-hidden mb-2">
                   <img src={detailData.avatar_url || '/default-avatar.png'} alt="avatar" className="object-cover w-full h-full" />
                 </div>
-                <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 mb-1">{detailData.Nurse_Name || detailData.Specialist_Name}</h3>
+                <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 mb-1">{detailData.FullName}</h3>
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${detailData.Status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{detailData.Status || 'Không có'}</span>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">

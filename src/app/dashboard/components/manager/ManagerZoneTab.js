@@ -16,8 +16,8 @@ const ManagerZoneTab = () => {
 
     // Lọc nurse và specialist theo khu vực và địa chỉ
     useEffect(() => {
-        let nurses = nursingSpecialists.filter(n => n.NursingID);
-        let specialists = nursingSpecialists.filter(s => s.SpecialistID);
+        let nurses = nursingSpecialists.filter(n => n.NursingID && n.Major === 'Y tá');
+        let specialists = nursingSpecialists.filter(s => s.NursingID && s.Major === 'Chuyên gia');
         if (selectedZone) {
             nurses = nurses.filter(n => n.ZoneID == selectedZone);
             specialists = specialists.filter(s => s.ZoneID == selectedZone);
@@ -27,7 +27,6 @@ const ManagerZoneTab = () => {
             nurses = nurses.filter(n => n.Address && n.Address.toLowerCase().includes(lowerTerm));
             specialists = specialists.filter(s => s.Address && s.Address.toLowerCase().includes(lowerTerm));
         }
-        // Nếu không chọn khu vực và không search, render toàn bộ
         setZoneNurses(nurses);
         setZoneSpecialists(specialists);
     }, [selectedZone, searchTerm]);
@@ -85,7 +84,7 @@ const ManagerZoneTab = () => {
                                 ) : (
                                     zoneNurses.map(n => (
                                         <tr key={n.NursingID} className="hover:bg-purple-50 transition cursor-pointer">
-                                            <td className="py-2 px-3 font-bold">{n.Nurse_Name}</td>
+                                            <td className="py-2 px-3 font-bold">{n.FullName}</td>
                                             <td className="py-2 px-3">{n.Address}</td>
                                             <td className="py-2 px-3">{n.Experience} năm</td>
                                             <td className="py-2 px-3">{n.Status}</td>
@@ -117,8 +116,8 @@ const ManagerZoneTab = () => {
                                     <tr><td colSpan={5} className="text-center text-gray-500 py-4">Không có specialist nào phù hợp.</td></tr>
                                 ) : (
                                     zoneSpecialists.map(s => (
-                                        <tr key={s.SpecialistID} className="hover:bg-purple-50 transition cursor-pointer">
-                                            <td className="py-2 px-3 font-bold">{s.Specialist_Name}</td>
+                                        <tr key={s.NursingID} className="hover:bg-purple-50 transition cursor-pointer">
+                                            <td className="py-2 px-3 font-bold">{s.FullName}</td>
                                             <td className="py-2 px-3">{s.Address}</td>
                                             <td className="py-2 px-3">{s.Experience} năm</td>
                                             <td className="py-2 px-3">{s.Status}</td>
@@ -145,7 +144,7 @@ const ManagerZoneTab = () => {
                                 className="w-24 h-24 rounded-full object-cover border-4 border-purple-200 shadow mb-2"
                             />
                             <h3 className="text-xl font-bold mb-1 text-purple-700">
-                                {detailModal.type === 'nurse' ? detailModal.data.Nurse_Name : detailModal.data.Specialist_Name}
+                                {detailModal.type === 'nurse' ? detailModal.data.FullName : detailModal.data.FullName}
                             </h3>
                             <span className="text-xs text-gray-500 mb-2">{detailModal.type === 'nurse' ? 'Nurse' : 'Specialist'}</span>
                         </div>

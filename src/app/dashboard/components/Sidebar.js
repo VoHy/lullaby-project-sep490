@@ -7,8 +7,8 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChartBar, faUsers, faUserNurse, faFileAlt, faCog, faCalendarAlt,
   faUser, faMoneyBill, faHospital, faNotesMedical, faChevronLeft,
-  faChevronRight, faSignOutAlt, faBars, faHome, faStethoscope,
-  faClipboardList, faUserMd, faTasks, faBlog, faNewspaper, faCalendarTimes, faCalendarCheck, faMapLocationDot
+  faChevronRight, faSignOutAlt, faBars, faHome, faStethoscope
+  , faUserMd, faNewspaper, faCalendarCheck, faMapLocationDot, faBell
 } from '@fortawesome/free-solid-svg-icons';
 
 const Sidebar = ({ user }) => {
@@ -32,10 +32,14 @@ const Sidebar = ({ user }) => {
       { name: 'Cài đặt Hệ thống', path: '/dashboard?tab=settings', icon: faCog, color: 'text-gray-500', tab: 'settings' },
     ],
     2: [ // Nurse
-      { name: 'Tổng quan', path: '/dashboard', icon: faChartBar, color: 'text-purple-500' },
-      { name: 'Hồ sơ cá nhân', path: '/profile', icon: faUser, color: 'text-pink-500' },
-      { name: 'Hồ sơ bệnh nhân', path: '/profile/patient', icon: faNotesMedical, color: 'text-blue-500' },
-      { name: 'Lịch hẹn', path: '/dashboard/appointments', icon: faCalendarAlt, color: 'text-green-500' },
+      { name: 'Tổng quan', path: '/dashboard?tab=overview', icon: faChartBar, color: 'text-purple-500', tab: 'overview' },
+      { name: 'Lịch của tôi', path: '/dashboard?tab=schedule', icon: faCalendarAlt, color: 'text-green-500', tab: 'schedule' },
+      { name: 'Lịch sử lịch hẹn', path: '/dashboard?tab=bookings', icon: faStethoscope, color: 'text-red-500', tab: 'bookings' },
+      { name: 'Hồ sơ khách hàng', path: '/dashboard?tab=patients', icon: faNotesMedical, color: 'text-blue-500', tab: 'patients' },
+      { name: 'Ghi chú y tế', path: '/dashboard?tab=medicalnote', icon: faNotesMedical, color: 'text-blue-500', tab: 'medicalnote' },
+      { name: 'Thông báo', path: '/dashboard?tab=notifications', icon: faBell, color: 'text-green-500', tab: 'notifications' },
+      { name: 'Hồ sơ cá nhân', path: '/dashboard?tab=profile', icon: faUser, color: 'text-pink-500', tab: 'profile' },
+
     ],
     4: [ // Manager
       { name: 'Quản lý Nurse', path: '/dashboard?tab=nurse', icon: faUserNurse, color: 'text-blue-500', tab: 'nurse' },
@@ -44,10 +48,13 @@ const Sidebar = ({ user }) => {
       { name: 'Quản lý Khu vực', path: '/dashboard?tab=zone', icon: faMapLocationDot, color: 'text-red-500', tab: 'zone' },
     ],
     5: [ // Specialist
-      { name: 'Tổng quan', path: '/dashboard', icon: faChartBar, color: 'text-purple-500' },
-      { name: 'Hồ sơ cá nhân', path: '/profile', icon: faUser, color: 'text-pink-500' },
-      { name: 'Hồ sơ bệnh nhân', path: '/profile/patient', icon: faNotesMedical, color: 'text-blue-500' },
-      { name: 'Ca bệnh', path: '/dashboard/cases', icon: faStethoscope, color: 'text-red-500' },
+      { name: 'Tổng quan', path: '/dashboard?tab=overview', icon: faChartBar, color: 'text-purple-500', tab: 'overview' },
+      { name: 'Lịch của tôi', path: '/dashboard?tab=schedule', icon: faCalendarAlt, color: 'text-green-500', tab: 'schedule' },
+      { name: 'Lịch sử lịch hẹn', path: '/dashboard?tab=bookings', icon: faStethoscope, color: 'text-red-500', tab: 'bookings' },
+      { name: 'Hồ sơ khách hàng', path: '/dashboard?tab=patients', icon: faNotesMedical, color: 'text-blue-500', tab: 'patients' },
+      { name: 'Ghi chú y tế', path: '/dashboard?tab=medicalnote', icon: faNotesMedical, color: 'text-blue-500', tab: 'medicalnote' },
+      { name: 'Thông báo', path: '/dashboard?tab=notifications', icon: faBell, color: 'text-green-500', tab: 'notifications' },
+      { name: 'Hồ sơ cá nhân', path: '/dashboard?tab=profile', icon: faUser, color: 'text-pink-500', tab: 'profile' },
     ],
   };
 
@@ -58,14 +65,14 @@ const Sidebar = ({ user }) => {
     const roleMap = {
       1: 'Administrator',
       2: 'Nurse',
-      4: 'Manager', 
+      4: 'Manager',
       5: 'Specialist'
     };
     return roleMap[role_id] || 'User';
   };
 
   return (
-    <div 
+    <div
       className={`
         relative h-screen bg-gradient-to-b from-pink-50 via-purple-50 to-rose-50 
         shadow-2xl transition-all duration-300 ease-in-out
@@ -104,8 +111,8 @@ const Sidebar = ({ user }) => {
               text-purple-600 hover:text-purple-700 shadow-md hover:shadow-lg
             `}
           >
-            <FontAwesomeIcon 
-              icon={isCollapsed ? faChevronRight : faChevronLeft} 
+            <FontAwesomeIcon
+              icon={isCollapsed ? faChevronRight : faChevronLeft}
               className="text-lg"
             />
           </button>
@@ -215,7 +222,7 @@ const UserProfile = ({ user, getRoleName }) => {
 
   return (
     <div className="relative" ref={dropdownRef}>
-      <div 
+      <div
         className="flex items-center p-3 rounded-xl bg-gradient-to-r from-white/50 to-pink-50/50 border border-pink-200/30 cursor-pointer hover:shadow-md transition-all duration-300"
         onClick={() => setDropdownOpen(!dropdownOpen)}
       >
@@ -233,8 +240,8 @@ const UserProfile = ({ user, getRoleName }) => {
             {getRoleName(user?.role_id)}
           </p>
         </div>
-        <FontAwesomeIcon 
-          icon={faChevronRight} 
+        <FontAwesomeIcon
+          icon={faChevronRight}
           className={`text-gray-400 text-xs transition-transform duration-300 ${dropdownOpen ? 'rotate-90' : ''}`}
         />
       </div>

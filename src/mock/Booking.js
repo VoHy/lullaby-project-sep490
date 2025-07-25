@@ -3,13 +3,13 @@ const bookings = [
     BookingID: 1,
     CareProfileID: 1,
     CustomizePackageID: 1,
-    booking_date: "2024-06-01T10:00:00Z",
+    booking_date: "2025-07-25T08:00:00Z",
     total_price: 900000,
     status: "completed",
     package_id: 1,
-    created_at: "2024-06-01T10:00:00Z",
-    updated_at: "2024-06-01T12:00:00Z",
-    work_date: "2024-06-10T08:00:00Z"
+    created_at: "2025-07-25T07:00:00Z",
+    updated_at: "2025-07-25T08:00:00Z",
+    work_date: "2025-07-25T07:00:00Z"
   },
   {   
     BookingID: 2,
@@ -27,13 +27,13 @@ const bookings = [
     BookingID: 3,
     CareProfileID: 3,
     CustomizePackageID: 3,
-    booking_date: "2024-06-03T14:00:00Z",
+    booking_date: "2025-07-24T06:00:00Z",
     total_price: 1200000,
-    status: "completed",
+    status: "pending",
     package_id: 3,
-    created_at: "2024-06-03T14:00:00Z",
-    updated_at: "2024-06-03T16:00:00Z",
-    work_date: "2024-06-12T10:00:00Z"
+    created_at: "2025-07-24T07:00:00Z",
+    updated_at: "2025-07-24T08:00:00Z",
+    work_date: "2025-07-24T06:00:00Z"
   },
   {
     BookingID: 4,
@@ -51,13 +51,13 @@ const bookings = [
     BookingID: 5,
     CareProfileID: 5,
     CustomizePackageID: 5,
-    booking_date: "2024-06-05T15:00:00Z",
+    booking_date: "2025-07-25T15:00:00Z",
     total_price: 3200000,
     status: "pending",
     package_id: 5,
-    created_at: "2024-06-05T15:00:00Z",
-    updated_at: "2024-06-05T17:00:00Z",
-    work_date: "2024-06-14T07:00:00Z"
+    created_at: "2025-07-25T15:00:00Z",
+    updated_at: "2025-07-25T17:00:00Z",
+    work_date: "2025-07-25T07:00:00Z"
     },
 ];
 

@@ -43,7 +43,7 @@ const ManagerDashboard = ({ user }) => {
     // Lọc nurse
     const nurses = nursingSpecialists.filter(n => n.NursingID && n.ZoneID == selectedZone);
     // Lọc specialist
-    const specialists = nursingSpecialists.filter(s => s.SpecialistID && s.ZoneID == selectedZone);
+    const specialists = nursingSpecialists.filter(s => s.NursingID && s.ZoneID == selectedZone);
     setZoneNurses(nurses);
     setZoneSpecialists(specialists);
   }, [selectedZone]);

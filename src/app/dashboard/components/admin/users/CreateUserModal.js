@@ -9,6 +9,7 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
   const [phone, setPhone] = useState('');
   const [role, setRole] = useState('');
   const [avatarPreview, setAvatarPreview] = useState('');
+  const [password, setPassword] = useState('');
   // Thông tin chuyên môn
   const [zoneId, setZoneId] = useState('');
   const [gender, setGender] = useState('');
@@ -35,6 +36,13 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
     setAvatarUrl(e.target.value);
     setAvatarPreview('');
   };
+  const handleRoleChange = (e) => {
+    const value = e.target.value;
+    setRole(value);
+    if (value === 'nurse') setMajor('Y tá');
+    else if (value === 'specialist') setMajor('Chuyên gia');
+    else setMajor('');
+  };
   const handleSubmit = (e) => {
     e.preventDefault();
     const accountData = {
@@ -45,6 +53,7 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
       role_id: role === 'nurse' ? 2 : 5,
       role_name: role === 'nurse' ? 'Y tá' : 'Chuyên gia',
       status: 'active',
+      password,
     };
     let nursingSpecialistData = null;
     if (role === 'nurse' || role === 'specialist') {
@@ -61,27 +70,28 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
     }
     if (onSubmit) onSubmit(accountData, nursingSpecialistData);
     // Reset form
-    setAvatarUrl(''); setFullName(''); setEmail(''); setPhone(''); setRole(''); setAvatarPreview('');
+    setAvatarUrl(''); setFullName(''); setEmail(''); setPhone(''); setRole(''); setAvatarPreview(''); setPassword('');
     setZoneId(''); setGender(''); setDob(''); setMajor(''); setExperience(''); setSlogan(''); setAddress('');
     if (onClose) onClose();
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm overflow-auto">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-4 md:p-6 relative my-6 mx-2">
-        {/* Nút đóng */}
-        <button
-          className="absolute top-2 right-2 text-gray-400 hover:text-pink-500 text-2xl font-bold z-10"
-          onClick={onClose}
-          aria-label="Đóng"
-          type="button"
-        >
-          &times;
-        </button>
-        {/* Tiêu đề modal */}
-        <h3 className="text-xl font-bold mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">Tạo tài khoản mới</h3>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 items-start">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto p-2 md:p-4 relative my-6 mx-2">
+        {/* Sticky tiêu đề + nút đóng */}
+        <div className="top-0 bg-white z-10 flex items-center justify-between border-b border-gray-100 pb-2 mb-2">
+          <h3 className="text-lg md:text-xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 flex-1">Tạo tài khoản mới</h3>
+          <button
+            className="ml-2 text-gray-400 hover:text-pink-500 text-2xl font-bold"
+            onClick={onClose}
+            aria-label="Đóng"
+            type="button"
+          >
+            &times;
+          </button>
+        </div>
+        <form onSubmit={handleSubmit} className="space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 items-start">
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
@@ -117,12 +127,23 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
                 />
               </div>
               <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
+                <input
+                  type="password"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-400"
+                  placeholder="Nhập mật khẩu"
+                  value={password}
+                  onChange={e => setPassword(e.target.value)}
+                />
+              </div>
+              <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Vai trò</label>
                 <select
                   required
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-400"
                   value={role}
-                  onChange={e => setRole(e.target.value)}
+                  onChange={handleRoleChange}
                 >
                   <option value="" hidden>Chọn vai trò</option>
                   <option value="nurse">Y tá</option>
@@ -131,7 +152,7 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
               </div>
             </div>
             {/* Avatar */}
-            <div className="flex flex-col items-center gap-2 bg-purple-50 border border-purple-100 rounded-lg p-4 shadow-sm">
+            <div className="flex flex-col items-center gap-1 bg-purple-50 border border-purple-100 rounded-lg p-2 shadow-sm">
               <label className="block text-xs font-medium mb-1 text-gray-600">Ảnh đại diện</label>
               <div className="relative w-20 h-20 mb-1">
                 <img src={avatarPreview || avatarUrl || "/images/avatar1.jpg"} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-pink-200 mx-auto" />
@@ -153,9 +174,9 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
           </div>
           {/* Card chuyên môn full width */}
           {(role === 'nurse' || role === 'specialist') && (
-            <div className="bg-purple-50 border border-purple-200 rounded-lg p-3 mt-2 space-y-2 shadow-sm">
+            <div className="bg-purple-50 border border-purple-200 rounded-lg p-2 mt-2 space-y-2 shadow-sm">
               <div className="font-semibold text-purple-700 mb-1 text-base">Thông tin chuyên môn</div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-1">
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Khu vực làm việc (Quận)</label>
                   <select
@@ -202,7 +223,7 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
                     className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-300"
                     placeholder="Nhập chuyên ngành"
                     value={major}
-                    onChange={e => setMajor(e.target.value)}
+                    readOnly
                   />
                 </div>
                 <div>

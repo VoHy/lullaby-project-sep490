@@ -52,7 +52,7 @@ const AdminZoneTab = () => {
 
   // Xem nhân sự theo khu vực
   const getNursesByZone = (zoneId) => nursingSpecialists.filter(n => n.ZoneID === zoneId && n.NursingID);
-  const getSpecialistsByZone = (zoneId) => nursingSpecialists.filter(n => n.ZoneID === zoneId && n.SpecialistID);
+  const getSpecialistsByZone = (zoneId) => nursingSpecialists.filter(n => n.ZoneID === zoneId && n.NursingID);
 
   return (
     <div>
@@ -146,12 +146,12 @@ const AdminZoneTab = () => {
             <div className="mb-2 font-semibold">Y tá:</div>
             <ul className="mb-4 list-disc pl-6">
               {getNursesByZone(selectedZone).length === 0 && <li className="text-gray-400">Không có y tá nào</li>}
-              {getNursesByZone(selectedZone).map(n => <li key={n.AccountID}>{n.Nurse_Name} <span className="text-xs text-gray-500">({n.Address})</span></li>)}
+              {getNursesByZone(selectedZone).map(n => <li key={n.AccountID}>{n.FullName} <span className="text-xs text-gray-500">({n.Address})</span></li>)}
             </ul>
             <div className="mb-2 font-semibold">Chuyên gia:</div>
             <ul className="mb-2 list-disc pl-6">
               {getSpecialistsByZone(selectedZone).length === 0 && <li className="text-gray-400">Không có chuyên gia nào</li>}
-              {getSpecialistsByZone(selectedZone).map(s => <li key={s.AccountID}>{s.Specialist_Name} <span className="text-xs text-gray-500">({s.Address})</span></li>)}
+              {getSpecialistsByZone(selectedZone).map(s => <li key={s.AccountID}>{s.FullName} <span className="text-xs text-gray-500">({s.Address})</span></li>)}
             </ul>
           </div>
         </div>

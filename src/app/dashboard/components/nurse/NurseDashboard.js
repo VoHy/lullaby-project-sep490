@@ -1,110 +1,105 @@
 'use client';
 
-import bookingService from '@/services/api/bookingService';
-import careProfileService from '@/services/api/careProfileService';
-import feedbackService from '@/services/api/feedbackService';
-import { useEffect, useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import bookingsMock from '@/mock/Booking';
+import careProfilesMock from '@/mock/CareProfile';
+import notificationsMock from '@/mock/Notification';
+import accounts from '@/mock/Account';
+import NurseOverviewTab from './NurseOverviewTab';
+import NurseScheduleTab from './NurseScheduleTab';
+import NurseBookingsTab from './NurseBookingsTab';
+import NursePatientsTab from './NursePatientsTab';
+import NurseNotificationsTab from './NurseNotificationsTab';
+import NurseProfileTab from './NurseProfileTab';
+import workSchedulesMock from '@/mock/WorkSchedule';
+import nursingSpecialists from '@/mock/NursingSpecialist';
+import NurseMedicalNoteTab from './NurseMedicalNoteTab';
+import medicalNotesMock from '@/mock/MedicalNote';
+import customerTasks from '@/mock/CustomerTask';
 
-const NurseDashboard = ({ user }) => {
-  const [bookings, setBookings] = useState([]);
-  const [careProfiles, setCareProfiles] = useState([]);
-  const [feedbacks, setFeedbacks] = useState([]);
+const NurseDashboard = ({ initialTab, user }) => {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState(initialTab || 'overview');
+
+  // Lấy NursingSpecialist theo user.AccountID
+  const specialist = nursingSpecialists.find(n => n.AccountID === user?.AccountID);
+  const nursingID = specialist?.NursingID;
+  const major = specialist?.Major;
+
+  // Chỉ lấy booking mà user phụ trách ít nhất 1 dịch vụ con (CustomerTask)
+  const userCustomerTasks = customerTasks.filter(task => task.NursingID === nursingID);
+  const bookingIDs = [...new Set(userCustomerTasks.map(task => task.BookingID))];
+  const nurseBookings = bookingsMock.filter(b => bookingIDs.includes(b.BookingID));
+
+  // Các filter khác giữ nguyên
+  const nurseWorkSchedules = workSchedulesMock.filter(ws => ws.NursingID === nursingID);
+  const patients = careProfilesMock.filter(p => nurseBookings.some(b => b.CareProfileID === p.CareProfileID));
+  const notifications = notificationsMock.filter(n => n.ReceiverID === user?.AccountID || n.ReceiverRole === user?.role_id);
+  const medicalNotes = medicalNotesMock.filter(note => note.NursingID === nursingID);
+
+  const tabs = [
+    { id: 'overview', label: 'Tổng quan' },
+    { id: 'schedule', label: 'Lịch của tôi' },
+    { id: 'bookings', label: 'Lịch sử lịch hẹn' },
+    { id: 'patients', label: 'Hồ sơ bệnh nhân' },
+    { id: 'medicalnote', label: 'Ghi chú y tế' },
+    { id: 'notifications', label: 'Thông báo' },
+    { id: 'profile', label: 'Tài khoản cá nhân' },
+  ];
+
+  // Khi đổi tab thì cập nhật query param
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    const params = new URLSearchParams(Array.from(searchParams.entries()));
+    params.set('tab', tabId);
+    router.replace(`/dashboard?${params.toString()}`);
+  };
 
   useEffect(() => {
-    bookingService.getBookingServices().then(setBookings);
-    careProfileService.getCareProfiles().then(setCareProfiles);
-    feedbackService.getFeedbacks().then(setFeedbacks);
-  }, []);
-
-  // Filter data for current nurse
-  const nurseBookings = bookings.filter(b => b.NurseID === user.AccountID);
-  const patients = careProfiles.filter(p => nurseBookings.some(b => b.CareProfileID === p.CareProfileID));
-  const nurseFeedbacks = feedbacks.filter(f => f.NurseID === user.AccountID);
-  const averageRating = nurseFeedbacks.length > 0
-    ? (nurseFeedbacks.reduce((sum, f) => sum + (f.Rating || 5), 0) / nurseFeedbacks.length).toFixed(1)
-    : 'N/A';
+    if (initialTab && initialTab !== activeTab) {
+      setActiveTab(initialTab);
+    }
+    // eslint-disable-next-line
+  }, [initialTab]);
 
   return (
-    <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Chào mừng Y tá: {user.full_name}</h2>
-        
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-blue-700">Bệnh nhân</h3>
-            <p className="text-3xl font-bold text-blue-900">{patients.length}</p>
-          </div>
-          <div className="bg-green-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-green-700">Lịch hẹn</h3>
-            <p className="text-3xl font-bold text-green-900">{nurseBookings.length}</p>
-          </div>
-          <div className="bg-yellow-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-yellow-700">Phản hồi</h3>
-            <p className="text-3xl font-bold text-yellow-900">{nurseFeedbacks.length}</p>
-          </div>
-          <div className="bg-purple-50 p-4 rounded-lg">
-            <h3 className="text-lg font-semibold text-purple-700">Đánh giá</h3>
-            <p className="text-3xl font-bold text-purple-900">{averageRating}⭐</p>
-          </div>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <button className="bg-pink-600 text-white px-4 py-2 rounded-lg hover:bg-pink-700">
-            Xem lịch hẹn
+    <div className="min-h-screen bg-gray-50 p-4">
+      <h2 className="text-2xl font-bold text-gray-900 mb-4">Chào mừng {user?.full_name || 'User'}!</h2>
+      <div className="flex gap-4 mb-6">
+        {tabs.map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => handleTabChange(tab.id)}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${activeTab === tab.id ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-purple-100'}`}
+          >
+            {tab.label}
           </button>
-          <button className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-            Quản lý bệnh nhân
-          </button>
-          <button className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
-            Cập nhật hồ sơ
-          </button>
-        </div>
+        ))}
       </div>
-
-      {/* Today's Schedule */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-xl font-semibold mb-4">Lịch hẹn hôm nay</h3>
-        <div className="space-y-2">
-          {nurseBookings.slice(0, 5).map(booking => {
-            const patient = patients.find(p => p.CareProfileID === booking.CareProfileID);
-            return (
-              <div key={booking.BookingServiceID} className="flex justify-between items-center p-3 bg-gray-50 rounded">
-                <div>
-                  <span className="font-medium">{patient?.ProfileName || 'Bệnh nhân'}</span>
-                  <p className="text-sm text-gray-500">Booking #{booking.BookingServiceID}</p>
-                </div>
-                <span className={`px-2 py-1 rounded text-sm ${
-                  booking.Status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                }`}>
-                  {booking.Status}
-                </span>
-              </div>
-            );
-          })}
-          {nurseBookings.length === 0 && (
-            <p className="text-gray-500 text-center py-4">Không có lịch hẹn nào hôm nay</p>
+      <div className="bg-white rounded-lg shadow p-6 w-full">
+        <div>
+          {activeTab === 'overview' && (
+            <NurseOverviewTab nurseAccount={user} nurseBookings={nurseBookings} patients={patients} notifications={notifications} />
           )}
-        </div>
-      </div>
-
-      {/* Recent Feedback */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-xl font-semibold mb-4">Phản hồi gần đây</h3>
-        <div className="space-y-2">
-          {nurseFeedbacks.slice(0, 3).map(feedback => (
-            <div key={feedback.FeedbackID} className="p-3 bg-yellow-50 rounded">
-              <div className="flex justify-between items-start">
-                <div>
-                  <p className="text-sm">{feedback.Comment}</p>
-                  <p className="text-xs text-gray-500 mt-1">Đánh giá: {feedback.Rating || 5}/5 ⭐</p>
-                </div>
-              </div>
-            </div>
-          ))}
-          {nurseFeedbacks.length === 0 && (
-            <p className="text-gray-500 text-center py-4">Chưa có phản hồi nào</p>
+          {activeTab === 'schedule' && (
+            <NurseScheduleTab workSchedules={nurseWorkSchedules} nurseBookings={nurseBookings} />
+          )}
+          {activeTab === 'bookings' && (
+            <NurseBookingsTab nurseBookings={nurseBookings} />
+          )}
+          {activeTab === 'patients' && (
+            <NursePatientsTab patients={patients} />
+          )}
+          {activeTab === 'medicalnote' && (
+            <NurseMedicalNoteTab medicalNotes={medicalNotes} patients={patients} />
+          )}
+          {activeTab === 'notifications' && (
+            <NurseNotificationsTab notifications={notifications} />
+          )}
+          {activeTab === 'profile' && (
+            <NurseProfileTab nurseAccount={user} />
           )}
         </div>
       </div>

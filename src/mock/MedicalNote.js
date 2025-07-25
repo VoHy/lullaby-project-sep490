@@ -6,7 +6,7 @@ const medicalNotes = [
     CareProfileID: 1,
     Image: "note1.jpg",
     Note: "Bệnh nhân hồi phục tốt",
-    CreatedAt: "2024-06-01T14:00:00Z",
+    CreatedAt: "2025-07-25T14:00:00Z",
     Advice: "Tiếp tục theo dõi huyết áp",
     RelatedID: 1
   },
@@ -17,7 +17,7 @@ const medicalNotes = [
     CareProfileID: 2,
     Image: "note2.jpg",
     Note: "Cần bổ sung dinh dưỡng",
-    CreatedAt: "2024-06-02T15:00:00Z",
+    CreatedAt: "2025-07-25T15:00:00Z",
     Advice: "Bổ sung vitamin và khoáng chất",
     RelatedID: 2
   }
