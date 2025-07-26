@@ -62,7 +62,14 @@ const zoneDetails = [
     ZoneID: 4,
     Name: "Phường 5",
     Note: "Khu dân cư lâu đời"
-  }
+  },
+  // Phường thuộc Quận 10 (ZoneID: 5)
+  {
+    ZoneDetailID: 11,
+    ZoneID: 5,
+    Name: "Phường 1",
+    Note: "Gần trung tâm Quận 10"
+  },
 ];
 
 export default zoneDetails; 

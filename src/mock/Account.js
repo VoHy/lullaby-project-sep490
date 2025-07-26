@@ -194,6 +194,19 @@ const accounts = [
     role_name: "Chuyên gia",
     delete_at: null
   },
+  {
+    AccountID: 16,
+    full_name: "Manager User5",
+    phone_number: "0933444555",
+    email: "manager5@example.com",
+    password: "hashedpassword4",
+    avatar_url: "avatar4.jpg",
+    created_at: "2024-04-01T11:00:00Z", 
+    status: "active",
+    role_id: 4, // Manager
+    role_name: "Quản lý",
+    delete_at: null
+  }
 ];
 
 export default accounts;

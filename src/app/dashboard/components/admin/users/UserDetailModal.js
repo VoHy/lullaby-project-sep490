@@ -14,6 +14,17 @@ const UserDetailModal = ({ show, account, onClose, onSave }) => {
     if (onClose) onClose();
   };
 
+  // Hiển thị toàn bộ thông tin tài khoản
+  const infoList = [
+    { label: "ID tài khoản", value: account.AccountID },
+    { label: "Họ và tên", value: account.full_name },
+    { label: "Email", value: account.email },
+    { label: "Số điện thoại", value: account.phone_number },
+    { label: "Ngày tạo", value: account.created_at },
+    { label: "Trạng thái", value: status === 'active' ? 'Hoạt động' : 'Tạm khóa' },
+    { label: "Vai trò", value: account.role_name || account.roleName },
+  ];
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm overflow-auto">
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative my-8 mx-2">
@@ -32,8 +43,23 @@ const UserDetailModal = ({ show, account, onClose, onSave }) => {
           <div className="text-xs text-gray-500 mb-1">{account.email}</div>
         </div>
         <div className="space-y-2 text-sm">
-          <div><span className="font-medium text-gray-600">Số điện thoại:</span> {account.phone_number || '-'}</div>
-          <div><span className="font-medium text-gray-600">Vai trò:</span> {account.role_name || account.roleName || '-'}</div>
+          {infoList.map((item, idx) => (
+            <div key={idx}>
+              <span className="font-medium text-gray-600">{item.label}:</span>{" "}
+              {item.label === "Ảnh đại diện" ? (
+                <span>
+                  <img
+                    src={item.value || '/images/avatar1.jpg'}
+                    alt="avatar"
+                    className="inline-block w-8 h-8 rounded-full object-cover border border-pink-200 align-middle"
+                  />
+                  <span className="ml-2 text-xs text-gray-500">{item.value}</span>
+                </span>
+              ) : (
+                <span>{item.value || '-'}</span>
+              )}
+            </div>
+          ))}
           <div className="flex items-center gap-2 mt-2">
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{status === 'active' ? 'Hoạt động' : 'Tạm khóa'}</span>
             <select
@@ -51,7 +77,7 @@ const UserDetailModal = ({ show, account, onClose, onSave }) => {
             onClick={handleSave}
             className="px-6 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg"
           >
-            Lưu
+            Đóng
           </button>
         </div>
       </div>
