@@ -1,10 +1,13 @@
 "use client";
 import { useEffect, useState, useContext } from "react";
-import accountsService from '@/services/api/accountService'; // Giả sử bạn có service này để lấy Account
+import { FaEdit, FaSave, FaTimes, FaUser, FaEnvelope, FaPhone, FaCalendar, FaShieldAlt, FaMapMarkerAlt, FaStickyNote, FaUsers } from "react-icons/fa";
+import accountsService from '@/services/api/accountService';
 import relativesService from '@/services/api/relativesService';
 import zoneService from '@/services/api/zoneService';
 import careProfileService from '@/services/api/careProfileService';
 import { AuthContext } from "@/context/AuthContext";
+import ProfileCard from './components/ProfileCard';
+import CareProfileList from './components/CareProfileList';
 
 export default function ProfilePage() {
   const { user } = useContext(AuthContext);
@@ -13,7 +16,8 @@ export default function ProfilePage() {
   const [relativesList, setRelativesList] = useState([]);
   const [zones, setZones] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
-  const [editData, setEditData] = useState({ full_name: '', phone_number: '', avatar_url: '' });
+  // Thêm email vào editData
+  const [editData, setEditData] = useState({ full_name: '', phone_number: '', avatar_url: '', email: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -45,7 +49,8 @@ export default function ProfilePage() {
     setEditData({
       full_name: profile.full_name || '',
       phone_number: profile.phone_number || '',
-      avatar_url: profile.avatar_url || ''
+      avatar_url: profile.avatar_url || '',
+      email: profile.email || ''
     });
     setIsEditing(true);
     setError('');
@@ -79,102 +84,72 @@ export default function ProfilePage() {
 
   // Hiển thị loading khi chưa có user
   if (!user) {
-    return <div className="text-center mt-10">Đang tải thông tin tài khoản...</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang tải thông tin tài khoản...</p>
+        </div>
+      </div>
+    );
   }
 
   // Hiển thị thông báo khi không tìm thấy profile
   if (!profile) {
-    return <div className="text-center mt-10">Không tìm thấy thông tin tài khoản.</div>;
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-6xl mb-4">😕</div>
+          <p className="text-gray-600 text-lg">Không tìm thấy thông tin tài khoản.</p>
+        </div>
+      </div>
+    );
   }
 
-  const handleUpdateAccount = (newProfile) => {
-    setProfile({ ...newProfile });
-  };
-  const handleUpdateRelatives = (newRelatives) => {
-    setRelativesList(newRelatives);
+  const getRoleName = (roleId) => {
+    switch (roleId) {
+      case 1: return "Quản trị viên";
+      case 2: return "Y tá/Chuyên gia";
+      case 3: return "Người thân";
+      case 4: return "Quản lý";
+      default: return "Khác";
+    }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10">
-      <div className="max-w-3xl mx-auto px-4">
-        {/* Thông tin cá nhân: Luôn hiển thị cho mọi tài khoản */}
-        <div className="bg-white rounded-xl shadow p-6 mb-8 flex items-center gap-6 relative">
-          {/* Nếu đang sửa thì hiện form */}
-          {isEditing ? (
-            <div className="w-full">
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Tên</label>
-                <input name="full_name" value={editData.full_name} onChange={handleInputChange} className="border rounded px-3 py-2 w-full" />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Số điện thoại</label>
-                <input name="phone_number" value={editData.phone_number} onChange={handleInputChange} className="border rounded px-3 py-2 w-full" />
-              </div>
-              <div className="mb-4">
-                <label className="block text-sm font-medium mb-1">Avatar URL</label>
-                <input name="avatar_url" value={editData.avatar_url} onChange={handleInputChange} className="border rounded px-3 py-2 w-full" />
-              </div>
-              {error && <div className="text-red-500 mb-2">{error}</div>}
-              <div className="flex gap-2">
-                <button onClick={handleSave} disabled={loading} className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Lưu</button>
-                <button onClick={handleCancel} className="bg-gray-300 px-4 py-2 rounded hover:bg-gray-400">Hủy</button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <img src={profile.avatar_url || "/images/avatar1.jpg"} alt={profile.full_name} className="w-20 h-20 rounded-full object-cover" />
-              <div>
-                <div className="font-bold text-xl mb-1">{profile.full_name}</div>
-                <div className="text-gray-500 text-sm mb-1">SĐT: {profile.phone_number}</div>
-                <div className="text-gray-500 text-sm mb-1">Email: {profile.email}</div>
-                <div className="text-gray-500 text-sm mb-1">Trạng thái: {profile.status === "active" ? "Đang hoạt động" : "Ngừng hoạt động"}</div>
-                <div className="text-gray-500 text-sm mb-1">Vai trò: {profile.role_id === 3 ? "Con" : profile.role_id === 1 ? "Admin" : profile.role_id === 2 ? "Y tá/Chuyên gia" : profile.role_id === 4 ? "Quản lý" : "Khác"}</div>
-              </div>
-              <button onClick={handleEditClick} className="absolute top-4 right-4 bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">Sửa thông tin</button>
-            </>
-          )}
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-2">
+            Hồ sơ cá nhân
+          </h1>
+          <p className="text-gray-600">Quản lý thông tin tài khoản và hồ sơ chăm sóc</p>
         </div>
-        {/* Chỉ hiển thị CareProfile và Relative nếu là tài khoản account (role_id === 3) */}
-        {profile && profile.role_id === 3 && (
-          <div>
-            <h2 className="text-xl font-bold mb-4">Danh sách hồ sơ chăm sóc</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {careProfiles.length === 0 ? (
-                <div className="text-gray-500">Bạn chưa có hồ sơ chăm sóc nào.</div>
-              ) : (
-                careProfiles.map(care => (
-                  <div key={care.CareProfileID} className="border rounded-lg p-4 bg-gray-50 mb-6">
-                    <div className="font-bold text-lg text-blue-700 mb-1">{care.ProfileName}</div>
-                    <div className="text-sm text-gray-500 mb-1">Ngày sinh: {care.DateOfBirth || 'N/A'}</div>
-                    <div className="text-sm text-gray-500 mb-1">Địa chỉ: {care.Address || 'N/A'}</div>
-                    <div className="text-sm text-gray-500 mb-1">Zone: {(() => {
-                      const z = zones.find(z => z.ZoneID === care.ZoneDetailID);
-                      return z ? z.Zone_name : 'N/A';
-                    })()}</div>
-                    <div className="text-sm text-gray-500 mb-1">Ghi chú: {care.Notes || 'Không có'}</div>
-                    <div className="text-sm text-gray-500 mb-1">Trạng thái: {care.Status}</div>
-                    {/* Danh sách người thân của CareProfile này */}
-                    <div className="mt-4">
-                      <div className="font-semibold text-base mb-2">Con:</div>
-                      {relativesList.filter(r => r.CareProfileID === care.CareProfileID).length === 0 ? (
-                        <div className="text-gray-500 text-sm">Không có người thân nào.</div>
-                      ) : (
-                        relativesList.filter(r => r.CareProfileID === care.CareProfileID).map(r => (
-                          <div key={r.RelativeID} className="border rounded p-2 mb-2 bg-white">
-                            <div className="font-bold text-blue-600">{r.Relative_Name}</div>
-                            <div className="text-xs text-gray-500">Ngày sinh: {r.DateOfBirth || 'N/A'}</div>
-                            <div className="text-xs text-gray-500">Địa chỉ: {r.Address || 'N/A'}</div>
-                            <div className="text-xs text-gray-500">Trạng thái: {r.Status}</div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="lg:col-span-1">
+            <ProfileCard
+              profile={profile}
+              isEditing={isEditing}
+              editData={editData}
+              onEditClick={handleEditClick}
+              onInputChange={handleInputChange}
+              onSave={handleSave}
+              onCancel={handleCancel}
+              loading={loading}
+              error={error}
+              getRoleName={getRoleName}
+            />
           </div>
-        )}
+          <div className="lg:col-span-2">
+            {profile && profile.role_id === 3 && (
+              <CareProfileList
+                careProfiles={careProfiles}
+                relativesList={relativesList}
+                zones={zones}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

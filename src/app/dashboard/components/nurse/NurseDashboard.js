@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import bookingsMock from '@/mock/Booking';
 import careProfilesMock from '@/mock/CareProfile';
@@ -17,11 +17,13 @@ import nursingSpecialists from '@/mock/NursingSpecialist';
 import NurseMedicalNoteTab from './NurseMedicalNoteTab';
 import medicalNotesMock from '@/mock/MedicalNote';
 import customerTasks from '@/mock/CustomerTask';
+import { AuthContext } from '@/context/AuthContext';
 
-const NurseDashboard = ({ initialTab, user }) => {
+const NurseDashboard = ({ initialTab }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(initialTab || 'overview');
+  const { user } = useContext(AuthContext);
 
   // Lấy NursingSpecialist theo user.AccountID
   const specialist = nursingSpecialists.find(n => n.AccountID === user?.AccountID);

@@ -6,6 +6,9 @@ import authService from '@/services/auth/authService';
 import relativesService from '@/services/api/relativesService';
 import zoneService from '@/services/api/zoneService';
 import careProfileService from '@/services/api/careProfileService';
+// Thêm các import icon cần thiết
+import { FaEdit, FaSave, FaTimes, FaUser, FaEnvelope, FaPhone, FaCalendar, FaShieldAlt, FaMapMarkerAlt, FaStickyNote, FaUsers, FaPlus, FaCamera } from "react-icons/fa";
+import PatientCareProfileList from './components/PatientCareProfileList';
 
 export default function RelativesProfilePage() {
   const router = useRouter();
@@ -348,120 +351,30 @@ export default function RelativesProfilePage() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Filter All/Active */}
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
-            <label className="font-semibold mr-2">Lọc hồ sơ:</label>
-            <select
-              className="px-3 py-2 rounded border border-gray-300 focus:outline-pink-500"
-              value={careProfileFilter}
-              onChange={e => setCareProfileFilter(e.target.value)}
-            >
-              <option value="all">Tất cả</option>
-              <option value="active">Hoạt động</option>
-            </select>
-          </div>
-          <button
-            className="px-4 py-2 rounded bg-gradient-to-r from-purple-100 to-pink-200 text-black font-semibold hover:bg-blue-700"
-            onClick={handleOpenCareProfileForm}
-          >
-            + Thêm Hồ Sơ Người Thân
-          </button>
-        </div>
-        {/* Hiển thị hồ sơ chăm sóc và người thân liên kết */}
-        {(() => {
-          // Lọc theo filter
-          let filtered = careProfiles;
-          if (careProfileFilter === 'active') {
-            filtered = careProfiles.filter(c => c.Status === 'active');
-          }
-          if (filtered.length === 0) {
-            return <div className="text-gray-500">Bạn chưa có hồ sơ chăm sóc nào.</div>;
-          }
-          return (
-            <div className="flex flex-col gap-6">
-              {filtered.map(care => (
-                <div key={care.CareProfileID} className="bg-white shadow rounded-lg p-6 mb-8">
-                  <div className="flex gap-6 items-center mb-4">
-                    <img src={care.Image || '/default-avatar.png'} alt={care.Care_Name} className="w-24 h-24 rounded-full object-cover border-2 border-blue-200" />
-                    <div>
-                      <div className="font-bold text-lg text-blue-700 mb-1">{care.ProfileName}</div>
-                      <div className="text-gray-500 text-sm mb-1">Ngày sinh: {care.DateOfBirth || 'N/A'}</div>
-                      <div className="text-gray-500 text-sm mb-1">Địa chỉ: {care.Address || 'N/A'}</div>
-                      <div className="text-gray-500 text-sm mb-1">Zone: {(() => {
-                        const z = zones.find(z => z.ZoneID === care.ZoneDetailID);
-                        return z ? z.Zone_name : 'N/A';
-                      })()}</div>
-                      <div className="text-gray-500 text-sm mb-1">Ghi chú: {care.Notes || 'Không có'}</div>
-                      <div className="text-sm text-gray-400">Trạng thái: {care.Status}</div>
-                    </div>
-                  </div>
-                  {/* Button thêm người thân */}
-                  <div className="mb-2 flex gap-2">
-            <button
-              className="px-4 py-2 rounded bg-gradient-to-r from-pink-100 to-rose-200 text-black font-semibold hover:bg-blue-700"
-                      onClick={() => handleOpenForm(null, care.CareProfileID)}
-            >
-              + Thêm người thân
-            </button>
-                    <button
-                      className="px-4 py-2 rounded bg-gradient-to-r from-yellow-100 to-yellow-300 text-black font-semibold hover:bg-yellow-400"
-                      onClick={() => handleEditCareProfile(care)}
-                    >
-                      Sửa
-                    </button>
-                    <button
-                      className="px-4 py-2 rounded bg-gradient-to-r from-red-100 to-red-300 text-black font-semibold hover:bg-red-400"
-                      onClick={() => handleDeleteCareProfile(care.CareProfileID)}
-                    >
-                      Xóa
-                    </button>
-                  </div>
-                  {/* Danh sách người thân của CareProfile này */}
-                  <div className="mt-4">
-                    <div className="font-semibold text-base mb-2 flex items-center gap-2">
-                      Con:
-                      <select
-                        className="ml-2 px-2 py-1 rounded border border-gray-300 text-xs focus:outline-pink-500"
-                        value={relativesFilter[care.CareProfileID] || 'all'}
-                        onChange={e => setRelativesFilter(f => ({...f, [care.CareProfileID]: e.target.value}))}
-                      >
-                        <option value="all">Tất cả</option>
-                        <option value="active">Hoạt động</option>
-                        <option value="inactive">Không hoạt động</option>
-                      </select>
-                    </div>
-                    {(() => {
-                      let rels = relativesList.filter(r => r.CareProfileID === care.CareProfileID);
-                      const filter = relativesFilter[care.CareProfileID] || 'all';
-                      if (filter === 'active') rels = rels.filter(r => r.Status === 'active');
-                      if (filter === 'inactive') rels = rels.filter(r => r.Status === 'inactive');
-                      if (rels.length === 0) return <div className="text-gray-500 text-sm">Không có người thân nào.</div>;
-                      return rels.map((r, idx) => (
-                        <div key={r.RelativeID} className="border rounded p-2 mb-2 bg-gray-50 flex gap-4 items-center relative">
-                          <img src={r.Image || '/default-avatar.png'} alt={r.Relative_Name} className="w-16 h-16 rounded-full object-cover border-2 border-blue-200" />
-                          <div>
-                            <div className="font-bold text-blue-600">{r.Relative_Name}</div>
-                            <div className="text-xs text-gray-500">Ngày sinh: {r.DateOfBirth || 'N/A'}</div>
-                            <div className="text-xs text-gray-500">Trạng thái: {r.Status}</div>
-                            <div className="flex gap-2 mt-1">
-                              <button className="px-2 py-1 rounded bg-yellow-100 text-black text-xs font-semibold hover:bg-yellow-300" onClick={() => handleEditRelative(r, relativesList.findIndex(x => x.RelativeID === r.RelativeID))}>Sửa</button>
-                              <button className="px-2 py-1 rounded bg-red-100 text-black text-xs font-semibold hover:bg-red-300" onClick={() => handleDeleteRelative(r.RelativeID)}>Xóa</button>
-                            </div>
-                          </div>
-                        </div>
-                      ));
-                    })()}
-                  </div>
-                </div>
-              ))}
-            </div>
-          );
-        })()}
+  // UI nâng cấp bắt đầu từ đây
+  // Lọc careProfiles theo filter
+  const filteredCareProfiles = careProfileFilter === 'all' ? careProfiles : careProfiles.filter(c => c.Status === careProfileFilter);
 
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-2">
+            Hồ sơ người thân
+          </h1>
+          <p className="text-gray-600">Quản lý thông tin hồ sơ chăm sóc và người thân</p>
+        </div>
+        <PatientCareProfileList
+          careProfiles={careProfiles}
+          relativesList={relativesList}
+          zones={zones}
+          relativesFilter={relativesFilter}
+          setRelativesFilter={setRelativesFilter}
+          handleOpenForm={handleOpenForm}
+          careProfileFilter={careProfileFilter}
+          setCareProfileFilter={setCareProfileFilter}
+          handleOpenCareProfileForm={handleOpenCareProfileForm}
+        />
         {/* Form thêm/sửa người thân */}
         {showForm && (
           <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 transition-all duration-200 animate-fadeIn">

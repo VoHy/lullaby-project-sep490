@@ -13,7 +13,7 @@ const workSchedules = [
     WorkScheduleID: 2,
     BookingID: 2,
     ServiceID: 2,
-    NursingID: 2,
+    NursingID: 4,
     IsAttended: false,
     EndTime: "2025-02-15T13:00:00Z",
     WorkDate: "2025-02-15T09:00:00Z",
@@ -23,7 +23,7 @@ const workSchedules = [
     WorkScheduleID: 3,
     BookingID: 3,
     ServiceID: 3,
-    NursingID: 1,
+    NursingID: 4,
     IsAttended: true,
     EndTime: "2025-03-20T08:00:00Z",
     WorkDate: "2025-03-20T06:00:00Z",
@@ -32,8 +32,8 @@ const workSchedules = [
   {
     WorkScheduleID: 4,
     BookingID: 4,
-    ServiceID: 4,
-    NursingID: 2,
+    ServiceID: 6,
+    NursingID: 9,
     IsAttended: false,
     EndTime: "2025-04-25T13:00:00Z",
     WorkDate: "2025-04-25T09:00:00Z",
@@ -42,32 +42,22 @@ const workSchedules = [
   {
     WorkScheduleID: 5,
     BookingID: 5,
-    ServiceID: 5,
-    NursingID: 3,
+    ServiceID: 7,
+    NursingID: 10,
     IsAttended: true,
-    EndTime: "2025-05-30T08:00:00Z",
-    WorkDate: "2025-05-30T06:00:00Z",
+    EndTime: "2025-07-10T08:00:00Z",
+    WorkDate: "2025-07-10T06:00:00Z",
     Status: "active"
   },
   {
     WorkScheduleID: 6,
     BookingID: 6,
-    ServiceID: 6,
-    NursingID: 4,
+    ServiceID: 9,
+    NursingID: 12,
     IsAttended: false,
-    EndTime: "2025-06-15T13:00:00Z",
-    WorkDate: "2025-06-15T09:00:00Z",
-    Status: "inactive"
-  },
-  {
-    WorkScheduleID: 7,
-    BookingID: 7,
-    ServiceID: 7,
-    NursingID: 1,
-    IsAttended: true,
-    EndTime: "2025-09-02T08:00:00Z",
-    WorkDate: "2025-09-02T06:00:00Z",
-    Status: "active"
+    EndTime: "2025-07-12T13:00:00Z",
+    WorkDate: "2025-07-12T09:00:00Z",
+    Status: "pending"
   }
 ];
 

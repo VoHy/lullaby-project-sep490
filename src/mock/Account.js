@@ -16,7 +16,7 @@ const accounts = [
     AccountID: 2,
     full_name: "Nguyen Van S",
     phone_number: "0123456789",
-    email: "e@example.com",
+    email: "e1@example.com",
     password: "hashedpassword1",
     avatar_url: "avatar1.jpg",
     created_at: "2024-01-01T08:00:00Z",
