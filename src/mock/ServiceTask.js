@@ -92,6 +92,38 @@ const serviceTasks = [
     Quantity: 1,
     // Không có Package_ServiceID
   },
+  // Gói 3: 2 dịch vụ con (cho booking 5)
+  {
+    ServiceTaskID: 10,
+    Child_ServiceID: 10,
+    TaskOrder: 1,
+    Description: "Kiểm tra sức khỏe tổng quát",
+    Status: "active",
+    Price: 75000,
+    Quantity: 1,
+    Package_ServiceID: 3
+  },
+  {
+    ServiceTaskID: 11,
+    Child_ServiceID: 11,
+    TaskOrder: 2,
+    Description: "Tư vấn dinh dưỡng chuyên sâu",
+    Status: "active",
+    Price: 65000,
+    Quantity: 1,
+    Package_ServiceID: 3
+  },
+  // Dịch vụ lẻ (cho booking 6)
+  {
+    ServiceTaskID: 12,
+    Child_ServiceID: 12,
+    TaskOrder: 1,
+    Description: "Chăm sóc vết thương phức tạp",
+    Status: "active",
+    Price: 85000,
+    Quantity: 1,
+    // Không có Package_ServiceID
+  },
 ];
 
 export default serviceTasks; 

@@ -57,7 +57,7 @@ const customerTasks = [
     CustomizeTaskID: 5,
     CustomizePackageID: 2,
     ServiceID: 2,
-    NursingID: 5,
+    NursingID: 1, // Đã đổi thành nurse thuộc Quận 1
     TaskOrder: 2,
     Status: "completed",
     Price: 50000,
@@ -70,7 +70,7 @@ const customerTasks = [
   {
     CustomizeTaskID: 6,
     ServiceID: 3,
-    NursingID: 6,
+    NursingID: 4, // Đổi thành nurse 4 (Quận 1)
     TaskOrder: 1,
     Status: "pending",
     Price: 80000,
@@ -82,7 +82,7 @@ const customerTasks = [
   {
     CustomizeTaskID: 7,
     ServiceID: 4,
-    NursingID: 7,
+    NursingID: 3, // Đổi thành specialist 3 (Quận 1)
     TaskOrder: 2,
     Status: "pending",
     Price: 60000,
@@ -94,7 +94,7 @@ const customerTasks = [
   {
     CustomizeTaskID: 8,
     ServiceID: 5,
-    NursingID: 8,
+    NursingID: 4, // Đổi thành specialist 4 (Quận 1)
     TaskOrder: 3,
     Status: "pending",
     Price: 55000,
@@ -115,6 +115,44 @@ const customerTasks = [
     Total: 90000,
     ServiceTaskID: 9,
     BookingID: 4,
+  },
+  // Booking 5: 2 dịch vụ lẻ
+  {
+    CustomizeTaskID: 10,
+    ServiceID: 7,
+    NursingID: 10,
+    TaskOrder: 1,
+    Status: "pending",
+    Price: 75000,
+    Quantity: 1,
+    Total: 75000,
+    ServiceTaskID: 10,
+    BookingID: 5,
+  },
+  {
+    CustomizeTaskID: 11,
+    ServiceID: 8,
+    NursingID: 11,
+    TaskOrder: 2,
+    Status: "pending",
+    Price: 65000,
+    Quantity: 1,
+    Total: 65000,
+    ServiceTaskID: 11,
+    BookingID: 5,
+  },
+  // Booking 6: 1 dịch vụ lẻ
+  {
+    CustomizeTaskID: 12,
+    ServiceID: 9,
+    NursingID: 12,
+    TaskOrder: 1,
+    Status: "pending",
+    Price: 85000,
+    Quantity: 1,
+    Total: 85000,
+    ServiceTaskID: 12,
+    BookingID: 6,
   },
 ];
 

@@ -1,11 +1,13 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import accounts from '@/mock/Account';
 import nursingSpecialists from '@/mock/NursingSpecialist';
 import zones from '@/mock/Zone';
-
-const nurses = accounts.filter(acc => acc.role_id === 2);
+import { AuthContext } from '@/context/AuthContext';
 
 const ManagerNurseTab = () => {
+  const { user } = useContext(AuthContext);
+  const currentManagerId = user?.AccountID;
+  
   const [showDetail, setShowDetail] = useState(false);
   const [detailData, setDetailData] = useState(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -15,7 +17,7 @@ const ManagerNurseTab = () => {
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
-  const [nurseList, setNurseList] = useState(nurses);
+  const [nurseList, setNurseList] = useState([]);
   const [editStatus, setEditStatus] = useState('');
   const [gender, setGender] = useState('');
   const [dob, setDob] = useState('');
@@ -24,6 +26,42 @@ const ManagerNurseTab = () => {
   const [slogan, setSlogan] = useState('');
   const [address, setAddress] = useState('');
   const major = 'Y tá';
+
+  // Lấy khu vực mà manager hiện tại quản lý
+  const getManagedZone = () => {
+    if (!currentManagerId) return null;
+    return zones.find(zone => zone.AccountID === currentManagerId);
+  };
+
+  // Lọc nurse thuộc khu vực quản lý của manager
+  const getNursesInManagedZone = () => {
+    const managedZone = getManagedZone();
+    if (!managedZone) return [];
+
+    // Lấy danh sách nurse thuộc khu vực quản lý
+    const nursesInZone = nursingSpecialists.filter(ns => 
+      ns.ZoneID === managedZone.ZoneID && ns.Major === 'Y tá'
+    );
+
+    // Lấy thông tin account của các nurse này
+    const nurseAccounts = accounts.filter(acc => 
+      acc.role_id === 2 && nursesInZone.some(ns => ns.AccountID === acc.AccountID)
+    );
+
+    return nurseAccounts;
+  };
+
+  useEffect(() => {
+    if (currentManagerId) {
+      const filteredNurses = getNursesInManagedZone();
+      setNurseList(filteredNurses);
+      // Set zoneId mặc định là khu vực quản lý của manager
+      const managedZone = getManagedZone();
+      if (managedZone) {
+        setZoneId(managedZone.ZoneID.toString());
+      }
+    }
+  }, [currentManagerId]);
 
   const handleView = (nurse) => {
     const detail = nursingSpecialists.find(n => n.AccountID === nurse.AccountID);
@@ -166,9 +204,12 @@ const ManagerNurseTab = () => {
                     <label className="block text-xs font-medium text-gray-700 mb-1">Khu vực làm việc (Quận)</label>
                     <select required className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-300" value={zoneId} onChange={e => setZoneId(e.target.value)}>
                       <option value="" hidden>Chọn khu vực</option>
-                      {zones.map(z => (
-                        <option key={z.ZoneID} value={z.ZoneID}>{z.Zone_name}</option>
-                      ))}
+                      {(() => {
+                        const managedZone = getManagedZone();
+                        return managedZone ? (
+                          <option key={managedZone.ZoneID} value={managedZone.ZoneID}>{managedZone.Zone_name}</option>
+                        ) : null;
+                      })()}
                     </select>
                   </div>
                   <div>

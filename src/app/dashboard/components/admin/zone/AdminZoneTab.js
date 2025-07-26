@@ -2,11 +2,12 @@ import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faMapMarkerAlt, faPlus, faEdit, faTrash, faUsers, faUserMd,
-  faSearch, faCity, faClock
+  faSearch, faCity, faClock, faUserTie
 } from '@fortawesome/free-solid-svg-icons';
 import zonesMock from '@/mock/Zone';
 import zoneDetailsMock from '@/mock/Zone_Detail';
 import nursingSpecialists from '@/mock/NursingSpecialist';
+import accounts from '@/mock/Account';
 
 const StatCard = ({ title, value, icon, color, subtitle }) => (
   <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
@@ -122,8 +123,18 @@ const AdminZoneTab = () => {
   };
 
   // Xem nhân sự theo khu vực
-  const getNursesByZone = (zoneId) => nursingSpecialists.filter(n => n.ZoneID === zoneId && n.NursingID);
-  const getSpecialistsByZone = (zoneId) => nursingSpecialists.filter(n => n.ZoneID === zoneId && n.NursingID);
+  const getNursesByZone = (zoneId) =>
+    nursingSpecialists.filter(n => n.ZoneID === zoneId && n.Major === 'Y tá');
+
+  const getSpecialistsByZone = (zoneId) =>
+    nursingSpecialists.filter(n => n.ZoneID === zoneId && n.Major === 'Chuyên gia');
+
+  // Lấy Manager theo AccountID của Zone
+  const getManagerByZone = (zoneId) => {
+    const zone = zones.find(z => z.ZoneID === zoneId);
+    if (!zone || !zone.AccountID) return null;
+    return accounts.find(acc => acc.AccountID === zone.AccountID && acc.role_id === 4);
+  };
 
   return (
     <div className="space-y-6">
@@ -391,6 +402,23 @@ const AdminZoneTab = () => {
               <div className="w-20 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded mx-auto"></div>
             </div>
             <div className="space-y-4">
+              {/* Manager */}
+              <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 p-4 rounded-xl">
+                <h4 className="font-semibold text-yellow-800 mb-3 flex items-center">
+                  <FontAwesomeIcon icon={faUserTie} className="mr-2" />
+                  Manager
+                </h4>
+                {getManagerByZone(selectedZone) ? (
+                  <div className="flex flex-col gap-1 p-2 bg-white rounded border">
+                    <span className="font-medium text-sm">{getManagerByZone(selectedZone).full_name}</span>
+                    <span className="text-xs text-gray-500">{getManagerByZone(selectedZone).email}</span>
+                    <span className="text-xs text-gray-500">{getManagerByZone(selectedZone).phone_number}</span>
+                  </div>
+                ) : (
+                  <div className="text-gray-400 text-sm">Chưa có Manager</div>
+                )}
+              </div>
+              {/* Y tá */}
               <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-xl">
                 <h4 className="font-semibold text-blue-800 mb-3 flex items-center">
                   <FontAwesomeIcon icon={faUsers} className="mr-2" />
@@ -409,7 +437,7 @@ const AdminZoneTab = () => {
                   )}
                 </ul>
               </div>
-              
+              {/* Chuyên gia */}
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl">
                 <h4 className="font-semibold text-green-800 mb-3 flex items-center">
                   <FontAwesomeIcon icon={faUserMd} className="mr-2" />

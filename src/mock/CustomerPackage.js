@@ -23,6 +23,18 @@ const customerPackages = [
     Quantity: 2,
     Total: 540000,
   },
+  {
+    CustomizePackageID: 3,
+    Name: "Gói chăm sóc sức khỏe nâng cao",
+    Description: "Dịch vụ chăm sóc sức khỏe toàn diện bao gồm kiểm tra sức khỏe và tư vấn dinh dưỡng.",
+    ServiceID: 3,
+    BookingID: 5,
+    Price: 600000,
+    Status: "pending",
+    Discount: 60000,
+    Quantity: 1,
+    Total: 540000,
+  },
 ];
 
 export default customerPackages; 

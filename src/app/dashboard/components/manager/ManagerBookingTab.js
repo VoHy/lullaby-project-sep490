@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import bookingsData from '@/mock/Booking';
 import accounts from '@/mock/Account';
 import careProfiles from '@/mock/CareProfile';
@@ -8,6 +8,8 @@ import customerTasks from '@/mock/CustomerTask';
 import serviceTasks from '@/mock/ServiceTask';
 import zoneDetails from '@/mock/Zone_Detail';
 import nursingSpecialists from '@/mock/NursingSpecialist';
+import zones from '@/mock/Zone';
+import { AuthContext } from '@/context/AuthContext';
 
 const allNurses = accounts.filter(acc => acc.role_id === 2 && nursingSpecialists.find(n => n.AccountID === acc.AccountID));
 const allSpecialists = accounts.filter(acc => acc.role_id === 5 && nursingSpecialists.find(s => s.AccountID === acc.AccountID));
@@ -34,22 +36,51 @@ function getBookingDetail(booking) {
   const customerTasksOfBooking = customerTasks.filter(t => t.BookingID === booking.BookingID);
   const serviceTasksOfBooking = customerTasksOfBooking.map(task => {
     const serviceTask = serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
-    const nurse = nursingSpecialists.find(n => n.NursingID === task.NursingID);
+    const assignedNurse = nursingSpecialists.find(n => n.NursingID === task.NursingID);
+    const assignedAccount = accounts.find(acc => acc.AccountID === assignedNurse?.AccountID);
+    
     return {
       ...serviceTask,
       price: task.Price,
       quantity: task.Quantity,
       total: task.Total,
       status: task.Status,
-      nurseName: nurse?.FullName,
-      nurseRole: nurse?.Major
+      assignedNurseId: assignedNurse?.NursingID,
+      assignedNurseName: assignedAccount?.full_name,
+      assignedNurseRole: assignedNurse?.Major,
+      hasAssignedNurse: !!assignedNurse
     };
   });
   return { careProfile, account, service, packageInfo, serviceTasksOfBooking };
 }
 
+// Lọc booking theo khu vực quản lý của manager
+function getFilteredBookings(bookings, currentManagerId) {
+  // Lấy khu vực mà manager hiện tại quản lý
+  const managedZone = zones.find(zone => zone.AccountID === currentManagerId);
+  if (!managedZone) return [];
+  
+  // Lọc booking có care profile thuộc khu vực quản lý
+  const filteredBookings = bookings.filter(booking => {
+    const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
+    if (!careProfile) return false;
+    
+    const zoneDetail = zoneDetails.find(z => z.ZoneDetailID === careProfile.ZoneDetailID);
+    if (!zoneDetail) return false;
+    
+    // Chỉ hiển thị booking thuộc khu vực quản lý của manager
+    return zoneDetail.ZoneID === managedZone.ZoneID;
+  });
+  
+  return filteredBookings;
+}
+
 const ManagerBookingTab = () => {
-  const [bookings] = useState(bookingsData);
+  const { user } = useContext(AuthContext);
+  const currentManagerId = user?.AccountID;
+  
+  const [allBookings] = useState(bookingsData);
+  const [bookings, setBookings] = useState([]);
   const [showDetail, setShowDetail] = useState(false);
   const [detailData, setDetailData] = useState(null);
   const [selectedNurse, setSelectedNurse] = useState('');
@@ -57,20 +88,28 @@ const ManagerBookingTab = () => {
   const [selectedStatus, setSelectedStatus] = useState('');
   const [taskAssignments, setTaskAssignments] = useState({}); // { [ServiceTaskID]: { nurse: '', specialist: '' } }
 
-  // Lọc nurse/specialist theo khu vực của khách hàng booking (join Account với NursingSpecialist để lấy ZoneID)
+  // Lọc booking theo khu vực quản lý khi component mount hoặc user thay đổi
+  useEffect(() => {
+    if (currentManagerId) {
+      const filteredBookings = getFilteredBookings(allBookings, currentManagerId);
+      setBookings(filteredBookings);
+    }
+  }, [allBookings, currentManagerId]);
+
+  // Lọc nurse/specialist theo khu vực của khách hàng booking
   function getFilteredNursesSpecialists(careProfile) {
     if (!careProfile) return { nurses: [], specialists: [] };
     const zoneDetail = zoneDetails.find(z => z.ZoneDetailID === careProfile.ZoneDetailID);
     if (!zoneDetail) return { nurses: [], specialists: [] };
     const zoneId = zoneDetail.ZoneID;
-    // Join Account với NursingSpecialist để lấy đúng ZoneID
+    
     const nurses = allNurses.filter(acc => {
       const n = nursingSpecialists.find(n => n.AccountID === acc.AccountID);
-      return n && n.ZoneID === zoneId;
+      return n && n.ZoneID === zoneId && n.Major === 'Y tá';
     });
     const specialists = allSpecialists.filter(acc => {
       const s = nursingSpecialists.find(s => s.AccountID === acc.AccountID);
-      return s && s.ZoneID === zoneId;
+      return s && s.ZoneID === zoneId && s.Major === 'Chuyên gia';
     });
     return { nurses, specialists };
   }
@@ -83,33 +122,60 @@ const ManagerBookingTab = () => {
     setTaskAssignments({});
     setShowDetail(true);
   };
+  
   const handleCloseDetail = () => {
     setShowDetail(false);
     setDetailData(null);
   };
+  
   const handleTaskAssign = (taskId, type, value) => {
-    setTaskAssignments(prev => ({
-      ...prev,
-      [taskId]: { ...prev[taskId], [type]: value }
-    }));
+    setTaskAssignments(prev => {
+      // Nếu chọn nurse thì clear specialist, chọn specialist thì clear nurse
+      if (type === 'nurse') {
+        return {
+          ...prev,
+          [taskId]: { nurse: value, specialist: '' }
+        };
+      } else if (type === 'specialist') {
+        return {
+          ...prev,
+          [taskId]: { nurse: '', specialist: value }
+        };
+      }
+      return prev;
+    });
   };
+  
   const handleAccept = () => {
     if (detailData) {
-      // Lấy các dịch vụ con thực tế của booking
       const { serviceTasksOfBooking } = getBookingDetail(detailData);
+      // Kiểm tra xem tất cả dịch vụ đã có nhân sự chưa
+      const unassignedTasks = serviceTasksOfBooking.filter(task => {
+        const hasExistingNurse = task.hasAssignedNurse;
+        const hasNewAssignment = (taskAssignments[task.ServiceTaskID]?.nurse || taskAssignments[task.ServiceTaskID]?.specialist);
+        return !hasExistingNurse && !hasNewAssignment;
+      });
+      if (unassignedTasks.length > 0) {
+        alert(`Vui lòng chọn nhân sự cho các dịch vụ sau:\n${unassignedTasks.map(task => `- ${task.Description}`).join('\n')}`);
+        return;
+      }
+      // Hiển thị kết quả gán nhân sự (chỉ lấy 1 nhân sự cho mỗi dịch vụ)
       const result = serviceTasksOfBooking.map(task => {
-        // Ưu tiên lấy nhân sự đã có, nếu chưa có thì lấy từ taskAssignments
-        const nurseName = task.nurseName
-          || (taskAssignments[task.ServiceTaskID]?.nurse
-            ? allNurses.find(n => n.AccountID === Number(taskAssignments[task.ServiceTaskID]?.nurse))?.full_name
-            : 'Chưa chọn');
-        const specialistName = task.nurseRole
-          || (taskAssignments[task.ServiceTaskID]?.specialist
-            ? allSpecialists.find(s => s.AccountID === Number(taskAssignments[task.ServiceTaskID]?.specialist))?.full_name
-            : 'Chưa chọn');
-        return `- ${task.Description}: Nurse: ${nurseName}, Specialist: ${specialistName}`;
+        let nhansu = '';
+        if (task.assignedNurseName) {
+          nhansu = `${task.assignedNurseName} (${task.assignedNurseRole})`;
+        } else if (taskAssignments[task.ServiceTaskID]?.nurse) {
+          const nurse = allNurses.find(n => n.AccountID === Number(taskAssignments[task.ServiceTaskID]?.nurse));
+          nhansu = nurse ? `${nurse.full_name} (Y tá)` : 'Chưa chọn';
+        } else if (taskAssignments[task.ServiceTaskID]?.specialist) {
+          const specialist = allSpecialists.find(s => s.AccountID === Number(taskAssignments[task.ServiceTaskID]?.specialist));
+          nhansu = specialist ? `${specialist.full_name} (Chuyên gia)` : 'Chưa chọn';
+        } else {
+          nhansu = 'Chưa chọn';
+        }
+        return `- ${task.Description}: ${nhansu}`;
       }).join('\n');
-      alert(`Gán cho từng dịch vụ:\n${result}`);
+      alert(`Đã accept booking với nhân sự:\n${result}`);
       setShowDetail(false);
     }
   };
@@ -117,7 +183,14 @@ const ManagerBookingTab = () => {
   return (
     <div>
       <h3 className="text-xl font-semibold mb-4">Danh sách Booking</h3>
-      <table className="w-full bg-white rounded-lg overflow-hidden shadow-lg">
+      {bookings.length === 0 ? (
+        <div className="text-center py-8">
+          <div className="text-gray-500 text-lg mb-2">📋</div>
+          <p className="text-gray-600 text-lg font-medium">Không có booking nào</p>
+          <p className="text-gray-400 text-sm mt-1">Hiện tại chưa có booking nào thuộc khu vực quản lý của bạn</p>
+        </div>
+      ) : (
+        <table className="w-full bg-white rounded-lg overflow-hidden shadow-lg">
         <thead className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
           <tr>
             <th className="px-6 py-3 text-left">Mã Booking</th>
@@ -176,6 +249,7 @@ const ManagerBookingTab = () => {
           })}
         </tbody>
       </table>
+      )}
       {/* Popup chi tiết booking */}
       {showDetail && detailData && (() => {
         const { careProfile, account, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(detailData);
@@ -184,38 +258,90 @@ const ManagerBookingTab = () => {
         const { nurses, specialists } = getFilteredNursesSpecialists(careProfile);
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-            <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-8 relative max-h-[90vh] overflow-y-auto">
+            <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl p-8 relative max-h-[90vh] overflow-y-auto">
               <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl" onClick={handleCloseDetail}>&times;</button>
               <h3 className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 mb-4">Chi tiết Booking #{detailData.BookingID}</h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm mb-6">
-                <div className="font-medium text-gray-600">Khách hàng:</div>
-                <div>{careProfile?.ProfileName || '-'}</div>
-                <div className="font-medium text-gray-600">SĐT:</div>
-                <div>{careProfile?.PhoneNumber || '-'}</div>
-                <div className="font-medium text-gray-600">Địa chỉ:</div>
-                <div>{careProfile?.Address || '-'}</div>
-                <div className="font-medium text-gray-600">Email:</div>
-                <div>{account?.email || '-'}</div>
-                <div className="font-medium text-gray-600">Dịch vụ:</div>
-                <div>{packageInfo ? packageInfo.Name : (service?.ServiceName || '-')}</div>
-                {packageInfo && <><div className="font-medium text-gray-600">Mô tả gói:</div><div>{packageInfo.Description}</div></>}
-                <div className="font-medium text-gray-600">Ngày đặt:</div>
-                <div>{detailData.CreatedAt ? new Date(detailData.CreatedAt).toLocaleString('vi-VN') : '-'}</div>
-                <div className="font-medium text-gray-600">Ngày làm việc:</div>
-                <div>{detailData.WorkDate ? new Date(detailData.WorkDate).toLocaleString('vi-VN') : '-'}</div>
-                <div className="font-medium text-gray-600">Giá tiền:</div>
-                <div>{detailData.Amount?.toLocaleString('vi-VN') || '-'} VND</div>
-                <div className="font-medium text-gray-600">Trạng thái:</div>
-                <div>
-                  <select
-                    value={selectedStatus || detailData.Status}
-                    onChange={e => setSelectedStatus(e.target.value)}
-                    className="px-2 py-1 rounded border"
-                  >
-                    {statusOptions.map(opt => (
-                      <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                  </select>
+              <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                  {/* Thông tin khách hàng */}
+                  <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                      <span className="w-2 h-2 bg-blue-500 rounded-full mr-3"></span>
+                      Thông tin khách hàng
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Tên khách hàng</div>
+                        <div className="text-gray-800 font-medium">{careProfile?.ProfileName || '-'}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Số điện thoại</div>
+                        <div className="text-gray-800">{careProfile?.PhoneNumber || '-'}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</div>
+                        <div className="text-gray-800">{account?.email || '-'}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Địa chỉ</div>
+                        <div className="text-gray-800 text-sm leading-relaxed">{careProfile?.Address || '-'}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Thông tin booking */}
+                  <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                      <span className="w-2 h-2 bg-green-500 rounded-full mr-3"></span>
+                      Thông tin booking
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Dịch vụ</div>
+                        <div className="text-gray-800 font-medium">{packageInfo ? packageInfo.Name : (service?.ServiceName || '-')}</div>
+                      </div>
+                      {packageInfo && (
+                        <div>
+                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Mô tả</div>
+                          <div className="text-gray-800 text-sm leading-relaxed">{packageInfo.Description}</div>
+                        </div>
+                      )}
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ngày đặt</div>
+                        <div className="text-gray-800">{detailData.CreatedAt ? new Date(detailData.CreatedAt).toLocaleString('vi-VN') : '-'}</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ngày làm việc</div>
+                        <div className="text-gray-800">{detailData.WorkDate ? new Date(detailData.WorkDate).toLocaleString('vi-VN') : '-'}</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Thông tin thanh toán */}
+                  <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
+                    <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+                      <span className="w-2 h-2 bg-purple-500 rounded-full mr-3"></span>
+                      Thông tin thanh toán
+                    </h4>
+                    <div className="space-y-3">
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Giá tiền</div>
+                        <div className="text-2xl font-bold text-purple-600">{detailData.Amount?.toLocaleString('vi-VN') || '-'} ₫</div>
+                      </div>
+                      <div>
+                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Trạng thái</div>
+                        <select
+                          value={selectedStatus || detailData.Status}
+                          onChange={e => setSelectedStatus(e.target.value)}
+                          className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-purple-400 focus:border-purple-400 bg-white"
+                        >
+                          {statusOptions.map(opt => (
+                            <option key={opt.value} value={opt.value}>{opt.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
               <div className="mb-4">
@@ -225,8 +351,11 @@ const ManagerBookingTab = () => {
                   {serviceTasksOfBooking.map((task, idx) => (
                     <li key={idx} className="text-sm">
                       {task?.Description} <span className="text-xs text-gray-500">({task?.price?.toLocaleString()}đ)</span>
-                      {task.nurseName && (
-                        <span className="ml-2 text-xs text-blue-700">- {task.nurseName} ({task.nurseRole})</span>
+                      {task.assignedNurseName && (
+                        <span className="ml-2 text-xs text-blue-700">- {task.assignedNurseName} ({task.assignedNurseRole})</span>
+                      )}
+                      {!task.assignedNurseName && (
+                        <span className="ml-2 text-xs text-red-600">- Chưa có nhân sự</span>
                       )}
                       {task.Status && (
                         <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${task.Status === 'active' ? 'bg-blue-100 text-blue-700' : task.Status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{task.Status}</span>
@@ -235,94 +364,64 @@ const ManagerBookingTab = () => {
                   ))}
                 </ul>
               </div>
-              {isPackage ? (
-                <div className="mb-6">
-                  <h4 className="font-semibold mb-2">Danh sách dịch vụ trong gói:</h4>
-                  <table className="w-full text-sm border rounded">
-                    <thead>
-                      <tr className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700">
-                        <th className="p-2 text-left">Dịch vụ</th>
-                        <th className="p-2 text-left">Giá</th>
-                        <th className="p-2 text-left">Nhân sự</th>
-                        <th className="p-2 text-left">Vai trò</th>
-                        <th className="p-2 text-left">Trạng thái</th>
+              <div className="mb-6">
+                <h4 className="font-semibold mb-2">Danh sách dịch vụ:</h4>
+                <table className="w-full text-sm border rounded">
+                  <thead>
+                    <tr className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700">
+                      <th className="p-2 text-left">Dịch vụ</th>
+                      <th className="p-2 text-left">Giá</th>
+                      <th className="p-2 text-left">Nhân sự đã chọn</th>
+                      <th className="p-2 text-left">Chọn nhân sự</th>
+                      <th className="p-2 text-left">Trạng thái</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {serviceTasksOfBooking.map((task, idx) => (
+                      <tr key={task.ServiceTaskID}>
+                        <td className="p-2">{task?.Description}</td>
+                        <td className="p-2">{task?.price?.toLocaleString()}đ</td>
+                        <td className="p-2">
+                          {task.assignedNurseName ? (
+                            <span className="text-green-600 font-medium">{task.assignedNurseName} ({task.assignedNurseRole})</span>
+                          ) : (
+                            <span className="text-red-500 text-sm">Chưa có nhân sự</span>
+                          )}
+                        </td>
+                        <td className="p-2">
+                          {!task.assignedNurseName ? (
+                            <div className="space-y-1">
+                              <select
+                                value={taskAssignments[task.ServiceTaskID]?.nurse || ''}
+                                onChange={e => handleTaskAssign(task.ServiceTaskID, 'nurse', e.target.value)}
+                                className="w-full px-2 py-1 rounded border text-xs"
+                              >
+                                <option value="">Chọn Y tá</option>
+                                {nurses.map(n => (
+                                  <option key={n.AccountID} value={n.AccountID}>{n.full_name}</option>
+                                ))}
+                              </select>
+                              <select
+                                value={taskAssignments[task.ServiceTaskID]?.specialist || ''}
+                                onChange={e => handleTaskAssign(task.ServiceTaskID, 'specialist', e.target.value)}
+                                className="w-full px-2 py-1 rounded border text-xs"
+                              >
+                                <option value="">Chọn Chuyên gia</option>
+                                {specialists.map(s => (
+                                  <option key={s.AccountID} value={s.AccountID}>{s.full_name}</option>
+                                ))}
+                              </select>
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 text-xs">Đã có nhân sự</span>
+                          )}
+                        </td>
+                        <td className="p-2">{task.status}</td>
                       </tr>
-                    </thead>
-                    <tbody>
-                      {serviceTasksOfBooking.map((task, idx) => (
-                        <tr key={task.ServiceTaskID}>
-                          <td className="p-2">{task?.Description}</td>
-                          <td className="p-2">{task?.price?.toLocaleString()}đ</td>
-                          <td className="p-2">
-                            {task.nurseName
-                              ? task.nurseName
-                              : (
-                                <select
-                                  value={taskAssignments[task.ServiceTaskID]?.nurse || ''}
-                                  onChange={e => handleTaskAssign(task.ServiceTaskID, 'nurse', e.target.value)}
-                                  className="px-2 py-1 rounded border"
-                                >
-                                  <option value="">Chọn nurse</option>
-                                  {nurses.map(n => (
-                                    <option key={n.AccountID} value={n.AccountID}>{n.full_name}</option>
-                                  ))}
-                                </select>
-                              )
-                            }
-                          </td>
-                          <td className="p-2">
-                            {task.nurseRole
-                              ? task.nurseRole
-                              : (
-                                <select
-                                  value={taskAssignments[task.ServiceTaskID]?.specialist || ''}
-                                  onChange={e => handleTaskAssign(task.ServiceTaskID, 'specialist', e.target.value)}
-                                  className="px-2 py-1 rounded border"
-                                >
-                                  <option value="">Chọn specialist</option>
-                                  {specialists.map(s => (
-                                    <option key={s.AccountID} value={s.AccountID}>{s.full_name}</option>
-                                  ))}
-                                </select>
-                              )
-                            }
-                          </td>
-                          <td className="p-2">{task.status}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm mb-6">
-                  <div className="font-medium text-gray-600">Chọn Nurse:</div>
-                  <div>
-                    <select
-                      value={selectedNurse}
-                      onChange={e => setSelectedNurse(e.target.value)}
-                      className="px-2 py-1 rounded border"
-                    >
-                      <option value="">Chọn nurse</option>
-                      {nurses.map(n => (
-                        <option key={n.AccountID} value={n.AccountID}>{n.full_name}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div className="font-medium text-gray-600">Chọn Specialist:</div>
-                  <div>
-                    <select
-                      value={selectedSpecialist}
-                      onChange={e => setSelectedSpecialist(e.target.value)}
-                      className="px-2 py-1 rounded border"
-                    >
-                      <option value="">Chọn specialist</option>
-                      {specialists.map(s => (
-                        <option key={s.AccountID} value={s.AccountID}>{s.full_name}</option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
-              )}
+                    ))}
+                  </tbody>
+                </table>
+              </div>
               <div className="flex justify-end mt-4">
                 <button
                   onClick={handleAccept}

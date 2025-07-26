@@ -67,7 +67,7 @@ const nursingSpecialists = [
   {
     NursingID: 6,
     AccountID: 13,
-    ZoneID: 2,
+    ZoneID: 3,
     Gender: "Nữ",
     DateOfBirth: "1985-03-10",
     FullName: "Nguyen Van H",
@@ -80,7 +80,7 @@ const nursingSpecialists = [
   {
     NursingID: 7,
     AccountID: 14,
-    ZoneID: 2,
+    ZoneID: 3,
     Gender: "Nam",
     DateOfBirth: "1985-03-10",
     FullName: "Nguyen Van I",
@@ -93,7 +93,7 @@ const nursingSpecialists = [
   {
     NursingID: 8,
     AccountID: 15,
-    ZoneID: 3,
+    ZoneID: 4,
     Gender: "Nữ",
     DateOfBirth: "1985-03-10",
     FullName: "Nguyen Van J",

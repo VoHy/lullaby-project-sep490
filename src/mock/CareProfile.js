@@ -69,6 +69,20 @@ const careProfiles = [
     Status: "active",
     Image: "care2.jpg"
   },
+  {
+    CareProfileID: 6,
+    AccountID: 5,
+    ZoneDetailID: 5, // Quận 7
+    ProfileName: "Le Thi K",
+    DateOfBirth: "15-08-1945",
+    Gender: "Nữ",
+    Address: "Số 78, Đường Nguyễn Thị Thập, Phường Tân Phú, Quận 7, TP. Hồ Chí Minh",
+    PhoneNumber: "0923456789",
+    Notes: "Bệnh tim mạch, cần chăm sóc đặc biệt",
+    CreatedAt: "2024-07-01T10:00:00Z",
+    Status: "active",
+    Image: "care3.jpg"
+  },
 ];
 
 export default careProfiles; 
