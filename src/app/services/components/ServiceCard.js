@@ -109,7 +109,7 @@ const ServiceCard = ({
                   ? 'bg-pink-500 hover:bg-pink-600' 
                   : 'bg-blue-500 hover:bg-blue-600'
               }`}
-              onClick={() => onBook(service.ServiceID)}
+              onClick={() => onBook(service.ServiceID, type)}
               disabled={isDisabled}
             >
               <FaShoppingCart className="text-sm" />

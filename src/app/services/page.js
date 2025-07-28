@@ -86,8 +86,8 @@ export default function ServicesPage() {
   };
 
   // Handle booking
-  const handleBook = (serviceId) => {
-    if (selectedPackage) {
+  const handleBook = (serviceId, type = 'service') => {
+    if (type === 'package') {
       router.push(`/booking?package=${serviceId}`);
     } else {
       router.push(`/booking?service=${serviceId}`);

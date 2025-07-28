@@ -65,8 +65,8 @@ const workSchedules = [
     ServiceID: 1,
     NursingID: 1,
     IsAttended: false,
-    EndTime: "2025-07-28T12:00:00Z", // 19:00 VN
-    WorkDate: "2025-07-28T10:00:00Z", // 17:00 VN
+    EndTime: "2025-07-29T12:00:00Z", // 19:00 VN
+    WorkDate: "2025-07-29T10:00:00Z", // 17:00 VN
     Status: "active"
   },
   {
@@ -75,8 +75,8 @@ const workSchedules = [
     ServiceID: 1,
     NursingID: 3,
     IsAttended: false,
-    EndTime: "2025-07-28T12:00:00Z",
-    WorkDate: "2025-07-28T10:00:00Z",
+    EndTime: "2025-07-29T12:00:00Z",
+    WorkDate: "2025-07-29T10:00:00Z",
     Status: "active"
   },
   {
@@ -85,8 +85,8 @@ const workSchedules = [
     ServiceID: 1,
     NursingID: 4,
     IsAttended: false,
-    EndTime: "2025-07-28T12:00:00Z",
-    WorkDate: "2025-07-28T10:00:00Z",
+    EndTime: "2025-07-29T12:00:00Z",
+    WorkDate: "2025-07-29T10:00:00Z",
     Status: "active"
   }
 ];
