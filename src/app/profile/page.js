@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useContext } from "react";
-import { FaEdit, FaSave, FaTimes, FaUser, FaEnvelope, FaPhone, FaCalendar, FaShieldAlt, FaMapMarkerAlt, FaStickyNote, FaUsers } from "react-icons/fa";
+import { FaEdit, FaSave, FaTimes, FaUser, FaEnvelope, FaPhone, FaCalendar, FaShieldAlt, FaMapMarkerAlt, FaStickyNote, FaUsers, FaWallet } from "react-icons/fa";
 import accountsService from '@/services/api/accountService';
 import relativesService from '@/services/api/relativesService';
 import zoneService from '@/services/api/zoneService';
@@ -8,6 +8,7 @@ import careProfileService from '@/services/api/careProfileService';
 import { AuthContext } from "@/context/AuthContext";
 import ProfileCard from './components/ProfileCard';
 import CareProfileList from './components/CareProfileList';
+import WalletTab from './components/WalletTab';
 
 export default function ProfilePage() {
   const { user } = useContext(AuthContext);
@@ -16,7 +17,7 @@ export default function ProfilePage() {
   const [relativesList, setRelativesList] = useState([]);
   const [zones, setZones] = useState([]);
   const [isEditing, setIsEditing] = useState(false);
-  // Thêm email vào editData
+  const [activeTab, setActiveTab] = useState('profile'); // 'profile', 'care-profiles', 'wallet'
   const [editData, setEditData] = useState({ full_name: '', phone_number: '', avatar_url: '', email: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -116,6 +117,59 @@ export default function ProfilePage() {
     }
   };
 
+  const tabs = [
+    {
+      id: 'profile',
+      name: 'Thông tin cá nhân',
+      icon: <FaUser className="text-sm" />,
+      show: true
+    },
+    {
+      id: 'care-profiles',
+      name: 'Hồ sơ người thân',
+      icon: <FaUsers className="text-sm" />,
+      show: profile.role_id === 3
+    },
+    {
+      id: 'wallet',
+      name: 'Ví điện tử',
+      icon: <FaWallet className="text-sm" />,
+      show: true
+    }
+  ];
+
+  const renderTabContent = () => {
+    switch (activeTab) {
+      case 'profile':
+        return (
+          <ProfileCard
+            profile={profile}
+            isEditing={isEditing}
+            editData={editData}
+            onEditClick={handleEditClick}
+            onInputChange={handleInputChange}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            loading={loading}
+            error={error}
+            getRoleName={getRoleName}
+          />
+        );
+      case 'care-profiles':
+        return (
+          <CareProfileList
+            careProfiles={careProfiles}
+            relativesList={relativesList}
+            zones={zones}
+          />
+        );
+      case 'wallet':
+        return <WalletTab />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
@@ -125,30 +179,30 @@ export default function ProfilePage() {
           </h1>
           <p className="text-gray-600">Quản lý thông tin tài khoản và hồ sơ chăm sóc</p>
         </div>
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-1">
-            <ProfileCard
-              profile={profile}
-              isEditing={isEditing}
-              editData={editData}
-              onEditClick={handleEditClick}
-              onInputChange={handleInputChange}
-              onSave={handleSave}
-              onCancel={handleCancel}
-              loading={loading}
-              error={error}
-              getRoleName={getRoleName}
-            />
+
+        {/* Tab Navigation */}
+        <div className="mb-8">
+          <div className="flex flex-wrap gap-2 border-b border-gray-200">
+            {tabs.filter(tab => tab.show).map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${
+                  activeTab === tab.id
+                    ? 'bg-white text-purple-600 border-b-2 border-purple-600 shadow-sm'
+                    : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                {tab.icon}
+                {tab.name}
+              </button>
+            ))}
           </div>
-          <div className="lg:col-span-2">
-            {profile && profile.role_id === 3 && (
-              <CareProfileList
-                careProfiles={careProfiles}
-                relativesList={relativesList}
-                zones={zones}
-              />
-            )}
-          </div>
+        </div>
+
+        {/* Tab Content */}
+        <div className="bg-white rounded-xl shadow-lg">
+          {renderTabContent()}
         </div>
       </div>
     </div>

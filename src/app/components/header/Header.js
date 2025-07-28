@@ -4,6 +4,7 @@ import { useState, useEffect, useContext } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AuthContext } from '../../../context/AuthContext';
+import WalletIcon from './WalletIcon';
 
 export default function Header() {
   const pathname = usePathname();
@@ -166,7 +167,10 @@ export default function Header() {
               )}
             </nav>
           </div>
-          <div className="flex items-center">
+          <div className="flex items-center gap-4">
+            {/* Wallet Icon - chỉ hiển thị cho user đã đăng nhập */}
+            {user && <WalletIcon />}
+            
             {user ? (
               <div className="relative">
                 <button onClick={toggleMenu} className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-lg">

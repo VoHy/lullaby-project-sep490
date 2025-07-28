@@ -1,18 +1,45 @@
 "use client";
 import { useEffect, useState } from "react";
 import { useRouter } from 'next/navigation';
+import { motion } from 'framer-motion';
+import { FaCalendar, FaPlus } from 'react-icons/fa';
 import authService from '@/services/auth/authService';
 import bookingService from '@/services/api/bookingService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
+import careProfileService from '@/services/api/careProfileService';
+import customerTaskService from '@/services/api/customerTaskService';
+import customerPackageService from '@/services/api/customerPackageService';
 import invoiceService from '@/services/api/invoiceService';
+import {
+  AppointmentCard,
+  AppointmentDetailModal,
+  SearchFilter,
+  EmptyState,
+  LoadingSpinner
+} from './components';
+import {
+  getServiceNames,
+  getNurseNames,
+  getStatusColor,
+  getStatusText,
+  formatDate,
+  filterAppointments
+} from './utils/appointmentUtils';
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
+  const [careProfiles, setCareProfiles] = useState([]);
+  const [customerTasks, setCustomerTasks] = useState([]);
+  const [customerPackages, setCustomerPackages] = useState([]);
   const [invoices, setInvoices] = useState([]);
-  const [selected, setSelected] = useState(null); // Lịch hẹn đang xem chi tiết
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [searchText, setSearchText] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
   const router = useRouter();
 
   useEffect(() => {
@@ -20,121 +47,225 @@ export default function AppointmentsPage() {
       router.push('/auth/login');
       return;
     }
-    const user = authService.getCurrentUser();
-    bookingService.getBookingServices().then(data => {
-      setAppointments(data.filter(a => a.AccountID === user.AccountID));
-    });
-    serviceTypeService.getServiceTypes().then(setServiceTypes);
-    nursingSpecialistService.getNursingSpecialists().then(setNursingSpecialists);
-    invoiceService.getInvoices().then(setInvoices);
+
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const user = authService.getCurrentUser();
+        
+        const [
+          bookings, 
+          services, 
+          specialists, 
+          careProfileData, 
+          taskData,
+          packageData,
+          invoiceData
+        ] = await Promise.all([
+          bookingService.getBookingServices(),
+          serviceTypeService.getServiceTypes(),
+          nursingSpecialistService.getNursingSpecialists(),
+          careProfileService.getCareProfiles(),
+          customerTaskService.getCustomerTasks(),
+          customerPackageService.getCustomerPackages(),
+          invoiceService.getInvoices()
+        ]);
+
+        // Get user's care profiles
+        const userCareProfiles = careProfileData.filter(cp => cp.AccountID === user.AccountID);
+        const userCareProfileIds = userCareProfiles.map(cp => cp.CareProfileID);
+
+        // Filter appointments for user's care profiles
+        const userAppointments = bookings.filter(booking => 
+          userCareProfileIds.includes(booking.CareProfileID)
+        );
+        
+        setAppointments(userAppointments);
+        setServiceTypes(services);
+        setNursingSpecialists(specialists);
+        setCareProfiles(careProfileData);
+        setCustomerTasks(taskData);
+        setCustomerPackages(packageData);
+        setInvoices(invoiceData);
+      } catch (error) {
+        console.error('Error fetching appointments:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, [router]);
 
-  // Hàm render thông tin lịch hẹn
-  const renderAppointment = (appt, idx) => {
-    let pkg = null;
-    let svcs = [];
-    let nurses = [];
-    if (appt.package) {
-      pkg = packages.find(p => p.package_id === Number(appt.package));
-    }
-    if (appt.services) {
-      const ids = appt.services.split(",").map(Number);
-      svcs = serviceTypes.filter(s => ids.includes(s.servicetype_id));
-    }
-    if (appt.nurses) {
-      const ids = appt.nurses.split(",").map(Number);
-      nurses = nursingSpecialists.filter(n => ids.includes(n.nursing_id));
-    }
-    return (
-      <div key={idx} className="mb-8 p-6 rounded-xl shadow bg-white cursor-pointer hover:bg-pink-50" onClick={() => setSelected({ ...appt, idx })}>
-        <div className="mb-2 text-lg font-bold text-pink-600">Lịch hẹn #{idx + 1}</div>
-        {pkg && (
-          <div className="mb-2">
-            <span className="font-semibold">Gói dịch vụ: </span>{pkg.package_name}
-          </div>
-        )}
-        {svcs.length > 0 && (
-          <div className="mb-2">
-            <span className="font-semibold">Dịch vụ lẻ: </span>
-            {svcs.map(s => s.servicetype_name).join(", ")}
-          </div>
-        )}
-        <div className="mb-2">
-          <span className="font-semibold">Ngày giờ: </span>{appt.datetime ? new Date(appt.datetime).toLocaleString() : "-"}
-        </div>
-        <div className="mb-2">
-          <span className="font-semibold">Nurse: </span>
-          {nurses.length === 0 ? "Không chọn" : nurses.map(n => n.full_name).join(", ")}
-        </div>
-        <div className="mb-2">
-          <span className="font-semibold">Trạng thái: </span>
-          <span className="text-green-600 font-semibold">Đã thanh toán</span>
-        </div>
-      </div>
-    );
+  // Filter appointments based on search and filters
+  const filteredAppointments = filterAppointments(appointments, searchText, statusFilter, dateFilter);
+
+  // Helper functions with data context
+  const getServiceNamesWithContext = (serviceIds) => getServiceNames(serviceIds, serviceTypes);
+  const getNurseNamesWithContext = (nurseIds) => getNurseNames(nurseIds, nursingSpecialists);
+
+  // Get care profile name for display
+  const getCareProfileName = (careProfileId) => {
+    const careProfile = careProfiles.find(cp => cp.CareProfileID === careProfileId);
+    return careProfile ? careProfile.ProfileName : 'Không xác định';
   };
 
-  // Render chi tiết lịch hẹn (modal đơn giản)
-  const renderDetail = () => {
-    if (!selected) return null;
-    let pkg = null;
-    let svcs = [];
-    let nurses = [];
-    if (selected.package) {
-      pkg = packages.find(p => p.package_id === Number(selected.package));
-    }
-    if (selected.services) {
-      const ids = selected.services.split(",").map(Number);
-      svcs = serviceTypes.filter(s => ids.includes(s.servicetype_id));
-    }
-    if (selected.nurses) {
-      const ids = selected.nurses.split(",").map(Number);
-      nurses = nursingSpecialists.filter(n => ids.includes(n.nursing_id));
-    }
-    // Giả lập lấy invoice đầu tiên (demo)
-    const invoice = invoices[0];
-    return (
-      <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl shadow-xl p-8 max-w-lg w-full relative">
-          <button className="absolute top-2 right-2 text-xl" onClick={() => setSelected(null)}>&times;</button>
-          <h2 className="text-2xl font-bold text-pink-600 mb-4">Chi tiết lịch hẹn</h2>
-          {pkg && (
-            <div className="mb-2"><span className="font-semibold">Gói dịch vụ: </span>{pkg.package_name}</div>
-          )}
-          {svcs.length > 0 && (
-            <div className="mb-2"><span className="font-semibold">Dịch vụ lẻ: </span>{svcs.map(s => s.servicetype_name).join(", ")}</div>
-          )}
-          <div className="mb-2"><span className="font-semibold">Ngày giờ: </span>{selected.datetime ? new Date(selected.datetime).toLocaleString() : "-"}</div>
-          <div className="mb-2"><span className="font-semibold">Nurse: </span>{nurses.length === 0 ? "Không chọn" : nurses.map(n => n.full_name).join(", ")}</div>
-          <div className="mb-2"><span className="font-semibold">Ghi chú: </span>{selected.note || "-"}</div>
-          <div className="mb-2"><span className="font-semibold">Trạng thái: </span><span className="text-green-600 font-semibold">Đã thanh toán</span></div>
-          <div className="mb-4">
-            <span className="font-semibold">Lịch sử thanh toán: </span>
-            <button
-              className="ml-2 px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600"
-              onClick={() => {
-                setSelected(null);
-                window.location.href = "/payment/history";
-              }}
-            >
-              Xem lịch sử thanh toán
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+  // Get detailed booking information
+  const getBookingDetails = (bookingId) => {
+    const tasks = customerTasks.filter(task => task.BookingID === bookingId);
+    const packages = customerPackages.filter(pkg => pkg.BookingID === bookingId);
+    
+    return {
+      tasks,
+      packages,
+      totalAmount: tasks.reduce((sum, task) => sum + task.Total, 0) + 
+                   packages.reduce((sum, pkg) => sum + pkg.Total, 0)
+    };
   };
+
+  // Get services for a booking
+  const getBookingServices = (bookingId) => {
+    const tasks = customerTasks.filter(task => task.BookingID === bookingId);
+    const services = tasks.map(task => {
+      const service = serviceTypes.find(s => s.ServiceID === task.ServiceID);
+      const nurse = nursingSpecialists.find(n => n.NursingID === task.NursingID);
+      return {
+        serviceName: service ? service.ServiceName : 'Không xác định',
+        nurseName: nurse ? nurse.FullName : 'Chưa phân công',
+        price: task.Total,
+        status: task.Status
+      };
+    });
+    return services;
+  };
+
+  // Get packages for a booking
+  const getBookingPackages = (bookingId) => {
+    const packages = customerPackages.filter(pkg => pkg.BookingID === bookingId);
+    return packages.map(pkg => ({
+      packageName: pkg.Name,
+      description: pkg.Description,
+      price: pkg.Total,
+      status: pkg.Status
+    }));
+  };
+
+  const handleNewAppointment = () => {
+    router.push('/services');
+  };
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10">
-      <div className="max-w-3xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-pink-600 mb-8">Lịch hẹn của bạn</h1>
-        {appointments.length === 0 ? (
-          <div className="text-gray-500">Bạn chưa có lịch hẹn nào.</div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Header Section */}
+        <motion.div
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <div className="flex items-center justify-center gap-3 mb-4">
+            <FaCalendar className="text-4xl text-purple-600" />
+            <h1 className="text-4xl md:text-5xl font-bold text-gray-900">
+              Lịch hẹn của bạn
+            </h1>
+          </div>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Quản lý và theo dõi tất cả lịch hẹn chăm sóc sức khỏe của bạn
+          </p>
+        </motion.div>
+
+        {/* Search and Filter Section */}
+        <SearchFilter
+          searchText={searchText}
+          setSearchText={setSearchText}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+        />
+
+        {/* Results Count */}
+        <motion.div
+          className="mb-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <p className="text-gray-600">
+            Tìm thấy <span className="font-semibold text-purple-600">{filteredAppointments.length}</span> lịch hẹn
+            {searchText && ` cho "${searchText}"`}
+            {statusFilter !== 'all' && ` với trạng thái "${getStatusText(statusFilter)}"`}
+          </p>
+        </motion.div>
+
+        {/* Appointments List */}
+        {filteredAppointments.length === 0 ? (
+          <EmptyState onNewAppointment={handleNewAppointment} />
         ) : (
-          appointments.map(renderAppointment)
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredAppointments.map((appointment, idx) => (
+              <AppointmentCard
+                key={appointment.BookingID}
+                appointment={appointment}
+                index={idx}
+                serviceTypes={serviceTypes}
+                nursingSpecialists={nursingSpecialists}
+                onSelect={setSelectedAppointment}
+                getServiceNames={getServiceNamesWithContext}
+                getNurseNames={getNurseNamesWithContext}
+                getStatusColor={getStatusColor}
+                getStatusText={getStatusText}
+                formatDate={formatDate}
+                getCareProfileName={getCareProfileName}
+                getBookingServices={getBookingServices}
+                getBookingPackages={getBookingPackages}
+                getBookingDetails={getBookingDetails}
+              />
+            ))}
+          </div>
         )}
-        {renderDetail()}
+
+        {/* New Appointment Button */}
+        {filteredAppointments.length > 0 && (
+          <motion.div
+            className="text-center mt-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <button
+              onClick={handleNewAppointment}
+              className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+            >
+              <FaPlus className="inline mr-2" />
+              Đặt lịch hẹn mới
+            </button>
+          </motion.div>
+        )}
+
+        {/* Appointment Detail Modal */}
+        {selectedAppointment && (
+          <AppointmentDetailModal
+            appointment={selectedAppointment}
+            onClose={() => setSelectedAppointment(null)}
+            serviceTypes={serviceTypes}
+            nursingSpecialists={nursingSpecialists}
+            getServiceNames={getServiceNamesWithContext}
+            getNurseNames={getNurseNamesWithContext}
+            getStatusColor={getStatusColor}
+            getStatusText={getStatusText}
+            formatDate={formatDate}
+            getCareProfileName={getCareProfileName}
+            getBookingServices={getBookingServices}
+            getBookingPackages={getBookingPackages}
+            getBookingDetails={getBookingDetails}
+          />
+        )}
       </div>
     </div>
   );
