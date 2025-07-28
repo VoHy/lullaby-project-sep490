@@ -6,7 +6,7 @@ const blogs = [
     Content: "Nội dung bài viết về chăm sóc sức khỏe...",
     CreatedAt: "2024-05-20T09:00:00Z",
     Status: "published",
-    Image: "logo.png",
+    Image: "/images/hero-bg.jpg",
     CreatedByID: 1
   },
   {
@@ -16,7 +16,7 @@ const blogs = [
     Content: "Bài viết về dinh dưỡng...",
     CreatedAt: "2024-05-22T10:00:00Z",
     Status: "draft",
-    Image: "blog2.jpg",
+    Image: "/images/hero-bg.jpg",
     CreatedByID: 1
   },
   {
@@ -26,7 +26,7 @@ const blogs = [
     Content: "Nội dung bài viết về chăm sóc sức khỏe...",
     CreatedAt: "2024-05-20T09:00:00Z",
     Status: "published",
-    Image: "logo.png",
+    Image: "/images/hero-bg.jpg",
     CreatedByID: 1
   },
   {
@@ -36,7 +36,7 @@ const blogs = [
     Content: "Nội dung bài viết về chăm sóc sức khỏe...",
     CreatedAt: "2024-05-20T09:00:00Z",
     Status: "published",
-    Image: "logo.png",
+    Image: "/images/hero-bg.jpg",
     CreatedByID: 1
   }
 ];

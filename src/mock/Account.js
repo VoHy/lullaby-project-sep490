@@ -5,7 +5,7 @@ const accounts = [
     phone_number: "0123456789",
     email: "e@example.com",
     password: "hashedpassword1",
-    avatar_url: "avatar1.jpg",
+    avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-01-01T08:00:00Z",
     status: "active",
     role_id: 3, // Relative
@@ -18,7 +18,7 @@ const accounts = [
     phone_number: "0123456789",
     email: "e1@example.com",
     password: "hashedpassword1",
-    avatar_url: "avatar1.jpg",
+    avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-01-01T08:00:00Z",
     status: "active",
     role_id: 3, // Relative
@@ -31,7 +31,7 @@ const accounts = [
     phone_number: "0987654321",
     email: "admin@example.com",
     password: "hashedpassword2",
-    avatar_url: "avatar2.jpg",
+    avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-02-01T09:00:00Z",
     status: "active",
     role_id: 1, // Admin
@@ -44,7 +44,7 @@ const accounts = [
     phone_number: "0911222333",
     email: "manager1@example.com",
     password: "hashedpassword3",
-    avatar_url: "avatar3.jpg",
+    avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-03-01T10:00:00Z",
     status: "active",
     role_id: 4, // Manager
@@ -57,7 +57,7 @@ const accounts = [
     phone_number: "0911222333",
     email: "manager2@example.com",
     password: "hashedpassword3",
-    avatar_url: "avatar3.jpg",
+    avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-03-01T10:00:00Z",
     status: "active",
     role_id: 4, // Manager
@@ -70,7 +70,7 @@ const accounts = [
     phone_number: "0911222333",
     email: "manager3@example.com",
     password: "hashedpassword3",
-    avatar_url: "avatar3.jpg",
+    avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-03-01T10:00:00Z",
     status: "active",
     role_id: 4, // Manager
@@ -83,7 +83,7 @@ const accounts = [
     phone_number: "0911222333",
     email: "manager4@example.com",
     password: "hashedpassword3",
-    avatar_url: "avatar3.jpg",
+    avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-03-01T10:00:00Z",
     status: "active",
     role_id: 4, // Manager
@@ -96,7 +96,7 @@ const accounts = [
     phone_number: "0933444555",
     email: "nurse@example.com",
     password: "hashedpassword4",
-    avatar_url: "avatar4.jpg",
+    avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-04-01T11:00:00Z",
     status: "active",
     role_id: 2, // Nurse
@@ -109,7 +109,7 @@ const accounts = [
     phone_number: "0933444555",
     email: "nurse2@example.com",
     password: "hashedpassword4",
-    avatar_url: "avatar4.jpg",
+    avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-04-01T11:00:00Z",
     status: "active",
     role_id: 2, // Nurse
@@ -122,7 +122,7 @@ const accounts = [
     phone_number: "0944555666",
     email: "specialist1@example.com",
     password: "hashedpassword5",
-    avatar_url: "avatar5.jpg",
+    avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-05-01T12:00:00Z",
     status: "active",
     role_id: 5, // Specialist
@@ -135,7 +135,7 @@ const accounts = [
     phone_number: "0955666777",
     email: "specialist2@example.com",
     password: "hashedpassword8",
-    avatar_url: "avatar8.jpg",
+      avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-06-10T16:45:00Z",
     status: "active",
     role_id: 5, // Specialist
@@ -148,7 +148,7 @@ const accounts = [
     phone_number: "0933444555",
     email: "nurse3@example.com",
     password: "hashedpassword4",
-    avatar_url: "avatar4.jpg",
+    avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-04-01T11:00:00Z",
     status: "active",
     role_id: 2, // Nurse
@@ -161,7 +161,7 @@ const accounts = [
     phone_number: "0933444555",
     email: "nurse4@example.com",
     password: "hashedpassword4",
-    avatar_url: "avatar4.jpg",
+    avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-04-01T11:00:00Z",
     status: "active",
     role_id: 2, // Nurse
@@ -174,7 +174,7 @@ const accounts = [
     phone_number: "0944555666",
     email: "specialist3@example.com",
     password: "hashedpassword5",
-    avatar_url: "avatar5.jpg",
+    avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-05-01T12:00:00Z",
     status: "active",
     role_id: 5, // Specialist
@@ -187,7 +187,7 @@ const accounts = [
     phone_number: "0955666777",
     email: "specialist4@example.com",
     password: "hashedpassword8",
-    avatar_url: "avatar8.jpg",
+    avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-06-10T16:45:00Z",
     status: "active",
     role_id: 5, // Specialist
@@ -200,7 +200,7 @@ const accounts = [
     phone_number: "0933444555",
     email: "manager5@example.com",
     password: "hashedpassword4",
-    avatar_url: "avatar4.jpg",
+    avatar_url: "/images/hero-bg.jpg",
     created_at: "2024-04-01T11:00:00Z", 
     status: "active",
     role_id: 4, // Manager

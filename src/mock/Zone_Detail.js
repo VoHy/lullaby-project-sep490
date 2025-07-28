@@ -70,6 +70,13 @@ const zoneDetails = [
     Name: "Phường 1",
     Note: "Gần trung tâm Quận 10"
   },
+  // Zone tùy chỉnh cho địa chỉ không có trong danh sách
+  {
+    ZoneDetailID: 999,
+    ZoneID: 999,
+    Name: "Khác",
+    Note: "Địa chỉ tùy chỉnh"
+  },
 ];
 
 export default zoneDetails; 

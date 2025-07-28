@@ -1,30 +1,38 @@
-import { FaPhone, FaMapMarkerAlt, FaStickyNote, FaUsers, FaPlus } from 'react-icons/fa';
+import { FaPhone, FaMapMarkerAlt, FaStickyNote, FaUsers, FaPlus, FaEdit } from 'react-icons/fa';
 
-export default function PatientCareProfileCard({ care, relativesList, zones, relFilter, setRelFilter, handleOpenForm }) {
+export default function PatientCareProfileCard({ care, relativesList, relFilter, setRelFilter, handleOpenForm, onViewDetailCareProfile, onViewDetailRelative, handleOpenEditCareProfile, handleOpenEditRelative }) {
   let rels = relativesList.filter(r => r.CareProfileID === care.CareProfileID);
   if (relFilter === 'active') rels = rels.filter(r => r.Status === 'active');
   if (relFilter === 'inactive') rels = rels.filter(r => r.Status === 'inactive');
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
       <div className="flex items-start justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <img 
-            src={care.Image || "/images/avatar1.jpg"} 
-            alt={care.ProfileName} 
-            className="w-16 h-16 rounded-full object-cover border-2 border-purple-200" 
+        <div className="flex items-center gap-3 cursor-pointer" onClick={() => onViewDetailCareProfile && onViewDetailCareProfile(care)}>
+          <img
+            src={care.Image || "/images/hero-bg.jpg"}
+            alt={care.ProfileName}
+            className="w-16 h-16 rounded-full object-cover border-2 border-purple-200"
           />
           <div>
-            <h3 className="text-lg font-bold text-purple-700">{care.ProfileName}</h3>
+            <h3 className="text-lg font-bold text-purple-700 hover:underline">{care.ProfileName}</h3>
             <p className="text-sm text-gray-500">{care.DateOfBirth || 'N/A'}</p>
           </div>
         </div>
-        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-          care.Status === 'active' 
-            ? 'bg-green-100 text-green-700' 
-            : 'bg-red-100 text-red-700'
-        }`}>
-          {care.Status === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động'}
-        </span>
+        <div className="flex flex-col items-end gap-2">
+          <span className={`px-3 py-1 rounded-full text-xs font-semibold ${care.Status === 'active'
+              ? 'bg-green-100 text-green-700'
+              : 'bg-red-100 text-red-700'
+            }`}>
+            {care.Status === 'active' ? 'Đang hoạt động' : 'Ngừng hoạt động'}
+          </span>
+          <button
+            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-purple-600 transition"
+            title="Sửa hồ sơ"
+            onClick={e => { e.stopPropagation(); handleOpenEditCareProfile && handleOpenEditCareProfile(care); }}
+          >
+            <FaEdit />
+          </button>
+        </div>
       </div>
       <div className="space-y-3">
         <div className="flex items-center gap-3">
@@ -34,15 +42,6 @@ export default function PatientCareProfileCard({ care, relativesList, zones, rel
         <div className="flex items-center gap-3">
           <FaMapMarkerAlt className="text-gray-400" />
           <span className="text-sm text-gray-600">{care.Address || 'N/A'}</span>
-        </div>
-        <div className="flex items-center gap-3">
-          <FaMapMarkerAlt className="text-gray-400" />
-          <span className="text-sm text-gray-600">
-            {(() => {
-              const z = zones.find(z => z.ZoneID === care.ZoneDetailID);
-              return z ? z.Zone_name : 'N/A';
-            })()}
-          </span>
         </div>
         {care.Notes && (
           <div className="flex items-start gap-3">
@@ -83,18 +82,26 @@ export default function PatientCareProfileCard({ care, relativesList, zones, rel
         ) : (
           <div className="space-y-2">
             {rels.map(r => (
-              <div key={r.RelativeID} className="bg-gray-50 rounded-lg p-3 flex items-center justify-between">
+              <div key={r.RelativeID} className="bg-gray-50 rounded-lg p-3 flex items-center justify-between cursor-pointer group" onClick={() => onViewDetailRelative && onViewDetailRelative(r)}>
                 <div>
-                  <p className="font-medium text-purple-600">{r.Relative_Name}</p>
+                  <p className="font-medium text-purple-600 hover:underline">{r.Relative_Name}</p>
                   <p className="text-xs text-gray-500">{r.DateOfBirth || 'N/A'}</p>
                 </div>
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  r.Status === 'active' 
-                    ? 'bg-green-100 text-green-700' 
-                    : 'bg-red-100 text-red-700'
-                }`}>
-                  {r.Status === 'active' ? 'Hoạt động' : 'Ngừng hoạt động'}
-                </span>
+                <div className="flex items-center gap-2">
+                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${r.Status === 'active'
+                      ? 'bg-green-100 text-green-700'
+                      : 'bg-red-100 text-red-700'
+                    }`}>
+                    {r.Status === 'active' ? 'Hoạt động' : 'Ngừng hoạt động'}
+                  </span>
+                  <button
+                    className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-purple-600 transition opacity-80 group-hover:opacity-100"
+                    title="Sửa người thân"
+                    onClick={e => { e.stopPropagation(); handleOpenEditRelative && handleOpenEditRelative(r, care.CareProfileID); }}
+                  >
+                    <FaEdit />
+                  </button>
+                </div>
               </div>
             ))}
           </div>

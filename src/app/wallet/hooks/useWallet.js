@@ -13,11 +13,9 @@ export const useWallet = () => {
       try {
         setLoading(true);
         const walletData = await walletService.getWallets();
-        
         // Find user's wallet
         const userWallet = walletData.find(w => w.AccountID === user?.AccountID);
         setWallet(userWallet || null);
-
         // Get transaction history for user's wallet
         if (userWallet) {
           const historyData = await walletService.getWalletHistories(userWallet.WalletID);
@@ -31,7 +29,6 @@ export const useWallet = () => {
         setLoading(false);
       }
     };
-
     if (user) {
       fetchWalletData();
     }
@@ -39,11 +36,9 @@ export const useWallet = () => {
 
   const handleDeposit = async (amount) => {
     if (!amount || parseFloat(amount) <= 0) return;
-    
     try {
       const newAmount = wallet.Amount + parseFloat(amount);
       setWallet({ ...wallet, Amount: newAmount });
-      
       const newTransaction = {
         TransactionHistoryID: transactions.length + 1,
         WalletID: wallet.WalletID,
@@ -57,7 +52,6 @@ export const useWallet = () => {
         Status: 'success',
         TransactionDate: new Date().toISOString()
       };
-      
       setTransactions([newTransaction, ...transactions]);
       return true;
     } catch (error) {
@@ -66,41 +60,10 @@ export const useWallet = () => {
     }
   };
 
-  const handleWithdraw = async (amount) => {
-    if (!amount || parseFloat(amount) <= 0) return false;
-    if (parseFloat(amount) > wallet.Amount) return false;
-    
-    try {
-      const newAmount = wallet.Amount - parseFloat(amount);
-      setWallet({ ...wallet, Amount: newAmount });
-      
-      const newTransaction = {
-        TransactionHistoryID: transactions.length + 1,
-        WalletID: wallet.WalletID,
-        Before: wallet.Amount,
-        Amount: -parseFloat(amount),
-        After: newAmount,
-        Transferrer: user?.FullName || 'User',
-        Receiver: "Lullaby",
-        InvoiceID: null,
-        Note: 'Rút tiền ví',
-        Status: 'success',
-        TransactionDate: new Date().toISOString()
-      };
-      
-      setTransactions([newTransaction, ...transactions]);
-      return true;
-    } catch (error) {
-      console.error('Error withdrawing:', error);
-      return false;
-    }
-  };
-
   return {
     wallet,
     transactions,
     loading,
-    handleDeposit,
-    handleWithdraw
+    handleDeposit
   };
 }; 

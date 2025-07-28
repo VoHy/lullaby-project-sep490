@@ -10,7 +10,7 @@ const nursingSpecialists = [
     Experience: 10,
     Slogan: "Tận tâm chăm sóc",
     Major: "Y tá",
-    Status: "active"
+    Status: "active",
   },
   {
     NursingID: 2,
@@ -23,7 +23,7 @@ const nursingSpecialists = [
     Experience: 7,
     Slogan: "Chuyên nghiệp và tận tình",
     Major: "Y tá",
-    Status: "inactive"
+    Status: "inactive",
   },
   {
     NursingID: 3,
@@ -36,7 +36,7 @@ const nursingSpecialists = [
     Experience: 15,
     Slogan: "Chuyên nghiệp và tận tình",
     Major: "Chuyên gia",
-    Status: "active"
+    Status: "active",
   },
   {
     NursingID: 4,
@@ -49,7 +49,7 @@ const nursingSpecialists = [
     Experience: 10,
     Slogan: "Tận tâm chăm sóc",
     Major: "Chuyên gia",
-    Status: "active"
+    Status: "active",
   },
   {
     NursingID: 5,
@@ -62,7 +62,7 @@ const nursingSpecialists = [
     Experience: 10,
     Slogan: "Tận tâm chăm sóc",
     Major: "Y tá",
-    Status: "active"
+    Status: "active",
   },  
   {
     NursingID: 6,
@@ -75,7 +75,7 @@ const nursingSpecialists = [
     Experience: 10,
     Slogan: "Tận tâm chăm sóc",
     Major: "Y tá",
-    Status: "active"
+    Status: "active",
   },
   {
     NursingID: 7,
@@ -88,7 +88,7 @@ const nursingSpecialists = [
     Experience: 10,
     Slogan: "Tận tâm chăm sóc",
     Major: "Chuyên gia",
-    Status: "active"
+    Status: "active",
   },
   {
     NursingID: 8,
@@ -101,7 +101,7 @@ const nursingSpecialists = [
     Experience: 10,
     Slogan: "Tận tâm chăm sóc",
     Major: "Chuyên gia",
-    Status: "active"
+    Status: "active",
   },
 ];
 

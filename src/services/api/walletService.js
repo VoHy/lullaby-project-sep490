@@ -69,46 +69,6 @@ const walletService = {
           processingTime: '5-10 phút',
           fee: 0
         },
-        {
-          id: 'momo',
-          name: 'Ví MoMo',
-          icon: '💜',
-          description: 'Thanh toán qua ví MoMo',
-          processingTime: 'Tức thì',
-          fee: 0
-        },
-        {
-          id: 'zalopay',
-          name: 'ZaloPay',
-          icon: '💙',
-          description: 'Thanh toán qua ZaloPay',
-          processingTime: 'Tức thì',
-          fee: 0
-        },
-        {
-          id: 'vnpay',
-          name: 'VNPay',
-          icon: '💚',
-          description: 'Thanh toán qua VNPay',
-          processingTime: 'Tức thì',
-          fee: 0
-        },
-        {
-          id: 'atm_card',
-          name: 'Thẻ ATM/Credit',
-          icon: '💳',
-          description: 'Thanh toán qua thẻ ATM hoặc Credit',
-          processingTime: 'Tức thì',
-          fee: 0
-        },
-        {
-          id: 'cash',
-          name: 'Tiền mặt',
-          icon: '💵',
-          description: 'Nạp tiền tại cửa hàng',
-          processingTime: '5-10 phút',
-          fee: 0
-        }
       ]);
     }
 

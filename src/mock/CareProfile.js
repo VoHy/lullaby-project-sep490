@@ -11,7 +11,7 @@ const careProfiles = [
     Notes: "Bệnh tiểu đường",
     CreatedAt: "2024-03-01T10:00:00Z",
     Status: "active",
-    Image: "care1.jpg"
+    Image: "/images/hero-bg.jpg"
   },
   {
     CareProfileID: 2,
@@ -25,12 +25,12 @@ const careProfiles = [
     Notes: "Bệnh tiểu đường",
     CreatedAt: "2024-03-01T10:00:00Z",
     Status: "inactive",
-    Image: "care1.jpg"
+    Image: "/images/hero-bg.jpg"
   },
   {
     CareProfileID: 3,
     AccountID: 2,
-    ZoneDetailID: 2, // Quận 1
+    ZoneDetailID: 1, // Quận 1
     ProfileName: "Tran Thi H",
     DateOfBirth: "20-12-1980",
     Gender: "Nữ",
@@ -39,12 +39,12 @@ const careProfiles = [
     Notes: "Huyết áp cao",
     CreatedAt: "2024-03-02T11:00:00Z",
     Status: "inactive",
-    Image: "care2.jpg"
+    Image: "/images/hero-bg.jpg"
   },
   {
     CareProfileID: 4,
     AccountID: 3,
-    ZoneDetailID: 3, // Quận 1
+    ZoneDetailID: 2, // Quận 1
     ProfileName: "Nguyen Van I",
     DateOfBirth: "05-05-1950",
     Gender: "Nam",
@@ -53,7 +53,7 @@ const careProfiles = [
     Notes: "Bệnh tiểu đường",
     CreatedAt: "2024-03-01T10:00:00Z",
     Status: "active",
-    Image: "care1.jpg"
+    Image: "/images/hero-bg.jpg"
   },
   {
     CareProfileID: 5,
@@ -67,12 +67,12 @@ const careProfiles = [
     Notes: "Huyết áp cao",
     CreatedAt: "2024-03-02T11:00:00Z",
     Status: "active",
-    Image: "care2.jpg"
+    Image: "/images/hero-bg.jpg"
   },
   {
     CareProfileID: 6,
     AccountID: 5,
-    ZoneDetailID: 5, // Quận 7
+    ZoneDetailID: 7, // Quận 7
     ProfileName: "Le Thi K",
     DateOfBirth: "15-08-1945",
     Gender: "Nữ",
@@ -81,7 +81,7 @@ const careProfiles = [
     Notes: "Bệnh tim mạch, cần chăm sóc đặc biệt",
     CreatedAt: "2024-07-01T10:00:00Z",
     Status: "active",
-    Image: "care3.jpg"
+    Image: "/images/hero-bg.jpg"
   },
 ];
 

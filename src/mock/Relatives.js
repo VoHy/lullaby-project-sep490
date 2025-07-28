@@ -8,7 +8,7 @@ const relatives = [
     Address: "Số 15, Đường Nguyễn Thị Minh Khai, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
     CreatedAt: "2024-06-01T10:00:00Z",
     Status: "active",
-    Image: "relative1.jpg"
+    Image: "/images/hero-bg.jpg"
   },
   {
     RelativeID: 2,
@@ -19,7 +19,7 @@ const relatives = [
     Address: "Số 120, Đường Nguyễn Thị Minh Khai, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
     CreatedAt: "2024-06-02T11:00:00Z",
     Status: "inactive",
-    Image: "relative2.jpg"
+    Image: "/images/hero-bg.jpg"
   },
   {
     RelativeID: 3,
@@ -30,7 +30,7 @@ const relatives = [
     Address: "Số 45, Đường Trần Hưng Đạo, Phường Cầu Kho, Quận 1, TP. Hồ Chí Minh",
     CreatedAt: "2024-06-01T10:00:00Z",
     Status: "active",
-    Image: "relative1.jpg"
+    Image: "/images/hero-bg.jpg"
   },
   {
     RelativeID: 4,
@@ -41,7 +41,7 @@ const relatives = [
     Address: "Số 200, Đường Lê Lợi, Phường Bến Thành, Quận 1, TP. Hồ Chí Minh",
     CreatedAt: "2024-06-02T11:00:00Z",
     Status: "inactive",
-    Image: "relative2.jpg"
+    Image: "/images/hero-bg.jpg"
   },
   {
     RelativeID: 5,
@@ -52,7 +52,7 @@ const relatives = [
     Address: "Số 100, Đường Nguyễn Thị Minh Khai, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
     CreatedAt: "2024-06-01T10:00:00Z",
     Status: "active",
-    Image: "relative1.jpg"
+    Image: "/images/hero-bg.jpg"
   },
   {
     RelativeID: 6,
@@ -63,7 +63,7 @@ const relatives = [
     Address: "Số 8, Đường Lý Tự Trọng, Phường Bến Nghé, Quận 1, TP. Hồ Chí Minh",
     CreatedAt: "2024-06-01T10:00:00Z",
     Status: "active",
-    Image: "relative1.jpg"
+    Image: "/images/hero-bg.jpg"
   },
   {
     RelativeID: 7,
@@ -74,7 +74,7 @@ const relatives = [
     Address: "Số 12, Đường Nguyễn Văn Cừ, Phường Nguyễn Cư Trinh, Quận 1, TP. Hồ Chí Minh",
     CreatedAt: "2024-06-01T10:00:00Z",
     Status: "active",
-    Image: "relative1.jpg"
+    Image: "/images/hero-bg.jpg"
   },
 ];
 

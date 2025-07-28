@@ -89,7 +89,7 @@ export default function TeamPage() {
       transition={{ duration: 0.6, ease: 'easeOut' }}
     >
       <img
-        src={member.avatar_url || '/default-avatar.png'}
+        src={member.avatar_url || '/images/hero-bg.jpg'}
         alt={member.FullName || member.Nurse_Name}
         className="w-24 h-24 rounded-full object-cover mb-4 border-4 border-pink-200 group-hover:scale-105 transition"
       />
@@ -152,7 +152,7 @@ export default function TeamPage() {
               <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl" onClick={handleCloseDetail}>&times;</button>
               <div className="flex flex-col items-center mb-4">
                 <div className="w-24 h-24 rounded-full border-4 border-pink-300 overflow-hidden mb-2">
-                  <img src={detailData.avatar_url || '/default-avatar.png'} alt="avatar" className="object-cover w-full h-full" />
+                  <img src={detailData.avatar_url || '/images/hero-bg.jpg'} alt="avatar" className="object-cover w-full h-full" />
                 </div>
                 <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 mb-1">{detailData.FullName || detailData.Nurse_Name}</h3>
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${detailData.Status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{detailData.Status || 'Không có'}</span>

@@ -107,10 +107,10 @@ export default function BookingPage() {
   // Xử lý thanh toán
   const handlePayment = () => {
     setError("");
-    if (!datetime || !isDatetimeValid) {
-      setError("Vui lòng chọn ngày giờ hợp lệ (cách hiện tại ít nhất 30 phút)");
-      return;
-    }
+      if (!datetime || !isDatetimeValid) {
+        setError("Vui lòng chọn ngày giờ hợp lệ (cách hiện tại ít nhất 30 phút)");
+        return;
+      }
     const params = new URLSearchParams();
     if (packageId) {
       params.set("package", packageId);
@@ -158,91 +158,91 @@ export default function BookingPage() {
         <div className="bg-white rounded-2xl shadow-xl p-4 md:p-8 relative overflow-hidden">
           {/* Header */}
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 md:mb-8 gap-2 border-b pb-3 md:pb-4">
-            <button
+          <button
               className="flex items-center gap-2 px-3 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold shadow-sm transition"
-              onClick={() => router.back()}
-            >
+            onClick={() => router.back()}
+          >
               <HiOutlineArrowLeft className="text-xl" />
               <span>Quay lại</span>
-            </button>
+          </button>
             <h1 className="text-2xl md:text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-pink-500 to-purple-600 text-center flex-1">
               Xác nhận đặt dịch vụ
             </h1>
-          </div>
+        </div>
           {/* Main 2-column layout */}
           <div className="flex flex-col md:flex-row gap-4 md:gap-8">
             {/* LEFT COLUMN: Info, dịch vụ, tổng tiền */}
             <div className="md:w-1/2 flex flex-col gap-4">
-              {renderPackageInfo()}
+        {renderPackageInfo()}
               <section className="border rounded-2xl p-4 md:p-6 bg-blue-50/60 shadow-sm">
                 <h2 className="text-lg md:text-xl font-bold mb-3 text-blue-700 flex items-center gap-2">
                   <HiOutlineUserGroup className="text-xl md:text-2xl" />
-                  {packageId ? "Các dịch vụ trong gói" : "Dịch vụ đã chọn"}
-                </h2>
+            {packageId ? "Các dịch vụ trong gói" : "Dịch vụ đã chọn"}
+          </h2>
                 <ul className="space-y-3 md:space-y-4">
-                  {selectedServicesList.map((s) => (
+            {selectedServicesList.map((s) => (
                     <li key={s.ServiceID} className="bg-white rounded-xl shadow p-3 md:p-4 border flex flex-col gap-1">
                       <div className="flex items-center gap-2">
                         <span className="font-bold text-blue-700 text-base md:text-lg">{s.ServiceName}</span>
-                        {!packageId && (
+                {!packageId && (
                           <span className="ml-2 text-pink-600 font-bold text-sm md:text-base">{s.Price?.toLocaleString('vi-VN') ?? ''}{s.Price !== undefined ? 'đ' : ''}</span>
-                        )}
+                )}
                       </div>
                       <div className="text-gray-500 text-xs md:text-sm">{s.Description}</div>
                       <div className="text-gray-500 text-xs md:text-sm flex items-center gap-1"><HiOutlineCalendar /> Thời gian: {s.Duration}</div>
-                      {isDatetimeValid && (
-                        <div className="mt-2">
-                          {getAvailableStaff(s.ServiceID).length === 0 ? (
-                            <div className="text-xs text-gray-400 italic">Không có nhân sự rảnh thời điểm này. Manager sẽ phân công sau.</div>
-                          ) : selectedStaff[s.ServiceID] ? (
-                            <div className="flex items-center gap-2">
-                              <span className="text-green-700 font-semibold">Đã chọn: </span>
+                {isDatetimeValid && (
+                  <div className="mt-2">
+                    {getAvailableStaff(s.ServiceID).length === 0 ? (
+                      <div className="text-xs text-gray-400 italic">Không có nhân sự rảnh thời điểm này. Manager sẽ phân công sau.</div>
+                    ) : selectedStaff[s.ServiceID] ? (
+                      <div className="flex items-center gap-2">
+                        <span className="text-green-700 font-semibold">Đã chọn: </span>
                               <span className={`px-2 py-0.5 rounded text-xs font-bold ${selectedStaff[s.ServiceID].type === 'nurse' ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>
-                                {selectedStaff[s.ServiceID].type === 'nurse' ? 'Y tá' : 'Chuyên gia'}
-                              </span>
-                              <span className="font-semibold">
-                                {(() => {
-                                  const staff = nursingSpecialists.find(n => n.NursingID === Number(selectedStaff[s.ServiceID].id));
-                                  return staff ? staff.FullName : '';
-                                })()}
-                              </span>
+                          {selectedStaff[s.ServiceID].type === 'nurse' ? 'Y tá' : 'Chuyên gia'}
+                        </span>
+                        <span className="font-semibold">
+                          {(() => {
+                            const staff = nursingSpecialists.find(n => n.NursingID === Number(selectedStaff[s.ServiceID].id));
+                            return staff ? staff.FullName : '';
+                          })()}
+                        </span>
                               <button className="ml-2 px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs hover:bg-gray-200 transition" onClick={() => setStaffPopup({ open: true, serviceId: s.ServiceID })}>Đổi</button>
-                            </div>
-                          ) : (
+                      </div>
+                    ) : (
                             <button className="px-4 py-1 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:scale-105 shadow transition" onClick={() => setStaffPopup({ open: true, serviceId: s.ServiceID })}>Chọn nhân sự</button>
-                          )}
-                        </div>
-                      )}
-                    </li>
-                  ))}
-                </ul>
+                    )}
+                  </div>
+                )}
+              </li>
+            ))}
+          </ul>
                 <div className="flex justify-end mt-4 md:mt-6 items-center gap-2">
                   <span className="text-base md:text-lg font-semibold">Tổng tiền:</span>
                   <span className="text-xl md:text-2xl text-pink-600 font-extrabold flex items-center gap-1">
                     <HiOutlineCurrencyDollar />
-                    {total > 0
-                      ? total.toLocaleString('vi-VN') + 'đ'
-                      : '0đ'}
-                  </span>
-                </div>
-              </section>
+              {total > 0
+                ? total.toLocaleString('vi-VN') + 'đ'
+                : '0đ'}
+            </span>
+          </div>
+        </section>
             </div>
             {/* RIGHT COLUMN: Form, chọn ngày giờ, ghi chú, thanh toán */}
             <div className="md:w-1/2 flex flex-col gap-4">
               <section className="border rounded-2xl p-4 md:p-6 bg-white flex flex-col gap-2">
                 <label className="block font-semibold mb-1 flex items-center gap-2"><HiOutlineCalendar />Chọn ngày giờ đặt dịch vụ <span className="text-red-500">*</span></label>
-                <input
-                  type="datetime-local"
+          <input
+            type="datetime-local"
                   className="border rounded-lg px-3 py-2 w-full focus:outline-none focus:ring-2 focus:ring-pink-300 text-base shadow-sm"
-                  value={datetime}
-                  onChange={e => setDatetime(e.target.value)}
-                  min={new Date(Date.now() + 30 * 60 * 1000).toISOString().slice(0, 16)}
-                  autoFocus
-                />
-                {!isDatetimeValid && datetime && (
-                  <div className="text-red-500 text-sm mt-1">Thời gian phải cách hiện tại ít nhất 30 phút</div>
-                )}
-              </section>
+            value={datetime}
+            onChange={e => setDatetime(e.target.value)}
+            min={new Date(Date.now() + 30 * 60 * 1000).toISOString().slice(0, 16)}
+            autoFocus
+          />
+          {!isDatetimeValid && datetime && (
+            <div className="text-red-500 text-sm mt-1">Thời gian phải cách hiện tại ít nhất 30 phút</div>
+          )}
+        </section>
               {/* Ghi chú */}
               <section className="border rounded-2xl p-4 md:p-6 bg-white">
                 <label className="block font-semibold mb-1 flex items-center gap-2"><HiOutlineDocumentText />Ghi chú</label>
@@ -264,59 +264,59 @@ export default function BookingPage() {
               </button>
             </div>
           </div>
-          {/* Popup chọn nhân sự */}
-          {staffPopup.open && (
+        {/* Popup chọn nhân sự */}
+        {staffPopup.open && (
             <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/20 backdrop-blur-sm animate-fade-in">
               <div className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full relative border-2 border-pink-100 animate-pop-in">
                 <button className="absolute top-2 right-2 text-2xl text-gray-400 hover:text-pink-500 transition" onClick={() => setStaffPopup({ open: false, serviceId: null })}>&times;</button>
                 <h2 className="text-xl font-extrabold text-purple-700 mb-4 flex items-center gap-2"><HiOutlineUserGroup />Chọn nhân sự cho dịch vụ</h2>
                 <div className="flex gap-6 flex-col md:flex-row">
-                  {/* Y tá */}
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-blue-700 mb-2">Y tá</h3>
-                    <ul className="space-y-2">
-                      {getAvailableStaff(staffPopup.serviceId).filter(n => n.Major && n.Major.toLowerCase().includes('y tá')).map(n => (
+                {/* Y tá */}
+                <div className="flex-1">
+                  <h3 className="font-semibold text-blue-700 mb-2">Y tá</h3>
+                  <ul className="space-y-2">
+                    {getAvailableStaff(staffPopup.serviceId).filter(n => n.Major && n.Major.toLowerCase().includes('y tá')).map(n => (
                         <li key={n.NursingID} className="border rounded-xl p-2 flex items-center gap-2 hover:bg-blue-50 cursor-pointer transition" onClick={() => handleSelectStaff(staffPopup.serviceId, 'nurse', n.NursingID)}>
-                          <img src={n.avatar_url || '/default-avatar.png'} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-blue-200" />
-                          <div>
-                            <div className="font-semibold text-blue-700">{n.FullName}</div>
-                            <div className="text-xs text-gray-500">Kinh nghiệm: {n.Experience} năm</div>
-                            <div className="text-xs text-gray-500">{n.Slogan}</div>
-                          </div>
-                        </li>
-                      ))}
-                      {getAvailableStaff(staffPopup.serviceId).filter(n => n.Major && n.Major.toLowerCase().includes('y tá')).length === 0 && (
-                        <li className="text-xs text-gray-400">Không có y tá nào rảnh thời điểm này.</li>
-                      )}
-                    </ul>
-                  </div>
-                  {/* Chuyên gia */}
-                  <div className="flex-1">
-                    <h3 className="font-semibold text-pink-700 mb-2">Chuyên gia</h3>
-                    <ul className="space-y-2">
-                      {getAvailableStaff(staffPopup.serviceId).filter(n => n.Major && !n.Major.toLowerCase().includes('y tá')).map(n => (
-                        <li key={n.NursingID} className="border rounded-xl p-2 flex items-center gap-2 hover:bg-pink-50 cursor-pointer transition" onClick={() => handleSelectStaff(staffPopup.serviceId, 'specialist', n.NursingID)}>
-                          <img src={n.avatar_url || '/default-avatar.png'} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-pink-200" />
-                          <div>
-                            <div className="font-semibold text-pink-700">{n.FullName}</div>
-                            <div className="text-xs text-gray-500">Kinh nghiệm: {n.Experience} năm</div>
-                            <div className="text-xs text-gray-500">{n.Slogan}</div>
-                          </div>
-                        </li>
-                      ))}
-                      {getAvailableStaff(staffPopup.serviceId).filter(n => n.Major && !n.Major.toLowerCase().includes('y tá')).length === 0 && (
-                        <li className="text-xs text-gray-400">Không có chuyên gia nào rảnh thời điểm này.</li>
-                      )}
-                    </ul>
-                  </div>
+                        <img src={n.avatar_url || '/default-avatar.png'} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-blue-200" />
+                        <div>
+                          <div className="font-semibold text-blue-700">{n.FullName}</div>
+                          <div className="text-xs text-gray-500">Kinh nghiệm: {n.Experience} năm</div>
+                          <div className="text-xs text-gray-500">{n.Slogan}</div>
+                        </div>
+                      </li>
+                    ))}
+                    {getAvailableStaff(staffPopup.serviceId).filter(n => n.Major && n.Major.toLowerCase().includes('y tá')).length === 0 && (
+                      <li className="text-xs text-gray-400">Không có y tá nào rảnh thời điểm này.</li>
+                    )}
+                  </ul>
                 </div>
+                {/* Chuyên gia */}
+                <div className="flex-1">
+                  <h3 className="font-semibold text-pink-700 mb-2">Chuyên gia</h3>
+                  <ul className="space-y-2">
+                    {getAvailableStaff(staffPopup.serviceId).filter(n => n.Major && !n.Major.toLowerCase().includes('y tá')).map(n => (
+                        <li key={n.NursingID} className="border rounded-xl p-2 flex items-center gap-2 hover:bg-pink-50 cursor-pointer transition" onClick={() => handleSelectStaff(staffPopup.serviceId, 'specialist', n.NursingID)}>
+                        <img src={n.avatar_url || '/default-avatar.png'} alt="avatar" className="w-10 h-10 rounded-full object-cover border-2 border-pink-200" />
+                        <div>
+                          <div className="font-semibold text-pink-700">{n.FullName}</div>
+                          <div className="text-xs text-gray-500">Kinh nghiệm: {n.Experience} năm</div>
+                          <div className="text-xs text-gray-500">{n.Slogan}</div>
+                        </div>
+                      </li>
+                    ))}
+                    {getAvailableStaff(staffPopup.serviceId).filter(n => n.Major && !n.Major.toLowerCase().includes('y tá')).length === 0 && (
+                      <li className="text-xs text-gray-400">Không có chuyên gia nào rảnh thời điểm này.</li>
+                    )}
+                  </ul>
+                </div>
+              </div>
                 <div className="mt-6 text-right">
                   <button className="px-4 py-2 rounded-lg bg-gray-100 text-gray-700 hover:bg-gray-200 font-semibold shadow-sm transition" onClick={() => setStaffPopup({ open: false, serviceId: null })}>Đóng</button>
                 </div>
               </div>
             </div>
           )}
-        </div>
+          </div>
       </div>
     </div>
   );

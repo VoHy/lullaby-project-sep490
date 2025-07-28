@@ -1,9 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { FaWallet, FaPlus, FaMinus } from 'react-icons/fa';
+import { FaWallet, FaPlus } from 'react-icons/fa';
 
-const WalletOverview = ({ wallet, onDeposit, onWithdraw }) => {
+const WalletOverview = ({ wallet, onDeposit }) => {
   if (!wallet) return null;
 
   return (
@@ -17,9 +17,8 @@ const WalletOverview = ({ wallet, onDeposit, onWithdraw }) => {
           <FaWallet className="text-purple-500" />
           Ví điện tử
         </h3>
-        <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-          wallet.Status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-        }`}>
+        <div className={`px-3 py-1 rounded-full text-sm font-medium ${wallet.Status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+          }`}>
           {wallet.Status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
         </div>
       </div>
@@ -37,12 +36,6 @@ const WalletOverview = ({ wallet, onDeposit, onWithdraw }) => {
           </div>
           <div className="text-sm text-gray-500">Tổng nạp</div>
         </div>
-        <div className="text-center">
-          <div className="text-lg font-semibold text-red-600">
-            0đ
-          </div>
-          <div className="text-sm text-gray-500">Tổng rút</div>
-        </div>
       </div>
 
       <div className="flex gap-3">
@@ -53,13 +46,7 @@ const WalletOverview = ({ wallet, onDeposit, onWithdraw }) => {
           <FaPlus className="text-sm" />
           Nạp tiền
         </button>
-        <button
-          onClick={onWithdraw}
-          className="flex-1 flex items-center justify-center gap-2 px-4 py-3 bg-blue-500 text-white rounded-lg font-medium hover:bg-blue-600 transition-colors"
-        >
-          <FaMinus className="text-sm" />
-          Rút tiền
-        </button>
+
       </div>
 
       {wallet.Note && (

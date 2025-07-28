@@ -1,19 +1,19 @@
 import { FaEdit, FaSave, FaTimes, FaUser, FaEnvelope, FaPhone, FaCalendar, FaShieldAlt } from "react-icons/fa";
 
-export default function ProfileCard({ profile, isEditing, editData, onEditClick, onInputChange, onSave, onCancel, loading, error, getRoleName }) {
+export default function ProfileCard({ profile, isEditing, editData, onEditClick, onInputChange, onSave, onCancel, loading, error   }) {
   if (!profile) return null;
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-8">
       <div className="text-center mb-6">
         <div className="relative inline-block">
           <img 
-            src={profile.avatar_url || "/images/avatar1.jpg"} 
+            src={profile.avatar_url || "/images/hero-bg.jpg"} 
             alt={profile.full_name} 
             className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg" 
           />
         </div>
         <h2 className="text-2xl font-bold text-gray-800 mt-4">{profile.full_name}</h2>
-        <p className="text-gray-600">{getRoleName(profile.role_id)}</p>
+        {/* <p className="text-gray-600">{profile.role_id}</p> */}
       </div>
       {isEditing ? (
         <div className="space-y-4">

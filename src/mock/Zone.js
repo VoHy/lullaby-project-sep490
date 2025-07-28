@@ -28,6 +28,11 @@ const zones = [
     Zone_name: "Quận 10",
     City: "Hồ Chí Minh"
   },
+  {
+    ZoneID: 999,
+    Zone_name: "Khác",
+    City: "Hồ Chí Minh"
+  },
 ];
 
 export default zones; 
