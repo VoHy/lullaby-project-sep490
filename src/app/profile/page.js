@@ -94,10 +94,22 @@ export default function ProfilePage() {
     if (!user) return;
     const loadProfileData = async () => {
       try {
-        const account = await accountsService.getAccount(user.AccountID);
+        console.log('Loading profile for user:', user);
+        const accountId = user.accountID || user.AccountID;
+        console.log('Account ID:', accountId);
+        
+        if (!accountId) {
+          console.error('No account ID found in user object');
+          setError('Không tìm thấy ID tài khoản');
+          return;
+        }
+        
+        const account = await accountsService.getAccount(accountId);
+        console.log('Loaded account:', account);
         setProfile(account);
       } catch (err) {
         console.error('Error loading profile data:', err);
+        setError('Không thể tải thông tin tài khoản');
       }
     };
     loadProfileData();
@@ -105,9 +117,9 @@ export default function ProfilePage() {
 
   const handleEditClick = () => {
     setEditData({
-      full_name: profile.full_name || '',
-      phone_number: profile.phone_number || '',
-      avatar_url: profile.avatar_url || '',
+      fullName: profile.fullName || profile.full_name || '',
+      phoneNumber: profile.phoneNumber || profile.phone_number || '',
+      avatarUrl: profile.avatarUrl || profile.avatar_url || '',
       email: profile.email || ''
     });
     setIsEditing(true);
@@ -123,7 +135,8 @@ export default function ProfilePage() {
     setLoading(true);
     setError('');
     try {
-      const updated = await accountsService.updateAccount(profile.AccountID, editData);
+      const accountId = profile.accountID || profile.AccountID;
+      const updated = await accountsService.updateAccount(accountId, editData);
       setProfile(updated);
       setIsEditing(false);
     } catch (err) {
@@ -169,7 +182,7 @@ export default function ProfilePage() {
             onCancel={handleCancel}
             loading={loading}
             error={error}
-            roleName={getRoleName(profile.role_id)}
+            roleName={getRoleName(profile.roleID || profile.role_id)}
           />
         </div>
       </div>

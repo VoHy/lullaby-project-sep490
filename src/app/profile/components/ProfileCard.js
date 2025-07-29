@@ -7,12 +7,12 @@ export default function ProfileCard({ profile, isEditing, editData, onEditClick,
       <div className="text-center mb-6">
         <div className="relative inline-block">
           <img 
-            src={profile.avatar_url || "/images/hero-bg.jpg"} 
-            alt={profile.full_name} 
+            src={profile.avatarUrl || profile.avatar_url || "/images/hero-bg.jpg"} 
+            alt={profile.fullName || profile.full_name} 
             className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg" 
           />
         </div>
-        <h2 className="text-2xl font-bold text-gray-800 mt-4">{profile.full_name}</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mt-4">{profile.fullName || profile.full_name}</h2>
         {/* <p className="text-gray-600">{profile.role_id}</p> */}
       </div>
       {isEditing ? (
@@ -23,8 +23,8 @@ export default function ProfileCard({ profile, isEditing, editData, onEditClick,
               Họ và tên
             </label>
             <input 
-              name="full_name" 
-              value={editData.full_name} 
+              name="fullName" 
+              value={editData.fullName} 
               onChange={onInputChange} 
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
             />
@@ -48,8 +48,8 @@ export default function ProfileCard({ profile, isEditing, editData, onEditClick,
               Số điện thoại
             </label>
             <input 
-              name="phone_number" 
-              value={editData.phone_number} 
+              name="phoneNumber" 
+              value={editData.phoneNumber} 
               onChange={onInputChange} 
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
             />
@@ -60,8 +60,8 @@ export default function ProfileCard({ profile, isEditing, editData, onEditClick,
               Avatar URL
             </label>
             <input 
-              name="avatar_url" 
-              value={editData.avatar_url} 
+              name="avatarUrl" 
+              value={editData.avatarUrl} 
               onChange={onInputChange} 
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
             />
@@ -102,7 +102,7 @@ export default function ProfileCard({ profile, isEditing, editData, onEditClick,
             <FaPhone className="text-blue-500" />
             <div>
               <p className="text-sm text-gray-600">Số điện thoại</p>
-              <p className="font-medium">{profile.phone_number}</p>
+              <p className="font-medium">{profile.phoneNumber || profile.phone_number}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
@@ -110,7 +110,7 @@ export default function ProfileCard({ profile, isEditing, editData, onEditClick,
             <div>
               <p className="text-sm text-gray-600">Ngày tạo</p>
               <p className="font-medium">
-                {profile.created_at ? new Date(profile.created_at).toLocaleDateString('vi-VN') : '-'}
+                {profile.createAt || profile.created_at ? new Date(profile.createAt || profile.created_at).toLocaleDateString('vi-VN') : '-'}
               </p>
             </div>
           </div>

@@ -43,15 +43,21 @@ export default function Dashboard() {
   const renderDashboardByRole = () => {
     if (!user) return null;
     const tabParam = searchParams.get('tab');
-    switch (user.role_id) {
+    const userRole = user.roleID || user.role_id;
+    
+    switch (userRole) {
       case 1: // Admin
         return <AdminDashboard user={user} initialTab={tabParam} />;
-      case 2: // Nurse
+      case 2: // NurseSpecialist
         return <NurseDashboard user={user} initialTab={tabParam} />;
-      case 4: // Manager
+      case 3: // Manager
         return <ManagerDashboard user={user} />;
-      case 5: // Specialist
-        return <NurseDashboard user={user} initialTab={tabParam} />;
+      case 4: // Customer
+        return (
+          <div className="text-center py-10">
+            <p className="text-gray-500">Không có quyền truy cập dashboard</p>
+          </div>
+        );
       default:
         return (
           <div className="text-center py-10">

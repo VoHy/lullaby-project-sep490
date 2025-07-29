@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useContext } from 'react';
+import { useState, useContext } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AuthContext } from '../../../context/AuthContext';
@@ -11,6 +11,7 @@ export default function Header() {
   const router = useRouter();
   const { user, logout } = useContext(AuthContext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -27,8 +28,8 @@ export default function Header() {
               </Link>
             </div>
             <nav className="hidden sm:ml-8 sm:flex sm:space-x-10">
-              {/* Menu cho Admin - giống Relative nhưng có "Quản lý" thay vì "Hồ sơ Người Thân" */}
-              {user && user.role_id === 1 && (
+              {/* Admin */}
+              {user && (user.roleID === 1 || user.RoleID === 1) && (
                 <>
                   <Link
                     href="/team"
@@ -78,21 +79,38 @@ export default function Header() {
                 </>
               )}
 
-              {/* Menu cho Staff (Manager, Nurse, Specialist) */}
-              {user && (user.role_id === 2 || user.role_id === 4 || user.role_id === 5) && (
-                <Link
-                  href="/dashboard"
-                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/dashboard')
-                      ? 'border-blue-500 text-gray-900'
-                      : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                    }`}
-                >
-                  Quản Lý
-                </Link>
+              {/* NurseSpecialist (2) */}
+              {user && (user.roleID === 2 || user.RoleID === 2) && (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/dashboard')
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                  >
+                    Quản Lý
+                  </Link>
+                </>
               )}
 
-              {/* Menu công khai cho Relative hoặc chưa login */}
-              {(!user || user.role_id === 3) && (
+              {/* Manager (3) */}
+              {user && (user.roleID === 3 || user.RoleID === 3) && (
+                <>
+                  <Link
+                    href="/dashboard"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/dashboard')
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                  >
+                    Quản Lý
+                  </Link>
+                </>
+              )}
+
+              {/* Customer (4) hoặc chưa đăng nhập */}
+              {(!user || user.roleID === 4 || user.RoleID === 4) && (
                 <>
                   <Link
                     href="/team"
@@ -124,8 +142,8 @@ export default function Header() {
                 </>
               )}
 
-              {/* Menu điều hướng cho người dùng đã đăng nhập (Relative) */}
-              {user && user.role_id === 3 && (
+              {/* Menu điều hướng cho Customer đã đăng nhập */}
+              {user && (user.roleID === 4 || user.RoleID === 4) && (
                 <>
                   <Link
                     href="/appointments"
@@ -169,8 +187,8 @@ export default function Header() {
                 </button>
                 {isMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded shadow-lg z-50">
-                    {/* Chỉ hiển thị cho Relative và Staff, không cho Admin */}
-                    {user.role_id !== 1 && (
+                    {/* Chỉ hiển thị cho Customer, NurseSpecialist, Manager, không cho Admin */}
+                    {(user.roleID !== 1 && user.RoleID !== 1) && (
                       <button
                         className="block w-full text-left px-4 py-2 hover:bg-gray-100"
                         onClick={() => { setIsMenuOpen(false); router.push('/profile'); }}
@@ -178,7 +196,8 @@ export default function Header() {
                         Tài Khoản
                       </button>
                     )}
-                    {user.role_id === 3 && (
+                    {/* Customer: hiển thị thêm lịch sử thanh toán, hồ sơ người thân */}
+                    {(user.roleID === 4 || user.RoleID === 4) && (
                       <>
                         <button
                           className="block w-full text-left px-4 py-2 hover:bg-gray-100"
@@ -219,8 +238,8 @@ export default function Header() {
       {/* Mobile menu */}
       <div className={`${isMenuOpen ? 'block' : 'hidden'} sm:hidden`}>
         <div className="pt-2 pb-3 space-y-1">
-          {/* Menu cho Admin - giống Relative nhưng có "Quản lý" thay vì "Hồ sơ Người Thân" */}
-          {user && user.role_id === 1 && (
+          {/* Admin */}
+          {user && (user.roleID === 1 || user.RoleID === 1) && (
             <>
               <Link
                 href="/team"
@@ -275,8 +294,8 @@ export default function Header() {
             </>
           )}
 
-          {/* Menu cho Staff (Manager, Nurse, Specialist) */}
-          {user && (user.role_id === 2 || user.role_id === 4 || user.role_id === 5) && (
+          {/* NurseSpecialist */}
+          {user && (user.roleID === 2 || user.RoleID === 2) && (
             <Link
               href="/dashboard"
               className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/dashboard')
@@ -289,8 +308,22 @@ export default function Header() {
             </Link>
           )}
 
-          {/* Menu công khai cho Relative hoặc chưa login */}
-          {(!user || user.role_id === 3) && (
+          {/* Manager */}
+          {user && (user.roleID === 3 || user.RoleID === 3) && (
+            <Link
+              href="/dashboard"
+              className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/dashboard')
+                  ? 'border-blue-500 text-blue-700 bg-blue-50'
+                  : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                }`}
+              onClick={() => setIsMenuOpen(false)}
+            >
+              Quản Lý
+            </Link>
+          )}
+
+          {/* Customer hoặc chưa đăng nhập */}
+          {(!user || user.roleID === 4 || user.RoleID === 4) && (
             <>
               <Link
                 href="/team"
@@ -325,8 +358,8 @@ export default function Header() {
             </>
           )}
 
-          {/* Menu cho User role Relative */}
-          {user && user.role_id === 3 && (
+          {/* Customer đã đăng nhập: thêm lịch hẹn, hồ sơ người thân, hồ sơ */}
+          {user && (user.roleID === 4 || user.RoleID === 4) && (
             <>
               <Link
                 href="/appointments"
@@ -361,8 +394,8 @@ export default function Header() {
             </>
           )}
 
-          {/* Common profile menu cho Staff (không cho Admin) */}
-          {user && (user.role_id === 2 || user.role_id === 4 || user.role_id === 5) && (
+          {/* Common profile menu cho NurseSpecialist, Manager (không cho Admin, Customer) */}
+          {user && ((user.roleID === 2 || user.RoleID === 2) || (user.roleID === 3 || user.RoleID === 3)) && (
             <Link
               href="/profile"
               className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/profile')

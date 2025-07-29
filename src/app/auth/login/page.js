@@ -37,26 +37,40 @@ export default function LoginPage() {
         emailOrPhoneNumber: formData.emailOrPhoneNumber,
         password: formData.password,
       });
-      if (response.user) {
-        login(response.user);
+      
+      console.log('Login response:', response);
+      
+      if (response.account) {
+        login(response.account);
         // Chuyển hướng dựa trên vai trò của người dùng
-        const role = response.user.role;
-        if (role === 'Admin') {
+        const roleID = response.account.roleID;
+        console.log('User roleID:', roleID);
+        
+        if (roleID === 1) { // Admin
           router.push('/dashboard');
-        } else if (role === 'Nurse') {
+        } else if (roleID === 2) { // NurseSpecialist
           router.push('/dashboard');
-        } else if (role === 'Specialist') {
+        } else if (roleID === 3) { // Manager
           router.push('/dashboard');
-        } else if (role === 'Manager') {
-          router.push('/dashboard');
+        } else if (roleID === 4) { // Customer
+          router.push('/?welcome=true');
         } else {
           router.push('/');
         }
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.'
-      );
+      console.error('Login error:', err);
+      let errorMessage = 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.';
+      
+      if (err.message) {
+        if (err.message.includes('<!DOCTYPE')) {
+          errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra backend có đang chạy không.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -73,29 +87,42 @@ export default function LoginPage() {
 
       const response = await apiService.auth.loginWithGoogle(fakeGoogleToken);
 
-      if (response.user) {
-        login(response.user);
+      console.log('Google login response:', response);
+
+      if (response.account) {
+        login(response.account);
         // Chuyển hướng dựa trên vai trò của người dùng
-        const role = response.user.role;
-        if (role === 'Admin') {
+        const roleID = response.account.roleID;
+        console.log('Google user roleID:', roleID);
+        
+        if (roleID === 1) { // Admin
           router.push('/dashboard');
-        } else if (role === 'Nurse') {
+        } else if (roleID === 2) { // NurseSpecialist
           router.push('/dashboard');
-        } else if (role === 'Specialist') {
+        } else if (roleID === 3) { // Manager
           router.push('/dashboard');
-        } else if (role === 'Manager') {
-          router.push('/dashboard');
+        } else if (roleID === 4) { // Customer
+          router.push('/?welcome=true');
         } else {
           router.push('/');
         }
       }
-    } catch (err) {
-      setError(
-        err.response?.data?.message || 'Đăng nhập với Google thất bại. Vui lòng thử lại sau.'
-      );
-    } finally {
-      setIsLoading(false);
-    }
+          } catch (err) {
+        console.error('Google login error:', err);
+        let errorMessage = 'Đăng nhập với Google thất bại. Vui lòng thử lại sau.';
+        
+        if (err.message) {
+          if (err.message.includes('<!DOCTYPE')) {
+            errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra backend có đang chạy không.';
+          } else {
+            errorMessage = err.message;
+          }
+        }
+        
+        setError(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
   };
 
   return (
