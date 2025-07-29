@@ -1,14 +1,12 @@
-import zones from '../../mock/Zone';
 
 const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 
 const zoneService = {
   getZones: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve(zones);
-    }
     const res = await fetch('/api/zones');
-    return res.json();
+    const data = await res.json();
+    console.log('Zones API response:', data);
+    return Array.isArray(data) ? data : data.zones || [];
   },
   getZoneById: async (id) => {
     if (USE_MOCK) {

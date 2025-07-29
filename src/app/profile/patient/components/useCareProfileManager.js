@@ -3,7 +3,7 @@ import authService from '@/services/auth/authService';
 import relativesService from '@/services/api/relativesService';
 import zoneService from '@/services/api/zoneService';
 import careProfileService from '@/services/api/careProfileService';
-import zoneDetails from '@/mock/Zone_Detail';
+import zoneDetailsService from '@/services/api/zoneDetailsService';
 
 export default function useCareProfileManager(router) {
   // State
@@ -12,9 +12,10 @@ export default function useCareProfileManager(router) {
   const [relativesList, setRelativesList] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
   const [zones, setZones] = useState([]);
-  const [zoneDetailsList, setZoneDetailsList] = useState(zoneDetails);
+  const [zoneDetailsList, setZoneDetailsList] = useState([]);
   const [careProfileFilter, setCareProfileFilter] = useState('all');
   const [relativesFilter, setRelativesFilter] = useState({});
+  const [careProfileSuccess, setCareProfileSuccess] = useState('');
 
   // Modal/form state
   const [showCareProfileForm, setShowCareProfileForm] = useState(false);
@@ -73,15 +74,36 @@ export default function useCareProfileManager(router) {
       return;
     }
     const currentUser = authService.getCurrentUser();
+    console.log('Current user:', currentUser);
     setUser(currentUser);
     careProfileService.getCareProfiles().then(careProfiles => {
-      const myCareProfiles = careProfiles.filter(c => c.AccountID === currentUser.AccountID);
-      setCareProfiles(myCareProfiles);
+      const safeCareProfiles = Array.isArray(careProfiles) ? careProfiles : [];
+      const myCareProfiles = safeCareProfiles.filter(
+        c => (c.accountID || c.AccountID) === (currentUser.accountID || currentUser.AccountID)
+      );
+      // Loại bỏ trùng careProfileID
+      const uniqueCareProfiles = [];
+      const seen = new Set();
+      for (const c of myCareProfiles) {
+        const id = c.careProfileID || c.CareProfileID;
+        if (!seen.has(id)) {
+          uniqueCareProfiles.push(c);
+          seen.add(id);
+        }
+      }
+      setCareProfiles(uniqueCareProfiles);
       relativesService.getRelatives().then(relatives => {
         setRelativesList(relatives);
       });
+    }).catch(err => {
+      console.error('Error loading careProfiles:', err);
+      setCareProfiles([]);
     });
-    zoneService.getZones().then(setZones);
+    zoneService.getZones().then(zs => {
+      setZones(zs);
+      console.log('Loaded zones:', zs);
+    });
+    zoneDetailsService.getZoneDetails().then(setZoneDetailsList);
     setLoading(false);
   }, [router]);
 
@@ -92,11 +114,11 @@ export default function useCareProfileManager(router) {
     if (care) {
       setCareProfileForm({
         ...care,
-        DateOfBirth: formatDateForInput(care.DateOfBirth),
+        dateOfBirth: formatDateForInput(care.dateOfBirth),
       });
-      setCareProfileAvatar(care.Image || '');
+      setCareProfileAvatar(care.image || '');
     } else {
-      setCareProfileForm({ ProfileName: '', DateOfBirth: '', PhoneNumber: '', Address: '', ZoneDetailID: '', CustomZoneName: '', Note: '', Status: 'active', Image: '' });
+      setCareProfileForm({ profileName: '', dateOfBirth: '', phoneNumber: '', address: '', zoneDetailID: '', customZoneName: '', note: '', status: 'Active', image: '' });
       setCareProfileAvatar('');
     }
     setCareProfileAvatarFile(null);
@@ -114,14 +136,49 @@ export default function useCareProfileManager(router) {
       reader.readAsDataURL(file);
     }
   };
-  const handleSaveCareProfile = e => {
-    e.preventDefault();
+  const handleSaveCareProfile = async (dataOrEvent) => {
+    let data = dataOrEvent;
+    // Nếu là event form thì lấy formData từ state và truyền avatar
+    if (dataOrEvent && typeof dataOrEvent.preventDefault === 'function') {
+      dataOrEvent.preventDefault();
+      data = { ...careProfileForm, image: careProfileAvatar };
+    } else {
+      // Nếu là submitData từ modal thì merge avatar
+      data = { ...data, image: careProfileAvatar };
+    }
     setCareProfileLoading(true);
-    // ... logic thêm/sửa careProfile (mock)
-    setTimeout(() => {
+    setCareProfileSuccess('');
+    try {
+      if (editCareProfile) {
+        await careProfileService.updateCareProfile(editCareProfile.careProfileID || editCareProfile.CareProfileID, data);
+        setCareProfileSuccess('Cập nhật hồ sơ thành công!');
+      } else {
+        // Create
+        console.log('Dữ liệu gửi lên:', data);
+        await careProfileService.createCareProfile(data);
+        setCareProfileSuccess('Tạo hồ sơ thành công!');
+      }
+      const updatedList = await careProfileService.getCareProfiles();
+      const safeCareProfiles = Array.isArray(updatedList) ? updatedList : [];
+      const myCareProfiles = safeCareProfiles.filter(
+        c => (c.accountID || c.AccountID) === (user.accountID || user.AccountID)
+      );
+      const uniqueCareProfiles = [];
+      const seen = new Set();
+      for (const c of myCareProfiles) {
+        const id = c.careProfileID || c.CareProfileID;
+        if (!seen.has(id)) {
+          uniqueCareProfiles.push(c);
+          seen.add(id);
+        }
+      }
+      setCareProfiles(uniqueCareProfiles);
       setShowCareProfileForm(false);
+    } catch (err) {
+      setCareProfileSuccess(err.message || 'Có lỗi khi xử lý hồ sơ.');
+    } finally {
       setCareProfileLoading(false);
-    }, 800);
+    }
   };
 
   // Relative handlers
@@ -132,11 +189,11 @@ export default function useCareProfileManager(router) {
     if (relative) {
       setRelativeForm({
         ...relative,
-        DateOfBirth: formatDateForInput(relative.DateOfBirth),
+        dateOfBirth: formatDateForInput(relative.dateOfBirth),
       });
-      setAvatarPreview(relative.Image || '');
+      setAvatarPreview(relative.image || '');
     } else {
-      setRelativeForm({ Relative_Name: '', DateOfBirth: '', Gender: '', Note: '', Status: 'active', Image: '' });
+      setRelativeForm({ relative_Name: '', dateOfBirth: '', gender: '', note: '', status: 'Active', image: '' });
       setAvatarPreview('');
     }
     setAvatarFile(null);
@@ -208,15 +265,27 @@ export default function useCareProfileManager(router) {
     handleCloseRelativeForm,
     showCareProfileDetail, detailCareProfile, handleOpenCareProfileDetail, handleCloseCareProfileDetail,
     showRelativeDetail, detailRelative, handleOpenRelativeDetail, handleCloseRelativeDetail,
+    careProfileSuccess,
   };
 }
 
+// Hàm chuyển đổi ngày sang định dạng input type="date" (YYYY-MM-DD)
+// Hỗ trợ cả định dạng DD-MM-YYYY và định dạng ISO như 2025-07-29T07:10:37.656
 function formatDateForInput(dateStr) {
   if (!dateStr) return '';
   // Nếu là dạng DD-MM-YYYY thì convert
   if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
     const [d, m, y] = dateStr.split('-');
     return `${y}-${m}-${d}`;
+  }
+  // Nếu là dạng ISO 2025-07-29T07:10:37.656 hoặc 2025-07-29T07:10:37Z
+  if (/^\d{4}-\d{2}-\d{2}T/.test(dateStr)) {
+    // Cắt lấy phần ngày
+    return dateStr.slice(0, 10);
+  }
+  // Nếu là dạng YYYY-MM-DD thì trả về luôn
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+    return dateStr;
   }
   // Nếu là dạng khác, trả về rỗng
   return '';

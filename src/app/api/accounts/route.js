@@ -4,7 +4,8 @@ export async function GET() {
   try {
     console.log('Proxy get all accounts request');
     
-    const response = await fetch('http://localhost:5294/api/accounts', {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
+    const response = await fetch(`${backendUrl}/api/accounts`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

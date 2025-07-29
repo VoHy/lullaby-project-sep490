@@ -77,7 +77,7 @@ const accountService = {
       console.log('Updating account with ID:', id, 'Data:', data);
       
       // Sử dụng proxy để bypass CORS
-      const response = await fetch(`/api/accounts/${id}`, {
+      const response = await fetch(`/api/accounts/update/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

@@ -6,7 +6,8 @@ export async function POST(request) {
     
     console.log('Proxy login request:', body);
     
-      const response = await fetch('http://localhost:5294/api/accounts/login', {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
+      const response = await fetch(`${backendUrl}/api/accounts/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

@@ -13,7 +13,8 @@ export const useWalletIcon = () => {
     const fetchWallet = async () => {
       if (user) {
         try {
-          const walletData = await walletService.getWallets();
+          const res = await walletService.getWallets();
+          const walletData = Array.isArray(res) ? res : res.wallets || res.data || [];
           const userWallet = walletData.find(w => w.AccountID === user.AccountID);
           setWallet(userWallet || null);
         } catch (error) {

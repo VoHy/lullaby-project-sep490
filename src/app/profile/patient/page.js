@@ -67,6 +67,12 @@ export default function PatientProfilePage(props) {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      {/* Thông báo thành công ở góc phải trên */}
+      {manager.careProfileSuccess && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
+          {manager.careProfileSuccess}
+        </div>
+      )}
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-2">
@@ -104,6 +110,7 @@ export default function PatientProfilePage(props) {
           isEdit={!!manager.editCareProfile}
           zones={manager.zones}
           zoneDetails={manager.zoneDetails}
+          user={manager.user} // truyền user vào modal
         />
         {/* Modal form người thân */}
         <RelativeFormModal
@@ -140,6 +147,7 @@ export default function PatientProfilePage(props) {
           onClose={manager.handleCloseCareProfileDetail}
           care={manager.detailCareProfile}
           zones={manager.zones}
+          zoneDetails={manager.zoneDetails}
         />
         {/* Modal chi tiết Relative */}
         <RelativeDetailModal

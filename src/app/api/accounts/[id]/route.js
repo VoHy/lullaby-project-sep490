@@ -7,11 +7,10 @@ export async function PUT(request, { params }) {
     
     console.log('Proxy update account request for ID:', id, 'Data:', body);
     
-    const response = await fetch(`http://localhost:5294/api/accounts/${id}`, {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
+    const response = await fetch(`${backendUrl}/api/accounts/${id}`, {
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     });
     
@@ -23,16 +22,10 @@ export async function PUT(request, { params }) {
       
       try {
         const errorData = JSON.parse(errorText);
-        return NextResponse.json(
-          { error: errorData.message || 'Không thể cập nhật tài khoản' },
-          { status: response.status }
-        );
+        return NextResponse.json({ error: errorData.message || 'Không thể cập nhật tài khoản' }, { status: response.status });
       } catch (parseError) {
         console.error('Failed to parse error response as JSON:', parseError);
-        return NextResponse.json(
-          { error: `Server error: ${response.status} - ${errorText.substring(0, 100)}` },
-          { status: response.status }
-        );
+        return NextResponse.json({ error: `Server error: ${response.status} - ${errorText.substring(0, 100)}` }, { status: response.status });
       }
     }
     
@@ -41,10 +34,7 @@ export async function PUT(request, { params }) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Proxy error:', error);
-    return NextResponse.json(
-      { error: `Không thể kết nối đến server: ${error.message}` },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: `Không thể kết nối đến server: ${error.message}` }, { status: 500 });
   }
 }
 
@@ -53,11 +43,10 @@ export async function DELETE(request, { params }) {
     const { id } = params;
     console.log('Proxy delete account request for ID:', id);
     
-    const response = await fetch(`http://localhost:5294/api/accounts/${id}`, {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
+    const response = await fetch(`${backendUrl}/api/accounts/${id}`, {
       method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
     });
     
     console.log('Backend response status:', response.status);
@@ -68,16 +57,10 @@ export async function DELETE(request, { params }) {
       
       try {
         const errorData = JSON.parse(errorText);
-        return NextResponse.json(
-          { error: errorData.message || 'Không thể xóa tài khoản' },
-          { status: response.status }
-        );
+        return NextResponse.json({ error: errorData.message || 'Không thể xóa tài khoản' }, { status: response.status });
       } catch (parseError) {
         console.error('Failed to parse error response as JSON:', parseError);
-        return NextResponse.json(
-          { error: `Server error: ${response.status} - ${errorText.substring(0, 100)}` },
-          { status: response.status }
-        );
+        return NextResponse.json({ error: `Server error: ${response.status} - ${errorText.substring(0, 100)}` }, { status: response.status });
       }
     }
     
@@ -86,9 +69,6 @@ export async function DELETE(request, { params }) {
     return NextResponse.json(data);
   } catch (error) {
     console.error('Proxy error:', error);
-    return NextResponse.json(
-      { error: `Không thể kết nối đến server: ${error.message}` },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: `Không thể kết nối đến server: ${error.message}` }, { status: 500 });
   }
 } 

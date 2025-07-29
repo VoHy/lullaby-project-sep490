@@ -7,9 +7,7 @@ const isBrowser = typeof window !== 'undefined';
 // Vì API route tích hợp trong Next.js App Router là /api/...
 // baseURL được để trống để request tự động sử dụng domain hiện tại 
 // Backend local của bạn chạy trên port 5294
-const baseURL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:5294'  // Local API (backend của bạn)
-  : 'https://lullaby-gze5f9dneyena3gb.eastasia-01.azurewebsites.net'; // Production API
+const baseURL = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294'; // fallback nếu chưa set env
 
 console.log('API Base URL:', baseURL);
 console.log('NODE_ENV:', process.env.NODE_ENV);
@@ -77,7 +75,7 @@ console.log('USE_MOCK:', process.env.NEXT_PUBLIC_USE_MOCK);
 
 // Tạo một axios instance đơn giản cho các service khác có thể cần
 const axiosInstance = axios.create({
-  baseURL: 'http://localhost:5294',
+  baseURL: baseURL,
   headers: {
     'Content-Type': 'application/json',
   },

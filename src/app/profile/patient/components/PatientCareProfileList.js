@@ -3,7 +3,11 @@ import { FaUsers, FaPlus } from 'react-icons/fa';
 
 export default function PatientCareProfileList({ careProfiles, relativesList, zones, relativesFilter, setRelativesFilter, handleOpenForm, careProfileFilter, setCareProfileFilter, handleOpenCareProfileForm, onViewDetailCareProfile, onViewDetailRelative, handleOpenEditCareProfile, handleOpenEditRelative }) {
   // Lọc careProfiles theo filter
-  const filteredCareProfiles = careProfileFilter === 'all' ? careProfiles : careProfiles.filter(c => c.Status === careProfileFilter);
+  const filteredCareProfiles = careProfileFilter === 'all'
+    ? careProfiles
+    : careProfiles.filter(c =>
+        (c.status || c.Status || '').toLowerCase() === careProfileFilter.toLowerCase()
+      );
   return (
     <>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 p-4">
@@ -43,12 +47,12 @@ export default function PatientCareProfileList({ careProfiles, relativesList, zo
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredCareProfiles.map(care => (
             <PatientCareProfileCard
-              key={care.CareProfileID}
+              key={care.careProfileID}
               care={care}
               relativesList={relativesList}
               zones={zones}
-              relFilter={relativesFilter[care.CareProfileID] || 'all'}
-              setRelFilter={val => setRelativesFilter(f => ({ ...f, [care.CareProfileID]: val }))}
+              relFilter={relativesFilter[care.careProfileID] || 'all'}
+              setRelFilter={val => setRelativesFilter(f => ({ ...f, [care.careProfileID]: val }))}
               handleOpenForm={handleOpenForm}
               onViewDetailCareProfile={onViewDetailCareProfile}
               onViewDetailRelative={onViewDetailRelative}

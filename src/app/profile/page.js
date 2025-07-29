@@ -78,6 +78,7 @@ export default function ProfilePage() {
   const [editData, setEditData] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
   // Helper function để lấy role name
   const getRoleName = (roleId) => {
@@ -124,6 +125,7 @@ export default function ProfilePage() {
     });
     setIsEditing(true);
     setError('');
+    setSuccess('');
   };
 
   const handleInputChange = (e) => {
@@ -134,11 +136,16 @@ export default function ProfilePage() {
   const handleSave = async () => {
     setLoading(true);
     setError('');
+    setSuccess('');
     try {
       const accountId = profile.accountID || profile.AccountID;
-      const updated = await accountsService.updateAccount(accountId, editData);
-      setProfile(updated);
+      const fullData = { ...profile, ...editData };
+      await accountsService.updateAccount(accountId, fullData);
+      // Gọi lại API lấy profile mới nhất
+      const refreshed = await accountsService.getAccount(accountId);
+      setProfile(refreshed);
       setIsEditing(false);
+      setSuccess('Cập nhật thành công!');
     } catch (err) {
       setError('Có lỗi khi cập nhật.');
     } finally {
@@ -170,6 +177,12 @@ export default function ProfilePage() {
         </div>
         {/* Tab Navigation */}
         <TabNavigation />
+        {/* Thông báo thành công */}
+        {success && (
+          <div className="text-green-600 bg-green-50 p-3 rounded-lg mb-4 text-center">
+            {success}
+          </div>
+        )}
         {/* Tab Content */}
         <div className="bg-white rounded-xl shadow-lg">
           <ProfileCard
