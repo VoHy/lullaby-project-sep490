@@ -37,14 +37,20 @@ const ManagerTab = () => {
 
   useEffect(() => {
     // Lấy managers và zones từ API thật
-    accountService.getManagers().then(setManagers).catch(() => setManagers([]));
-    zoneService.getZones().then(setZones).catch(() => setZones([]));
+    accountService.getManagers().then(data => {
+      setManagers(data);
+    }).catch(() => setManagers([]));
+    
+    zoneService.getZones().then(data => {
+      setZones(data);
+    }).catch(() => setZones([]));
+    
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
   const filteredManagers = managers.filter(manager => {
-    const matchesSearch = manager.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    const matchesSearch = manager.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       manager.email?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || manager.status === statusFilter;
     return matchesSearch && matchesStatus;
@@ -76,8 +82,6 @@ const ManagerTab = () => {
 
   const handleCreateManager = async (accountData) => {
     try {
-      console.log('Creating manager with data:', accountData);
-      
       // Kiểm tra accountData có tồn tại không
       if (!accountData) {
         console.error('accountData is undefined');
@@ -89,7 +93,6 @@ const ManagerTab = () => {
       const newAccount = {
         ...accountData,
         accountID: Date.now(), // Đảm bảo có ID
-        AccountID: Date.now(), // Đảm bảo có ID
         role_id: 3, // Manager role
         status: 'active', // Đảm bảo status là active
         role_name: "Quản lý",
@@ -97,18 +100,15 @@ const ManagerTab = () => {
         createAt: new Date().toISOString()
       };
 
-      console.log('New account data:', newAccount);
-
       // Thêm vào danh sách managers
       setManagers(prev => [...prev, newAccount]);
 
       // Nếu có chọn khu vực quản lý, cập nhật Zone
       if (accountData.zone_id) {
-        console.log('Updating zone with ID:', accountData.zone_id);
         setZones(prevZones => 
           prevZones.map(zone => 
-            zone.ZoneID === Number(accountData.zone_id) 
-              ? { ...zone, AccountID: newAccount.AccountID }
+            zone.zoneID === Number(accountData.zone_id) 
+              ? { ...zone, accountID: newAccount.accountID }
               : zone
           )
         );
@@ -129,7 +129,7 @@ const ManagerTab = () => {
   const handleUpdateManager = async (managerId, updatedData) => {
     try {
       setManagers(prev => 
-        prev.map(m => m.AccountID === managerId ? { ...m, ...updatedData } : m)
+        prev.map(m => m.accountID === managerId ? { ...m, ...updatedData } : m)
       );
 
       alert('Cập nhật Manager thành công!');
@@ -141,12 +141,12 @@ const ManagerTab = () => {
 
   const handleDeleteManager = (managerId) => {
     if (confirm('Bạn có chắc chắn muốn xóa Manager này?')) {
-      setManagers(prev => prev.filter(m => m.AccountID !== managerId));
+      setManagers(prev => prev.filter(m => m.accountID !== managerId));
       
       // Xóa zone assignment khi xóa Manager
       setZones(prevZones => 
         prevZones.map(zone => 
-          zone.AccountID === managerId ? { ...zone, AccountID: null } : zone
+          zone.accountID === managerId ? { ...zone, accountID: null } : zone
         )
       );
       
@@ -156,13 +156,10 @@ const ManagerTab = () => {
 
   const fetchManagers = async () => {
     try {
-      console.log('Fetching managers and zones...');
       const [managersData, zonesData] = await Promise.all([
         accountService.getManagers(),
         zoneService.getZones()
       ]);
-      console.log('Managers data:', managersData);
-      console.log('Zones data:', zonesData);
       setManagers(managersData);
       setZones(zonesData);
     } catch (error) {
@@ -249,7 +246,8 @@ const ManagerTab = () => {
             <tbody className="divide-y divide-gray-200">
               {filteredManagers.map((manager, index) => {
                 // Tìm khu vực mà Manager đang quản lý
-                const managedZone = zones.find(zone => zone.AccountID === manager.AccountID);
+                // Tạm thời sử dụng managerID vì backend chưa fix accountID
+                const managedZone = zones.find(zone => zone.managerID === manager.accountID);
                 
                 return (
                   <tr key={manager.accountID || `manager-${index}`} className="hover:bg-gray-50 transition-colors">
@@ -304,7 +302,7 @@ const ManagerTab = () => {
                           <FontAwesomeIcon icon={faEdit} />
                         </button>
                         <button
-                          onClick={() => handleDeleteManager(manager.AccountID)}
+                          onClick={() => handleDeleteManager(manager.accountID)}
                           className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
                           title="Xóa"
                         >

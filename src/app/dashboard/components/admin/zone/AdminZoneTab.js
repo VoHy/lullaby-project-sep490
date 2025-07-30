@@ -5,6 +5,7 @@ import {
   faSearch, faCity, faClock, faUserTie
 } from '@fortawesome/free-solid-svg-icons';
 import zoneService from '@/services/api/zoneService';
+import zoneDetailService from '@/services/api/zoneDetailService';
 import accountService from '@/services/api/accountService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 
@@ -30,9 +31,9 @@ const AdminZoneTab = () => {
   const [accounts, setAccounts] = useState([]);
   const [selectedZone, setSelectedZone] = useState(null);
   const [showZoneModal, setShowZoneModal] = useState(false);
-  const [zoneForm, setZoneForm] = useState({ zoneID: '', zoneName: '', city: '', managerID: '' });
+  const [zoneForm, setZoneForm] = useState({ zoneID: '', zoneName: '', city: '', accountID: '' });
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [zonedetailForm, setZonedetailForm] = useState({ zonedetailid: '', zoneID: '', name: '', note: '' });
+  const [zonedetailForm, setZonedetailForm] = useState({ zoneDetailID: '', zoneID: '', name: '', note: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -48,7 +49,7 @@ const AdminZoneTab = () => {
       setLoading(true);
       const [zonesData, zonedetailsData, specialistsData, accountsData] = await Promise.all([
         zoneService.getZones(),
-        zoneService.getZoneDetails(),
+        zoneDetailService.getZoneDetails(),
         nursingSpecialistService.getNursingSpecialists(),
         accountService.getAllAccounts()
       ]);
@@ -86,14 +87,14 @@ const AdminZoneTab = () => {
     },
     {
       title: 'Y tá',
-      value: nursingSpecialists.filter(n => n.zoneID && n.nursingID).length,
+      value: nursingSpecialists.filter(n => n.zoneID && n.NursingID).length,
       icon: faUsers,
       color: 'from-purple-500 to-pink-500',
       subtitle: 'Tổng y tá'
     },
     {
       title: 'Chuyên gia',
-      value: nursingSpecialists.filter(n => n.zoneID && n.nursingID).length,
+      value: nursingSpecialists.filter(n => n.zoneID && n.NursingID).length,
       icon: faUserMd,
       color: 'from-orange-500 to-red-500',
       subtitle: 'Tổng chuyên gia'
@@ -106,8 +107,8 @@ const AdminZoneTab = () => {
       zoneID: zone.zoneID, 
       zoneName: zone.zoneName, 
       city: zone.city,
-      managerID: zone.managerID || '' // Ensure managerID is set if zone exists
-    } : { zoneID: '', zoneName: '', city: '', managerID: '' });
+      accountID: zone.managerID || '' // Ensure managerID is set if zone exists
+    } : { zoneID: '', zoneName: '', city: '', accountID: '' });
     setShowZoneModal(true);
   };
 
@@ -124,20 +125,20 @@ const AdminZoneTab = () => {
         return;
       }
 
-      if (!zoneForm.managerID) {
+      if (!zoneForm.accountID) {
         alert('Vui lòng chọn quản lý!');
         return;
       }
 
       // Sử dụng managerID từ form
-      const managerID = zoneForm.managerID;
+      const accountID = zoneForm.accountID;
 
       if (zoneForm.zoneID) {
         // Update existing zone
         await zoneService.updateZone(zoneForm.zoneID, {
           zoneName: zoneForm.zoneName.trim(),
           city: zoneForm.city.trim(),
-          managerID: managerID
+          accountID: accountID
         });
         alert('Cập nhật khu vực thành công!');
       } else {
@@ -145,7 +146,7 @@ const AdminZoneTab = () => {
         await zoneService.createZone({
           zoneName: zoneForm.zoneName.trim(),
           city: zoneForm.city.trim(),
-          managerID: managerID
+          accountID: accountID
         });
         alert('Tạo khu vực thành công!');
       }
@@ -174,12 +175,12 @@ const AdminZoneTab = () => {
   // Thêm/sửa ZoneDetail
   const handleOpenZonedetailModal = (detail = null, zoneId = null) => {
     setZonedetailForm(detail ? { 
-      zonedetailid: detail.zonedetailid, 
+      zoneDetailID: detail.zoneDetailID, 
       zoneID: detail.zoneID, 
       name: detail.name, 
       note: detail.note 
     } : { 
-      zonedetailid: '', 
+      zoneDetailID: '', 
       zoneID: zoneId || '', 
       name: '', 
       note: '' 
@@ -200,18 +201,17 @@ const AdminZoneTab = () => {
         return;
       }
 
-      if (zonedetailForm.zonedetailid) {
+      if (zonedetailForm.zoneDetailID) {
         // Update existing zone detail - chỉ gửi name và note
         const updateData = {
           name: zonedetailForm.name.trim(),
           note: zonedetailForm.note.trim()
         };
-        console.log('Update zone detail data:', updateData);
-        await zoneService.updateZoneDetail(zonedetailForm.zonedetailid, updateData);
+        await zoneDetailService.updateZoneDetail(zonedetailForm.zoneDetailID, updateData);
         alert('Cập nhật chi tiết khu vực thành công!');
       } else {
         // Create new zone detail
-        await zoneService.createZoneDetail({
+        await zoneDetailService.createZoneDetail({
           zoneID: parseInt(zonedetailForm.zoneID),
           name: zonedetailForm.name.trim(),
           note: zonedetailForm.note.trim()
@@ -229,7 +229,7 @@ const AdminZoneTab = () => {
   const handleDeleteZonedetail = async (detailId) => {
     if (confirm('Bạn có chắc chắn muốn xóa chi tiết khu vực này?')) {
       try {
-        await zoneService.deleteZoneDetail(detailId);
+        await zoneDetailService.deleteZoneDetail(detailId);
         alert('Xóa chi tiết khu vực thành công!');
         await fetchData(); // Reload data
       } catch (error) {
@@ -241,16 +241,16 @@ const AdminZoneTab = () => {
 
   // Xem nhân sự theo khu vực
   const getNursesByZone = (zoneId) =>
-    nursingSpecialists.filter(n => n.zoneID === zoneId && n.major === 'Y tá');
+    nursingSpecialists.filter(n => n.zoneID === zoneId && n.Major === 'Y tá');
 
   const getSpecialistsByZone = (zoneId) =>
-    nursingSpecialists.filter(n => n.zoneID === zoneId && n.major === 'Chuyên gia');
+    nursingSpecialists.filter(n => n.zoneID === zoneId && n.Major === 'Chuyên gia');
 
   // Lấy Manager theo AccountID của Zone
   const getManagerByZone = (zoneId) => {
     const zone = zones.find(z => z.zoneID === zoneId);
     if (!zone || !zone.accountID) return null;
-    return accounts.find(acc => acc.accountID === zone.accountID && acc.roleID === 4);
+    return accounts.find(acc => acc.accountID === zone.accountID && acc.roleID === 3);
   };
 
   if (loading) {
@@ -346,7 +346,7 @@ const AdminZoneTab = () => {
                   <td className="px-6 py-4">
                     <div className="space-y-2">
                       {zonedetails.filter(d => d.zoneID === zone.zoneID).map(d => (
-                        <div key={d.zonedetailid} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
+                        <div key={d.zoneDetailID} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
                           <div>
                             <span className="font-medium text-sm">{d.name}</span>
                             {d.note && <span className="text-xs text-gray-500 ml-2">({d.note})</span>}
@@ -361,7 +361,7 @@ const AdminZoneTab = () => {
                             </button>
                             <button 
                               className="text-red-500 hover:text-red-700 text-xs p-1 hover:bg-red-50 rounded"
-                              onClick={() => handleDeleteZonedetail(d.zonedetailid)}
+                              onClick={() => handleDeleteZonedetail(d.zoneDetailID)}
                               title="Xóa"
                             >
                               <FontAwesomeIcon icon={faTrash} />
@@ -455,8 +455,8 @@ const AdminZoneTab = () => {
                 <label className="block text-sm font-medium text-gray-700 mb-2">Quản lý</label>
                 <select 
                   className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                  value={zoneForm.managerID}
-                  onChange={e => setZoneForm(f => ({ ...f, managerID: parseInt(e.target.value) }))}
+                  value={zoneForm.accountID}
+                  onChange={e => setZoneForm(f => ({ ...f, accountID: parseInt(e.target.value) }))}
                 >
                   <option value="">Chọn quản lý</option>
                   {accounts.filter(acc => acc.roleID === 3).map(manager => (
@@ -490,7 +490,7 @@ const AdminZoneTab = () => {
             <button className="absolute top-4 right-4 text-gray-400 hover:text-pink-500 text-2xl font-bold z-10" onClick={() => setShowDetailModal(false)}>&times;</button>
             <div className="mb-6">
               <h3 className="text-xl font-bold mb-2 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">
-                {zonedetailForm.zonedetailid ? 'Sửa chi tiết khu vực' : 'Thêm chi tiết khu vực'}
+                {zonedetailForm.zoneDetailID ? 'Sửa chi tiết khu vực' : 'Thêm chi tiết khu vực'}
               </h3>
               <div className="w-20 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded mx-auto"></div>
             </div>
