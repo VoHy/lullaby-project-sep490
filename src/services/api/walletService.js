@@ -1,18 +1,14 @@
+import { createService } from './serviceFactory';
+
+// Tạo base service với factory
+const baseWalletService = createService('Wallet', 'Wallet');
+
+// Thêm các method đặc biệt
 const walletService = {
-  getWallets: async () => {
-    const res = await fetch('/api/Wallet');
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách wallet');
-    return data;
-  },
+  // Base CRUD methods từ factory
+  ...baseWalletService,
 
-  getWalletById: async (id) => {
-    const res = await fetch(`/api/Wallet/${id}`);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin wallet');
-    return data;
-  },
-
+  // === WALLET HISTORY ===
   getWalletHistories: async (walletId) => {
     const res = await fetch(`/api/Wallet/${walletId}/histories`);
     const data = await res.json();
@@ -83,37 +79,6 @@ const walletService = {
     });
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || 'Tạo QR Code thất bại');
-    return result;
-  },
-
-  // === CÁC METHOD CŨ ===
-  
-  createWallet: async (data) => {
-    const res = await fetch('/api/Wallet', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Tạo wallet thất bại');
-    return result;
-  },
-
-  updateWallet: async (id, data) => {
-    const res = await fetch(`/api/Wallet/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Cập nhật wallet thất bại');
-    return result;
-  },
-
-  deleteWallet: async (id) => {
-    const res = await fetch(`/api/Wallet/${id}`, { method: 'DELETE' });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Xóa wallet thất bại');
     return result;
   }
 };

@@ -2,47 +2,42 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
   try {
-    const { id } = params;
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-    const response = await fetch(`${backendUrl}/api/nursingspecialists/get/${id}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    const { id } = await params;
+    const res = await fetch(`http://localhost:5294/api/nursingspecialists/get/${id}`);
+    const data = await res.json();
+    return Response.json(data, { status: res.status });
   } catch (error) {
-    return NextResponse.json({ error: error.message || 'Lỗi server' }, { status: 500 });
+    return Response.json({ error: 'Không thể lấy thông tin nursing specialist' }, { status: 500 });
   }
 }
 
 export async function PUT(request, { params }) {
   try {
-    const { id } = params;
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
+    const { id } = await params;
     const body = await request.json();
-    const response = await fetch(`${backendUrl}/api/nursingspecialists/update/${id}`, {
+    const res = await fetch(`http://localhost:5294/api/nursingspecialists/update/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(body),
     });
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    const data = await res.json();
+    return Response.json(data, { status: res.status });
   } catch (error) {
-    return NextResponse.json({ error: error.message || 'Lỗi server' }, { status: 500 });
+    return Response.json({ error: 'Không thể cập nhật nursing specialist' }, { status: 500 });
   }
 }
 
 export async function DELETE(request, { params }) {
   try {
-    const { id } = params;
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-    const response = await fetch(`${backendUrl}/api/nursingspecialists/delete/${id}`, {
+    const { id } = await params;
+    const res = await fetch(`http://localhost:5294/api/nursingspecialists/delete/${id}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' },
     });
-    const data = await response.json();
-    return NextResponse.json(data, { status: response.status });
+    const data = await res.json();
+    return Response.json(data, { status: res.status });
   } catch (error) {
-    return NextResponse.json({ error: error.message || 'Lỗi server' }, { status: 500 });
+    return Response.json({ error: 'Không thể xóa nursing specialist' }, { status: 500 });
   }
 } 

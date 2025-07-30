@@ -19,90 +19,18 @@ let mockManagerData = {
 
 export async function PUT(request, { params }) {
   try {
-    const { id } = params;
+    const { id } = await params;
     const body = await request.json();
-    
-    console.log('Update account - ID:', id);
-    console.log('Update account - Request body:', body);
-    
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-    console.log('Calling backend:', `${backendUrl}/api/accounts/update/${id}`);
-    
-    const response = await fetch(`${backendUrl}/api/accounts/update/${id}`, {
+    const res = await fetch(`http://localhost:5294/api/accounts/update/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+      },
       body: JSON.stringify(body),
     });
-    
-    console.log('Backend response status:', response.status);
-    
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('Backend error response:', errorText);
-      
-      try {
-        const errorData = JSON.parse(errorText);
-        console.log('Parsed error data:', errorData);
-        
-        // Nếu backend báo account không tồn tại, cập nhật mock data
-        if (errorData.message && errorData.message.includes('does not exist')) {
-          console.log('Account not found in backend, updating mock data');
-          
-          // Cập nhật mock data
-          mockManagerData[id] = {
-            ...mockManagerData[id],
-            ...body,
-            id: parseInt(id),
-            accountID: parseInt(id),
-            updated_at: new Date().toISOString()
-          };
-          
-          console.log('Updated mock data:', mockManagerData[id]);
-          
-          return NextResponse.json({
-            success: true,
-            message: 'Cập nhật manager thành công',
-            account: mockManagerData[id]
-          });
-        }
-        
-        return NextResponse.json({ error: errorData.message || 'Không thể cập nhật tài khoản' }, { status: response.status });
-      } catch (parseError) {
-        console.log('Error parsing backend response:', parseError);
-        return NextResponse.json({ error: `Server error: ${response.status} - ${errorText.substring(0, 100)}` }, { status: response.status });
-      }
-    }
-    
-    const data = await response.json();
-    console.log('Backend success response:', data);
-    
-    // Cập nhật mock data với response từ backend
-    mockManagerData[id] = {
-      ...mockManagerData[id],
-      ...data,
-      id: parseInt(id),
-      accountID: parseInt(id),
-      updated_at: new Date().toISOString()
-    };
-    
-    return NextResponse.json(data);
+    const data = await res.json();
+    return Response.json(data, { status: res.status });
   } catch (error) {
-    console.error('Update account error:', error);
-    console.log('Network error, updating mock data');
-    
-    // Cập nhật mock data khi có lỗi network
-    mockManagerData[id] = {
-      ...mockManagerData[id],
-      ...body,
-      id: parseInt(id),
-      accountID: parseInt(id),
-      updated_at: new Date().toISOString()
-    };
-    
-    return NextResponse.json({
-      success: true,
-      message: 'Cập nhật manager thành công',
-      account: mockManagerData[id]
-    });
+    return Response.json({ error: 'Không thể cập nhật tài khoản' }, { status: 500 });
   }
 } 
