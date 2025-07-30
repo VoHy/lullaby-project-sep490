@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUserPlus, faUser, faEnvelope, faPhone, 
   faSave, faTimes
 } from '@fortawesome/free-solid-svg-icons';
-import zonesData from '@/mock/Zone';
+import accountService from '@/services/api/accountService';
+import zoneService from '@/services/api/zoneService';
 
 const CreateManagerModal = ({ show, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -14,14 +15,30 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
     password: '',
     confirm_password: '',
     zone_id: '', // Thêm field khu vực quản lý
-    role_id: 4, // Manager role
+    role_id: 3, // Manager role
     status: 'active'
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [zones, setZones] = useState([]);
+  const [loading, setLoading] = useState(false);
 
-  const zones = zonesData;
+  // Fetch zones từ API khi component mount
+  useEffect(() => {
+    if (show) {
+      setLoading(true);
+      zoneService.getZones()
+        .then(setZones)
+        .catch((error) => {
+          console.error('Error fetching zones:', error);
+          setZones([]);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [show]);
 
   const validateForm = () => {
     const newErrors = {};
@@ -74,21 +91,28 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
     setIsSubmitting(true);
     
     try {
-      // Tạo account data với thông tin cơ bản
-      const accountData = {
-        full_name: formData.full_name,
+      const data = {
+        fullName: formData.full_name,
         email: formData.email,
-        phone_number: formData.phone_number,
+        phoneNumber: formData.phone_number,
         password: formData.password,
-        role_id: formData.role_id,
-        status: formData.status,
-        created_at: new Date().toISOString(),
-        zone_id: formData.zone_id || null // Thêm zone_id nếu có
+        avatarUrl: '',
+        zone_id: formData.zone_id || null, // Đảm bảo có giá trị
       };
-
-      await onSubmit(accountData);
+      
+      console.log('Submitting manager data:', data);
+      
+      await accountService.registerManager(data);
+      alert('Tạo tài khoản manager thành công!');
+      
+      if (onSubmit) {
+        console.log('Calling onSubmit with data:', data);
+        onSubmit(data); // Truyền data cho callback
+      }
+      
       handleClose();
     } catch (error) {
+      alert('Tạo tài khoản manager thất bại!');
       console.error('Error creating manager:', error);
     } finally {
       setIsSubmitting(false);
@@ -110,7 +134,7 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
       password: '',
       confirm_password: '',
       zone_id: '',
-      role_id: 4,
+      role_id: 3,
       status: 'active'
     });
     setErrors({});
@@ -218,9 +242,9 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
                   errors.zone_id ? 'border-red-500' : 'border-gray-300'
                 }`}
               >
-                <option value="">Chọn khu vực (có thể để trống)</option>
-                {zones.map(zone => (
-                  <option key={zone.ZoneID} value={zone.ZoneID} disabled={zone.AccountID}>
+                <option key="empty" value="">Chọn khu vực (có thể để trống)</option>
+                {zones.map((zone, index) => (
+                  <option key={`zone-${zone.ZoneID || index}`} value={zone.ZoneID} disabled={zone.AccountID}>
                     {zone.Zone_name} - {zone.City}
                     {zone.AccountID ? ' (Đã có Manager)' : ''}
                   </option>

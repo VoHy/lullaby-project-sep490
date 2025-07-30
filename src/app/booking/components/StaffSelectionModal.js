@@ -38,7 +38,7 @@ export default function StaffSelectionModal({
                     }
                   >
                     <img
-                      src={n.avatar_url || "/default-avatar.png"}
+                      src={n.avatar_url && n.avatar_url !== 'string' ? n.avatar_url : "/images/logo-eldora.png"}
                       alt="avatar"
                       className="w-10 h-10 rounded-full object-cover border-2 border-blue-200"
                     />
@@ -75,7 +75,7 @@ export default function StaffSelectionModal({
                     }
                   >
                     <img
-                      src={n.avatar_url || "/default-avatar.png"}
+                      src={n.avatar_url && n.avatar_url !== 'string' ? n.avatar_url : "/images/logo-eldora.png"}
                       alt="avatar"
                       className="w-10 h-10 rounded-full object-cover border-2 border-pink-200"
                     />

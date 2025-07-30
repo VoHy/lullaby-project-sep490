@@ -1,36 +1,41 @@
-import customerPackages from '../../mock/CustomerPackage';
-
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
-
 const customerPackageService = {
   getCustomerPackages: async () => {
-    if (USE_MOCK) return Promise.resolve(customerPackages);
-    const res = await fetch('/api/customer-packages');
-    return res.json();
+    const res = await fetch('/api/CustomizePackage');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách customer packages');
+    return data;
   },
   getCustomerPackageById: async (id) => {
-    if (USE_MOCK) return Promise.resolve(customerPackages.find(p => p.CustomerPackageID === id));
-    const res = await fetch(`/api/customer-packages/${id}`);
-    return res.json();
+    const res = await fetch(`/api/CustomizePackage/${id}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin customer package');
+    return data;
   },
   createCustomerPackage: async (data) => {
-    if (USE_MOCK) return Promise.resolve({ ...data, CustomerPackageID: customerPackages.length + 1 });
-    const res = await fetch('/api/customer-packages', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    const res = await fetch('/api/CustomizePackage', {
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Tạo customer package thất bại');
+    return result;
   },
   updateCustomerPackage: async (id, data) => {
-    if (USE_MOCK) return Promise.resolve({ ...customerPackages.find(p => p.CustomerPackageID === id), ...data });
-    const res = await fetch(`/api/customer-packages/${id}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    const res = await fetch(`/api/CustomizePackage/${id}`, {
+      method: 'PUT', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Cập nhật customer package thất bại');
+    return result;
   },
   deleteCustomerPackage: async (id) => {
-    if (USE_MOCK) return Promise.resolve(true);
-    const res = await fetch(`/api/customer-packages/${id}`, { method: 'DELETE' });
-    return res.ok;
+    const res = await fetch(`/api/CustomizePackage/${id}`, { method: 'DELETE' });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Xóa customer package thất bại');
+    return result;
   }
 };
 

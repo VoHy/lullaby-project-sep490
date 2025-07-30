@@ -1,11 +1,11 @@
 import React from 'react';
 
-export default function CareProfileDetailModal({ open, onClose, care, zones, zoneDetails, successMessage }) {
+export default function CareProfileDetailModal({ open, onClose, care, zones, zonedetails, successMessage }) {
   if (!open || !care) return null;
-  // Lấy zoneDetail và zone đúng
+  // Lấy zonedetail và zone đúng
 
-  const zoneDetail = zoneDetails.find(z => Number(z.zoneDetailID) === Number(care.zoneDetailID));
-  const zone = zoneDetail && zones ? zones.find(z => Number(z.zoneID) === Number(zoneDetail.zoneID)) : null;
+  const zonedetail = zonedetails.find(z => Number(z.zonedetailid) === Number(care.zonedetailid));
+  const zone = zonedetail && zones ? zones.find(z => Number(z.zoneID) === Number(zonedetail.zoneID)) : null;
 
 
   function formatDate(dateStr) {
@@ -47,7 +47,7 @@ export default function CareProfileDetailModal({ open, onClose, care, zones, zon
                 <div className="text-xs text-gray-500">Khu vực</div>
                 <div className="font-medium text-gray-800">
                   {zone ? zone.zoneName : 'N/A'}
-                  {zoneDetail ? ` - ${zoneDetail.name}` : ''}
+                  {zonedetail ? ` - ${zonedetail.name}` : ''}
                 </div>
               </div>
             </div>

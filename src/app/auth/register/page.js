@@ -59,7 +59,7 @@ export default function RegisterPage() {
             phoneNumber: formData.phoneNumber,
             email: formData.email,
             password: formData.password,
-            avatarUrl: formData.avatarUrl || 'string'
+            avatarUrl: formData.avatarUrl || ''
           })
         });
 

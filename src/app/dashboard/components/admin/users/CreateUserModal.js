@@ -1,6 +1,7 @@
-import { useState } from 'react';
-import zoneDetails from '@/mock/Zone_Detail';
-import zones from '@/mock/Zone';
+import { useState, useEffect } from 'react';
+import accountService from '@/services/api/accountService';
+import zoneService from '@/services/api/zoneService';
+import zoneDetailService from '@/services/api/zoneDetailService';
 
 const CreateUserModal = ({ show, onClose, onSubmit }) => {
   const [avatarUrl, setAvatarUrl] = useState('');
@@ -18,6 +19,34 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
   const [experience, setExperience] = useState('');
   const [slogan, setSlogan] = useState('');
   const [address, setAddress] = useState('');
+  const [zones, setZones] = useState([]);
+  const [zoneDetails, setZoneDetails] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  // Fetch zones và zone details từ API thật khi mở modal
+  useEffect(() => {
+    if (show) {
+      setLoading(true);
+      Promise.all([
+        zoneService.getZones(),
+        zoneDetailService.getZoneDetails()
+      ])
+        .then(([zonesData, zoneDetailsData]) => {
+          console.log('Zones data:', zonesData);
+          console.log('Zone details data:', zoneDetailsData);
+          setZones(zonesData);
+          setZoneDetails(zoneDetailsData);
+        })
+        .catch((error) => {
+          console.error('Error fetching zones data:', error);
+          setZones([]);
+          setZoneDetails([]);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    }
+  }, [show]);
 
   if (!show) return null;
 
@@ -43,32 +72,45 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
     else if (value === 'specialist') setMajor('Chuyên gia');
     else setMajor('');
   };
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    const accountData = {
-      full_name: fullName,
-      email,
-      phone_number: phone,
-      avatar_url: avatarUrl || avatarPreview,
-      role_id: role === 'nurse' ? 2 : 5,
-      role_name: role === 'nurse' ? 'Y tá' : 'Chuyên gia',
-      status: 'active',
-      password,
-    };
-    let nursingSpecialistData = null;
     if (role === 'nurse' || role === 'specialist') {
-      nursingSpecialistData = {
-        ZoneID: zoneId,
-        Gender: gender,
-        DateOfBirth: dob,
-        Major: major,
-        Experience: experience,
-        Slogan: slogan,
-        Address: address,
-        Status: 'active',
+      // Chuẩn hóa dữ liệu gửi lên API
+      const data = {
+        fullName: fullName,
+        phoneNumber: phone,
+        email: email,
+        password: password,
+        avatarUrl: avatarUrl || avatarPreview,
+        dateOfBirth: dob,
+        address: address,
+        gender: gender,
+        major: major,
+        experience: experience,
+        slogan: slogan,
+        zoneID: Number(zoneId),
+        status: 'active', // Đảm bảo luôn active khi tạo mới
       };
+      try {
+        const result = await accountService.registerNursingSpecialist(data);
+        alert(result.message || 'Tạo tài khoản nurse specialist thành công!');
+        if (onSubmit) onSubmit();
+      } catch (err) {
+        alert('Tạo tài khoản nurse specialist thất bại!');
+      }
+    } else {
+      const accountData = {
+        full_name: fullName,
+        email,
+        phone_number: phone,
+        avatar_url: avatarUrl || avatarPreview,
+        role_id: role === 'nurse' ? 2 : 2,
+        role_name: role === 'nurse' ? 'Y tá' : 'Chuyên gia',
+        status: 'active',
+        password,
+      };
+      if (onSubmit) onSubmit(accountData);
     }
-    if (onSubmit) onSubmit(accountData, nursingSpecialistData);
     // Reset form
     setAvatarUrl(''); setFullName(''); setEmail(''); setPhone(''); setRole(''); setAvatarPreview(''); setPassword('');
     setZoneId(''); setGender(''); setDob(''); setMajor(''); setExperience(''); setSlogan(''); setAddress('');
@@ -155,7 +197,7 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
             <div className="flex flex-col items-center gap-1 bg-purple-50 border border-purple-100 rounded-lg p-2 shadow-sm">
               <label className="block text-xs font-medium mb-1 text-gray-600">Ảnh đại diện</label>
               <div className="relative w-20 h-20 mb-1">
-                <img src={avatarPreview || avatarUrl || "/images/avatar1.jpg"} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-pink-200 mx-auto" />
+                                 <img src={avatarPreview || avatarUrl || "/images/logo-eldora.png"} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-pink-200 mx-auto" />
                 <label className="absolute bottom-0 right-0 bg-pink-500 text-white rounded-full p-1 cursor-pointer shadow-md hover:bg-pink-600 transition" title="Đổi ảnh">
                   <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
@@ -186,10 +228,17 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
                     onChange={e => setZoneId(e.target.value)}
                   >
                     <option value="" hidden>Chọn khu vực</option>
-                    {zones.map(z => (
-                      <option key={z.ZoneID} value={z.ZoneID}>{z.Zone_name}</option>
-                    ))}
+                                         {zones
+                       .filter(z => z && z.zoneID && z.zoneName)
+                       .map(z => (
+                         <option key={String(z.zoneID)} value={z.zoneID}>
+                           {z.zoneName}
+                         </option>
+                       ))}
                   </select>
+                  {zones.length === 0 && (
+                    <p className="text-xs text-red-500 mt-1">Không có dữ liệu khu vực</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Giới tính</label>

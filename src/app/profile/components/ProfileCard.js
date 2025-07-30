@@ -7,7 +7,7 @@ export default function ProfileCard({ profile, isEditing, editData, onEditClick,
       <div className="text-center mb-6">
         <div className="relative inline-block">
           <img 
-            src={profile.avatarUrl || profile.avatar_url || "/images/hero-bg.jpg"} 
+            src={(profile.avatarUrl || profile.avatar_url) && (profile.avatarUrl || profile.avatar_url) !== 'string' ? (profile.avatarUrl || profile.avatar_url) : "/images/logo-eldora.png"} 
             alt={profile.fullName || profile.full_name} 
             className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg" 
           />

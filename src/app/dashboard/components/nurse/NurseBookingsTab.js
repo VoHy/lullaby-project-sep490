@@ -1,11 +1,42 @@
-import React, { useState } from 'react';
-import careProfiles from '@/mock/CareProfile';
-import customerPackages from '@/mock/CustomerPackage';
-import customerTasks from '@/mock/CustomerTask';
-import serviceTasks from '@/mock/ServiceTask';
+import React, { useState, useEffect } from 'react';
+import careProfileService from '@/services/api/careProfileService';
+import customerPackageService from '@/services/api/customerPackageService';
+import customerTaskService from '@/services/api/customerTaskService';
+import serviceTaskService from '@/services/api/serviceTaskService';
 
 const NurseBookingsTab = ({ nurseBookings }) => {
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [careProfiles, setCareProfiles] = useState([]);
+  const [customerPackages, setCustomerPackages] = useState([]);
+  const [customerTasks, setCustomerTasks] = useState([]);
+  const [serviceTasks, setServiceTasks] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [careProfilesData, customerPackagesData, customerTasksData, serviceTasksData] = await Promise.all([
+          careProfileService.getAllCareProfiles(),
+          customerPackageService.getAllCustomerPackages(),
+          customerTaskService.getAllCustomerTasks(),
+          serviceTaskService.getAllServiceTasks()
+        ]);
+        setCareProfiles(careProfilesData);
+        setCustomerPackages(customerPackagesData);
+        setCustomerTasks(customerTasksData);
+        setServiceTasks(serviceTasksData);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Không thể tải dữ liệu. Vui lòng thử lại.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // Lấy thông tin chi tiết booking
   const getBookingDetail = (booking) => {
@@ -27,6 +58,34 @@ const NurseBookingsTab = ({ nurseBookings }) => {
     });
     return { patient, customerPackage, serviceTasksOfBooking };
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">⚠️</div>
+          <p className="text-red-600">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

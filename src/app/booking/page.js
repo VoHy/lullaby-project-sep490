@@ -1,11 +1,12 @@
 "use client";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useMemo, useContext } from "react";
-import serviceTypes from '@/mock/ServiceType';
-import serviceTasks from '@/mock/ServiceTask';
-import workSchedules from "@/mock/WorkSchedule";
-import nursingSpecialists from '@/mock/NursingSpecialist';
-import careProfiles from '@/mock/CareProfile';
+import { useState, useMemo, useContext, useEffect } from "react";
+// Thay thế import mock data bằng services
+import serviceTypeService from '@/services/api/serviceTypeService';
+import serviceTaskService from '@/services/api/serviceTaskService';
+import workScheduleService from '@/services/api/workScheduleService';
+import nursingSpecialistService from '@/services/api/nursingSpecialistService';
+import careProfileService from '@/services/api/careProfileService';
 import {
   BookingHeader,
   PackageInfo,
@@ -23,6 +24,54 @@ export default function BookingPage() {
   const serviceId = searchParams.get('service');
   const packageId = searchParams.get('package');
 
+  // State cho API data
+  const [serviceTypes, setServiceTypes] = useState([]);
+  const [serviceTasks, setServiceTasks] = useState([]);
+  const [workSchedules, setWorkSchedules] = useState([]);
+  const [nursingSpecialists, setNursingSpecialists] = useState([]);
+  const [careProfiles, setCareProfiles] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Load data từ API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        
+        const [
+          serviceTypesData,
+          serviceTasksData,
+          workSchedulesData,
+          nursingSpecialistsData,
+          careProfilesData
+        ] = await Promise.all([
+          serviceTypeService.getServiceTypes(),
+          serviceTaskService.getServiceTasks(),
+          workScheduleService.getWorkSchedules(),
+          nursingSpecialistService.getNursingSpecialists(),
+          careProfileService.getCareProfiles()
+        ]);
+
+        setServiceTypes(serviceTypesData);
+        setServiceTasks(serviceTasksData);
+        setWorkSchedules(workSchedulesData);
+        setNursingSpecialists(nursingSpecialistsData);
+        setCareProfiles(careProfilesData);
+      } catch (error) {
+        console.error('Error fetching booking data:', error);
+        setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
+
   // Lấy thông tin dịch vụ lẻ hoặc package
   let detail = null;
   let childServices = [];
@@ -31,8 +80,6 @@ export default function BookingPage() {
     detail = serviceTypes.find(s => s.ServiceID === Number(packageId));
     const tasks = serviceTasks.filter(t => t.Package_ServiceID === Number(packageId));
     childServices = tasks.map(t => serviceTypes.find(s => s.ServiceID === t.Child_ServiceID)).filter(Boolean);
-
-
   } else if (serviceId) {
     // Có thể là 1 dịch vụ hoặc nhiều dịch vụ lẻ (danh sách id)
     if (serviceId.includes(',')) {
@@ -45,7 +92,6 @@ export default function BookingPage() {
   // Form state
   const [note, setNote] = useState("");
   const [selectedNurses, setSelectedNurses] = useState([]);
-  const [error, setError] = useState("");
   const [selectedCareProfile, setSelectedCareProfile] = useState(null);
   const [careProfileError, setCareProfileError] = useState("");
 
@@ -83,8 +129,6 @@ export default function BookingPage() {
   } else if (serviceId && detail) {
     selectedServicesList = [detail];
   }
-
-
 
   // Tính tổng tiền
   let total = 0;
@@ -149,10 +193,10 @@ export default function BookingPage() {
       return;
     }
     
-      if (!datetime || !isDatetimeValid) {
-        setError("Vui lòng chọn ngày giờ hợp lệ (cách hiện tại ít nhất 30 phút)");
-        return;
-      }
+    if (!datetime || !isDatetimeValid) {
+      setError("Vui lòng chọn ngày giờ hợp lệ (cách hiện tại ít nhất 30 phút)");
+      return;
+    }
 
     const params = new URLSearchParams();
     if (packageId) {
@@ -181,6 +225,45 @@ export default function BookingPage() {
     )));
     router.push(`/payment?${params.toString()}`);
   };
+
+  // Loading state khi đang fetch data
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-blue-50 py-8">
+        <div className="max-w-5xl mx-auto px-2 md:px-4">
+          <div className="bg-white rounded-2xl shadow-xl p-4 md:p-8 relative overflow-hidden">
+            <div className="text-center py-12">
+              <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600">Đang tải dữ liệu...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-blue-50 py-8">
+        <div className="max-w-5xl mx-auto px-2 md:px-4">
+          <div className="bg-white rounded-2xl shadow-xl p-4 md:p-8 relative overflow-hidden">
+            <div className="text-center py-12">
+              <div className="text-red-500 text-6xl mb-4">⚠️</div>
+              <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
+              <p className="text-gray-600 mb-4">{error}</p>
+              <button 
+                onClick={() => window.location.reload()} 
+                className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
+              >
+                Thử lại
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Loading state khi user chưa load xong
   if (!user) {

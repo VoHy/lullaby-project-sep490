@@ -16,9 +16,7 @@ const StatCard = ({ title, value, icon, color, subtitle, trend }) => (
         <FontAwesomeIcon icon={icon} className="text-white text-xl" />
       </div>
       {trend && (
-        <div className={`text-sm font-medium ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>
-          {trend > 0 ? '+' : ''}{trend}%
-        </div>
+        <div className={`text-sm font-medium ${trend > 0 ? 'text-green-600' : 'text-red-600'}`}>{trend > 0 ? '+' : ''}{trend}%</div>
       )}
     </div>
     <div>
@@ -29,21 +27,39 @@ const StatCard = ({ title, value, icon, color, subtitle, trend }) => (
   </div>
 );
 
-const UsersTab = ({ accounts, searchTerm, setSearchTerm, statusFilter, setStatusFilter, onStatusChange }) => {
+const UsersTab = () => {
+  const [accounts, setAccounts] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailAccount, setDetailAccount] = useState(null);
-  const [accountsState, setAccountsState] = useState(accounts);
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
+    fetchAccounts();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
+  const fetchAccounts = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch('/api/accounts/getall');
+      const data = await res.json();
+      setAccounts(data);
+    } catch (err) {
+      setAccounts([]);
+    }
+    setLoading(false);
+  };
+
   const filteredAccounts = accounts.filter(account => {
-    const matchesSearch = account.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      account.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const name = account.fullName || account.full_name || '';
+    const email = account.email || '';
+    const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || account.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -76,7 +92,7 @@ const UsersTab = ({ accounts, searchTerm, setSearchTerm, statusFilter, setStatus
     {
       title: 'Mới tháng này',
       value: accounts.filter(acc => {
-        const createdDate = new Date(acc.created_at);
+        const createdDate = new Date(acc.createdAt || acc.created_at);
         const currentMonth = new Date().getMonth();
         return createdDate.getMonth() === currentMonth;
       }).length,
@@ -87,14 +103,8 @@ const UsersTab = ({ accounts, searchTerm, setSearchTerm, statusFilter, setStatus
     }
   ];
 
-  const handleCreateAccountClick = () => {
-    setShowCreateModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setShowCreateModal(false);
-  };
-
+  const handleCreateAccountClick = () => setShowCreateModal(true);
+  const handleCloseModal = () => setShowCreateModal(false);
   const handleViewDetail = (account) => {
     setDetailAccount(account);
     setShowDetailModal(true);
@@ -108,7 +118,6 @@ const UsersTab = ({ accounts, searchTerm, setSearchTerm, statusFilter, setStatus
           <StatCard key={index} {...stat} />
         ))}
       </div>
-
       {/* Header with Create Button */}
       <div className="bg-white p-6 rounded-2xl shadow-lg">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
@@ -125,7 +134,6 @@ const UsersTab = ({ accounts, searchTerm, setSearchTerm, statusFilter, setStatus
           </button>
         </div>
       </div>
-
       {/* Search and Filter */}
       <div className="bg-white p-6 rounded-2xl shadow-lg">
         <div className="flex flex-col lg:flex-row gap-4">
@@ -154,7 +162,6 @@ const UsersTab = ({ accounts, searchTerm, setSearchTerm, statusFilter, setStatus
           </div>
         </div>
       </div>
-
       {/* Users Table */}
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         <div className="overflow-x-auto">
@@ -169,31 +176,33 @@ const UsersTab = ({ accounts, searchTerm, setSearchTerm, statusFilter, setStatus
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredAccounts.length > 0 ? filteredAccounts.map((account, index) => (
-                <tr key={account.AccountID || index} className="hover:bg-gray-50 transition-colors duration-200">
+              {loading ? (
+                <tr><td colSpan="5" className="text-center py-12 text-gray-500">Đang tải dữ liệu...</td></tr>
+              ) : filteredAccounts.length > 0 ? filteredAccounts.map((account, index) => (
+                <tr key={account.accountID || account.AccountID || index} className="hover:bg-gray-50 transition-colors duration-200">
                   <td className="px-6 py-4">
                     <div className="flex items-center space-x-3">
                       <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold overflow-hidden">
-                        {account.avatar_url ? (
+                        {(account.avatarUrl || account.avatar_url) && (account.avatarUrl || account.avatar_url) !== 'string' ? (
                           <img
-                            src={account.avatar_url}
-                            alt={account.full_name}
+                            src={account.avatarUrl || account.avatar_url}
+                            alt={account.fullName || account.full_name}
                             className="w-12 h-12 object-cover rounded-full"
                           />
                         ) : (
-                          account.full_name?.charAt(0) || '?'
+                          (account.fullName || account.full_name || '?').charAt(0)
                         )}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900">{account.full_name}</p>
+                        <p className="font-medium text-gray-900">{account.fullName || account.full_name}</p>
                         <p className="text-sm text-gray-600">{account.email}</p>
-                        <p className="text-xs text-gray-500">{account.phone_number || 'Chưa có số điện thoại'}</p>
+                        <p className="text-xs text-gray-500">{account.phoneNumber || account.phone_number || 'Chưa có số điện thoại'}</p>
                       </div>
                     </div>
                   </td>
                   <td className="px-6 py-4">
                     <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {account.role_name || account.roleName || 'User'}
+                      {account.roleName || account.role_name || account.roleID || account.role_id || 'User'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -205,10 +214,10 @@ const UsersTab = ({ accounts, searchTerm, setSearchTerm, statusFilter, setStatus
                   </td>
                   <td className="px-6 py-4 text-gray-600">
                     <div className="text-sm">
-                      {new Date(account.created_at).toLocaleDateString('vi-VN')}
+                      {new Date(account.createdAt || account.created_at).toLocaleDateString('vi-VN')}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {new Date(account.created_at).toLocaleTimeString('vi-VN')}
+                      {new Date(account.createdAt || account.created_at).toLocaleTimeString('vi-VN')}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">
@@ -236,27 +245,25 @@ const UsersTab = ({ accounts, searchTerm, setSearchTerm, statusFilter, setStatus
           </table>
         </div>
       </div>
-
       {/* Create User Modal */}
       {showCreateModal && (
         <CreateUserModal
           show={showCreateModal}
           onClose={handleCloseModal}
-          onSubmit={(accountData, nursingSpecialistData) => {
-            alert('Tạo tài khoản thành công (giả lập):\n' + JSON.stringify(accountData, null, 2) + (nursingSpecialistData ? ('\n---\nThông tin chuyên môn:\n' + JSON.stringify(nursingSpecialistData, null, 2)) : ''));
+          onSubmit={() => {
+            fetchAccounts();
           }}
         />
       )}
-
       {/* User Detail Modal */}
       {showDetailModal && detailAccount && (
         <UserDetailModal
           show={showDetailModal}
           account={detailAccount}
           onClose={() => setShowDetailModal(false)}
-          onSave={(accountId, newStatus) => {
-            setAccountsState(prev => prev.map(acc => acc.AccountID === accountId ? { ...acc, status: newStatus } : acc));
+          onSave={() => {
             setShowDetailModal(false);
+            fetchAccounts();
           }}
         />
       )}

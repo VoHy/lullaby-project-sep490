@@ -32,14 +32,14 @@ const WalletIcon = () => {
         >
           <FaWallet className="text-purple-500 text-lg" />
           <span className="font-semibold text-gray-700">
-            {formatBalance(wallet.Amount)}đ
+            {formatBalance(wallet?.Amount || 0)}đ
           </span>
           {wallet.Status === 'active' && (
             <div className="w-2 h-2 bg-green-500 rounded-full"></div>
           )}
         </button>
 
-        {showDropdown && (
+        {showDropdown && wallet && (
           <WalletIconDropdown
             wallet={wallet}
             onDeposit={openDepositModal}

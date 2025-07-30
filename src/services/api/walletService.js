@@ -1,51 +1,30 @@
-import wallets from '../../mock/Wallet';
-import walletHistories from '../../mock/WalletHistory';
-
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
-
 const walletService = {
   getWallets: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve(wallets);
-    }
-    const res = await fetch('/api/wallets');
-    return res.json();
+    const res = await fetch('/api/Wallet');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách wallet');
+    return data;
   },
 
   getWalletById: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(wallets.find(w => w.WalletID === id));
-    }
-    const res = await fetch(`/api/wallets/${id}`);
-    return res.json();
+    const res = await fetch(`/api/Wallet/${id}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin wallet');
+    return data;
   },
 
   getWalletHistories: async (walletId) => {
-    if (USE_MOCK) {
-      return Promise.resolve(walletHistories.filter(h => h.WalletID === walletId));
-    }
-    const res = await fetch(`/api/wallets/${walletId}/histories`);
-    return res.json();
+    const res = await fetch(`/api/Wallet/${walletId}/histories`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy lịch sử wallet');
+    return data;
   },
 
   // === THANH TOÁN THẬT ===
   
   // Tạo giao dịch nạp tiền
   createDepositTransaction: async (walletId, amount, paymentMethod) => {
-    if (USE_MOCK) {
-      // Simulate payment gateway
-      const transaction = {
-        TransactionID: `TXN_${Date.now()}`,
-        WalletID: walletId,
-        Amount: amount,
-        PaymentMethod: paymentMethod,
-        Status: 'pending',
-        CreatedAt: new Date().toISOString()
-      };
-      return Promise.resolve(transaction);
-    }
-
-    const res = await fetch('/api/wallets/deposit', {
+    const res = await fetch('/api/Wallet/deposit', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -54,128 +33,88 @@ const walletService = {
         paymentMethod
       })
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Tạo giao dịch nạp tiền thất bại');
+    return result;
   },
 
   // Lấy danh sách phương thức thanh toán
   getPaymentMethods: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve([
-        {
-          id: 'bank_transfer',
-          name: 'Chuyển khoản ngân hàng',
-          icon: '🏦',
-          description: 'Chuyển khoản trực tiếp đến tài khoản ngân hàng',
-          processingTime: '5-10 phút',
-          fee: 0
-        },
-      ]);
-    }
-
     const res = await fetch('/api/payment-methods');
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách phương thức thanh toán');
+    return data;
   },
 
   // Xác nhận giao dịch
   confirmTransaction: async (transactionId, paymentData) => {
-    if (USE_MOCK) {
-      // Simulate payment confirmation
-      return Promise.resolve({
-        success: true,
-        transactionId,
-        status: 'success',
-        message: 'Giao dịch thành công'
-      });
-    }
-
     const res = await fetch(`/api/transactions/${transactionId}/confirm`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(paymentData)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Xác nhận giao dịch thất bại');
+    return result;
   },
 
   // Kiểm tra trạng thái giao dịch
   getTransactionStatus: async (transactionId) => {
-    if (USE_MOCK) {
-      return Promise.resolve({
-        transactionId,
-        status: 'success',
-        amount: 100000,
-        processedAt: new Date().toISOString()
-      });
-    }
-
     const res = await fetch(`/api/transactions/${transactionId}/status`);
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể kiểm tra trạng thái giao dịch');
+    return data;
   },
 
   // Lấy thông tin ngân hàng
   getBankInfo: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve({
-        bankName: 'Vietcombank',
-        accountNumber: '1234567890',
-        accountName: 'CONG TY LULLABY',
-        branch: 'Chi nhánh TP.HCM',
-        transferContent: 'NAP_TIEN_[SỐ_ĐIỆN_THOẠI]'
-      });
-    }
-
     const res = await fetch('/api/bank-info');
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin ngân hàng');
+    return data;
   },
 
   // Tạo QR Code thanh toán
   generateQRCode: async (amount, paymentMethod) => {
-    if (USE_MOCK) {
-      return Promise.resolve({
-        qrCodeUrl: 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
-        qrCodeData: 'https://lullaby.com/pay?amount=' + amount + '&method=' + paymentMethod
-      });
-    }
-
     const res = await fetch('/api/payment/qr-code', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount, paymentMethod })
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Tạo QR Code thất bại');
+    return result;
   },
 
   // === CÁC METHOD CŨ ===
   
   createWallet: async (data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...data, WalletID: wallets.length + 1 });
-    }
-    const res = await fetch('/api/wallets', {
+    const res = await fetch('/api/Wallet', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Tạo wallet thất bại');
+    return result;
   },
 
   updateWallet: async (id, data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...wallets.find(w => w.WalletID === id), ...data });
-    }
-    const res = await fetch(`/api/wallets/${id}`, {
+    const res = await fetch(`/api/Wallet/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Cập nhật wallet thất bại');
+    return result;
   },
 
   deleteWallet: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(true);
-    }
-    const res = await fetch(`/api/wallets/${id}`, { method: 'DELETE' });
-    return res.ok;
+    const res = await fetch(`/api/Wallet/${id}`, { method: 'DELETE' });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Xóa wallet thất bại');
+    return result;
   }
 };
 

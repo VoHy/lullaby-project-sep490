@@ -38,7 +38,7 @@ const NursePatientsTab = ({ patients }) => {
             <h4 className="text-xl font-bold mb-4 text-blue-700">Chi tiết hồ sơ bệnh nhân</h4>
             <div className="flex flex-col items-center mb-4">
               <img
-                src={selectedPatient.Image || '/images/avatar1.jpg'}
+                src={selectedPatient.Image && selectedPatient.Image !== 'string' ? selectedPatient.Image : '/images/logo-eldora.png'}
                 alt="avatar"
                 className="w-24 h-24 rounded-full object-cover border-2 border-blue-200 mb-2"
               />

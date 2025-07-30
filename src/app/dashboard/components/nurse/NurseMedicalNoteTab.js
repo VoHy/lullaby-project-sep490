@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
-import careProfiles from '@/mock/CareProfile';
-import bookings from '@/mock/Booking';
-import customerTasks from '@/mock/CustomerTask';
-import serviceTasks from '@/mock/ServiceTask';
-import customerPackages from '@/mock/CustomerPackage';
+import React, { useState, useEffect } from 'react';
+import careProfileService from '@/services/api/careProfileService';
+import bookingService from '@/services/api/bookingService';
+import customerTaskService from '@/services/api/customerTaskService';
+import serviceTaskService from '@/services/api/serviceTaskService';
+import customerPackageService from '@/services/api/customerPackageService';
 
 const NurseMedicalNoteTab = ({ medicalNotes, patients }) => {
   const [notes, setNotes] = useState(medicalNotes);
@@ -15,6 +15,40 @@ const NurseMedicalNoteTab = ({ medicalNotes, patients }) => {
     Advice: '',
     Image: ''
   });
+  const [careProfiles, setCareProfiles] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [customerTasks, setCustomerTasks] = useState([]);
+  const [serviceTasks, setServiceTasks] = useState([]);
+  const [customerPackages, setCustomerPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [careProfilesData, bookingsData, customerTasksData, serviceTasksData, customerPackagesData] = await Promise.all([
+          careProfileService.getAllCareProfiles(),
+          bookingService.getAllBookings(),
+          customerTaskService.getAllCustomerTasks(),
+          serviceTaskService.getAllServiceTasks(),
+          customerPackageService.getAllCustomerPackages()
+        ]);
+        setCareProfiles(careProfilesData);
+        setBookings(bookingsData);
+        setCustomerTasks(customerTasksData);
+        setServiceTasks(serviceTasksData);
+        setCustomerPackages(customerPackagesData);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Không thể tải dữ liệu. Vui lòng thử lại.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
 
   // Hàm tìm booking gần nhất cho ghi chú (nếu MedicalNote không có BookingID)
   const findBookingForNote = (note) => {
@@ -32,6 +66,34 @@ const NurseMedicalNoteTab = ({ medicalNotes, patients }) => {
     if (!task) return null;
     return serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
   };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">⚠️</div>
+          <p className="text-red-600">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>

@@ -1,28 +1,33 @@
 import { useState, useEffect } from 'react';
+import accountService from '@/services/api/accountService';
 
 const UserDetailModal = ({ show, account, onClose, onSave }) => {
-  const [status, setStatus] = useState(account?.status || 'active');
-
+  const [status, setStatus] = useState(account?.status || 'inactive');
   useEffect(() => {
-    setStatus(account?.status || 'active');
+    setStatus(account?.status || 'inactive');
   }, [account]);
 
   if (!show || !account) return null;
 
-  const handleSave = () => {
-    if (onSave) onSave(account.AccountID, status);
+  const handleToggle = async () => {
+    try {
+      await accountService.banAccount(account.AccountID || account.accountID);
+      if (onSave) onSave(account.AccountID || account.accountID);
+    } catch (err) {
+      alert('Cập nhật trạng thái tài khoản thất bại!');
+    }
     if (onClose) onClose();
   };
 
-  // Hiển thị toàn bộ thông tin tài khoản
+  // Hiển thị toàn bộ thông tin tài khoản (chuẩn hóa field)
   const infoList = [
-    { label: "ID tài khoản", value: account.AccountID },
-    { label: "Họ và tên", value: account.full_name },
-    { label: "Email", value: account.email },
-    { label: "Số điện thoại", value: account.phone_number },
-    { label: "Ngày tạo", value: account.created_at },
+    { label: "ID tài khoản", value: account.AccountID || account.accountID || '-' },
+    { label: "Họ và tên", value: account.full_name || account.fullName || '-' },
+    { label: "Email", value: account.email || '-' },
+    { label: "Số điện thoại", value: account.phone_number || account.phoneNumber || '-' },
+    { label: "Ngày tạo", value: account.created_at || account.createdAt || '-' },
     { label: "Trạng thái", value: status === 'active' ? 'Hoạt động' : 'Tạm khóa' },
-    { label: "Vai trò", value: account.role_name || account.roleName },
+    { label: "Vai trò", value: account.role_name || account.roleName || '-' },
   ];
 
   return (
@@ -38,46 +43,31 @@ const UserDetailModal = ({ show, account, onClose, onSave }) => {
         </button>
         <h3 className="text-xl font-bold mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">Chi tiết tài khoản</h3>
         <div className="flex flex-col items-center mb-4">
-          <img src={account.avatar_url || '/images/avatar1.jpg'} alt="avatar" className="w-24 h-24 rounded-full object-cover border-2 border-pink-200 mb-2" />
-          <div className="font-semibold text-lg text-gray-800 mb-1">{account.full_name}</div>
-          <div className="text-xs text-gray-500 mb-1">{account.email}</div>
+                          <img src={(account.avatar_url || account.avatarUrl) && (account.avatar_url || account.avatarUrl) !== 'string' ? (account.avatar_url || account.avatarUrl) : '/images/logo-eldora.png'} alt="avatar" className="w-24 h-24 rounded-full object-cover border-2 border-pink-200 mb-2" />
+          <div className="font-semibold text-lg text-gray-800 mb-1">{account.full_name || account.fullName || '-'}</div>
+          <div className="text-xs text-gray-500 mb-1">{account.email || '-'}</div>
         </div>
         <div className="space-y-2 text-sm">
           {infoList.map((item, idx) => (
             <div key={idx}>
               <span className="font-medium text-gray-600">{item.label}:</span>{" "}
-              {item.label === "Ảnh đại diện" ? (
-                <span>
-                  <img
-                    src={item.value || '/images/avatar1.jpg'}
-                    alt="avatar"
-                    className="inline-block w-8 h-8 rounded-full object-cover border border-pink-200 align-middle"
-                  />
-                  <span className="ml-2 text-xs text-gray-500">{item.value}</span>
-                </span>
-              ) : (
-                <span>{item.value || '-'}</span>
-              )}
+              <span>{item.value || '-'}</span>
             </div>
           ))}
           <div className="flex items-center gap-2 mt-2">
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{status === 'active' ? 'Hoạt động' : 'Tạm khóa'}</span>
-            <select
-              value={status}
-              onChange={e => setStatus(e.target.value)}
-              className="ml-2 px-2 py-1 rounded border focus:ring-2 focus:ring-purple-400"
-            >
-              <option value="active">Hoạt động</option>
-              <option value="inactive">Tạm khóa</option>
-            </select>
           </div>
         </div>
         <div className="flex justify-end mt-6">
           <button
-            onClick={handleSave}
-            className="px-6 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg"
+            onClick={handleToggle}
+            className={`px-6 py-2 rounded-lg font-semibold hover:shadow-lg ${
+              status === 'active'
+                ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
+                : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
+            }`}
           >
-            Đóng
+            {status === 'active' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
           </button>
         </div>
       </div>

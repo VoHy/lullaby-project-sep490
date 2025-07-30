@@ -1,50 +1,41 @@
-import feedbacks from '../../mock/Feedback';
-
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
-
 const feedbackService = {
   getFeedbacks: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve(feedbacks);
-    }
-    const res = await fetch('/api/feedbacks');
-    return res.json();
+    const res = await fetch('/api/FeedBack');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách feedback');
+    return data;
   },
   getFeedbackById: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(feedbacks.find(f => f.FeedbackID === id));
-    }
-    const res = await fetch(`/api/feedbacks/${id}`);
-    return res.json();
+    const res = await fetch(`/api/FeedBack/${id}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin feedback');
+    return data;
   },
   createFeedback: async (data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...data, FeedbackID: feedbacks.length + 1 });
-    }
-    const res = await fetch('/api/feedbacks', {
+    const res = await fetch('/api/FeedBack', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Tạo feedback thất bại');
+    return result;
   },
   updateFeedback: async (id, data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...feedbacks.find(f => f.FeedbackID === id), ...data });
-    }
-    const res = await fetch(`/api/feedbacks/${id}`, {
+    const res = await fetch(`/api/FeedBack/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Cập nhật feedback thất bại');
+    return result;
   },
   deleteFeedback: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(true);
-    }
-    const res = await fetch(`/api/feedbacks/${id}`, { method: 'DELETE' });
-    return res.ok;
+    const res = await fetch(`/api/FeedBack/${id}`, { method: 'DELETE' });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Xóa feedback thất bại');
+    return result;
   }
 };
 

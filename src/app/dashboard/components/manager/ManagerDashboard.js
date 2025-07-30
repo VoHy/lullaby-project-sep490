@@ -6,7 +6,7 @@ import ManagerBookingTab from './ManagerBookingTab';
 import ManagerZoneTab from './ManagerZoneTab';
 import { useRouter, useSearchParams } from 'next/navigation';
 import zoneService from '@/services/api/zoneService';
-import nursingSpecialists from '@/mock/NursingSpecialist';
+import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 
 const TABS = [
   { id: 'nurse', label: 'Quản lý Nurse' },
@@ -29,9 +29,33 @@ const ManagerDashboard = ({ user }) => {
   const [selectedZone, setSelectedZone] = useState('');
   const [zoneNurses, setZoneNurses] = useState([]);
   const [zoneSpecialists, setZoneSpecialists] = useState([]);
+  const [nursingSpecialists, setNursingSpecialists] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
+  // Load data từ API
   useEffect(() => {
-    zoneService.getZones().then(setZones);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        
+        const [zonesData, nursingSpecialistsData] = await Promise.all([
+          zoneService.getZones(),
+          nursingSpecialistService.getNursingSpecialists()
+        ]);
+
+        setZones(zonesData);
+        setNursingSpecialists(nursingSpecialistsData);
+      } catch (error) {
+        console.error('Error fetching manager dashboard data:', error);
+        setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
   }, []);
 
   useEffect(() => {
@@ -46,7 +70,7 @@ const ManagerDashboard = ({ user }) => {
     const specialists = nursingSpecialists.filter(s => s.NursingID && s.ZoneID == selectedZone);
     setZoneNurses(nurses);
     setZoneSpecialists(specialists);
-  }, [selectedZone]);
+  }, [selectedZone, nursingSpecialists]);
 
   // Khi URL query string thay đổi thì cập nhật tab
   useEffect(() => {
@@ -63,6 +87,30 @@ const ManagerDashboard = ({ user }) => {
       router.push(`?tab=${tabId}`, { scroll: false });
     }
   };
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Đang tải dữ liệu...</p>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-red-500 text-6xl mb-4">⚠️</div>
+        <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button onClick={() => window.location.reload()} className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
+          Thử lại
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

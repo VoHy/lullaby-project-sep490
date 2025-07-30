@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import zoneService from '@/services/api/zoneService';
-import nursingSpecialists from '@/mock/NursingSpecialist';
+import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 
 const ManagerZoneTab = () => {
     const [zones, setZones] = useState([]);
@@ -9,9 +9,29 @@ const ManagerZoneTab = () => {
     const [zoneNurses, setZoneNurses] = useState([]);
     const [zoneSpecialists, setZoneSpecialists] = useState([]);
     const [detailModal, setDetailModal] = useState({ open: false, data: null, type: '' });
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const [nursingSpecialists, setNursingSpecialists] = useState([]);
 
     useEffect(() => {
-        zoneService.getZones().then(setZones);
+        const fetchData = async () => {
+            try {
+                setLoading(true);
+                const [zonesData, nursingSpecialistsData] = await Promise.all([
+                    zoneService.getZones(),
+                    nursingSpecialistService.getAllNursingSpecialists()
+                ]);
+                setZones(zonesData);
+                setNursingSpecialists(nursingSpecialistsData);
+            } catch (err) {
+                console.error('Error fetching data:', err);
+                setError('Không thể tải dữ liệu. Vui lòng thử lại.');
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchData();
     }, []);
 
     // Lọc nurse và specialist theo khu vực và địa chỉ
@@ -29,13 +49,41 @@ const ManagerZoneTab = () => {
         }
         setZoneNurses(nurses);
         setZoneSpecialists(specialists);
-    }, [selectedZone, searchTerm]);
+    }, [selectedZone, searchTerm, nursingSpecialists]);
 
     // Hiển thị modal chi tiết
     const showDetail = (data, type) => {
         setDetailModal({ open: true, data, type });
     };
     const closeModal = () => setDetailModal({ open: false, data: null, type: '' });
+
+    if (loading) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+                    <p className="text-gray-600">Đang tải dữ liệu...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (error) {
+        return (
+            <div className="flex justify-center items-center h-64">
+                <div className="text-center">
+                    <div className="text-red-500 mb-4">⚠️</div>
+                    <p className="text-red-600">{error}</p>
+                    <button 
+                        onClick={() => window.location.reload()} 
+                        className="mt-4 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+                    >
+                        Thử lại
+                    </button>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div>
@@ -139,7 +187,7 @@ const ManagerZoneTab = () => {
                         <button onClick={closeModal} className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-2xl font-bold">×</button>
                         <div className="flex flex-col items-center mb-4">
                             <img
-                                src={detailModal.data.avatar_url || "/images/avatar1.jpg"}
+                                src={detailModal.data.avatar_url && detailModal.data.avatar_url !== 'string' ? detailModal.data.avatar_url : "/images/logo-eldora.png"}
                                 alt="avatar"
                                 className="w-24 h-24 rounded-full object-cover border-4 border-purple-200 shadow mb-2"
                             />

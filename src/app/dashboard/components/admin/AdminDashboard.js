@@ -79,17 +79,17 @@ const AdminDashboard = ({ user, initialTab }) => {
       const [accountData, specialistData, bookingData, feedbackData] = await Promise.all([
         accountService.getAllAccounts(),
         nursingSpecialistService.getNursingSpecialists(),
-        bookingService.getBookingServices(),
-        feedbackService.getFeedbacks()
+        // bookingService.getBookingServices(),
+        // feedbackService.getFeedbacks()
       ]);
 
       setAccounts(accountData);
       setNursingSpecialists(specialistData);
-      setBookings(bookingData);
-      setFeedbacks(feedbackData);
+      // setBookings(bookingData);
+      // setFeedbacks(feedbackData);
 
       // Calculate revenue
-      const totalRevenue = bookingData.reduce((sum, booking) => sum + (booking.total_price || 0), 0);
+      const totalRevenue = (bookingData || []).reduce((sum, booking) => sum + (booking.total_price || 0), 0);
       setRevenue({
         total: totalRevenue,
         monthly: totalRevenue * 0.8,

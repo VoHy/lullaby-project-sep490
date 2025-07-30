@@ -5,8 +5,6 @@ export async function PUT(request, { params }) {
     const { id } = params;
     const body = await request.json();
     
-    console.log('Proxy update account request for ID:', id, 'Data:', body);
-    
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     const response = await fetch(`${backendUrl}/api/accounts/${id}`, {
       method: 'PUT',
@@ -14,11 +12,8 @@ export async function PUT(request, { params }) {
       body: JSON.stringify(body),
     });
     
-    console.log('Backend response status:', response.status);
-    
     if (!response.ok) {
       const errorText = await response.text();
-      console.log('Error response text:', errorText);
       
       try {
         const errorData = JSON.parse(errorText);
@@ -30,7 +25,6 @@ export async function PUT(request, { params }) {
     }
     
     const data = await response.json();
-    console.log('Backend response data:', data);
     return NextResponse.json(data);
   } catch (error) {
     console.error('Proxy error:', error);
@@ -41,19 +35,14 @@ export async function PUT(request, { params }) {
 export async function DELETE(request, { params }) {
   try {
     const { id } = params;
-    console.log('Proxy delete account request for ID:', id);
-    
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     const response = await fetch(`${backendUrl}/api/accounts/${id}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' },
     });
     
-    console.log('Backend response status:', response.status);
-    
     if (!response.ok) {
       const errorText = await response.text();
-      console.log('Error response text:', errorText);
       
       try {
         const errorData = JSON.parse(errorText);
@@ -65,7 +54,6 @@ export async function DELETE(request, { params }) {
     }
     
     const data = await response.json();
-    console.log('Backend response data:', data);
     return NextResponse.json(data);
   } catch (error) {
     console.error('Proxy error:', error);

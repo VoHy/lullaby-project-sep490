@@ -1,18 +1,15 @@
 import React, { useState, useEffect, useContext } from 'react';
-import bookingsData from '@/mock/Booking';
-import accounts from '@/mock/Account';
-import careProfiles from '@/mock/CareProfile';
-import serviceTypes from '@/mock/ServiceType';
-import customerPackages from '@/mock/CustomerPackage';
-import customerTasks from '@/mock/CustomerTask';
-import serviceTasks from '@/mock/ServiceTask';
-import zoneDetails from '@/mock/Zone_Detail';
-import nursingSpecialists from '@/mock/NursingSpecialist';
-import zones from '@/mock/Zone';
 import { AuthContext } from '@/context/AuthContext';
-
-const allNurses = accounts.filter(acc => acc.role_id === 2 && nursingSpecialists.find(n => n.AccountID === acc.AccountID));
-const allSpecialists = accounts.filter(acc => acc.role_id === 5 && nursingSpecialists.find(s => s.AccountID === acc.AccountID));
+import bookingService from '@/services/api/bookingService';
+import accountService from '@/services/api/accountService';
+import careProfileService from '@/services/api/careProfileService';
+import serviceTypeService from '@/services/api/serviceTypeService';
+import customerPackageService from '@/services/api/customerPackageService';
+import customerTaskService from '@/services/api/customerTaskService';
+import serviceTaskService from '@/services/api/serviceTaskService';
+import zoneDetailService from '@/services/api/zoneDetailService';
+import nursingSpecialistService from '@/services/api/nursingSpecialistService';
+import zoneService from '@/services/api/zoneService';
 
 const statusOptions = [
   { value: 'pending', label: 'Chờ xử lý' },
@@ -21,76 +18,141 @@ const statusOptions = [
   { value: 'cancelled', label: 'Đã hủy' },
 ];
 
-function getBookingDetail(booking) {
-  const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
-  const account = accounts.find(a => a.AccountID === careProfile?.AccountID);
-  let service = null;
-  let packageInfo = null;
-  if (booking.CustomizePackageID) {
-    packageInfo = customerPackages.find(p => p.CustomizePackageID === booking.CustomizePackageID);
-    service = serviceTypes.find(s => s.ServiceID === packageInfo?.ServiceID);
-  } else if (booking.CareProfileID) {
-    service = serviceTypes.find(s => s.ServiceID === booking.CareProfileID);
-  }
-  // Lấy các dịch vụ con/lẻ thực tế từ CustomerTask
-  const customerTasksOfBooking = customerTasks.filter(t => t.BookingID === booking.BookingID);
-  const serviceTasksOfBooking = customerTasksOfBooking.map(task => {
-    const serviceTask = serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
-    const assignedNurse = nursingSpecialists.find(n => n.NursingID === task.NursingID);
-    const assignedAccount = accounts.find(acc => acc.AccountID === assignedNurse?.AccountID);
-    
-    return {
-      ...serviceTask,
-      price: task.Price,
-      quantity: task.Quantity,
-      total: task.Total,
-      status: task.Status,
-      assignedNurseId: assignedNurse?.NursingID,
-      assignedNurseName: assignedAccount?.full_name,
-      assignedNurseRole: assignedNurse?.Major,
-      hasAssignedNurse: !!assignedNurse
-    };
-  });
-  return { careProfile, account, service, packageInfo, serviceTasksOfBooking };
-}
-
-// Lọc booking theo khu vực quản lý của manager
-function getFilteredBookings(bookings, currentManagerId) {
-  // Lấy khu vực mà manager hiện tại quản lý
-  const managedZone = zones.find(zone => zone.AccountID === currentManagerId);
-  if (!managedZone) return [];
-  
-  // Lọc booking có care profile thuộc khu vực quản lý
-  const filteredBookings = bookings.filter(booking => {
-    const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
-    if (!careProfile) return false;
-    
-    const zoneDetail = zoneDetails.find(z => z.ZoneDetailID === careProfile.ZoneDetailID);
-    if (!zoneDetail) return false;
-    
-    // Chỉ hiển thị booking thuộc khu vực quản lý của manager
-    return zoneDetail.ZoneID === managedZone.ZoneID;
-  });
-  
-  return filteredBookings;
-}
-
 const ManagerBookingTab = () => {
   const { user } = useContext(AuthContext);
   const currentManagerId = user?.AccountID;
   
-  const [allBookings] = useState(bookingsData);
+  // State cho API data
+  const [allBookings, setAllBookings] = useState([]);
+  const [accounts, setAccounts] = useState([]);
+  const [careProfiles, setCareProfiles] = useState([]);
+  const [serviceTypes, setServiceTypes] = useState([]);
+  const [customerPackages, setCustomerPackages] = useState([]);
+  const [customerTasks, setCustomerTasks] = useState([]);
+  const [serviceTasks, setServiceTasks] = useState([]);
+  const [zoneDetails, setZoneDetails] = useState([]);
+  const [nursingSpecialists, setNursingSpecialists] = useState([]);
+  const [zones, setZones] = useState([]);
   const [bookings, setBookings] = useState([]);
-  const [showDetail, setShowDetail] = useState(false);
-  const [detailData, setDetailData] = useState(null);
-  const [selectedNurse, setSelectedNurse] = useState('');
-  const [selectedSpecialist, setSelectedSpecialist] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
-  const [taskAssignments, setTaskAssignments] = useState({}); // { [ServiceTaskID]: { nurse: '', specialist: '' } }
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  // Load data từ API
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!currentManagerId) return;
+
+      try {
+        setLoading(true);
+        setError("");
+        
+        const [
+          bookingsData,
+          accountsData,
+          careProfilesData,
+          serviceTypesData,
+          customerPackagesData,
+          customerTasksData,
+          serviceTasksData,
+          zoneDetailsData,
+          nursingSpecialistsData,
+          zonesData
+        ] = await Promise.all([
+          bookingService.getBookings(),
+          accountService.getAllAccounts(),
+          careProfileService.getCareProfiles(),
+          serviceTypeService.getServiceTypes(),
+          customerPackageService.getCustomerPackages(),
+          customerTaskService.getCustomerTasks(),
+          serviceTaskService.getServiceTasks(),
+          zoneDetailService.getZoneDetails(),
+          nursingSpecialistService.getNursingSpecialists(),
+          zoneService.getZones()
+        ]);
+
+        setAllBookings(bookingsData);
+        setAccounts(accountsData);
+        setCareProfiles(careProfilesData);
+        setServiceTypes(serviceTypesData);
+        setCustomerPackages(customerPackagesData);
+        setCustomerTasks(customerTasksData);
+        setServiceTasks(serviceTasksData);
+        setZoneDetails(zoneDetailsData);
+        setNursingSpecialists(nursingSpecialistsData);
+        setZones(zonesData);
+
+      } catch (error) {
+        console.error('Error fetching manager booking data:', error);
+        setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [currentManagerId]);
+
+  // Lọc nurse/specialist theo role
+  const allNurses = accounts.filter(acc => acc.role_id === 2 && nursingSpecialists.find(n => n.AccountID === acc.AccountID));
+  const allSpecialists = accounts.filter(acc => acc.role_id === 2 && nursingSpecialists.find(s => s.AccountID === acc.AccountID));
+
+  function getBookingDetail(booking) {
+    const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
+    const account = accounts.find(a => a.AccountID === careProfile?.AccountID);
+    let service = null;
+    let packageInfo = null;
+    if (booking.CustomizePackageID) {
+      packageInfo = customerPackages.find(p => p.CustomizePackageID === booking.CustomizePackageID);
+      service = serviceTypes.find(s => s.ServiceID === packageInfo?.ServiceID);
+    } else if (booking.CareProfileID) {
+      service = serviceTypes.find(s => s.ServiceID === booking.CareProfileID);
+    }
+    // Lấy các dịch vụ con/lẻ thực tế từ CustomerTask
+    const customerTasksOfBooking = customerTasks.filter(t => t.BookingID === booking.BookingID);
+    const serviceTasksOfBooking = customerTasksOfBooking.map(task => {
+      const serviceTask = serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
+      const assignedNurse = nursingSpecialists.find(n => n.NursingID === task.NursingID);
+      const assignedAccount = accounts.find(acc => acc.AccountID === assignedNurse?.AccountID);
+      
+      return {
+        ...serviceTask,
+        price: task.Price,
+        quantity: task.Quantity,
+        total: task.Total,
+        status: task.Status,
+        assignedNurseId: assignedNurse?.NursingID,
+        assignedNurseName: assignedAccount?.full_name,
+        assignedNurseRole: assignedNurse?.Major,
+        hasAssignedNurse: !!assignedNurse
+      };
+    });
+    return { careProfile, account, service, packageInfo, serviceTasksOfBooking };
+  }
+
+  // Lọc booking theo khu vực quản lý của manager
+  function getFilteredBookings(bookings, currentManagerId) {
+    // Lấy khu vực mà manager hiện tại quản lý
+    const managedZone = zones.find(zone => zone.AccountID === currentManagerId);
+    if (!managedZone) return [];
+    
+    // Lọc booking có care profile thuộc khu vực quản lý
+    const filteredBookings = bookings.filter(booking => {
+      const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
+      if (!careProfile) return false;
+      
+      const zoneDetail = zoneDetails.find(z => z.ZoneDetailID === careProfile.ZoneDetailID);
+      if (!zoneDetail) return false;
+      
+      // Chỉ hiển thị booking thuộc khu vực quản lý của manager
+      return zoneDetail.ZoneID === managedZone.ZoneID;
+    });
+    
+    return filteredBookings;
+  }
 
   // Lọc booking theo khu vực quản lý khi component mount hoặc user thay đổi
   useEffect(() => {
-    if (currentManagerId) {
+    if (currentManagerId && allBookings.length > 0) {
       const filteredBookings = getFilteredBookings(allBookings, currentManagerId);
       setBookings(filteredBookings);
     }
@@ -112,6 +174,30 @@ const ManagerBookingTab = () => {
       return s && s.ZoneID === zoneId && s.Major === 'Chuyên gia';
     });
     return { nurses, specialists };
+  }
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Đang tải dữ liệu...</p>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-red-500 text-6xl mb-4">⚠️</div>
+        <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button onClick={() => window.location.reload()} className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
+          Thử lại
+        </button>
+      </div>
+    );
   }
 
   const handleViewDetail = (booking) => {

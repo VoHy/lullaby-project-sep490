@@ -1,58 +1,72 @@
 const medicalNotes = [
   {
     MedicalNoteID: 1,
-    CustomerTaskID: 1,
-    NursingID: 1,
-    CareProfileID: 1,
-    Image: "/images/hero-bg.jpg",
-    Note: "Bệnh nhân hồi phục tốt, huyết áp ổn định",
-    CreatedAt: "2025-07-25T14:00:00Z",
-    Advice: "Tiếp tục theo dõi huyết áp hàng ngày",
-    RelatedID: 1
+    PatientID: 1,
+    NurseID: 1,
+    NoteDate: '2024-01-15',
+    NoteContent: 'Bệnh nhân có dấu hiệu cải thiện, huyết áp ổn định',
+    VitalSigns: {
+      bloodPressure: '120/80',
+      heartRate: 72,
+      temperature: 36.8,
+      oxygenSaturation: 98
+    },
+    Medications: [
+      {
+        name: 'Paracetamol',
+        dosage: '500mg',
+        frequency: '3 lần/ngày'
+      }
+    ],
+    Recommendations: 'Tiếp tục theo dõi huyết áp hàng ngày',
+    CreatedAt: '2024-01-15T08:00:00Z',
+    UpdatedAt: '2024-01-15T08:00:00Z'
   },
   {
     MedicalNoteID: 2,
-    CustomerTaskID: 4,
-    NursingID: 4,
-    CareProfileID: 2,
-    Image: "/images/hero-bg.jpg",
-    Note: "Cần bổ sung dinh dưỡng và vitamin",
-    CreatedAt: "2025-07-25T15:00:00Z",
-    Advice: "Bổ sung vitamin D và canxi",
-    RelatedID: 2
+    PatientID: 2,
+    NurseID: 2,
+    NoteDate: '2024-01-16',
+    NoteContent: 'Bệnh nhân cần hỗ trợ vận động nhẹ nhàng',
+    VitalSigns: {
+      bloodPressure: '118/78',
+      heartRate: 75,
+      temperature: 36.9,
+      oxygenSaturation: 97
+    },
+    Medications: [
+      {
+        name: 'Vitamin D',
+        dosage: '1000IU',
+        frequency: '1 lần/ngày'
+      }
+    ],
+    Recommendations: 'Tăng cường vận động nhẹ nhàng, tập thở sâu',
+    CreatedAt: '2024-01-16T09:00:00Z',
+    UpdatedAt: '2024-01-16T09:00:00Z'
   },
   {
     MedicalNoteID: 3,
-    CustomerTaskID: 6,
-    NursingID: 4,
-    CareProfileID: 3,
-    Image: "/images/hero-bg.jpg",
-    Note: "Bệnh nhân cần tập luyện phục hồi chức năng",
-    CreatedAt: "2025-07-24T16:00:00Z",
-    Advice: "Tập luyện nhẹ nhàng 30 phút mỗi ngày",
-    RelatedID: 3
-  },
-  {
-    MedicalNoteID: 4,
-    CustomerTaskID: 10,
-    NursingID: 10,
-    CareProfileID: 6,
-    Image: "/images/hero-bg.jpg",
-    Note: "Kiểm tra sức khỏe tổng quát, tim mạch ổn định",
-    CreatedAt: "2025-07-01T10:30:00Z",
-    Advice: "Duy trì chế độ ăn ít muối, tập thể dục đều đặn",
-    RelatedID: 5
-  },
-  {
-    MedicalNoteID: 5,
-    CustomerTaskID: 12,
-    NursingID: 12,
-    CareProfileID: 6,
-    Image: "/images/hero-bg.jpg",
-    Note: "Chăm sóc vết thương phức tạp, vết thương lành tốt",
-    CreatedAt: "2025-07-02T09:15:00Z",
-    Advice: "Thay băng hàng ngày, giữ vết thương sạch sẽ",
-    RelatedID: 6
+    PatientID: 3,
+    NurseID: 1,
+    NoteDate: '2024-01-17',
+    NoteContent: 'Bệnh nhân có dấu hiệu mệt mỏi, cần nghỉ ngơi nhiều hơn',
+    VitalSigns: {
+      bloodPressure: '125/85',
+      heartRate: 80,
+      temperature: 37.1,
+      oxygenSaturation: 96
+    },
+    Medications: [
+      {
+        name: 'Iron supplement',
+        dosage: '100mg',
+        frequency: '1 lần/ngày'
+      }
+    ],
+    Recommendations: 'Nghỉ ngơi đầy đủ, ăn uống đầy đủ dinh dưỡng',
+    CreatedAt: '2024-01-17T10:00:00Z',
+    UpdatedAt: '2024-01-17T10:00:00Z'
   }
 ];
 

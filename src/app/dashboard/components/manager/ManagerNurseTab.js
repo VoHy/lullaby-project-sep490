@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
-import accounts from '@/mock/Account';
-import nursingSpecialists from '@/mock/NursingSpecialist';
-import zones from '@/mock/Zone';
+import accountService from '@/services/api/accountService';
+import nursingSpecialistService from '@/services/api/nursingSpecialistService';
+import zoneService from '@/services/api/zoneService';
 import { AuthContext } from '@/context/AuthContext';
 
 const ManagerNurseTab = () => {
@@ -25,7 +25,39 @@ const ManagerNurseTab = () => {
   const [experience, setExperience] = useState('');
   const [slogan, setSlogan] = useState('');
   const [address, setAddress] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [accounts, setAccounts] = useState([]);
+  const [nursingSpecialists, setNursingSpecialists] = useState([]);
+  const [zones, setZones] = useState([]);
   const major = 'Y tá';
+
+  // Fetch data from API
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [accountsData, nursingSpecialistsData, zonesData] = await Promise.all([
+          accountService.getAllAccounts(),
+          nursingSpecialistService.getAllNursingSpecialists(),
+          zoneService.getZones()
+        ]);
+        
+        setAccounts(accountsData);
+        setNursingSpecialists(nursingSpecialistsData);
+        setZones(zonesData);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Không thể tải dữ liệu. Vui lòng thử lại.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (currentManagerId) {
+      fetchData();
+    }
+  }, [currentManagerId]);
 
   // Lấy khu vực mà manager hiện tại quản lý
   const getManagedZone = () => {
@@ -52,7 +84,7 @@ const ManagerNurseTab = () => {
   };
 
   useEffect(() => {
-    if (currentManagerId) {
+    if (currentManagerId && accounts.length > 0 && nursingSpecialists.length > 0 && zones.length > 0) {
       const filteredNurses = getNursesInManagedZone();
       setNurseList(filteredNurses);
       // Set zoneId mặc định là khu vực quản lý của manager
@@ -61,7 +93,7 @@ const ManagerNurseTab = () => {
         setZoneId(managedZone.ZoneID.toString());
       }
     }
-  }, [currentManagerId]);
+  }, [currentManagerId, accounts, nursingSpecialists, zones]);
 
   const handleView = (nurse) => {
     const detail = nursingSpecialists.find(n => n.AccountID === nurse.AccountID);
@@ -135,6 +167,34 @@ const ManagerNurseTab = () => {
     setDetailData(null);
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">⚠️</div>
+          <p className="text-red-600">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
@@ -185,7 +245,7 @@ const ManagerNurseTab = () => {
                 <div className="flex flex-col items-center gap-2 bg-purple-50 border border-purple-100 rounded-lg p-4 shadow-sm">
                   <label className="block text-xs font-medium mb-1 text-gray-600">Ảnh đại diện</label>
                   <div className="relative w-20 h-20 mb-1">
-                    <img src={avatarPreview || avatarUrl || "/images/avatar1.jpg"} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-pink-200 mx-auto" />
+                    <img src={avatarPreview || avatarUrl || "/images/logo-eldora.png"} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-pink-200 mx-auto" />
                     <label className="absolute bottom-0 right-0 bg-pink-500 text-white rounded-full p-1 cursor-pointer shadow-md hover:bg-pink-600 transition" title="Đổi ảnh">
                       <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
@@ -257,7 +317,7 @@ const ManagerNurseTab = () => {
             <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl" onClick={handleCloseDetail}>&times;</button>
             <div className="flex flex-col items-center mb-4">
               <div className="w-24 h-24 rounded-full border-4 border-pink-300 overflow-hidden mb-2">
-                <img src={detailData.avatar_url || '/images/avatar1.jpg'} alt="avatar" className="object-cover w-full h-full" />
+                <img src={detailData.avatar_url && detailData.avatar_url !== 'string' ? detailData.avatar_url : '/images/logo-eldora.png'} alt="avatar" className="object-cover w-full h-full" />
               </div>
               <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 mb-1">{detailData.full_name || 'Không có'}</h3>
               <div className="flex items-center gap-2 mt-2">

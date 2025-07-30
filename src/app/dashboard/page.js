@@ -24,6 +24,17 @@ export default function Dashboard() {
       }
 
       const currentUser = authService.getCurrentUser();
+      // Bổ sung kiểm tra trạng thái user
+      if (
+        !currentUser ||
+        currentUser.deletedAt !== null && currentUser.deletedAt !== undefined && currentUser.deletedAt !== 'NULL' && currentUser.deletedAt !== '' ||
+        (currentUser.status && currentUser.status !== 'active')
+      ) {
+        authService.logout && authService.logout(); // Nếu có hàm logout thì gọi
+        localStorage.clear();
+        router.push('/auth/login');
+        return;
+      }
       setUser(currentUser);
       setLoading(false);
     };

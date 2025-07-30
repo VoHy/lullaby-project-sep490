@@ -58,18 +58,20 @@ const Sidebar = ({ user }) => {
     ],
   };
 
-  const currentMenuItems = menuItems[user?.role_id] || [];
-
-  // Get role name based on role_id
+  // Get role name based on role_id hoặc roleID
   const getRoleName = (role_id) => {
     const roleMap = {
       1: 'Administrator',
-      2: 'Nurse',
-      4: 'Manager',
-      5: 'Specialist'
+      2: 'NursingSpecialist',
+      3: 'Manager',
+      4: 'Customer'
     };
     return roleMap[role_id] || 'User';
   };
+
+  // Lấy role thực tế từ user
+  const userRole = user?.roleID || user?.role_id;
+  const currentMenuItems = menuItems[userRole] || [];
 
   return (
     <div
@@ -228,16 +230,17 @@ const UserProfile = ({ user, getRoleName }) => {
       >
         <div className="relative">
           <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-            {user?.full_name?.charAt(0) || 'U'}
+            {/* Lấy ký tự đầu tiên của tên, ưu tiên fullName, sau đó full_name */}
+            {(user?.fullName || user?.full_name || 'U').charAt(0)}
           </div>
           <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full animate-pulse"></div>
         </div>
         <div className="ml-3 flex-1">
           <h3 className="font-semibold text-gray-800 text-sm">
-            {user?.full_name || 'User'}
+            {user?.fullName || user?.full_name || 'User'}
           </h3>
           <p className="text-xs text-purple-600 font-medium">
-            {getRoleName(user?.role_id)}
+            {getRoleName(user?.roleID || user?.role_id)}
           </p>
         </div>
         <FontAwesomeIcon

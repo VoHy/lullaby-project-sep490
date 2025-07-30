@@ -7,10 +7,9 @@ import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import walletService from '@/services/api/walletService';
 import { AuthContext } from "@/context/AuthContext";
 import walletHistoryService from '@/services/api/walletHistoryService';
-import serviceTasks from '@/mock/ServiceTask';
-import serviceTypes from '@/mock/ServiceType';
-import nursingSpecialists from '@/mock/NursingSpecialist';
-import careProfiles from '@/mock/CareProfile';
+// Thay thế import mock data bằng services
+import serviceTaskService from '@/services/api/serviceTaskService';
+import careProfileService from '@/services/api/careProfileService';
 import { 
   PaymentHeader, 
   ServiceInfo, 
@@ -31,21 +30,58 @@ export default function PaymentPage() {
 
   const [packages, setPackages] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
+  const [serviceTasks, setServiceTasks] = useState([]);
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
+  const [careProfiles, setCareProfiles] = useState([]);
   const [wallets, setWallets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   const { user } = useContext(AuthContext);
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastInvoiceId, setLastInvoiceId] = useState(null);
 
+  // Load data từ API
   useEffect(() => {
-    customerPackageService.getCustomerPackages().then(setPackages);
-    serviceTypeService.getServiceTypes().then(setServiceTypes);
-    nursingSpecialistService.getNursingSpecialists().then(setNursingSpecialists);
-    walletService.getWallets().then(setWallets);
-  }, []);
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        
+        const [
+          packagesData,
+          serviceTypesData,
+          serviceTasksData,
+          nursingSpecialistsData,
+          careProfilesData,
+          walletsData
+        ] = await Promise.all([
+          customerPackageService.getCustomerPackages(),
+          serviceTypeService.getServiceTypes(),
+          serviceTaskService.getServiceTasks(),
+          nursingSpecialistService.getNursingSpecialists(),
+          careProfileService.getCareProfiles(),
+          walletService.getWallets()
+        ]);
+
+        setPackages(packagesData);
+        setServiceTypes(serviceTypesData);
+        setServiceTasks(serviceTasksData);
+        setNursingSpecialists(nursingSpecialistsData);
+        setCareProfiles(careProfilesData);
+        setWallets(walletsData);
+      } catch (error) {
+        console.error('Error fetching payment data:', error);
+        setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (user) {
+      fetchData();
+    }
+  }, [user]);
 
   let selectedPackage = null;
   let selectedServices = [];
@@ -102,124 +138,103 @@ export default function PaymentPage() {
     childServices = tasks.map(t => serviceTypes.find(s => s.ServiceID === t.Child_ServiceID)).filter(Boolean);
   }
 
-  // Lấy thông tin nhân sự đã chọn cho từng dịch vụ
+  // Lấy thông tin CareProfile
+  const selectedCareProfile = careProfiles.find(cp => cp.CareProfileID === Number(careProfileId));
+
+  // Lấy thông tin nhân sự cho từng dịch vụ
   const getStaffInfo = (serviceId) => {
     const staff = selectedStaff[serviceId];
     if (!staff) return null;
-    const found = nursingSpecialists.find(n => n.NursingID === Number(staff.id));
-    return found ? { ...staff, name: found.FullName, major: found.Major } : staff;
+    
+    const specialist = nursingSpecialists.find(n => n.NursingID === Number(staff.id));
+    return {
+      name: specialist?.FullName || 'Không xác định',
+      role: specialist?.Major || 'Nhân viên',
+      type: staff.type
+    };
   };
 
-  // Lấy thông tin CareProfile đã chọn
-  const selectedCareProfile = careProfileId ? careProfiles.find(p => p.CareProfileID === Number(careProfileId)) : null;
-
-  // Xử lý xác nhận thanh toán bằng ví
   const handleConfirm = async () => {
-    setError("");
-    if (!user || !myWallet) {
-      setError("Không tìm thấy ví hoặc thông tin tài khoản!");
-      return;
-    }
-    if (myWallet.Amount < total) {
-      setError("Số dư ví không đủ để thanh toán!");
-      return;
-    }
-    setLoading(true);
-    // Trừ tiền ví (mock localStorage)
-    const before = myWallet.Amount;
-    myWallet.Amount -= total;
-    // Lưu lại vào localStorage (mock update)
-    const allWallets = wallets.map(w => w.WalletID === myWallet.WalletID ? { ...w, Amount: myWallet.Amount } : w);
-    localStorage.setItem("wallets", JSON.stringify(allWallets));
-    // Tạo lịch sử giao dịch
-    await walletHistoryService.createWalletHistory({
-      WalletID: myWallet.WalletID,
-      InvoiceID: null,
-      Before: before,
-      Amount: -total,
-      After: myWallet.Amount,
-      Receiver: "Lullaby Service",
-      Transferrer: user.FullName || user.username || "User",
-      Note: "Thanh toán dịch vụ",
-      Status: "success"
-    });
-    // Lưu lịch hẹn vào localStorage (demo)
-    const data = localStorage.getItem("appointments");
-    let arr = [];
-    if (data) arr = JSON.parse(data);
-    const invoiceId = 1000 + arr.length;
-    arr.push({
-      package: packageId,
-      services,
-      datetime,
-      note,
-      nurses,
-      careProfileId: searchParams.get("careProfileId"),
-      selectedStaff: searchParams.get("selectedStaff"),
-      amount: total,
-      createdAt: new Date().toISOString(),
-      userId: user.AccountID // Thêm user ID để lọc theo user
-    });
-    localStorage.setItem("appointments", JSON.stringify(arr));
-    setLoading(false);
-    setLastInvoiceId(invoiceId);
+    // Logic xử lý thanh toán
     setShowSuccessModal(true);
+    setLastInvoiceId(Math.floor(Math.random() * 1000000));
   };
 
-  // Fix hydration: format datetime ở client
-  const [formattedDatetime, setFormattedDatetime] = useState("");
-  useEffect(() => {
-    if (datetime) {
-      setFormattedDatetime(new Date(datetime).toLocaleString());
-    } else {
-      setFormattedDatetime("-");
-    }
-  }, [datetime]);
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-pink-50 to-blue-50 py-8">
-      <div className="max-w-7xl mx-auto px-4">
-        {/* Header */}
-        <PaymentHeader />
-
-        {/* Layout 2 Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          
-          {/* Row 1: Thông tin dịch vụ */}
-          <div>
-            <ServiceInfo 
-              packageId={packageId}
-              packageDetail={packageDetail}
-              childServices={childServices}
-              selectedServices={selectedServices}
-              getStaffInfo={getStaffInfo}
-            />
-            
-            {/* Thông tin lịch hẹn */}
-            <AppointmentInfo 
-              formattedDatetime={formattedDatetime}
-              note={note}
-              selectedCareProfile={selectedCareProfile}
-            />
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Đang tải dữ liệu thanh toán...</p>
           </div>
-
-          {/* Row 2: Thông tin thanh toán */}
-          <PaymentInfo 
-            total={total}
-            myWallet={myWallet}
-            error={error}
-            loading={loading}
-            handleConfirm={handleConfirm}
-          />
         </div>
       </div>
+    );
+  }
 
-      {/* Success Modal */}
-      <PaymentSuccessModal 
-        isOpen={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
-        invoiceId={lastInvoiceId}
-      />
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
+            <p className="text-gray-600 mb-4">{error}</p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
+            >
+              Thử lại
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+      <div className="max-w-6xl mx-auto px-4 py-8">
+        <PaymentHeader />
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Left Column */}
+          <div className="space-y-6">
+            <ServiceInfo 
+              packageDetail={packageDetail}
+              selectedServices={selectedServices}
+              childServices={childServices}
+              total={total}
+            />
+            
+            <AppointmentInfo 
+              datetime={datetime}
+              note={note}
+              selectedCareProfile={selectedCareProfile}
+              selectedStaff={selectedStaff}
+              getStaffInfo={getStaffInfo}
+            />
+          </div>
+          
+          {/* Right Column */}
+          <div>
+            <PaymentInfo 
+              total={total}
+              myWallet={myWallet}
+              onConfirm={handleConfirm}
+            />
+          </div>
+        </div>
+        
+        <PaymentSuccessModal 
+          isOpen={showSuccessModal}
+          onClose={() => setShowSuccessModal(false)}
+          invoiceId={lastInvoiceId}
+        />
+      </div>
     </div>
   );
 } 

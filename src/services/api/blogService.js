@@ -1,50 +1,41 @@
-import blogs from '../../mock/Blog';
-
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
-
 const blogService = {
   getBlogs: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve(blogs);
-    }
-    const res = await fetch('/api/blogs');
-    return res.json();
+    const res = await fetch('/api/Blog');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách blog');
+    return data;
   },
   getBlogById: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(blogs.find(b => b.BlogID === id));
-    }
-    const res = await fetch(`/api/blogs/${id}`);
-    return res.json();
+    const res = await fetch(`/api/Blog/${id}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin blog');
+    return data;
   },
   createBlog: async (data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...data, BlogID: blogs.length + 1 });
-    }
-    const res = await fetch('/api/blogs', {
+    const res = await fetch('/api/Blog', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Tạo blog thất bại');
+    return result;
   },
   updateBlog: async (id, data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...blogs.find(b => b.BlogID === id), ...data });
-    }
-    const res = await fetch(`/api/blogs/${id}`, {
+    const res = await fetch(`/api/Blog/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Cập nhật blog thất bại');
+    return result;
   },
   deleteBlog: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(true);
-    }
-    const res = await fetch(`/api/blogs/${id}`, { method: 'DELETE' });
-    return res.ok;
+    const res = await fetch(`/api/Blog/${id}`, { method: 'DELETE' });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Xóa blog thất bại');
+    return result;
   }
 };
 

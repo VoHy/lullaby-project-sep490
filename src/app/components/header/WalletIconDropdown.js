@@ -4,6 +4,9 @@ import { motion } from 'framer-motion';
 import { FaWallet, FaPlus, FaTimes } from 'react-icons/fa';
 
 const WalletIconDropdown = ({ wallet, onDeposit, onViewDetails, onClose }) => {
+  // Kiểm tra wallet có tồn tại không
+  if (!wallet) return null;
+  
   return (
     <motion.div
       initial={{ opacity: 0, y: -10 }}
@@ -24,7 +27,7 @@ const WalletIconDropdown = ({ wallet, onDeposit, onViewDetails, onClose }) => {
         
         <div className="mb-4">
           <div className="text-2xl font-bold text-purple-600">
-            {wallet.Amount.toLocaleString('vi-VN')}đ
+            {(wallet?.Amount || 0).toLocaleString('vi-VN')}đ
           </div>
           <div className={`inline-block px-2 py-1 rounded-full text-xs font-medium mt-1 ${
             wallet.Status === 'active' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'

@@ -1,50 +1,41 @@
-import invoices from '../../mock/Invoice';
-
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
-
 const invoiceService = {
   getInvoices: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve(invoices);
-    }
-    const res = await fetch('/api/invoices');
-    return res.json();
+    const res = await fetch('/api/Invoice');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách invoice');
+    return data;
   },
   getInvoiceById: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(invoices.find(i => i.InvoiceID === id));
-    }
-    const res = await fetch(`/api/invoices/${id}`);
-    return res.json();
+    const res = await fetch(`/api/Invoice/${id}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin invoice');
+    return data;
   },
   createInvoice: async (data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...data, InvoiceID: invoices.length + 1 });
-    }
-    const res = await fetch('/api/invoices', {
+    const res = await fetch('/api/Invoice', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Tạo invoice thất bại');
+    return result;
   },
   updateInvoice: async (id, data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...invoices.find(i => i.InvoiceID === id), ...data });
-    }
-    const res = await fetch(`/api/invoices/${id}`, {
+    const res = await fetch(`/api/Invoice/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Cập nhật invoice thất bại');
+    return result;
   },
   deleteInvoice: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(true);
-    }
-    const res = await fetch(`/api/invoices/${id}`, { method: 'DELETE' });
-    return res.ok;
+    const res = await fetch(`/api/Invoice/${id}`, { method: 'DELETE' });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Xóa invoice thất bại');
+    return result;
   }
 };
 

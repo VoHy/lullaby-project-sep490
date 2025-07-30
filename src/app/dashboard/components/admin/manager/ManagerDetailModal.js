@@ -5,40 +5,44 @@ import {
   faSave, faTimes, faEdit, faEye,
   faUserMd, faShieldAlt, faClock
 } from '@fortawesome/free-solid-svg-icons';
-import zonesData from '@/mock/Zone';
+import accountService from '@/services/api/accountService';
+import zoneService from '@/services/api/zoneService';
 
 const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    full_name: manager?.full_name || '',
-    email: manager?.email || '',
-    phone_number: manager?.phone_number || '',
-    zone_id: manager?.zone_id || '',
-    status: manager?.status || 'active'
-  });
+  const [formData, setFormData] = useState({});
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [managerData, setManagerData] = useState(null);
+  const [zones, setZones] = useState([]);
 
-  const zones = zonesData;
-
-  // Cập nhật form data khi manager thay đổi
+  // Fetch manager và zones khi mở modal
   React.useEffect(() => {
-    if (manager) {
-      setFormData({
-        full_name: manager.full_name || '',
-        email: manager.email || '',
-        phone_number: manager.phone_number || '',
-        zone_id: manager.zone_id || '',
-        status: manager.status || 'active'
-      });
+    if (show && manager?.accountID) {
+      setLoading(true);
+      Promise.all([
+        accountService.getManagerById(manager.accountID),
+        zoneService.getZones()
+      ]).then(([mgr, zs]) => {
+        setManagerData(mgr);
+        setZones(zs);
+        setFormData({
+          fullName: mgr.fullName || '',
+          email: mgr.email || '',
+          phoneNumber: mgr.phoneNumber || '',
+          zoneID: mgr.zoneID || '',
+          status: mgr.status || 'active',
+        });
+      }).finally(() => setLoading(false));
     }
-  }, [manager]);
+  }, [show, manager]);
 
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.full_name.trim()) {
-      newErrors.full_name = 'Tên không được để trống';
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Tên không được để trống';
     }
 
     if (!formData.email.trim()) {
@@ -47,10 +51,10 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
       newErrors.email = 'Email không hợp lệ';
     }
 
-    if (!formData.phone_number.trim()) {
-      newErrors.phone_number = 'Số điện thoại không được để trống';
-    } else if (!/^[0-9]{10,11}$/.test(formData.phone_number)) {
-      newErrors.phone_number = 'Số điện thoại không hợp lệ';
+    if (!formData.phoneNumber.trim()) {
+      newErrors.phoneNumber = 'Số điện thoại không được để trống';
+    } else if (!/^[0-9]{10,11}$/.test(formData.phoneNumber)) {
+      newErrors.phoneNumber = 'Số điện thoại không hợp lệ';
     }
 
     setErrors(newErrors);
@@ -67,15 +71,50 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
     setIsSubmitting(true);
     
     try {
+      // Sử dụng ID từ manager prop hoặc managerData
+      const managerId = manager?.id || manager?.accountID || managerData?.id || managerData?.accountID;
+      
+      console.log('Updating manager with ID:', managerId);
+      console.log('Manager data:', managerData);
+      console.log('Form data:', formData);
+      
       const updatedManager = {
-        ...manager,
+        ...managerData,
         ...formData,
-        updated_at: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
       };
 
-      await onSave(manager.AccountID, updatedManager);
+      await accountService.updateManager(managerId, updatedManager);
+      alert('Cập nhật manager thành công!');
       setIsEditing(false);
+      
+      // Cập nhật dữ liệu local với thông tin mới
+      setManagerData(updatedManager);
+      
+      // Cập nhật formData với dữ liệu mới
+      setFormData({
+        fullName: updatedManager.fullName || '',
+        email: updatedManager.email || '',
+        phoneNumber: updatedManager.phoneNumber || '',
+        zoneID: updatedManager.zoneID || '',
+        status: updatedManager.status || 'active',
+      });
+      
+      // Fetch lại thông tin manager mới nhất từ backend
+      try {
+        const freshManager = await accountService.getManagerById(managerId);
+        console.log('Fresh manager data:', freshManager);
+        setManagerData(freshManager);
+      } catch (fetchError) {
+        console.log('Could not fetch fresh data, using updated data:', fetchError);
+      }
+      
+      if (onSave) {
+        console.log('Calling onSave callback with managerId:', managerId, 'and updatedManager:', updatedManager);
+        onSave(managerId, updatedManager);
+      }
     } catch (error) {
+      alert('Cập nhật manager thất bại!');
       console.error('Error updating manager:', error);
     } finally {
       setIsSubmitting(false);
@@ -91,13 +130,13 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
 
   // Tìm khu vực mà Manager đang quản lý (giống logic trong ManagerTab.js)
   const getManagedZone = (managerId) => {
-    const zone = zones.find(z => z.AccountID === managerId);
+    const zone = zones.find(z => z.accountID === managerId);
     return zone;
   };
 
   const getZoneName = (zoneId) => {
-    const zone = zones.find(z => z.ZoneID === Number(zoneId));
-    return zone ? zone.Zone_name : 'Chưa có khu vực';
+    const zone = zones.find(z => z.zoneID === Number(zoneId));
+    return zone ? zone.zoneName : 'Chưa có khu vực';
   };
 
   const getStatusText = (status) => {
@@ -105,9 +144,10 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
   };
 
   if (!show || !manager) return null;
+  if (loading || !managerData) return (<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="bg-white p-8 rounded-xl">Đang tải dữ liệu...</div></div>);
 
   // Lấy khu vực quản lý hiện tại của Manager
-  const currentManagedZone = getManagedZone(manager.AccountID);
+  const currentManagedZone = getManagedZone(managerData.AccountID);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
@@ -140,16 +180,16 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
           <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-6 rounded-xl">
             <div className="flex items-center space-x-4">
               <div className="w-16 h-16 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold text-xl">
-                {manager.full_name?.charAt(0) || 'M'}
+                {managerData.fullName?.charAt(0) || 'M'}
               </div>
               <div>
-                <h4 className="text-xl font-bold text-gray-800">{manager.full_name}</h4>
-                <p className="text-gray-600">{manager.email}</p>
+                <h4 className="text-xl font-bold text-gray-800">{managerData.fullName}</h4>
+                <p className="text-gray-600">{managerData.email}</p>
                 <div className="flex items-center space-x-4 mt-2">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    manager.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                    managerData.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
                   }`}>
-                    {getStatusText(manager.status)}
+                    {getStatusText(managerData.status)}
                   </span>
                   <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
                     Manager
@@ -176,18 +216,18 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
                   {isEditing ? (
                     <input
                       type="text"
-                      value={formData.full_name}
-                      onChange={(e) => handleInputChange('full_name', e.target.value)}
+                      value={formData.fullName}
+                      onChange={(e) => handleInputChange('fullName', e.target.value)}
                       className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                        errors.full_name ? 'border-red-500' : 'border-gray-300'
+                        errors.fullName ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="Nhập họ và tên"
                     />
                   ) : (
-                    <p className="px-4 py-3 bg-gray-50 rounded-xl">{manager.full_name}</p>
+                    <p className="px-4 py-3 bg-gray-50 rounded-xl">{managerData.fullName}</p>
                   )}
-                  {errors.full_name && (
-                    <p className="text-red-500 text-sm mt-1">{errors.full_name}</p>
+                  {errors.fullName && (
+                    <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
                   )}
                 </div>
 
@@ -207,7 +247,7 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
                       placeholder="example@email.com"
                     />
                   ) : (
-                    <p className="px-4 py-3 bg-gray-50 rounded-xl">{manager.email}</p>
+                    <p className="px-4 py-3 bg-gray-50 rounded-xl">{managerData.email}</p>
                   )}
                   {errors.email && (
                     <p className="text-red-500 text-sm mt-1">{errors.email}</p>
@@ -222,18 +262,18 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
                   {isEditing ? (
                     <input
                       type="tel"
-                      value={formData.phone_number}
-                      onChange={(e) => handleInputChange('phone_number', e.target.value)}
+                      value={formData.phoneNumber}
+                      onChange={(e) => handleInputChange('phoneNumber', e.target.value)}
                       className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                        errors.phone_number ? 'border-red-500' : 'border-gray-300'
+                        errors.phoneNumber ? 'border-red-500' : 'border-gray-300'
                       }`}
                       placeholder="0123456789"
                     />
                   ) : (
-                    <p className="px-4 py-3 bg-gray-50 rounded-xl">{manager.phone_number || 'Chưa cập nhật'}</p>
+                    <p className="px-4 py-3 bg-gray-50 rounded-xl">{managerData.phoneNumber || 'Chưa cập nhật'}</p>
                   )}
-                  {errors.phone_number && (
-                    <p className="text-red-500 text-sm mt-1">{errors.phone_number}</p>
+                  {errors.phoneNumber && (
+                    <p className="text-red-500 text-sm mt-1">{errors.phoneNumber}</p>
                   )}
                 </div>
               </div>
@@ -253,21 +293,21 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
                   </label>
                   {isEditing ? (
                     <select
-                      value={formData.zone_id}
-                      onChange={(e) => handleInputChange('zone_id', e.target.value)}
+                      value={formData.zoneID}
+                      onChange={(e) => handleInputChange('zoneID', e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
                     >
                       <option value="">Chọn khu vực (có thể để trống)</option>
                       {zones.map(zone => (
-                        <option key={zone.ZoneID} value={zone.ZoneID} disabled={zone.AccountID && zone.AccountID !== manager.AccountID}>
-                          {zone.Zone_name} - {zone.City}
-                          {zone.AccountID && zone.AccountID !== manager.AccountID ? ' (Đã có Manager)' : ''}
+                        <option key={zone.zoneID} value={zone.zoneID} disabled={zone.accountID && zone.accountID !== managerData.accountID}>
+                          {zone.zoneName} - {zone.city}
+                          {zone.accountID && zone.accountID !== managerData.accountID ? ' (Đã có Manager)' : ''}
                         </option>
                       ))}
                     </select>
                   ) : (
                     <p className="px-4 py-3 bg-gray-50 rounded-xl">
-                      {currentManagedZone ? currentManagedZone.Zone_name : 'Chưa có khu vực'}
+                      {currentManagedZone ? currentManagedZone.zoneName : 'Chưa có khu vực'}
                     </p>
                   )}
                 </div>
@@ -287,7 +327,7 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
                       <option value="inactive">Tạm khóa</option>
                     </select>
                   ) : (
-                    <p className="px-4 py-3 bg-gray-50 rounded-xl">{getStatusText(manager.status)}</p>
+                    <p className="px-4 py-3 bg-gray-50 rounded-xl">{getStatusText(managerData.status)}</p>
                   )}
                 </div>
 
@@ -297,7 +337,7 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
                     Ngày tạo tài khoản
                   </label>
                   <p className="px-4 py-3 bg-gray-50 rounded-xl">
-                    {manager.created_at ? new Date(manager.created_at).toLocaleString('vi-VN') : 'Chưa cập nhật'}
+                    {managerData.createAt ? new Date(managerData.createAt).toLocaleString('vi-VN') : 'Chưa cập nhật'}
                   </p>
                 </div>
 
@@ -307,7 +347,7 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
                     Cập nhật lần cuối
                   </label>
                   <p className="px-4 py-3 bg-gray-50 rounded-xl">
-                    {manager.updated_at ? new Date(manager.updated_at).toLocaleString('vi-VN') : 'Chưa cập nhật'}
+                    {managerData.updatedAt ? new Date(managerData.updatedAt).toLocaleString('vi-VN') : 'Chưa cập nhật'}
                   </p>
                 </div>
               </div>

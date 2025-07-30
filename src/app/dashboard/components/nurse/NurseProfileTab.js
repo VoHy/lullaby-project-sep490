@@ -79,7 +79,7 @@ const NurseProfileTab = ({ nurseAccount }) => {
             <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-lg p-6 text-center">
               <div className="relative inline-block">
                 <img 
-                  src={formData.avatar_url || '/images/avatar1.jpg'} 
+                  src={formData.avatar_url && formData.avatar_url !== 'string' ? formData.avatar_url : '/images/logo-eldora.png'} 
                   alt="avatar" 
                   className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg" 
                 />

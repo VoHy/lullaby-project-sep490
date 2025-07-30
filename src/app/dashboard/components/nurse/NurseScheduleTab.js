@@ -1,40 +1,68 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, format, isSameMonth, isSameDay, isWithinInterval, parseISO } from 'date-fns';
-import holidays from '@/mock/Holiday';
-import careProfiles from '@/mock/CareProfile';
-import customerPackages from '@/mock/CustomerPackage';
+import holidayService from '@/services/api/holidayService';
+import careProfileService from '@/services/api/careProfileService';
+import customerPackageService from '@/services/api/customerPackageService';
 import { FaRegClock, FaFlag, FaCalendarCheck } from 'react-icons/fa';
-
-const getHolidayByDate = (dateStr) => {
-  for (let h of holidays) {
-    const start = parseISO(h.StartDate);
-    const end = parseISO(h.EndDate);
-    const d = parseISO(dateStr);
-    if (isWithinInterval(d, { start, end })) {
-      return h;
-    }
-  }
-  return null;
-};
-
-const getDaysInMonthGrid = (currentMonth) => {
-  const startMonth = startOfMonth(currentMonth);
-  const endMonth = endOfMonth(currentMonth);
-  const startDate = startOfWeek(startMonth, { weekStartsOn: 1 });
-  const endDate = endOfWeek(endMonth, { weekStartsOn: 1 });
-  const days = [];
-  let day = startDate;
-  while (day <= endDate) {
-    days.push(day);
-    day = addDays(day, 1);
-  }
-  return days;
-};
 
 const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [holidays, setHolidays] = useState([]);
+  const [careProfiles, setCareProfiles] = useState([]);
+  const [customerPackages, setCustomerPackages] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        const [holidaysData, careProfilesData, customerPackagesData] = await Promise.all([
+          holidayService.getAllHolidays(),
+          careProfileService.getAllCareProfiles(),
+          customerPackageService.getAllCustomerPackages()
+        ]);
+        setHolidays(holidaysData);
+        setCareProfiles(careProfilesData);
+        setCustomerPackages(customerPackagesData);
+      } catch (err) {
+        console.error('Error fetching data:', err);
+        setError('Không thể tải dữ liệu. Vui lòng thử lại.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, []);
+
+  const getHolidayByDate = (dateStr) => {
+    for (let h of holidays) {
+      const start = parseISO(h.StartDate);
+      const end = parseISO(h.EndDate);
+      const d = parseISO(dateStr);
+      if (isWithinInterval(d, { start, end })) {
+        return h;
+      }
+    }
+    return null;
+  };
+
+  const getDaysInMonthGrid = (currentMonth) => {
+    const startMonth = startOfMonth(currentMonth);
+    const endMonth = endOfMonth(currentMonth);
+    const startDate = startOfWeek(startMonth, { weekStartsOn: 1 });
+    const endDate = endOfWeek(endMonth, { weekStartsOn: 1 });
+    const days = [];
+    let day = startDate;
+    while (day <= endDate) {
+      days.push(day);
+      day = addDays(day, 1);
+    }
+    return days;
+  };
 
   const days = getDaysInMonthGrid(currentMonth);
   const workDates = workSchedules.map(ws => ws.WorkDate.split('T')[0]);
@@ -80,6 +108,34 @@ const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
         holidayObj: holiday,
       });
     }
+  }
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">⚠️</div>
+          <p className="text-red-600">{error}</p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="mt-4 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (

@@ -3,7 +3,6 @@ import authService from '@/services/auth/authService';
 import relativesService from '@/services/api/relativesService';
 import zoneService from '@/services/api/zoneService';
 import careProfileService from '@/services/api/careProfileService';
-import zoneDetailsService from '@/services/api/zoneDetailsService';
 
 export default function useCareProfileManager(router) {
   // State
@@ -12,7 +11,7 @@ export default function useCareProfileManager(router) {
   const [relativesList, setRelativesList] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
   const [zones, setZones] = useState([]);
-  const [zoneDetailsList, setZoneDetailsList] = useState([]);
+  const [zonedetailsList, setZonedetailsList] = useState([]);
   const [careProfileFilter, setCareProfileFilter] = useState('all');
   const [relativesFilter, setRelativesFilter] = useState({});
   const [careProfileSuccess, setCareProfileSuccess] = useState('');
@@ -21,7 +20,7 @@ export default function useCareProfileManager(router) {
   const [showCareProfileForm, setShowCareProfileForm] = useState(false);
   const [editCareProfile, setEditCareProfile] = useState(null);
   const [careProfileForm, setCareProfileForm] = useState({
-    ProfileName: '', DateOfBirth: '', PhoneNumber: '', Address: '', ZoneDetailID: '', CustomZoneName: '', Note: '', Status: 'active', Image: '',
+    ProfileName: '', DateOfBirth: '', PhoneNumber: '', Address: '', ZonedetailID: '', CustomZoneName: '', Note: '', Status: 'active', Image: '',
   });
   const [careProfileAvatarFile, setCareProfileAvatarFile] = useState(null);
   const [careProfileAvatar, setCareProfileAvatar] = useState('');
@@ -74,7 +73,6 @@ export default function useCareProfileManager(router) {
       return;
     }
     const currentUser = authService.getCurrentUser();
-    console.log('Current user:', currentUser);
     setUser(currentUser);
     careProfileService.getCareProfiles().then(careProfiles => {
       const safeCareProfiles = Array.isArray(careProfiles) ? careProfiles : [];
@@ -101,9 +99,8 @@ export default function useCareProfileManager(router) {
     });
     zoneService.getZones().then(zs => {
       setZones(zs);
-      console.log('Loaded zones:', zs);
     });
-    zoneDetailsService.getZoneDetails().then(setZoneDetailsList);
+    zoneService.getZoneDetails().then(setZonedetailsList);
     setLoading(false);
   }, [router]);
 
@@ -118,7 +115,7 @@ export default function useCareProfileManager(router) {
       });
       setCareProfileAvatar(care.image || '');
     } else {
-      setCareProfileForm({ profileName: '', dateOfBirth: '', phoneNumber: '', address: '', zoneDetailID: '', customZoneName: '', note: '', status: 'Active', image: '' });
+      setCareProfileForm({ profileName: '', dateOfBirth: '', phoneNumber: '', address: '', zonedetailid: '', customZoneName: '', note: '', status: 'Active', image: '' });
       setCareProfileAvatar('');
     }
     setCareProfileAvatarFile(null);
@@ -154,7 +151,6 @@ export default function useCareProfileManager(router) {
         setCareProfileSuccess('Cập nhật hồ sơ thành công!');
       } else {
         // Create
-        console.log('Dữ liệu gửi lên:', data);
         await careProfileService.createCareProfile(data);
         setCareProfileSuccess('Tạo hồ sơ thành công!');
       }
@@ -254,7 +250,7 @@ export default function useCareProfileManager(router) {
   const handleCloseRelativeForm = () => setShowRelativeForm(false);
 
   return {
-    user, loading, relativesList, careProfiles, zones, zoneDetails: zoneDetailsList, careProfileFilter, setCareProfileFilter, relativesFilter, setRelativesFilter,
+    user, loading, relativesList, careProfiles, zones, zonedetails: zonedetailsList, careProfileFilter, setCareProfileFilter, relativesFilter, setRelativesFilter,
     showCareProfileForm, editCareProfile, careProfileForm, careProfileAvatar, careProfileAvatarFile, careProfileLoading,
     handleOpenCareProfileForm, handleCareProfileInputChange, handleCareProfileAvatarChange, handleSaveCareProfile,
     showRelativeForm, editRelative, currentCareID, relativeForm, avatarFile, avatarPreview, relativeLoading,

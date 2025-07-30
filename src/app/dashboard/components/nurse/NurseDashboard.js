@@ -2,22 +2,21 @@
 
 import { useState, useEffect, useContext } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import bookingsMock from '@/mock/Booking';
-import careProfilesMock from '@/mock/CareProfile';
-import notificationsMock from '@/mock/Notification';
-import accounts from '@/mock/Account';
 import NurseOverviewTab from './NurseOverviewTab';
 import NurseScheduleTab from './NurseScheduleTab';
 import NurseBookingsTab from './NurseBookingsTab';
 import NursePatientsTab from './NursePatientsTab';
 import NurseNotificationsTab from './NurseNotificationsTab';
 import NurseProfileTab from './NurseProfileTab';
-import workSchedulesMock from '@/mock/WorkSchedule';
-import nursingSpecialists from '@/mock/NursingSpecialist';
 import NurseMedicalNoteTab from './NurseMedicalNoteTab';
-import medicalNotesMock from '@/mock/MedicalNote';
-import customerTasks from '@/mock/CustomerTask';
 import { AuthContext } from '@/context/AuthContext';
+import bookingService from '@/services/api/bookingService';
+import careProfileService from '@/services/api/careProfileService';
+import notificationService from '@/services/api/notificationService';
+import workScheduleService from '@/services/api/workScheduleService';
+import nursingSpecialistService from '@/services/api/nursingSpecialistService';
+import medicalNoteService from '@/services/api/medicalNoteService';
+import customerTaskService from '@/services/api/customerTaskService';
 
 const NurseDashboard = ({ initialTab }) => {
   const router = useRouter();
@@ -25,21 +24,80 @@ const NurseDashboard = ({ initialTab }) => {
   const [activeTab, setActiveTab] = useState(initialTab || 'overview');
   const { user } = useContext(AuthContext);
 
-  // Lấy NursingSpecialist theo user.AccountID
-  const specialist = nursingSpecialists.find(n => n.AccountID === user?.AccountID);
-  const nursingID = specialist?.NursingID;
-  const major = specialist?.Major;
+  // State cho API data
+  const [nurseBookings, setNurseBookings] = useState([]);
+  const [nurseWorkSchedules, setNurseWorkSchedules] = useState([]);
+  const [patients, setPatients] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [medicalNotes, setMedicalNotes] = useState([]);
+  const [specialist, setSpecialist] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  // Chỉ lấy booking mà user phụ trách ít nhất 1 dịch vụ con (CustomerTask)
-  const userCustomerTasks = customerTasks.filter(task => task.NursingID === nursingID);
-  const bookingIDs = [...new Set(userCustomerTasks.map(task => task.BookingID))];
-  const nurseBookings = bookingsMock.filter(b => bookingIDs.includes(b.BookingID));
+  // Load data từ API
+  useEffect(() => {
+    const fetchData = async () => {
+      if (!user?.AccountID) return;
 
-  // Các filter khác giữ nguyên
-  const nurseWorkSchedules = workSchedulesMock.filter(ws => ws.NursingID === nursingID);
-  const patients = careProfilesMock.filter(p => nurseBookings.some(b => b.CareProfileID === p.CareProfileID));
-  const notifications = notificationsMock.filter(n => n.ReceiverID === user?.AccountID || n.ReceiverRole === user?.role_id);
-  const medicalNotes = medicalNotesMock.filter(note => note.NursingID === nursingID);
+      try {
+        setLoading(true);
+        setError("");
+        
+        // Lấy thông tin specialist
+        const specialists = await nursingSpecialistService.getNursingSpecialists();
+        const currentSpecialist = specialists.find(n => n.AccountID === user.AccountID);
+        setSpecialist(currentSpecialist);
+
+        if (!currentSpecialist?.NursingID) {
+          setLoading(false);
+          return;
+        }
+
+        const nursingID = currentSpecialist.NursingID;
+
+        // Load tất cả data song song
+        const [
+          allBookings,
+          allCustomerTasks,
+          allWorkSchedules,
+          allCareProfiles,
+          allNotifications,
+          allMedicalNotes
+        ] = await Promise.all([
+          bookingService.getBookings(),
+          customerTaskService.getCustomerTasks(),
+          workScheduleService.getWorkSchedules(),
+          careProfileService.getCareProfiles(),
+          notificationService.getNotifications(),
+          medicalNoteService.getMedicalNotes()
+        ]);
+
+        // Lọc data theo nursingID
+        const userCustomerTasks = allCustomerTasks.filter(task => task.NursingID === nursingID);
+        const bookingIDs = [...new Set(userCustomerTasks.map(task => task.BookingID))];
+        const filteredBookings = allBookings.filter(b => bookingIDs.includes(b.BookingID));
+        
+        const filteredWorkSchedules = allWorkSchedules.filter(ws => ws.NursingID === nursingID);
+        const filteredPatients = allCareProfiles.filter(p => filteredBookings.some(b => b.CareProfileID === p.CareProfileID));
+        const filteredNotifications = allNotifications.filter(n => n.ReceiverID === user.AccountID || n.ReceiverRole === user.role_id);
+        const filteredMedicalNotes = allMedicalNotes.filter(note => note.NursingID === nursingID);
+
+        setNurseBookings(filteredBookings);
+        setNurseWorkSchedules(filteredWorkSchedules);
+        setPatients(filteredPatients);
+        setNotifications(filteredNotifications);
+        setMedicalNotes(filteredMedicalNotes);
+
+      } catch (error) {
+        console.error('Error fetching nurse dashboard data:', error);
+        setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user]);
 
   const tabs = [
     { id: 'overview', label: 'Tổng quan' },
@@ -65,6 +123,34 @@ const NurseDashboard = ({ initialTab }) => {
     }
     // eslint-disable-next-line
   }, [initialTab]);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="text-center py-12">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-4">
+        <div className="text-center py-12">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button onClick={() => window.location.reload()} className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">

@@ -99,7 +99,7 @@ const authService = {
         phoneNumber: userData.phoneNumber,
         email: userData.email,
         password: userData.password,
-        avatarUrl: userData.avatarUrl || 'string'
+        avatarUrl: userData.avatarUrl || ''
       });
 
       // Sử dụng proxy để bypass CORS
@@ -113,7 +113,7 @@ const authService = {
           phoneNumber: userData.phoneNumber,
           email: userData.email,
           password: userData.password,
-          avatarUrl: userData.avatarUrl || 'string'
+          avatarUrl: userData.avatarUrl || ''
         })
       });
 

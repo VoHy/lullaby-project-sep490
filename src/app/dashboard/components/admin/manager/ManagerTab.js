@@ -2,12 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUserMd, faPlus, faEye, faEdit, faTrash, faSearch, faFilter,
-  faUsers, faChartLine, faClock, faSave
+  faUsers, faChartLine
 } from '@fortawesome/free-solid-svg-icons';
-import accounts from '@/mock/Account';
-import zonesData from '@/mock/Zone';
 import CreateManagerModal from './CreateManagerModal';
 import ManagerDetailModal from './ManagerDetailModal';
+import accountService from '@/services/api/accountService';
+import zoneService from '@/services/api/zoneService';
 
 const StatCard = ({ title, value, icon, color, subtitle }) => (
   <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
@@ -25,9 +25,8 @@ const StatCard = ({ title, value, icon, color, subtitle }) => (
 );
 
 const ManagerTab = () => {
-  // Lọc ra các manager
-  const [managers, setManagers] = useState(accounts.filter(acc => acc.role_id === 4));
-  const [zones, setZones] = useState(zonesData);
+  const [managers, setManagers] = useState([]);
+  const [zones, setZones] = useState([]);
   const [saving, setSaving] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -37,6 +36,9 @@ const ManagerTab = () => {
   const [currentTime, setCurrentTime] = useState(new Date());
 
   useEffect(() => {
+    // Lấy managers và zones từ API thật
+    accountService.getManagers().then(setManagers).catch(() => setManagers([]));
+    zoneService.getZones().then(setZones).catch(() => setZones([]));
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
@@ -65,7 +67,7 @@ const ManagerTab = () => {
     },
     {
       title: 'Tạm khóa',
-      value: managers.filter(m => m.status === 'inactive').length,
+      value: managers.filter(m => m.status === 'remove').length,
       icon: faChartLine,
       color: 'from-orange-500 to-red-500',
       subtitle: 'Manager tạm khóa'
@@ -74,19 +76,35 @@ const ManagerTab = () => {
 
   const handleCreateManager = async (accountData) => {
     try {
+      console.log('Creating manager with data:', accountData);
+      
+      // Kiểm tra accountData có tồn tại không
+      if (!accountData) {
+        console.error('accountData is undefined');
+        alert('Có lỗi xảy ra khi tạo Manager!');
+        return;
+      }
+
       // Tạo account mới với thông tin cơ bản
       const newAccount = {
         ...accountData,
-        AccountID: Date.now(),
+        accountID: Date.now(), // Đảm bảo có ID
+        AccountID: Date.now(), // Đảm bảo có ID
+        role_id: 3, // Manager role
+        status: 'active', // Đảm bảo status là active
         role_name: "Quản lý",
-        created_at: new Date().toISOString()
+        created_at: new Date().toISOString(),
+        createAt: new Date().toISOString()
       };
+
+      console.log('New account data:', newAccount);
 
       // Thêm vào danh sách managers
       setManagers(prev => [...prev, newAccount]);
 
       // Nếu có chọn khu vực quản lý, cập nhật Zone
       if (accountData.zone_id) {
+        console.log('Updating zone with ID:', accountData.zone_id);
         setZones(prevZones => 
           prevZones.map(zone => 
             zone.ZoneID === Number(accountData.zone_id) 
@@ -133,6 +151,22 @@ const ManagerTab = () => {
       );
       
       alert('Xóa Manager thành công!');
+    }
+  };
+
+  const fetchManagers = async () => {
+    try {
+      console.log('Fetching managers and zones...');
+      const [managersData, zonesData] = await Promise.all([
+        accountService.getManagers(),
+        zoneService.getZones()
+      ]);
+      console.log('Managers data:', managersData);
+      console.log('Zones data:', zonesData);
+      setManagers(managersData);
+      setZones(zonesData);
+    } catch (error) {
+      console.error('Error fetching managers and zones:', error);
     }
   };
 
@@ -190,7 +224,7 @@ const ManagerTab = () => {
               >
                 <option value="all">Tất cả trạng thái</option>
                 <option value="active">Hoạt động</option>
-                <option value="inactive">Tạm khóa</option>
+                <option value="remove">Tạm khóa</option>
               </select>
             </div>
           </div>
@@ -213,29 +247,29 @@ const ManagerTab = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredManagers.map((manager) => {
+              {filteredManagers.map((manager, index) => {
                 // Tìm khu vực mà Manager đang quản lý
                 const managedZone = zones.find(zone => zone.AccountID === manager.AccountID);
                 
                 return (
-                  <tr key={manager.AccountID} className="hover:bg-gray-50 transition-colors">
+                  <tr key={manager.accountID || `manager-${index}`} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
                         <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold mr-3">
-                          {manager.full_name?.charAt(0) || 'M'}
+                            {manager.fullName?.charAt(0) || 'M'}
                         </div>
                         <div>
-                          <div className="font-semibold text-gray-800">{manager.full_name}</div>
-                          <div className="text-sm text-gray-500">ID: {manager.AccountID}</div>
+                          <div className="font-semibold text-gray-800">{manager.fullName}</div>
+                          <div className="text-sm text-gray-500">ID: {manager.accountID}</div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 text-gray-700">{manager.email}</td>
-                    <td className="px-6 py-4 text-gray-700">{manager.phone_number}</td>
+                    <td className="px-6 py-4 text-gray-700">{manager.phoneNumber}</td>
                     <td className="px-6 py-4 text-gray-700">
                       {managedZone ? (
                         <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
-                          {managedZone.Zone_name}
+                          {managedZone.zoneName}
                         </span>
                       ) : (
                         <span className="text-gray-400 italic">Chưa phân công</span>
@@ -251,7 +285,7 @@ const ManagerTab = () => {
                       </span>
                     </td>
                     <td className="px-6 py-4 text-gray-700">
-                      {manager.created_at ? new Date(manager.created_at).toLocaleDateString('vi-VN') : 'N/A'}
+                      {manager.createAt ? new Date(manager.createAt).toLocaleString('vi-VN') : 'N/A'}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center space-x-2">
@@ -304,7 +338,7 @@ const ManagerTab = () => {
         show={showDetailModal}
         manager={selectedManager}
         onClose={() => setShowDetailModal(false)}
-        onSave={handleUpdateManager}
+        onSave={fetchManagers} // truyền hàm reload
       />
     </div>
   );

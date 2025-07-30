@@ -41,6 +41,11 @@ export const useWalletIcon = () => {
   };
 
   const formatBalance = (amount) => {
+    // Kiểm tra amount có tồn tại và là số không
+    if (!amount || isNaN(amount)) {
+      return '0';
+    }
+    
     if (amount >= 1000000) {
       return `${(amount / 1000000).toFixed(1)}M`;
     } else if (amount >= 1000) {

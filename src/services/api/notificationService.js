@@ -1,50 +1,41 @@
-import notifications from '../../mock/Notification';
-
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
-
 const notificationService = {
   getNotifications: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve(notifications);
-    }
-    const res = await fetch('/api/notifications');
-    return res.json();
+    const res = await fetch('/api/Notification');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách notification');
+    return data;
   },
   getNotificationById: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(notifications.find(n => n.NotificationID === id));
-    }
-    const res = await fetch(`/api/notifications/${id}`);
-    return res.json();
+    const res = await fetch(`/api/Notification/${id}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin notification');
+    return data;
   },
   createNotification: async (data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...data, NotificationID: notifications.length + 1 });
-    }
-    const res = await fetch('/api/notifications', {
+    const res = await fetch('/api/Notification', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Tạo notification thất bại');
+    return result;
   },
   updateNotification: async (id, data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...notifications.find(n => n.NotificationID === id), ...data });
-    }
-    const res = await fetch(`/api/notifications/${id}`, {
+    const res = await fetch(`/api/Notification/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Cập nhật notification thất bại');
+    return result;
   },
   deleteNotification: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(true);
-    }
-    const res = await fetch(`/api/notifications/${id}`, { method: 'DELETE' });
-    return res.ok;
+    const res = await fetch(`/api/Notification/${id}`, { method: 'DELETE' });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Xóa notification thất bại');
+    return result;
   }
 };
 

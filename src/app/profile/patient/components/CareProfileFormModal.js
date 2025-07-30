@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function CareProfileFormModal({ open, onClose, onSave, formData, onChange, onAvatarChange, loading, isEdit, zones = [], zoneDetails = [], user }) {
+export default function CareProfileFormModal({ open, onClose, onSave, formData, onChange, onAvatarChange, loading, isEdit, zones = [], zonedetails = [], user }) {
   if (!open) return null;
 
   const handleSubmit = (e) => {
@@ -9,13 +9,13 @@ export default function CareProfileFormModal({ open, onClose, onSave, formData, 
     const submitData = {
       ...formData,
       accountID: user?.accountID || user?.AccountID, // luôn lấy từ user hiện tại
-      zoneDetailID: parseInt(formData.zoneDetailID) || 1,
+      zonedetailid: parseInt(formData.zonedetailid) || 1,
       profileName: formData.profileName || formData.ProfileName,
       dateOfBirth: formData.dateOfBirth || formData.DateOfBirth,
       phoneNumber: formData.phoneNumber || formData.PhoneNumber,
       address: formData.address || formData.Address,
       image: formData.image || '/images/hero-bg.jpg', // truyền ảnh mặc định nếu rỗng
-      note: formData.note || formData.Note || 'string',
+              note: formData.note || formData.Note || '',
       status: formData.status || formData.Status || 'Active'
     };
     onSave(submitData);
@@ -66,12 +66,12 @@ export default function CareProfileFormModal({ open, onClose, onSave, formData, 
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">Khu vực</label>
-                  <select name="zoneDetailID" value={formData.zoneDetailID || formData.ZoneDetailID || ''} onChange={onChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm">
+                  <select name="zonedetailid" value={formData.zonedetailid || formData.ZonedetailID || ''} onChange={onChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm">
                     <option value="">Chọn khu vực</option>
-                    {zoneDetails && zoneDetails.length > 0 ? zoneDetails.map(zd => {
+                    {zonedetails && zonedetails.length > 0 ? zonedetails.map(zd => {
                       const zone = zones.find(z => z.zoneID === zd.zoneID);
                       return (
-                        <option key={zd.zoneDetailID} value={zd.zoneDetailID}>
+                        <option key={zd.zonedetailid} value={zd.zonedetailid}>
                           {zone ? zone.zoneName : 'Unknown Zone'} - {zd.name}
                         </option>
                       );

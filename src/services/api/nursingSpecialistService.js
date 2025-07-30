@@ -1,36 +1,58 @@
-import nursingSpecialists from '../../mock/NursingSpecialist';
-
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
-
 const nursingSpecialistService = {
   getNursingSpecialists: async () => {
-    if (USE_MOCK) return Promise.resolve(nursingSpecialists);
-    const res = await fetch('/api/nursing-specialists');
-    return res.json();
+    const res = await fetch('/api/nursingspecialists/getall');
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách nursing specialists');
+    return Array.isArray(data) ? data : data.nursingSpecialists || data || [];
   },
+  
   getNursingSpecialistById: async (id) => {
-    if (USE_MOCK) return Promise.resolve(nursingSpecialists.find(n => n.NursingID === id));
-    const res = await fetch(`/api/nursing-specialists/${id}`);
-    return res.json();
+    const res = await fetch(`/api/nursingspecialists/get/${id}`);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin nursing specialist');
+    return data;
   },
+  
   createNursingSpecialist: async (data) => {
-    if (USE_MOCK) return Promise.resolve({ ...data, NursingID: nursingSpecialists.length + 1 });
-    const res = await fetch('/api/nursing-specialists', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    const res = await fetch('/api/nursingspecialists', {
+      method: 'POST', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Tạo nursing specialist thất bại');
+    return result;
   },
+  
   updateNursingSpecialist: async (id, data) => {
-    if (USE_MOCK) return Promise.resolve({ ...nursingSpecialists.find(n => n.NursingID === id), ...data });
-    const res = await fetch(`/api/nursing-specialists/${id}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    const res = await fetch(`/api/nursingspecialists/update/${id}`, {
+      method: 'PUT', 
+      headers: { 'Content-Type': 'application/json' }, 
+      body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Cập nhật nursing specialist thất bại');
+    return result;
   },
+  
   deleteNursingSpecialist: async (id) => {
-    if (USE_MOCK) return Promise.resolve(true);
-    const res = await fetch(`/api/nursing-specialists/${id}`, { method: 'DELETE' });
-    return res.ok;
+    const res = await fetch(`/api/nursingspecialists/delete/${id}`, { 
+      method: 'DELETE' 
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Xóa nursing specialist thất bại');
+    return result;
+  },
+
+  changeNursingSpecialistStatus: async (id, status) => {
+    const res = await fetch(`/api/nursingspecialists/changestatus/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status })
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Thay đổi trạng thái nursing specialist thất bại');
+    return result;
   }
 };
 
