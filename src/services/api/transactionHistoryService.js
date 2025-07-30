@@ -2,7 +2,7 @@ const transactionHistoryService = {
   getTransactionHistories: async () => {
     const res = await fetch('/api/TransactionHistory');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách transaction history');
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách transaction histories');
     return data;
   },
   getTransactionHistoryById: async (id) => {

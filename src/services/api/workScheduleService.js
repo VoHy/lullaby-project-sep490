@@ -2,7 +2,7 @@ const workScheduleService = {
   getWorkSchedules: async () => {
     const res = await fetch('/api/WorkSchedule');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách work schedule');
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách work schedules');
     return data;
   },
   getWorkScheduleById: async (id) => {

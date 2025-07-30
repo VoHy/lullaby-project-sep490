@@ -4,6 +4,9 @@ export { default as accountService } from './accountService';
 // Blog Services
 export { default as blogService } from './blogService';
 
+// Blog Category Services
+export { default as blogCategoryService } from './blogCategoryService';
+
 // Booking Services
 export { default as bookingService } from './bookingService';
 
@@ -62,4 +65,7 @@ export { default as walletHistoryService } from './walletHistoryService';
 export { default as workScheduleService } from './workScheduleService';
 
 // Zone Services
-export { default as zoneService } from './zoneService'; 
+export { default as zoneService } from './zoneService';
+
+// Zone Detail Services
+export { default as zoneDetailService } from './zoneDetailService'; 

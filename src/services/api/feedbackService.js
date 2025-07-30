@@ -2,7 +2,7 @@ const feedbackService = {
   getFeedbacks: async () => {
     const res = await fetch('/api/FeedBack');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách feedback');
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách feedbacks');
     return data;
   },
   getFeedbackById: async (id) => {

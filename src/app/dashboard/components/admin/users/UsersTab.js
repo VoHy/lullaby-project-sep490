@@ -214,10 +214,10 @@ const UsersTab = () => {
                   </td>
                   <td className="px-6 py-4 text-gray-600">
                     <div className="text-sm">
-                      {new Date(account.createdAt || account.created_at).toLocaleDateString('vi-VN')}
+                      {new Date(account.createAt || account.createAt).toLocaleDateString('vi-VN')}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {new Date(account.createdAt || account.created_at).toLocaleTimeString('vi-VN')}
+                      {new Date(account.createAt || account.createAt).toLocaleTimeString('vi-VN')}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">

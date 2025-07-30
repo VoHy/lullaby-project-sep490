@@ -13,8 +13,8 @@ const customerTaskService = {
   },
   createCustomerTask: async (data) => {
     const res = await fetch('/api/CustomizeTask', {
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' }, 
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
     const result = await res.json();
@@ -23,8 +23,8 @@ const customerTaskService = {
   },
   updateCustomerTask: async (id, data) => {
     const res = await fetch(`/api/CustomizeTask/${id}`, {
-      method: 'PUT', 
-      headers: { 'Content-Type': 'application/json' }, 
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
     const result = await res.json();

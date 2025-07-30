@@ -1,74 +1,41 @@
 const walletHistoryService = {
-  // Lấy tất cả lịch sử giao dịch
   getWalletHistories: async () => {
-    const res = await fetch('/api/TransactionHistory');
+    const res = await fetch('/api/WalletHistory');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách lịch sử giao dịch');
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách wallet histories');
     return data;
   },
-
-  // Lấy lịch sử giao dịch theo WalletID
-  getWalletHistoryByWalletId: async (walletId) => {
-    const res = await fetch(`/api/TransactionHistory/wallet/${walletId}`);
+  getWalletHistoryById: async (id) => {
+    const res = await fetch(`/api/WalletHistory/${id}`);
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy lịch sử giao dịch theo wallet');
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin wallet history');
     return data;
   },
-
-  // Lấy lịch sử giao dịch theo TransactionHistoryID
-  getWalletHistoryById: async (transactionHistoryId) => {
-    const res = await fetch(`/api/TransactionHistory/${transactionHistoryId}`);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin lịch sử giao dịch');
-    return data;
-  },
-
-  // Tạo lịch sử giao dịch mới
-  createWalletHistory: async (walletHistoryData) => {
-    const res = await fetch('/api/TransactionHistory', {
+  createWalletHistory: async (data) => {
+    const res = await fetch('/api/WalletHistory', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(walletHistoryData)
+      body: JSON.stringify(data)
     });
     const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Tạo lịch sử giao dịch thất bại');
+    if (!res.ok) throw new Error(result.error || 'Tạo wallet history thất bại');
     return result;
   },
-
-  // Cập nhật lịch sử giao dịch
-  updateWalletHistory: async (transactionHistoryId, updateData) => {
-    const res = await fetch(`/api/TransactionHistory/${transactionHistoryId}`, {
+  updateWalletHistory: async (id, data) => {
+    const res = await fetch(`/api/WalletHistory/${id}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updateData)
+      body: JSON.stringify(data)
     });
     const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Cập nhật lịch sử giao dịch thất bại');
+    if (!res.ok) throw new Error(result.error || 'Cập nhật wallet history thất bại');
     return result;
   },
-
-  // Xóa lịch sử giao dịch
-  deleteWalletHistory: async (transactionHistoryId) => {
-    const res = await fetch(`/api/TransactionHistory/${transactionHistoryId}`, { method: 'DELETE' });
+  deleteWalletHistory: async (id) => {
+    const res = await fetch(`/api/WalletHistory/${id}`, { method: 'DELETE' });
     const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Xóa lịch sử giao dịch thất bại');
+    if (!res.ok) throw new Error(result.error || 'Xóa wallet history thất bại');
     return result;
-  },
-
-  // Lấy lịch sử giao dịch theo trạng thái
-  getWalletHistoriesByStatus: async (status) => {
-    const res = await fetch(`/api/TransactionHistory/status/${status}`);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy lịch sử giao dịch theo trạng thái');
-    return data;
-  },
-
-  // Lấy lịch sử giao dịch theo khoảng thời gian
-  getWalletHistoriesByDateRange: async (startDate, endDate) => {
-    const res = await fetch(`/api/TransactionHistory/date-range?startDate=${startDate}&endDate=${endDate}`);
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy lịch sử giao dịch theo khoảng thời gian');
-    return data;
   }
 };
 

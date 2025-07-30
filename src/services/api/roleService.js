@@ -1,11 +1,11 @@
 const roleService = {
-  getAllRoles: async () => {
+  getRoles: async () => {
     const res = await fetch('/api/roles/getall');
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách roles');
     return data;
   },
-  getRole: async (id) => {
+  getRoleById: async (id) => {
     const res = await fetch(`/api/roles/get/${id}`);
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin role');

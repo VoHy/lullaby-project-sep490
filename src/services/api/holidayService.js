@@ -2,7 +2,7 @@ const holidayService = {
   getHolidays: async () => {
     const res = await fetch('/api/Holiday');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách holiday');
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách holidays');
     return data;
   },
   getHolidayById: async (id) => {

@@ -2,7 +2,7 @@ const notificationService = {
   getNotifications: async () => {
     const res = await fetch('/api/Notification');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách notification');
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách notifications');
     return data;
   },
   getNotificationById: async (id) => {

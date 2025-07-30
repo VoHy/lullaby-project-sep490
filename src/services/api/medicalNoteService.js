@@ -2,7 +2,7 @@ const medicalNoteService = {
   getMedicalNotes: async () => {
     const res = await fetch('/api/MedicalNote');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách medical note');
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách medical notes');
     return data;
   },
   getMedicalNoteById: async (id) => {

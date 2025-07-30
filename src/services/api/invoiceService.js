@@ -2,7 +2,7 @@ const invoiceService = {
   getInvoices: async () => {
     const res = await fetch('/api/Invoice');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách invoice');
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách invoices');
     return data;
   },
   getInvoiceById: async (id) => {

@@ -13,8 +13,8 @@ const customerPackageService = {
   },
   createCustomerPackage: async (data) => {
     const res = await fetch('/api/CustomizePackage', {
-      method: 'POST', 
-      headers: { 'Content-Type': 'application/json' }, 
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
     const result = await res.json();
@@ -23,8 +23,8 @@ const customerPackageService = {
   },
   updateCustomerPackage: async (id, data) => {
     const res = await fetch(`/api/CustomizePackage/${id}`, {
-      method: 'PUT', 
-      headers: { 'Content-Type': 'application/json' }, 
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
     const result = await res.json();
