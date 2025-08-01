@@ -9,6 +9,26 @@ import {
 import CreateUserModal from './CreateUserModal';
 import UserDetailModal from './UserDetailModal';
 
+// Định nghĩa các trạng thái tài khoản đồng bộ
+const ACCOUNT_STATUSES = [
+  { value: 'all', label: 'Tất cả trạng thái' },
+  { value: 'active', label: 'Hoạt động' },
+  { value: 'banned', label: 'Bị cấm' },
+  { value: 'remove', label: 'Đã xóa' }
+];
+
+const STATUS_LABELS = {
+  active: 'Hoạt động',
+  banned: 'Bị cấm',
+  remove: 'Đã xóa'
+};
+
+const STATUS_STYLES = {
+  active: 'bg-green-100 text-green-700',
+  banned: 'bg-red-100 text-red-700',
+  remove: 'bg-gray-100 text-gray-700'
+};
+
 const StatCard = ({ title, value, icon, color, subtitle, trend }) => (
   <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-all duration-300">
     <div className="flex items-center justify-between mb-4">
@@ -55,12 +75,14 @@ const UsersTab = () => {
     setLoading(false);
   };
 
+  // Lọc tài khoản theo search và status đồng bộ
   const filteredAccounts = accounts.filter(account => {
     const name = account.fullName || account.full_name || '';
     const email = account.email || '';
     const matchesSearch = name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || account.status === statusFilter;
+    // Chỉ lọc đúng status được chọn, không gộp các status lại
+    const matchesStatus = statusFilter === 'all' ? true : account.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
 
@@ -83,11 +105,19 @@ const UsersTab = () => {
     },
     {
       title: 'Tạm khóa',
-      value: accounts.filter(acc => acc.status === 'inactive').length,
+      value: accounts.filter(acc => acc.status === 'banned').length,
       icon: faUserTimes,
-      color: 'from-red-500 to-pink-500',
+      color: 'from-yellow-500 to-yellow-300',
       subtitle: 'Đã tạm khóa',
       trend: -3
+    },
+    {
+      title: 'Bị cấm/Đã xóa',
+      value: accounts.filter(acc => acc.status === 'banned' || acc.status === 'remove').length,
+      icon: faUserTimes,
+      color: 'from-red-500 to-pink-500',
+      subtitle: 'Bị cấm & Đã xóa',
+      trend: -2
     },
     {
       title: 'Mới tháng này',
@@ -114,7 +144,7 @@ const UsersTab = () => {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {stats.slice(0, 4).map((stat, index) => (
           <StatCard key={index} {...stat} />
         ))}
       </div>
@@ -152,9 +182,9 @@ const UsersTab = () => {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
           >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="active">Hoạt động</option>
-            <option value="inactive">Tạm khóa</option>
+            {ACCOUNT_STATUSES.map((status) => (
+              <option key={status.value} value={status.value}>{status.label}</option>
+            ))}
           </select>
           <div className="text-sm text-gray-500 flex items-center">
             <FontAwesomeIcon icon={faClock} className="mr-2" />
@@ -207,17 +237,17 @@ const UsersTab = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                      account.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        STATUS_STYLES[account.status] || 'bg-red-100 text-red-700'
                     }`}>
-                      {account.status === 'active' ? 'Hoạt động' : 'Tạm khóa'}
+                      {STATUS_LABELS[account.status] || 'Không xác định'}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-gray-600">
                     <div className="text-sm">
-                      {new Date(account.createAt || account.createAt).toLocaleDateString('vi-VN')}
+                      {new Date(account.createAt || account.createdAt || account.create_at).toLocaleDateString('vi-VN')}
                     </div>
                     <div className="text-xs text-gray-500">
-                      {new Date(account.createAt || account.createAt).toLocaleTimeString('vi-VN')}
+                      {new Date(account.createAt || account.createdAt || account.create_at).toLocaleTimeString('vi-VN')}
                     </div>
                   </td>
                   <td className="px-6 py-4 text-center">

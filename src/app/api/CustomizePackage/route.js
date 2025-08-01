@@ -16,7 +16,7 @@ export async function GET() {
       try {
         const errorData = JSON.parse(errorText);
         return NextResponse.json(
-          { error: errorData.message || 'Không thể lấy danh sách customizepackage' },
+          { error: errorData.message || 'Không thể lấy danh sách customize package' },
           { status: response.status }
         );
       } catch (parseError) {

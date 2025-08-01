@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUserPlus, faUser, faEnvelope, faPhone, 
-  faSave, faTimes
+  faSave, faTimes, faImage
 } from '@fortawesome/free-solid-svg-icons';
 import accountService from '@/services/api/accountService';
-import zoneService from '@/services/api/zoneService';
 
 const CreateManagerModal = ({ show, onClose, onSubmit }) => {
   const [formData, setFormData] = useState({
@@ -14,31 +13,14 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
     phone_number: '',
     password: '',
     confirm_password: '',
-    zone_id: '', // Thêm field khu vực quản lý
+    avatar_url: '',
     role_id: 3, // Manager role
     status: 'active'
   });
 
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [zones, setZones] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  // Fetch zones từ API khi component mount
-  useEffect(() => {
-    if (show) {
-      setLoading(true);
-      zoneService.getZones()
-        .then(setZones)
-        .catch((error) => {
-          console.error('Error fetching zones:', error);
-          setZones([]);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    }
-  }, [show]);
+  const [hasSubmitted, setHasSubmitted] = useState(false);
 
   const validateForm = () => {
     const newErrors = {};
@@ -69,14 +51,6 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
       newErrors.confirm_password = 'Mật khẩu xác nhận không khớp';
     }
 
-    // Nếu chọn khu vực, kiểm tra khu vực đã có Manager chưa
-    if (formData.zone_id) {
-      const selectedZone = zones.find(z => z.ZoneID === Number(formData.zone_id));
-      if (selectedZone && selectedZone.AccountID) {
-        newErrors.zone_id = 'Khu vực này đã có Manager!';
-      }
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -84,11 +58,16 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
+    if (isSubmitting || hasSubmitted) {
+      return;
+    }
+    
     if (!validateForm()) {
       return;
     }
 
     setIsSubmitting(true);
+    setHasSubmitted(true);
     
     try {
       const data = {
@@ -96,26 +75,33 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
         email: formData.email,
         phoneNumber: formData.phone_number,
         password: formData.password,
-        avatarUrl: '',
-        zone_id: formData.zone_id || null, // Đảm bảo có giá trị
+        avatarUrl: formData.avatar_url || '',
       };
       
-      console.log('Submitting manager data:', data);
+      // Gọi API để tạo manager
+      const result = await accountService.registerManager(data);
       
-      await accountService.registerManager(data);
       alert('Tạo tài khoản manager thành công!');
       
+      // Gọi callback để refresh danh sách (không truyền data)
       if (onSubmit) {
-        console.log('Calling onSubmit with data:', data);
-        onSubmit(data); // Truyền data cho callback
+        onSubmit(); // Không truyền data để tránh duplicate request
       }
       
       handleClose();
     } catch (error) {
-      alert('Tạo tài khoản manager thất bại!');
-      console.error('Error creating manager:', error);
+      console.error('CreateManagerModal: Error creating manager:', error);
+      
+      // Hiển thị thông báo lỗi chi tiết
+      let errorMessage = 'Tạo tài khoản manager thất bại!';
+      if (error.message.includes('email address already exists')) {
+        errorMessage = 'Email đã tồn tại trong hệ thống. Vui lòng sử dụng email khác.';
+      }
+      
+      alert(errorMessage);
     } finally {
       setIsSubmitting(false);
+      setHasSubmitted(false);
     }
   };
 
@@ -133,7 +119,7 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
       phone_number: '',
       password: '',
       confirm_password: '',
-      zone_id: '',
+      avatar_url: '',
       role_id: 3,
       status: 'active'
     });
@@ -230,31 +216,21 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
               )}
             </div>
 
-            {/* Khu vực quản lý */}
+            {/* Avatar URL */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
-                Khu vực quản lý (không bắt buộc)
+                <FontAwesomeIcon icon={faImage} className="mr-2 text-purple-500" />
+                Avatar URL (không bắt buộc)
               </label>
-              <select
-                value={formData.zone_id}
-                onChange={(e) => handleInputChange('zone_id', e.target.value)}
-                className={`w-full px-4 py-3 border rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                  errors.zone_id ? 'border-red-500' : 'border-gray-300'
-                }`}
-              >
-                <option key="empty" value="">Chọn khu vực (có thể để trống)</option>
-                {zones.map((zone, index) => (
-                  <option key={`zone-${zone.ZoneID || index}`} value={zone.ZoneID} disabled={zone.AccountID}>
-                    {zone.Zone_name} - {zone.City}
-                    {zone.AccountID ? ' (Đã có Manager)' : ''}
-                  </option>
-                ))}
-              </select>
-              {errors.zone_id && (
-                <p className="text-red-500 text-sm mt-1">{errors.zone_id}</p>
-              )}
-              <p className="text-sm text-gray-500 mt-1">
-                Nếu chọn, khu vực này sẽ được phân công cho Manager mới. Mỗi khu vực chỉ có thể có một Manager.
+              <input
+                type="url"
+                value={formData.avatar_url}
+                onChange={(e) => handleInputChange('avatar_url', e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="https://example.com/avatar.jpg"
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                Để trống nếu không có avatar
               </p>
             </div>
           </div>
@@ -301,6 +277,14 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
             </div>
           </div>
 
+          {/* Thông báo về khu vực - di chuyển xuống dưới cùng */}
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-4">
+            <p className="text-sm text-blue-700">
+              <strong>Lưu ý:</strong> Khu vực quản lý sẽ được phân công sau khi tạo Manager. 
+              Admin có thể cập nhật khu vực cho Manager trong phần quản lý.
+            </p>
+          </div>
+
           {/* Buttons */}
           <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
             <button
@@ -335,4 +319,4 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
   );
 };
 
-export default CreateManagerModal; 
+export default CreateManagerModal;

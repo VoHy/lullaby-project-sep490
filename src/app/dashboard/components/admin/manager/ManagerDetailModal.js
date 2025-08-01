@@ -3,7 +3,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUser, faEnvelope, faPhone,
   faSave, faTimes, faEdit, faEye,
-  faUserMd, faShieldAlt, faClock
+  faUserMd, faShieldAlt, faClock, faExclamationCircle
 } from '@fortawesome/free-solid-svg-icons';
 import accountService from '@/services/api/accountService';
 import zoneService from '@/services/api/zoneService';
@@ -31,7 +31,6 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
           fullName: mgr.fullName || '',
           email: mgr.email || '',
           phoneNumber: mgr.phoneNumber || '',
-          zoneID: mgr.zoneID || '',
           status: mgr.status || 'active',
         });
       }).finally(() => setLoading(false));
@@ -74,10 +73,6 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
       // Sử dụng ID từ manager prop hoặc managerData
       const managerId = manager?.id || manager?.accountID || managerData?.id || managerData?.accountID;
       
-      console.log('Updating manager with ID:', managerId);
-      console.log('Manager data:', managerData);
-      console.log('Form data:', formData);
-      
       const updatedManager = {
         ...managerData,
         ...formData,
@@ -96,21 +91,18 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
         fullName: updatedManager.fullName || '',
         email: updatedManager.email || '',
         phoneNumber: updatedManager.phoneNumber || '',
-        zoneID: updatedManager.zoneID || '',
         status: updatedManager.status || 'active',
       });
       
       // Fetch lại thông tin manager mới nhất từ backend
       try {
         const freshManager = await accountService.getManagerById(managerId);
-        console.log('Fresh manager data:', freshManager);
         setManagerData(freshManager);
       } catch (fetchError) {
-        console.log('Could not fetch fresh data, using updated data:', fetchError);
+        // Ignore fetch error, use updated data
       }
       
       if (onSave) {
-        console.log('Calling onSave callback with managerId:', managerId, 'and updatedManager:', updatedManager);
         onSave(managerId, updatedManager);
       }
     } catch (error) {
@@ -128,15 +120,40 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
     }
   };
 
-  // Tìm khu vực mà Manager đang quản lý (giống logic trong ManagerTab.js)
+  // Tìm khu vực mà Manager đang quản lý (đồng bộ với ManagerTab.js)
   const getManagedZone = (managerId) => {
-    const zone = zones.find(z => z.accountID === managerId);
+    const zone = zones.find(z => z.managerID === managerId);
     return zone;
   };
 
-  const getZoneName = (zoneId) => {
-    const zone = zones.find(z => z.zoneID === Number(zoneId));
-    return zone ? zone.zoneName : 'Chưa có khu vực';
+  // Kiểm tra manager đã được khôi phục
+  const isRestoredManager = (manager) => {
+    return manager?.deletedAt && manager?.status === 'active';
+  };
+
+  // Hàm lấy trạng thái hiển thị cho manager
+  const getManagerStatus = (manager) => {
+    if (isRestoredManager(manager)) {
+      return {
+        text: 'Đã khôi phục',
+        color: 'bg-yellow-100 text-yellow-700',
+        description: 'Manager này đã được khôi phục sau khi xóa'
+      };
+    }
+    
+    if (manager?.status === 'active') {
+      return {
+        text: 'Hoạt động',
+        color: 'bg-green-100 text-green-700',
+        description: 'Manager đang hoạt động bình thường'
+      };
+    }
+    
+    return {
+      text: 'Tạm khóa',
+      color: 'bg-red-100 text-red-700',
+      description: 'Manager đã bị tạm khóa'
+    };
   };
 
   const getStatusText = (status) => {
@@ -146,8 +163,8 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
   if (!show || !manager) return null;
   if (loading || !managerData) return (<div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"><div className="bg-white p-8 rounded-xl">Đang tải dữ liệu...</div></div>);
 
-  // Lấy khu vực quản lý hiện tại của Manager
-  const currentManagedZone = getManagedZone(managerData.AccountID);
+  // Lấy khu vực quản lý hiện tại của Manager (đồng bộ với ManagerTab)
+  const currentManagedZone = getManagedZone(managerData.accountID);
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
@@ -187,9 +204,9 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
                 <p className="text-gray-600">{managerData.email}</p>
                 <div className="flex items-center space-x-4 mt-2">
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                    managerData.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-                  }`}>
-                    {getStatusText(managerData.status)}
+                    getManagerStatus(managerData).color
+                  }`} title={getManagerStatus(managerData).description}>
+                    {getManagerStatus(managerData).text}
                   </span>
                   <span className="px-3 py-1 rounded-full text-xs font-semibold bg-blue-100 text-blue-700">
                     Manager
@@ -291,25 +308,12 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Khu vực quản lý
                   </label>
-                  {isEditing ? (
-                    <select
-                      value={formData.zoneID}
-                      onChange={(e) => handleInputChange('zoneID', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    >
-                      <option value="">Chọn khu vực (có thể để trống)</option>
-                      {zones.map(zone => (
-                        <option key={zone.zoneID} value={zone.zoneID} disabled={zone.accountID && zone.accountID !== managerData.accountID}>
-                          {zone.zoneName} - {zone.city}
-                          {zone.accountID && zone.accountID !== managerData.accountID ? ' (Đã có Manager)' : ''}
-                        </option>
-                      ))}
-                    </select>
-                  ) : (
-                    <p className="px-4 py-3 bg-gray-50 rounded-xl">
-                      {currentManagedZone ? currentManagedZone.zoneName : 'Chưa có khu vực'}
-                    </p>
-                  )}
+                  <p className="px-4 py-3 bg-gray-50 rounded-xl">
+                    {currentManagedZone ? currentManagedZone.zoneName : 'Chưa phân công'}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    * Khu vực quản lý chỉ có thể thay đổi bởi Admin
+                  </p>
                 </div>
 
                 <div>
@@ -350,6 +354,21 @@ const ManagerDetailModal = ({ show, manager, onClose, onSave }) => {
                     {managerData.updatedAt ? new Date(managerData.updatedAt).toLocaleString('vi-VN') : 'Chưa cập nhật'}
                   </p>
                 </div>
+
+                {/* Thông tin khôi phục cho manager đã khôi phục */}
+                {isRestoredManager(managerData) && (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-xl p-4">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <FontAwesomeIcon icon={faExclamationCircle} className="text-yellow-600" />
+                      <span className="text-sm font-semibold text-yellow-800">Thông tin khôi phục</span>
+                    </div>
+                    <div className="text-sm text-yellow-700 space-y-1">
+                      <p>• Manager này đã được khôi phục sau khi bị xóa</p>
+                      <p>• Ngày xóa: {new Date(managerData.deletedAt).toLocaleString('vi-VN')}</p>
+                      <p>• Lưu ý: Manager này có thể không thể xóa lại được</p>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
           </div>

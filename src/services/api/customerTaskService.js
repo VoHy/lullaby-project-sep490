@@ -1,5 +1,5 @@
 import { createService } from './serviceFactory';
 
-const customerTaskService = createService('CustomizeTask', 'CustomerTask');
+const customerTaskService = createService('CustomizeTask', 'CustomerTask', true);
 
 export default customerTaskService; 

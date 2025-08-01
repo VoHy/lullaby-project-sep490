@@ -3,10 +3,26 @@ import { NextResponse } from 'next/server';
 export async function GET(request, { params }) {
   try {
     const { id } = await params;
-    const res = await fetch(`http://localhost:5294/api/zonedetails/get/${id}`);
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
+    
+    const res = await fetch(`${backendUrl}/api/zonedetails/get/${id}`);
+    
+    if (!res.ok) {
+      const errorText = await res.text();
+      console.error('Backend error:', errorText);
+      return NextResponse.json(
+        { error: 'Không thể lấy thông tin chi tiết khu vực' },
+        { status: res.status }
+      );
+    }
+    
     const data = await res.json();
-    return Response.json(data, { status: res.status });
+    return NextResponse.json(data, { status: res.status });
   } catch (error) {
-    return Response.json({ error: 'Không thể lấy thông tin zone detail' }, { status: 500 });
+    console.error('Error fetching zone detail:', error);
+    return NextResponse.json(
+      { error: 'Lỗi kết nối đến backend' },
+      { status: 500 }
+    );
   }
 } 

@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
-  faUserMd, faPlus, faEye, faEdit, faTrash, faSearch, faFilter,
-  faUsers, faChartLine
+  faUserMd, faPlus, faEye, faTrash, faSearch, faFilter,
+  faUsers, faChartLine, faExclamationTriangle, faExclamationCircle
 } from '@fortawesome/free-solid-svg-icons';
 import CreateManagerModal from './CreateManagerModal';
 import ManagerDetailModal from './ManagerDetailModal';
@@ -24,6 +24,12 @@ const StatCard = ({ title, value, icon, color, subtitle }) => (
   </div>
 );
 
+const MANAGER_STATUS = {
+  ACTIVE: 'active',
+  BANNED: 'banned',
+  REMOVE: 'remove',
+};
+
 const ManagerTab = () => {
   const [managers, setManagers] = useState([]);
   const [zones, setZones] = useState([]);
@@ -34,25 +40,88 @@ const ManagerTab = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [showDeletedNotification, setShowDeletedNotification] = useState(false);
+  const [deletedManagerName, setDeletedManagerName] = useState('');
 
   useEffect(() => {
-    // Lấy managers và zones từ API thật
-    accountService.getManagers().then(data => {
-      setManagers(data);
-    }).catch(() => setManagers([]));
-    
-    zoneService.getZones().then(data => {
-      setZones(data);
-    }).catch(() => setZones([]));
-    
+    fetchManagers();
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
+  const fetchManagers = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      const [managersData, zonesData] = await Promise.all([
+        accountService.getManagers(),
+        zoneService.getZones()
+      ]);
+      
+      // Hiển thị tất cả manager trừ những manager đã bị xóa (remove)
+      const visibleManagers = managersData.filter(manager => manager.status !== MANAGER_STATUS.REMOVE);
+      setManagers(visibleManagers);
+      setZones(zonesData);
+    } catch (error) {
+      console.error('Error fetching managers and zones:', error);
+      setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Hàm kiểm tra manager đã được khôi phục (có deletedAt nhưng status active)
+  const isRestoredManager = (manager) => {
+    return manager.deletedAt && manager.status === MANAGER_STATUS.ACTIVE;
+  };
+
+  // Hàm lấy trạng thái hiển thị cho manager
+  const getManagerStatus = (manager) => {
+    if (isRestoredManager(manager)) {
+      return {
+        text: 'Đã khôi phục',
+        color: 'bg-yellow-100 text-yellow-700',
+        description: 'Manager này đã được khôi phục sau khi xóa',
+        icon: faExclamationCircle
+      };
+    }
+    if (manager.status === MANAGER_STATUS.ACTIVE) {
+      return {
+        text: 'Hoạt động',
+        color: 'bg-green-100 text-green-700',
+        description: 'Manager đang hoạt động bình thường',
+        icon: faUserMd
+      };
+    }
+    if (manager.status === MANAGER_STATUS.BANNED) {
+      return {
+        text: 'Bị cấm',
+        color: 'bg-red-100 text-red-700',
+        description: 'Manager đã bị cấm (banned)',
+        icon: faExclamationTriangle
+      };
+    }
+    // Trường hợp khác (dự phòng)
+    return {
+      text: manager.status,
+      color: 'bg-gray-100 text-gray-700',
+      description: 'Trạng thái không xác định',
+      icon: faExclamationTriangle
+    };
+  };
+
   const filteredManagers = managers.filter(manager => {
     const matchesSearch = manager.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       manager.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || manager.status === statusFilter;
+    let matchesStatus = true;
+    if (statusFilter === 'all') {
+      matchesStatus = true;
+    } else {
+      matchesStatus = manager.status === statusFilter;
+    }
     return matchesSearch && matchesStatus;
   });
 
@@ -62,62 +131,40 @@ const ManagerTab = () => {
       value: managers.length,
       icon: faUserMd,
       color: 'from-blue-500 to-cyan-500',
-      subtitle: 'Tất cả Manager'
+      subtitle: 'Tổng số Manager (trừ đã xóa)'
     },
     {
       title: 'Đang hoạt động',
-      value: managers.filter(m => m.status === 'active').length,
+      value: managers.filter(m => m.status === MANAGER_STATUS.ACTIVE && !m.deletedAt).length,
       icon: faUsers,
       color: 'from-green-500 to-emerald-500',
-      subtitle: 'Manager hoạt động'
+      subtitle: 'Manager hoạt động bình thường'
     },
     {
-      title: 'Tạm khóa',
-      value: managers.filter(m => m.status === 'remove').length,
+      title: 'Đã khôi phục',
+      value: managers.filter(m => isRestoredManager(m)).length,
       icon: faChartLine,
+      color: 'from-yellow-500 to-orange-500',
+      subtitle: 'Manager đã khôi phục sau xóa'
+    },
+    {
+      title: 'Bị cấm',
+      value: managers.filter(m => m.status === MANAGER_STATUS.BANNED).length,
+      icon: faExclamationTriangle,
       color: 'from-orange-500 to-red-500',
-      subtitle: 'Manager tạm khóa'
+      subtitle: 'Manager bị cấm (banned)'
     }
   ];
 
-  const handleCreateManager = async (accountData) => {
+  const handleCreateManager = async () => {
     try {
-      // Kiểm tra accountData có tồn tại không
-      if (!accountData) {
-        console.error('accountData is undefined');
-        alert('Có lỗi xảy ra khi tạo Manager!');
-        return;
-      }
-
-      // Tạo account mới với thông tin cơ bản
-      const newAccount = {
-        ...accountData,
-        accountID: Date.now(), // Đảm bảo có ID
-        role_id: 3, // Manager role
-        status: 'active', // Đảm bảo status là active
-        role_name: "Quản lý",
-        created_at: new Date().toISOString(),
-        createAt: new Date().toISOString()
-      };
-
-      // Thêm vào danh sách managers
-      setManagers(prev => [...prev, newAccount]);
-
-      // Nếu có chọn khu vực quản lý, cập nhật Zone
-      if (accountData.zone_id) {
-        setZones(prevZones => 
-          prevZones.map(zone => 
-            zone.zoneID === Number(accountData.zone_id) 
-              ? { ...zone, accountID: newAccount.accountID }
-              : zone
-          )
-        );
-      }
-
-      alert('Tạo Manager thành công!');
+      setSaving(true);
+      await fetchManagers();
     } catch (error) {
-      console.error('Error creating manager:', error);
-      alert('Có lỗi xảy ra khi tạo Manager!');
+      console.error('ManagerTab: Error in handleCreateManager:', error);
+      alert('Có lỗi xảy ra khi refresh danh sách Manager!');
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -128,47 +175,101 @@ const ManagerTab = () => {
 
   const handleUpdateManager = async (managerId, updatedData) => {
     try {
-      setManagers(prev => 
-        prev.map(m => m.accountID === managerId ? { ...m, ...updatedData } : m)
-      );
-
+      setSaving(true);
+      await accountService.updateManager(managerId, updatedData);
+      await fetchManagers();
       alert('Cập nhật Manager thành công!');
     } catch (error) {
       console.error('Error updating manager:', error);
-      alert('Có lỗi xảy ra khi cập nhật Manager!');
+      alert(`Có lỗi xảy ra khi cập nhật Manager: ${error.message}`);
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDeleteManager = (managerId) => {
-    if (confirm('Bạn có chắc chắn muốn xóa Manager này?')) {
-      setManagers(prev => prev.filter(m => m.accountID !== managerId));
-      
-      // Xóa zone assignment khi xóa Manager
-      setZones(prevZones => 
-        prevZones.map(zone => 
-          zone.accountID === managerId ? { ...zone, accountID: null } : zone
-        )
-      );
-      
-      alert('Xóa Manager thành công!');
+  const handleDeleteManager = async (managerId) => {
+    const managerToDelete = managers.find(m => m.accountID === managerId);
+    const managerName = managerToDelete?.fullName || 'Manager';
+    const isRestored = isRestoredManager(managerToDelete);
+
+    let confirmMessage = `Bạn có chắc chắn muốn xóa Manager "${managerName}"? Hành động này sẽ đánh dấu Manager là đã xóa (soft delete).`;
+
+    if (isRestored) {
+      confirmMessage = `Manager "${managerName}" đã được khôi phục trước đó. Bạn có chắc chắn muốn xóa lại? Lưu ý: Manager này có thể không thể xóa được do đã bị xóa trước đó.`;
+    }
+
+    if (confirm(confirmMessage)) {
+      try {
+        setSaving(true);
+        await accountService.deleteAccount(managerId);
+        await fetchManagers();
+        setDeletedManagerName(managerName);
+        setShowDeletedNotification(true);
+        setTimeout(() => {
+          setShowDeletedNotification(false);
+          setDeletedManagerName('');
+        }, 5000);
+      } catch (error) {
+        console.error('Error deleting manager:', error);
+        let errorMessage = error.message;
+        if (error.message.includes('Endpoint DELETE không tồn tại')) {
+          errorMessage = 'Backend chưa hỗ trợ endpoint DELETE. Vui lòng liên hệ admin để cập nhật API.';
+        } else if (error.message.includes('does not exist or has been deleted')) {
+          errorMessage = 'Manager này đã được khôi phục sau khi xóa và không thể xóa lại. Vui lòng liên hệ admin để xử lý.';
+        }
+        alert(`Có lỗi xảy ra khi xóa Manager: ${errorMessage}`);
+      } finally {
+        setSaving(false);
+      }
     }
   };
 
-  const fetchManagers = async () => {
-    try {
-      const [managersData, zonesData] = await Promise.all([
-        accountService.getManagers(),
-        zoneService.getZones()
-      ]);
-      setManagers(managersData);
-      setZones(zonesData);
-    } catch (error) {
-      console.error('Error fetching managers and zones:', error);
-    }
-  };
+  // Loading state
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Đang tải dữ liệu Manager...</p>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-red-500 text-6xl mb-4">⚠️</div>
+        <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button 
+          onClick={fetchManagers} 
+          className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
+        >
+          Thử lại
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
+      {/* Success Notification */}
+      {showDeletedNotification && (
+        <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-4 rounded-lg shadow-lg flex items-center space-x-3 animate-fade-in">
+          <FontAwesomeIcon icon={faExclamationTriangle} className="text-xl" />
+          <div>
+            <div className="font-semibold">Xóa thành công!</div>
+            <div className="text-sm">Manager "{deletedManagerName}" đã được đánh dấu là đã xóa.</div>
+          </div>
+          <button 
+            onClick={() => setShowDeletedNotification(false)}
+            className="ml-4 text-white hover:text-gray-200"
+          >
+            ×
+          </button>
+        </div>
+      )}
+
       {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div>
@@ -181,16 +282,17 @@ const ManagerTab = () => {
           </div>
           <button
             onClick={() => setShowCreateModal(true)}
-            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300 flex items-center"
+            disabled={saving}
+            className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FontAwesomeIcon icon={faPlus} className="mr-2" />
-            Thêm Manager
+            {saving ? 'Đang xử lý...' : 'Thêm Manager'}
           </button>
         </div>
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => (
           <StatCard key={index} {...stat} />
         ))}
@@ -220,8 +322,8 @@ const ManagerTab = () => {
                 className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               >
                 <option value="all">Tất cả trạng thái</option>
-                <option value="active">Hoạt động</option>
-                <option value="remove">Tạm khóa</option>
+                <option value={MANAGER_STATUS.ACTIVE}>Hoạt động</option>
+                <option value={MANAGER_STATUS.BANNED}>Bị cấm</option>
               </select>
             </div>
           </div>
@@ -246,7 +348,6 @@ const ManagerTab = () => {
             <tbody className="divide-y divide-gray-200">
               {filteredManagers.map((manager, index) => {
                 // Tìm khu vực mà Manager đang quản lý
-                // Tạm thời sử dụng managerID vì backend chưa fix accountID
                 const managedZone = zones.find(zone => zone.managerID === manager.accountID);
                 
                 return (
@@ -274,16 +375,23 @@ const ManagerTab = () => {
                       )}
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        manager.status === 'active' 
-                          ? 'bg-green-100 text-green-700' 
-                          : 'bg-red-100 text-red-700'
-                      }`}>
-                        {manager.status === 'active' ? 'Hoạt động' : 'Tạm khóa'}
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold flex items-center space-x-1 ${
+                        getManagerStatus(manager).color
+                      }`} title={getManagerStatus(manager).description}>
+                        {getManagerStatus(manager).icon && (
+                          <FontAwesomeIcon icon={getManagerStatus(manager).icon} className="text-xs" />
+                        )}
+                        <span>{getManagerStatus(manager).text}</span>
                       </span>
                     </td>
                     <td className="px-6 py-4 text-gray-700">
                       {manager.createAt ? new Date(manager.createAt).toLocaleString('vi-VN') : 'N/A'}
+                      {isRestoredManager(manager) && (
+                        <div className="text-xs text-yellow-600 mt-1">
+                          <FontAwesomeIcon icon={faExclamationCircle} className="mr-1" />
+                          Đã xóa: {new Date(manager.deletedAt).toLocaleString('vi-VN')}
+                        </div>
+                      )}
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center justify-center space-x-2">
@@ -295,16 +403,10 @@ const ManagerTab = () => {
                           <FontAwesomeIcon icon={faEye} />
                         </button>
                         <button
-                          onClick={() => handleViewDetail(manager)}
-                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors"
-                          title="Chỉnh sửa"
-                        >
-                          <FontAwesomeIcon icon={faEdit} />
-                        </button>
-                        <button
                           onClick={() => handleDeleteManager(manager.accountID)}
-                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                          title="Xóa"
+                          disabled={saving}
+                          className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
+                          title="Xóa (Soft Delete)"
                         >
                           <FontAwesomeIcon icon={faTrash} />
                         </button>
@@ -336,7 +438,7 @@ const ManagerTab = () => {
         show={showDetailModal}
         manager={selectedManager}
         onClose={() => setShowDetailModal(false)}
-        onSave={fetchManagers} // truyền hàm reload
+        onSave={fetchManagers}
       />
     </div>
   );

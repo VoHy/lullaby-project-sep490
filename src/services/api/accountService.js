@@ -53,6 +53,17 @@ const accountService = {
     return result;
   },
 
+  // === DELETE METHOD ===
+  deleteAccount: async (id) => {
+    const res = await fetch(`/api/accounts/delete/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Xóa tài khoản thất bại');
+    return result;
+  },
+
   // === GET SPECIFIC ACCOUNTS ===
   getManagers: async () => {
     const res = await fetch('/api/accounts/managers', {
