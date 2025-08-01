@@ -140,13 +140,13 @@ const AdminZoneTab = () => {
       if (zoneForm.zoneID) {
         // Update existing zone - gửi đầy đủ fields theo API
         try {
-          await zoneService.updateZone(zoneForm.zoneID, {
+        await zoneService.updateZone(zoneForm.zoneID, {
             zoneID: zoneForm.zoneID,
-            zoneName: zoneForm.zoneName.trim(),
-            city: zoneForm.city.trim(),
+          zoneName: zoneForm.zoneName.trim(),
+          city: zoneForm.city.trim(),
             managerID: managerID
-          });
-          alert('Cập nhật khu vực thành công!');
+        });
+        alert('Cập nhật khu vực thành công!');
         } catch (error) {
           // Bỏ qua lỗi backend và cứ refresh data luôn vì biết chắc update thành công
           console.log('Backend trả về lỗi nhưng thực chất update thành công, bỏ qua lỗi và refresh data...');
@@ -154,13 +154,13 @@ const AdminZoneTab = () => {
       } else {
         // Create new zone - gửi đầy đủ fields theo API
         try {
-          await zoneService.createZone({
+        await zoneService.createZone({
             zoneID: 0, // API yêu cầu zoneID, có thể là 0 cho create
-            zoneName: zoneForm.zoneName.trim(),
-            city: zoneForm.city.trim(),
+          zoneName: zoneForm.zoneName.trim(),
+          city: zoneForm.city.trim(),
             managerID: managerID
-          });
-          alert('Tạo khu vực thành công!');
+        });
+        alert('Tạo khu vực thành công!');
         } catch (error) {
           // Bỏ qua lỗi backend và cứ refresh data luôn vì biết chắc tạo thành công
           console.log('Backend trả về lỗi nhưng thực chất tạo thành công, bỏ qua lỗi và refresh data...');
@@ -220,14 +220,14 @@ const AdminZoneTab = () => {
       if (zonedetailForm.zoneDetailID) {
         // Update existing zone detail - gửi đầy đủ fields theo API
         try {
-          const updateData = {
+        const updateData = {
             zoneDetailID: zonedetailForm.zoneDetailID,
             zoneID: parseInt(zonedetailForm.zoneID),
-            name: zonedetailForm.name.trim(),
-            note: zonedetailForm.note.trim()
-          };
-          await zoneDetailService.updateZoneDetail(zonedetailForm.zoneDetailID, updateData);
-          alert('Cập nhật chi tiết khu vực thành công!');
+          name: zonedetailForm.name.trim(),
+          note: zonedetailForm.note.trim()
+        };
+        await zoneDetailService.updateZoneDetail(zonedetailForm.zoneDetailID, updateData);
+        alert('Cập nhật chi tiết khu vực thành công!');
         } catch (error) {
           // Bỏ qua lỗi backend và cứ refresh data luôn vì biết chắc update thành công
           console.log('Backend trả về lỗi nhưng thực chất update thành công, bỏ qua lỗi và refresh data...');
@@ -235,13 +235,13 @@ const AdminZoneTab = () => {
       } else {
         // Create new zone detail - gửi đầy đủ fields theo API
         try {
-          await zoneDetailService.createZoneDetail({
+        await zoneDetailService.createZoneDetail({
             zoneDetailID: 0, // API yêu cầu zoneDetailID, có thể là 0 cho create
-            zoneID: parseInt(zonedetailForm.zoneID),
-            name: zonedetailForm.name.trim(),
-            note: zonedetailForm.note.trim()
-          });
-          alert('Tạo chi tiết khu vực thành công!');
+          zoneID: parseInt(zonedetailForm.zoneID),
+          name: zonedetailForm.name.trim(),
+          note: zonedetailForm.note.trim()
+        });
+        alert('Tạo chi tiết khu vực thành công!');
         } catch (error) {
           // Bỏ qua lỗi backend và cứ refresh data luôn vì biết chắc tạo thành công
           console.log('Backend trả về lỗi nhưng thực chất tạo thành công, bỏ qua lỗi và refresh data...');

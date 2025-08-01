@@ -27,7 +27,6 @@ const UserDetailModal = ({ show, account, onClose, onSave }) => {
     { label: "Số điện thoại", value: account.phone_number || account.phoneNumber || '-' },
     { label: "Ngày tạo", value: account.createAt || account.createAt || '-' },
     { label: "Trạng thái", value: status === 'active' ? 'Hoạt động' : 'Tạm khóa' },
-    { label: "Vai trò", value: account.role_name || account.roleName || '-' },
   ];
 
   return (

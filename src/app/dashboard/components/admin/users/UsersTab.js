@@ -17,6 +17,15 @@ const ACCOUNT_STATUSES = [
   { value: 'remove', label: 'Đã xóa' }
 ];
 
+// Định nghĩa các loại tài khoản theo role
+const ACCOUNT_ROLES = [
+  { value: 'all', label: 'Tất cả vai trò' },
+  { value: '1', label: 'Admin' },
+  { value: '2', label: 'Nursing Specialist' },
+  { value: '3', label: 'Manager' },
+  { value: '4', label: 'Customer' }
+];
+
 const STATUS_LABELS = {
   active: 'Hoạt động',
   banned: 'Bị cấm',
@@ -27,6 +36,20 @@ const STATUS_STYLES = {
   active: 'bg-green-100 text-green-700',
   banned: 'bg-red-100 text-red-700',
   remove: 'bg-gray-100 text-gray-700'
+};
+
+const ROLE_LABELS = {
+  '1': 'Admin',
+  '2': 'Nursing Specialist',
+  '3': 'Manager', 
+  '4': 'Customer'
+};
+
+const ROLE_STYLES = {
+  '1': 'bg-red-100 text-red-700',
+  '2': 'bg-purple-100 text-purple-700',
+  '3': 'bg-blue-100 text-blue-700',
+  '4': 'bg-green-100 text-green-700'
 };
 
 const StatCard = ({ title, value, icon, color, subtitle, trend }) => (
@@ -52,6 +75,7 @@ const UsersTab = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [roleFilter, setRoleFilter] = useState('all');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [detailAccount, setDetailAccount] = useState(null);
@@ -70,6 +94,7 @@ const UsersTab = () => {
       const data = await res.json();
       setAccounts(data);
     } catch (err) {
+      console.error('Error fetching accounts:', err);
       setAccounts([]);
     }
     setLoading(false);
@@ -83,7 +108,9 @@ const UsersTab = () => {
       email.toLowerCase().includes(searchTerm.toLowerCase());
     // Chỉ lọc đúng status được chọn, không gộp các status lại
     const matchesStatus = statusFilter === 'all' ? true : account.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    // So sánh roleID với roleFilter, chuyển đổi kiểu dữ liệu nếu cần
+    const matchesRole = roleFilter === 'all' ? true : String(account.roleID) === roleFilter;
+    return matchesSearch && matchesStatus && matchesRole;
   });
 
   const stats = [
@@ -94,6 +121,38 @@ const UsersTab = () => {
       color: 'from-blue-500 to-cyan-500',
       subtitle: 'Tất cả người dùng',
       trend: 12
+    },
+    {
+      title: 'Admin',
+      value: accounts.filter(acc => String(acc.roleID) === '1').length,
+      icon: faUserPlus,
+      color: 'from-red-500 to-pink-500',
+      subtitle: 'Admin',
+      trend: 8
+    },
+    {
+      title: 'Nursing Specialist',
+      value: accounts.filter(acc => String(acc.roleID) === '2').length,
+      icon: faUserPlus,
+      color: 'from-purple-500 to-pink-500',
+      subtitle: 'Chuyên gia điều dưỡng',
+      trend: 8
+    },
+    {
+      title: 'Manager',
+      value: accounts.filter(acc => String(acc.roleID) === '3').length,
+      icon: faUserCheck,
+      color: 'from-blue-500 to-cyan-500',
+      subtitle: 'Quản lý khu vực',
+      trend: 5
+    },
+    {
+      title: 'Customer',
+      value: accounts.filter(acc => String(acc.roleID) === '4').length,
+      icon: faUsers,
+      color: 'from-green-500 to-emerald-500',
+      subtitle: 'Khách hàng',
+      trend: 15
     },
     {
       title: 'Hoạt động',
@@ -144,7 +203,7 @@ const UsersTab = () => {
     <div className="space-y-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.slice(0, 4).map((stat, index) => (
+        {stats.map((stat, index) => (
           <StatCard key={index} {...stat} />
         ))}
       </div>
@@ -166,8 +225,8 @@ const UsersTab = () => {
       </div>
       {/* Search and Filter */}
       <div className="bg-white p-6 rounded-2xl shadow-lg">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1 relative">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4">
+          <div className="lg:col-span-2 relative">
             <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
             <input
               type="text"
@@ -186,10 +245,19 @@ const UsersTab = () => {
               <option key={status.value} value={status.value}>{status.label}</option>
             ))}
           </select>
-          <div className="text-sm text-gray-500 flex items-center">
-            <FontAwesomeIcon icon={faClock} className="mr-2" />
-            {currentTime.toLocaleTimeString('vi-VN')}
-          </div>
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          >
+            {ACCOUNT_ROLES.map((role) => (
+              <option key={role.value} value={role.value}>{role.label}</option>
+            ))}
+          </select>
+        </div>
+        <div className="mt-4 text-sm text-gray-500 flex items-center justify-end">
+          <FontAwesomeIcon icon={faClock} className="mr-2" />
+          {currentTime.toLocaleTimeString('vi-VN')}
         </div>
       </div>
       {/* Users Table */}
@@ -231,8 +299,10 @@ const UsersTab = () => {
                     </div>
                   </td>
                   <td className="px-6 py-4">
-                    <span className="px-3 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                      {account.roleName || account.role_name || account.roleID || account.role_id || 'User'}
+                    <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                        ROLE_STYLES[String(account.roleID)] || 'bg-red-100 text-red-700'
+                    }`}>
+                      {ROLE_LABELS[String(account.roleID)] || 'Không xác định'}
                     </span>
                   </td>
                   <td className="px-6 py-4">
