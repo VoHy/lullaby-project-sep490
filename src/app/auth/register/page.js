@@ -3,7 +3,6 @@
 import { useState, useContext } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import apiService from '@/services/api/apiService';
 import Image from 'next/image';
 import { motion } from "framer-motion";
 import { AuthContext } from "../../../context/AuthContext";
@@ -11,10 +10,12 @@ import { AuthContext } from "../../../context/AuthContext";
 export default function RegisterPage() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    name: '',
+    fullName: '',
+    phoneNumber: '',
     email: '',
     password: '',
     confirmPassword: '',
+    avatarUrl: '',
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -47,75 +48,68 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-      const response = await apiService.auth.register({
-        name: formData.name,
-        email: formData.email,
-        password: formData.password,
-      });
-      if (response.user) {
-        login(response.user);
-        // Chuyển hướng dựa trên vai trò của người dùng
-        const role = response.user.role;
-        if (role === 'admin') {
+              // Sử dụng API thật
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            fullName: formData.fullName,
+            phoneNumber: formData.phoneNumber,
+            email: formData.email,
+            password: formData.password,
+            avatarUrl: formData.avatarUrl || ''
+          })
+        });
+
+      const data = await response.json();
+      console.log('Registration response:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Đăng ký thất bại');
+      }
+
+      if (data.account) {
+        login(data.account);
+
+        // Hiển thị thông báo thành công
+        alert('Đăng ký thành công! Chào mừng bạn đến với Lullaby.');
+
+        // Lấy role từ account
+        const roleID = data.account.roleID;
+        console.log('User roleID:', roleID);
+
+        // Chuyển hướng dựa trên roleID
+        if (roleID === 1) {
+          // Admin
           router.push('/dashboard');
-        } else if (role === 'nurse') {
+        } else if (roleID === 2) {
+          // NurseSpecialist
           router.push('/dashboard');
+        } else if (roleID === 3) {
+          // Manager
+          router.push('/dashboard');
+        } else if (roleID === 4) {
+          // Customer
+          router.push('/?welcome=true');
         } else {
+          // Nếu không xác định được role, về trang chủ
           router.push('/');
         }
       } else {
+        // Nếu không có account data, chuyển đến trang đăng nhập
+        alert('Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.');
         router.push('/auth/login');
       }
     } catch (err) {
       console.error('Lỗi đăng ký:', err);
       let errorMessage = 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.';
-      
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
+
+      if (err.message) {
         errorMessage = err.message;
       }
-      
-      setError(errorMessage);
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
-  // Xử lý đăng nhập với Google
-  const handleGoogleLogin = async () => {
-    setError('');
-    setIsLoading(true);
-
-    try {
-      const fakeGoogleToken = 'fake-google-token-' + Date.now();
-      
-      const response = await apiService.auth.loginWithGoogle(fakeGoogleToken);
-      console.log('Đăng nhập Google thành công:', response);
-      
-      if (response && response.user) {
-        // Chuyển hướng dựa trên vai trò của người dùng
-        const role = response.user.role;
-        if (role === 'admin') {
-          router.push('/dashboard');
-        } else if (role === 'nurse') {
-          router.push('/dashboard');
-        } else {
-          router.push('/');
-        }
-      } else {
-        throw new Error('Không nhận được thông tin người dùng từ server');
-      }
-    } catch (err) {
-      console.error('Lỗi đăng nhập Google:', err);
-      let errorMessage = 'Đăng nhập với Google thất bại. Vui lòng thử lại sau.';
-      
-      if (err.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      
       setError(errorMessage);
     } finally {
       setIsLoading(false);
@@ -140,10 +134,22 @@ export default function RegisterPage() {
               <label className="mb-2 block text-xs font-semibold">Họ tên</label>
               <input
                 type="text"
-                name="name"
+                name="fullName"
                 placeholder="Nhập họ tên"
                 className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
-                value={formData.name}
+                value={formData.fullName}
+                onChange={handleChange}
+                required
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-xs font-semibold">Số điện thoại</label>
+              <input
+                type="text"
+                name="phoneNumber"
+                placeholder="Nhập số điện thoại"
+                className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
+                value={formData.phoneNumber}
                 onChange={handleChange}
                 required
               />
@@ -184,13 +190,24 @@ export default function RegisterPage() {
                 required
               />
             </div>
+            <div>
+              <label className="mb-2 block text-xs font-semibold">Avatar URL (tuỳ chọn)</label>
+              <input
+                type="text"
+                name="avatarUrl"
+                placeholder="Nhập link avatar (nếu có)"
+                className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
+                value={formData.avatarUrl}
+                onChange={handleChange}
+              />
+            </div>
             {error && <div className="text-red-500 text-sm text-center">{error}</div>}
             <button
               type="submit"
               className="mb-1.5 block w-full text-center text-white bg-pink-500 hover:bg-pink-600 px-2 py-2 rounded-md font-semibold"
               disabled={isLoading}
             >
-              {isLoading ? "..." : "Đăng ký"}
+              {isLoading ? "Đang xử lý..." : "Đăng ký"}
             </button>
           </form>
           <div className="text-center mt-6">

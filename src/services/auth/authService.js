@@ -1,251 +1,204 @@
+import accounts from '../../mock/Account';
 import axiosInstance from '../http/axios';
 
-const AUTH_ENDPOINTS = {
-  LOGIN: '/api/auth/login',
-  REGISTER: '/api/auth/register',
-  GOOGLE_LOGIN: '/api/auth/google',
-  FORGOT_PASSWORD: '/api/auth/forgot-password',
-  CHANGE_PASSWORD: '/api/auth/change-password',
-  LOGOUT: '/api/auth/logout',
-  VERIFY_EMAIL: '/api/auth/verify-email',
-  REFRESH_TOKEN: '/api/auth/refresh-token',
-};
-
-// Hỗ trợ cho cả browser và server-side rendering
 const isBrowser = typeof window !== 'undefined';
+const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
 
-// Validation helpers
-const validateEmail = (email) => {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  return emailRegex.test(email);
-};
-
-const validatePassword = (password) => {
-  return password && password.length >= 6;
-};
-
-export const authService = {
-  // Đăng nhập
+const authService = {
   login: async (credentials) => {
-    try {
-      // Validation
-      if (!credentials.email || !credentials.password) {
-        throw new Error('Email và mật khẩu là bắt buộc');
-      }
-      
-      if (!validateEmail(credentials.email)) {
-        throw new Error('Email không hợp lệ');
-      }
-
-      const response = await axiosInstance.post(AUTH_ENDPOINTS.LOGIN, credentials);
-      
-      if (isBrowser && response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        if (response.data.refreshToken) {
-          localStorage.setItem('refreshToken', response.data.refreshToken);
-        }
-      }
-      
-      return response.data;
-    } catch (error) {
-      console.error('Login error:', error);
-      const message = error.response?.data?.message || error.message || 'Đăng nhập thất bại';
-      throw new Error(message);
-    }
-  },
-
-  // Đăng nhập với Google
-  loginWithGoogle: async (token) => {
-    try {
-      if (!token) {
-        throw new Error('Token Google là bắt buộc');
-      }
-
-      const response = await axiosInstance.post(AUTH_ENDPOINTS.GOOGLE_LOGIN, { token });
-      
-      if (isBrowser && response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        if (response.data.refreshToken) {
-          localStorage.setItem('refreshToken', response.data.refreshToken);
-        }
-      }
-      
-      return response.data;
-    } catch (error) {
-      console.error('Google login error:', error);
-      const message = error.response?.data?.message || error.message || 'Đăng nhập Google thất bại';
-      throw new Error(message);
-    }
-  },
-
-  // Đăng ký
-  register: async (userData) => {
-    try {
-      // Validation
-      if (!userData.email || !userData.password || !userData.name) {
-        throw new Error('Email, mật khẩu và tên là bắt buộc');
-      }
-      
-      if (!validateEmail(userData.email)) {
-        throw new Error('Email không hợp lệ');
-      }
-      
-      if (!validatePassword(userData.password)) {
-        throw new Error('Mật khẩu phải có ít nhất 6 ký tự');
-      }
-
-      const response = await axiosInstance.post(AUTH_ENDPOINTS.REGISTER, userData);
-      
-      // Tự động đăng nhập sau khi đăng ký
-      if (isBrowser && response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        localStorage.setItem('user', JSON.stringify(response.data.user));
-        if (response.data.refreshToken) {
-          localStorage.setItem('refreshToken', response.data.refreshToken);
-        }
-      }
-      
-      return response.data;
-    } catch (error) {
-      console.error('Register error:', error);
-      const message = error.response?.data?.message || error.message || 'Đăng ký thất bại';
-      throw new Error(message);
-    }
-  },
-
-  // Quên mật khẩu
-  forgotPassword: async (email) => {
-    try {
-      if (!email) {
-        throw new Error('Email là bắt buộc');
-      }
-      
-      if (!validateEmail(email)) {
-        throw new Error('Email không hợp lệ');
-      }
-
-      const response = await axiosInstance.post(AUTH_ENDPOINTS.FORGOT_PASSWORD, { email });
-      return response.data;
-    } catch (error) {
-      console.error('Forgot password error:', error);
-      const message = error.response?.data?.message || error.message || 'Gửi email khôi phục thất bại';
-      throw new Error(message);
-    }
-  },
-
-  // Thay đổi mật khẩu
-  changePassword: async (passwordData) => {
-    try {
-      if (!passwordData.oldPassword || !passwordData.newPassword) {
-        throw new Error('Mật khẩu cũ và mới là bắt buộc');
-      }
-      
-      if (!validatePassword(passwordData.newPassword)) {
-        throw new Error('Mật khẩu mới phải có ít nhất 6 ký tự');
-      }
-
-      const response = await axiosInstance.post(AUTH_ENDPOINTS.CHANGE_PASSWORD, passwordData);
-      return response.data;
-    } catch (error) {
-      console.error('Change password error:', error);
-      const message = error.response?.data?.message || error.message || 'Thay đổi mật khẩu thất bại';
-      throw new Error(message);
-    }
-  },
-
-  // Đăng xuất
-  logout: async () => {
-    try {
-      // Không cần gọi API logout, chỉ xóa localStorage
-    } finally {
+    if (USE_MOCK) {
+      const user = accounts.find(
+        acc => (acc.email === credentials.emailOrPhoneNumber || acc.phone_number === credentials.emailOrPhoneNumber) &&
+          (acc.password === credentials.password || credentials.password === 'password') // Allow simple password for testing
+      );
+      if (!user) throw new Error('Sai thông tin đăng nhập');
       if (isBrowser) {
-        localStorage.removeItem('token');
-        localStorage.removeItem('user');
-        localStorage.removeItem('refreshToken');
+        localStorage.setItem('token', 'mock-token');
+        localStorage.setItem('user', JSON.stringify(user));
       }
+      return Promise.resolve({ token: 'mock-token', user });
     }
-  },
 
-  // Refresh token
-  refreshToken: async () => {
+    // Sử dụng API thật
     try {
-      if (!isBrowser) return null;
-      
-      const refreshToken = localStorage.getItem('refreshToken');
-      if (!refreshToken) {
-        throw new Error('Không có refresh token');
+      console.log('Sending login request to:', '/api/login');
+      console.log('Request data:', {
+        emailOrPhoneNumber: credentials.emailOrPhoneNumber,
+        password: credentials.password
+      });
+
+      // Sử dụng proxy để bypass CORS
+      const response = await fetch('/api/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          emailOrPhoneNumber: credentials.emailOrPhoneNumber,
+          password: credentials.password
+        })
+      });
+
+      const data = await response.json();
+      console.log('Login response:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Sai thông tin đăng nhập');
       }
 
-      const response = await axiosInstance.post(AUTH_ENDPOINTS.REFRESH_TOKEN, { 
-        refreshToken 
-      });
-      
-      if (response.data.token) {
-        localStorage.setItem('token', response.data.token);
-        if (response.data.refreshToken) {
-          localStorage.setItem('refreshToken', response.data.refreshToken);
-        }
+      const { token, account } = data;
+      if (isBrowser) {
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(account));
       }
-      
-      return response.data;
+      return { token, account };
     } catch (error) {
-      console.error('Refresh token error:', error);
-      // Nếu refresh token fail, logout user
-      authService.logout();
-      throw error;
+      console.error('Login error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
+      throw new Error(error.message || 'Sai thông tin đăng nhập');
     }
   },
 
-  // Kiểm tra người dùng đã đăng nhập
+  register: async (userData) => {
+    if (USE_MOCK) {
+      if (!userData.fullName || !userData.phoneNumber || !userData.email || !userData.password) {
+        throw new Error('Họ tên, số điện thoại, email và mật khẩu là bắt buộc');
+      }
+      // Giả lập đăng ký thành công
+      const newAccount = {
+        accountID: accounts.length + 1,
+        fullName: userData.fullName,
+        phoneNumber: userData.phoneNumber,
+        email: userData.email,
+        password: userData.password,
+        avatarUrl: userData.avatarUrl || '',
+        createAt: new Date().toISOString(),
+        status: 'active',
+        roleID: userData.role_id || 4, // Default to Customer (4)
+        deletedAt: null
+      };
+      if (isBrowser) {
+        localStorage.setItem('token', 'mock-token');
+        localStorage.setItem('user', JSON.stringify(newAccount));
+      }
+      return Promise.resolve({ token: 'mock-token', account: newAccount });
+    }
+
+    // Sử dụng API thật
+    try {
+      if (!userData.fullName || !userData.phoneNumber || !userData.email || !userData.password) {
+        throw new Error('Họ tên, số điện thoại, email và mật khẩu là bắt buộc');
+      }
+
+      console.log('Sending registration request to:', '/api/accounts/register/customer');
+      console.log('Request data:', {
+        fullName: userData.fullName,
+        phoneNumber: userData.phoneNumber,
+        email: userData.email,
+        password: userData.password,
+        avatarUrl: userData.avatarUrl || ''
+      });
+
+      // Sử dụng proxy để bypass CORS
+      const response = await fetch('/api/accounts/register/customer', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fullName: userData.fullName,
+          phoneNumber: userData.phoneNumber,
+          email: userData.email,
+          password: userData.password,
+          avatarUrl: userData.avatarUrl || ''
+        })
+      });
+
+      const data = await response.json();
+      console.log('Registration response:', data);
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Đăng ký thất bại');
+      }
+
+      const { account } = data;
+
+      // Lưu thông tin đăng nhập
+      if (isBrowser) {
+        localStorage.setItem('token', 'temp-token'); // Có thể cần token từ response
+        localStorage.setItem('user', JSON.stringify(account));
+      }
+
+      // Trả về response với account thay vì user để phù hợp với logic trong register page
+      return { token: 'temp-token', account: account };
+    } catch (error) {
+      console.error('Registration error details:', {
+        message: error.message,
+        name: error.name,
+        stack: error.stack
+      });
+      throw new Error(error.message || 'Đăng ký thất bại');
+    }
+  },
+
   isAuthenticated: () => {
     if (!isBrowser) return false;
-    const token = localStorage.getItem('token');
-    return !!token;
+    return !!localStorage.getItem('token');
   },
 
-  // Lấy thông tin người dùng hiện tại
   getCurrentUser: () => {
     if (!isBrowser) return null;
     try {
       const user = localStorage.getItem('user');
       return user ? JSON.parse(user) : null;
-    } catch (error) {
-      console.error('Error parsing user data:', error);
+    } catch {
       return null;
     }
   },
 
-  // Lấy token hiện tại
-  getToken: () => {
-    if (!isBrowser) return null;
-    return localStorage.getItem('token');
-  },
-
-  // Cập nhật thông tin người dùng hiện tại
-  updateCurrentUser: (userData) => {
-    if (!isBrowser) return;
-    try {
-      localStorage.setItem('user', JSON.stringify(userData));
-    } catch (error) {
-      console.error('Error updating user data:', error);
+  logout: async () => {
+    if (isBrowser) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      localStorage.removeItem('refreshToken');
     }
+    return Promise.resolve(true);
   },
 
-  // Xác minh email
-  verifyEmail: async (token) => {
-    try {
-      if (!token) {
-        throw new Error('Token xác minh là bắt buộc');
+  loginWithGoogle: async (googleToken) => {
+    if (USE_MOCK) {
+      // Mock Google login
+      const mockAccount = {
+        accountID: 999,
+        fullName: 'Google User',
+        email: 'google@example.com',
+        roleID: 4, // Customer
+        avatarUrl: 'https://via.placeholder.com/150'
+      };
+      if (isBrowser) {
+        localStorage.setItem('token', 'google-mock-token');
+        localStorage.setItem('user', JSON.stringify(mockAccount));
       }
+      return Promise.resolve({ token: 'google-mock-token', account: mockAccount });
+    }
 
-      const response = await axiosInstance.post(AUTH_ENDPOINTS.VERIFY_EMAIL, { token });
-      return response.data;
+    // Sử dụng API thật cho Google login
+    try {
+      const response = await axiosInstance.post('/api/accounts/login/google', {
+        token: googleToken
+      });
+
+      const { token, account } = response.data;
+      if (isBrowser) {
+        localStorage.setItem('token', token);
+        localStorage.setItem('user', JSON.stringify(account));
+      }
+      return { token, account };
     } catch (error) {
-      console.error('Verify email error:', error);
-      const message = error.response?.data?.message || error.message || 'Xác minh email thất bại';
-      throw new Error(message);
+      throw new Error(error.response?.data?.message || 'Đăng nhập Google thất bại');
     }
   },
 };

@@ -12,7 +12,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    email: '',
+    emailOrPhoneNumber: '',
     password: '',
   });
   const [error, setError] = useState('');
@@ -33,23 +33,44 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await apiService.auth.login(formData);
-      if (response.user) {
-        login(response.user);
+      const response = await apiService.auth.login({
+        emailOrPhoneNumber: formData.emailOrPhoneNumber,
+        password: formData.password,
+      });
+      
+      console.log('Login response:', response);
+      
+      if (response.account) {
+        login(response.account);
         // Chuyển hướng dựa trên vai trò của người dùng
-        const role = response.user.role;
-        if (role === 'admin') {
+        const roleID = response.account.roleID;
+        console.log('User roleID:', roleID);
+        
+        if (roleID === 1) { // Admin
           router.push('/dashboard');
-        } else if (role === 'nurse') {
+        } else if (roleID === 2) { // NurseSpecialist
           router.push('/dashboard');
+        } else if (roleID === 3) { // Manager
+          router.push('/dashboard');
+        } else if (roleID === 4) { // Customer
+          router.push('/?welcome=true');
         } else {
           router.push('/');
         }
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.'
-      );
+      console.error('Login error:', err);
+      let errorMessage = 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.';
+      
+      if (err.message) {
+        if (err.message.includes('<!DOCTYPE')) {
+          errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra backend có đang chạy không.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -63,38 +84,55 @@ export default function LoginPage() {
     try {
       // Giả lập việc lấy token từ Google OAuth
       const fakeGoogleToken = 'fake-google-token-' + Date.now();
-      
+
       const response = await apiService.auth.loginWithGoogle(fakeGoogleToken);
-      
-      if (response.user) {
-        login(response.user);
+
+      console.log('Google login response:', response);
+
+      if (response.account) {
+        login(response.account);
         // Chuyển hướng dựa trên vai trò của người dùng
-        const role = response.user.role;
-        if (role === 'admin') {
+        const roleID = response.account.roleID;
+        console.log('Google user roleID:', roleID);
+        
+        if (roleID === 1) { // Admin
           router.push('/dashboard');
-        } else if (role === 'nurse') {
+        } else if (roleID === 2) { // NurseSpecialist
           router.push('/dashboard');
+        } else if (roleID === 3) { // Manager
+          router.push('/dashboard');
+        } else if (roleID === 4) { // Customer
+          router.push('/?welcome=true');
         } else {
           router.push('/');
         }
       }
-    } catch (err) {
-      setError(
-        err.response?.data?.message || 'Đăng nhập với Google thất bại. Vui lòng thử lại sau.'
-      );
-    } finally {
-      setIsLoading(false);
-    }
+          } catch (err) {
+        console.error('Google login error:', err);
+        let errorMessage = 'Đăng nhập với Google thất bại. Vui lòng thử lại sau.';
+        
+        if (err.message) {
+          if (err.message.includes('<!DOCTYPE')) {
+            errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra backend có đang chạy không.';
+          } else {
+            errorMessage = err.message;
+          }
+        }
+        
+        setError(errorMessage);
+      } finally {
+        setIsLoading(false);
+      }
   };
 
   return (
-      <motion.div
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.85 }}
-        transition={{ duration: 0.8, ease: "easeOut" }}
-        className="flex min-h-screen items-center justify-center"
-      >
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      exit={{ opacity: 0, scale: 0.85 }}
+      transition={{ duration: 0.8, ease: "easeOut" }}
+      className="flex min-h-screen items-center justify-center"
+    >
       <div className="flex shadow-md rounded-2xl overflow-hidden w-full max-w-4xl bg-white/80">
         {/* Login form */}
         <div className="flex flex-col justify-center px-10 py-12 w-full md:w-1/2">
@@ -102,13 +140,13 @@ export default function LoginPage() {
           <small className="text-gray-400 mb-6">Please login to continue</small>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="mb-2 block text-xs font-semibold">Email</label>
+              <label className="mb-2 block text-xs font-semibold">Email hoặc Số điện thoại</label>
               <input
-                type="email"
-                name="email"
-                placeholder="Nhập email của bạn"
+                type="text"
+                name="emailOrPhoneNumber"
+                placeholder="Nhập email hoặc số điện thoại của bạn"
                 className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
-                value={formData.email}
+                value={formData.emailOrPhoneNumber}
                 onChange={handleChange}
                 required
               />
