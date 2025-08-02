@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
-import customerPackageService from '@/services/api/customerPackageService';
-import serviceTypeService from '@/services/api/serviceTypeService';   
-import serviceTasks from '@/mock/ServiceTask';
-import feedbacks from '@/mock/Feedback';
+// import customizePackageService from '@/services/api/customizePackageService';
+import serviceTypeService from '@/services/api/serviceTypeService';
+// import serviceTaskService from '@/services/api/serviceTaskService';
+// import feedbackService from '@/services/api/feedbackService';
 import { 
   SearchFilter, 
   ServiceSection, 
@@ -14,9 +14,9 @@ import {
 import { useRouter } from 'next/navigation';
 
 export default function ServicesPage() {
-  const [packages, setPackages] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
-  const [packageServiceTypes, setPackageServiceTypes] = useState([]);
+  // const [serviceTasks, setServiceTasks] = useState([]);
+  // const [feedbacks, setFeedbacks] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedServices, setSelectedServices] = useState([]);
   const [searchText, setSearchText] = useState('');
@@ -26,9 +26,18 @@ export default function ServicesPage() {
   const [expandedPackage, setExpandedPackage] = useState(null);
   const router = useRouter();
 
+  // Lấy dữ liệu từ API
   useEffect(() => {
-    customerPackageService.getCustomerPackages().then(setPackages);
+    // Lấy tất cả service types (bao gồm cả gói và dịch vụ lẻ)
     serviceTypeService.getServiceTypes().then(setServiceTypes);
+
+    // Lấy danh sách service task (liên kết giữa package và service lẻ)
+    // serviceTaskService.getServiceTasks().then(setServiceTasks);
+
+    // Lấy feedbacks cho dịch vụ
+    // fetch('/api/feedbacks')
+    //   .then(res => res.json())
+    //   .then(data => setFeedbacks(Array.isArray(data) ? data : []));
   }, []);
 
   // Khi chọn package thì reset chọn service lẻ
@@ -52,13 +61,15 @@ export default function ServicesPage() {
   };
 
   // Tách dịch vụ lẻ và package
-  const singleServices = serviceTypes.filter(s => !s.IsPackage && s.Status === 'active');
-  const servicePackages = serviceTypes.filter(s => s.IsPackage && s.Status === 'active');
+  const singleServices = serviceTypes.filter(s => !s.IsPackage && (s.Status === 'active' || s.Status === 'Inactive'));
+  const servicePackages = serviceTypes.filter(s => s.IsPackage && (s.Status === 'active' || s.Status === 'Inactive'));
 
-  // Lấy dịch vụ lẻ thuộc về 1 package
+  // Lấy dịch vụ lẻ thuộc về 1 package từ API
   function getServicesOfPackage(packageId) {
-    const tasks = serviceTasks.filter(t => t.Package_ServiceID === packageId);
-    return tasks.map(task => serviceTypes.find(s => s.ServiceID === task.Child_ServiceID)).filter(Boolean);
+    // Tạm thời return empty array vì serviceTasks API chưa hoàn thiện
+    // const tasks = serviceTasks.filter(t => t.Package_ServiceID === packageId);
+    // return tasks.map(task => serviceTypes.find(s => s.ServiceID === task.Child_ServiceID)).filter(Boolean);
+    return [];
   }
 
   const handleToggleExpand = (pkgId) => {
@@ -77,12 +88,15 @@ export default function ServicesPage() {
   const filteredServicePackages = servicePackages.filter(filterService);
   const filteredSingleServices = singleServices.filter(filterService);
 
-  // Calculate rating
+  // Tính rating từ feedbacks API
   const getRating = (serviceId) => {
-    const fb = feedbacks.filter(f => f.ServiceID === serviceId);
-    if (!fb.length) return { rating: 5.0, count: 0 };
-    const rating = (fb.reduce((sum, f) => sum + (f.Rating || 5), 0) / fb.length).toFixed(1);
-    return { rating, count: fb.length };
+    // const fb = feedbacks.filter(f => f.ServiceID === serviceId);
+    // if (!fb.length) return { rating: 5.0, count: 0 };
+    // const rating = (fb.reduce((sum, f) => sum + (f.Rating || 5), 0) / fb.length).toFixed(1);
+    // return { rating, count: fb.length };
+    
+    // Tạm thời return rating mặc định vì feedbacks API đã bị comment
+    return { rating: 5.0, count: 0 };
   };
 
   // Handle booking

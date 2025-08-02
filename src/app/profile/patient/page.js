@@ -1,9 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useContext } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import { AuthContext } from '@/context/AuthContext';
 // Thêm các import icon cần thiết
-import { FaUser, FaUsers, FaWallet } from "react-icons/fa";
+import { FaUser, FaUsers } from "react-icons/fa";
+// import { FaWallet } from "react-icons/fa";
 import PatientCareProfileList from './components/PatientCareProfileList';
 import useCareProfileManager from './components/useCareProfileManager';
 import CareProfileFormModal from './components/CareProfileFormModal';
@@ -31,13 +33,13 @@ const TabNavigation = () => {
       href: '/profile/patient',
       active: pathname === '/profile/patient',
     },
-    {
-      id: 'wallet',
-      name: 'Ví điện tử',
-      icon: <FaWallet className="text-sm" />,
-      href: '/wallet',
-      active: pathname === '/wallet',
-    }
+    // {
+    //   id: 'wallet',
+    //   name: 'Ví điện tử',
+    //   icon: <FaWallet className="text-sm" />,
+    //   href: '/wallet',
+    //   active: pathname === '/wallet',
+    // }
   ];
     return (
     <div className="flex flex-wrap gap-2 border-b border-gray-200 mb-8">
@@ -61,7 +63,33 @@ const TabNavigation = () => {
 
 export default function PatientProfilePage(props) {
   const router = useRouter();
+  const { user } = useContext(AuthContext);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Authentication check
+  useEffect(() => {
+    const checkAuth = () => {
+      if (!user) {
+        router.push('/auth/login');
+        return;
+      }
+      setIsLoading(false);
+    };
+
+    // Delay để đảm bảo AuthContext đã load
+    const timer = setTimeout(checkAuth, 100);
+    return () => clearTimeout(timer);
+  }, [user, router]);
+
   const manager = useCareProfileManager(router);
+
+  if (isLoading) {
+    return <div className="text-center py-20">Đang kiểm tra đăng nhập...</div>;
+  }
+
+  if (!user) {
+    return null; // Sẽ redirect về login
+  }
 
   if (manager.loading) return <div className="text-center py-20">Đang tải dữ liệu...</div>;
 

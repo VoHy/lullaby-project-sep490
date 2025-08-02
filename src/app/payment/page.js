@@ -4,9 +4,9 @@ import { useMemo, useEffect, useState, useContext } from "react";
 import customerPackageService from '@/services/api/customerPackageService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
-import walletService from '@/services/api/walletService';
+// import walletService from '@/services/api/walletService';
 import { AuthContext } from "@/context/AuthContext";
-import walletHistoryService from '@/services/api/walletHistoryService';
+// import walletHistoryService from '@/services/api/walletHistoryService';
 // Thay thế import mock data bằng services
 import serviceTaskService from '@/services/api/serviceTaskService';
 import careProfileService from '@/services/api/careProfileService';
@@ -61,7 +61,7 @@ export default function PaymentPage() {
           serviceTaskService.getServiceTasks(),
           nursingSpecialistService.getNursingSpecialists(),
           careProfileService.getCareProfiles(),
-          walletService.getWallets()
+          // walletService.getWallets()
         ]);
 
         setPackages(packagesData);
@@ -69,7 +69,7 @@ export default function PaymentPage() {
         setServiceTasks(serviceTasksData);
         setNursingSpecialists(nursingSpecialistsData);
         setCareProfiles(careProfilesData);
-        setWallets(walletsData);
+        setWallets([]); // Commented out wallet functionality
       } catch (error) {
         console.error('Error fetching payment data:', error);
         setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');

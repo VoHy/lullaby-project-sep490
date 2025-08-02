@@ -4,7 +4,7 @@ import { useState, useContext } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AuthContext } from '../../../context/AuthContext';
-import WalletIcon from './WalletIcon';
+// // import WalletIcon from './WalletIcon';
 
 export default function Header() {
   const pathname = usePathname();
@@ -178,7 +178,8 @@ export default function Header() {
           </div>
           <div className="flex items-center gap-4">
             {/* Wallet Icon - chỉ hiển thị cho user đã đăng nhập */}
-            {user && <WalletIcon />}
+            {/* Wallet Icon - chỉ hiển thị cho user đã đăng nhập */}
+            {/* {user && <WalletIcon />} */}
             
             {user ? (
               <div className="relative">

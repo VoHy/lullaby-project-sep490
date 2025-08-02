@@ -1,24 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { useSearchParams } from 'next/navigation';
-import authService from '@/services/auth/authService';
+import { AuthContext } from '@/context/AuthContext';
 import { HeroSection, StatsSection, FeaturesSection, CTASection } from './components';
 import SuccessNotification from './components/SuccessNotification';
 
 export default function Home() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
   const [showWelcome, setShowWelcome] = useState(false);
   const searchParams = useSearchParams();
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     const checkAuth = () => {
-      const loggedIn = authService.isAuthenticated();
-      setIsLoggedIn(loggedIn);
-      if (loggedIn) {
-        setUser(authService.getCurrentUser());
-      }
+      setIsLoggedIn(!!user);
     };
 
     checkAuth();
@@ -30,7 +26,7 @@ export default function Home() {
       // Xóa parameter khỏi URL
       window.history.replaceState({}, '', '/');
     }
-  }, [searchParams]);
+  }, [searchParams, user]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">

@@ -38,13 +38,11 @@ export default function LoginPage() {
         password: formData.password,
       });
       
-      console.log('Login response:', response);
       
-      if (response.account) {
-        login(response.account);
+      if (response.account && response.token) {
+        login(response.account, response.token);
         // Chuyển hướng dựa trên vai trò của người dùng
         const roleID = response.account.roleID;
-        console.log('User roleID:', roleID);
         
         if (roleID === 1) { // Admin
           router.push('/dashboard');
@@ -57,6 +55,8 @@ export default function LoginPage() {
         } else {
           router.push('/');
         }
+      } else {
+        setError('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.');
       }
     } catch (err) {
       console.error('Login error:', err);
@@ -87,13 +87,11 @@ export default function LoginPage() {
 
       const response = await apiService.auth.loginWithGoogle(fakeGoogleToken);
 
-      console.log('Google login response:', response);
 
-      if (response.account) {
-        login(response.account);
+      if (response.account && response.token) {
+        login(response.account, response.token);
         // Chuyển hướng dựa trên vai trò của người dùng
         const roleID = response.account.roleID;
-        console.log('Google user roleID:', roleID);
         
         if (roleID === 1) { // Admin
           router.push('/dashboard');
@@ -106,23 +104,25 @@ export default function LoginPage() {
         } else {
           router.push('/');
         }
+      } else {
+        setError('Đăng nhập với Google thất bại. Vui lòng thử lại sau.');
       }
-          } catch (err) {
-        console.error('Google login error:', err);
-        let errorMessage = 'Đăng nhập với Google thất bại. Vui lòng thử lại sau.';
-        
-        if (err.message) {
-          if (err.message.includes('<!DOCTYPE')) {
-            errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra backend có đang chạy không.';
-          } else {
-            errorMessage = err.message;
-          }
+    } catch (err) {
+      console.error('Google login error:', err);
+      let errorMessage = 'Đăng nhập với Google thất bại. Vui lòng thử lại sau.';
+      
+      if (err.message) {
+        if (err.message.includes('<!DOCTYPE')) {
+          errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra backend có đang chạy không.';
+        } else {
+          errorMessage = err.message;
         }
-        
-        setError(errorMessage);
-      } finally {
-        setIsLoading(false);
       }
+      
+      setError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (

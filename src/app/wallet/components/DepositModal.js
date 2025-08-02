@@ -3,8 +3,8 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaPlus, FaTimes } from 'react-icons/fa';
-import walletService from '@/services/api/walletService';
-import walletHistoryService from '@/services/api/walletHistoryService';
+// import walletService from '@/services/api/walletService';
+// import walletHistoryService from '@/services/api/walletHistoryService';
 
 const DepositModal = ({ isOpen, onClose, amount, setAmount, onDeposit, walletId, myWallet }) => {
   const [step, setStep] = useState('input'); // 'input' | 'qr' | 'success'
@@ -15,7 +15,7 @@ const DepositModal = ({ isOpen, onClose, amount, setAmount, onDeposit, walletId,
   const handleGenerateQR = async () => {
     if (!tempAmount || parseFloat(tempAmount) <= 0) return;
     setLoading(true);
-    const qrData = await walletService.generateQRCode(parseFloat(tempAmount), 'bank_transfer');
+          // const qrData = await walletService.generateQRCode(parseFloat(tempAmount), 'bank_transfer');
     setQr(qrData.qrCodeUrl);
     setStep('qr');
     setLoading(false);
@@ -32,7 +32,7 @@ const DepositModal = ({ isOpen, onClose, amount, setAmount, onDeposit, walletId,
       const updatedWallets = allWallets.map(w => w.WalletID === myWallet.WalletID ? { ...w, Amount: myWallet.Amount } : w);
       localStorage.setItem('wallets', JSON.stringify(updatedWallets));
       // Tạo lịch sử giao dịch
-      await walletHistoryService.createWalletHistory({
+              // await walletHistoryService.createWalletHistory({
         WalletID: myWallet.WalletID,
         Before: before,
         Amount: parseFloat(tempAmount),

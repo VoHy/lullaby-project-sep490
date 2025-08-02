@@ -1,8 +1,8 @@
 import { FaPhone, FaMapMarkerAlt, FaStickyNote, FaUsers, FaPlus, FaEdit } from 'react-icons/fa';
 
 export default function PatientCareProfileCard({ care, relativesList, relFilter, setRelFilter, handleOpenForm, onViewDetailCareProfile, onViewDetailRelative, handleOpenEditCareProfile, handleOpenEditRelative }) {
-  // Đồng bộ field chữ thường
-  let rels = relativesList.filter(r => r.careProfileID === care.careProfileID);
+  // Đồng bộ field chữ thường và chữ hoa
+  let rels = relativesList.filter(r => (r.careProfileID || r.CareProfileID) === (care.careProfileID || care.CareProfileID));
   if (relFilter === 'active') rels = rels.filter(r => (r.status || '').toLowerCase() === 'active');
   if (relFilter === 'inactive') rels = rels.filter(r => (r.status || '').toLowerCase() === 'inactive');
 
@@ -65,9 +65,9 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
             Con cái ({rels.length})
           </h4>
           <div className="flex items-center gap-2">
-            <label htmlFor={`relFilter-${care.careProfileID}`} className="text-xs font-medium text-gray-700">Lọc:</label>
+            <label htmlFor={`relFilter-${care.careProfileID || care.CareProfileID}`} className="text-xs font-medium text-gray-700">Lọc:</label>
             <select
-              id={`relFilter-${care.careProfileID}`}
+              id={`relFilter-${care.careProfileID || care.CareProfileID}`}
               value={relFilter}
               onChange={e => setRelFilter(e.target.value)}
               className="px-2 py-1 rounded border border-gray-300 text-xs focus:ring-2 focus:ring-purple-400 focus:border-purple-400 bg-white"
@@ -77,7 +77,7 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
               <option value="inactive">Ngừng hoạt động</option>
             </select>
             <button
-              onClick={() => handleOpenForm(null, care.careProfileID)}
+              onClick={() => handleOpenForm(null, care.careProfileID || care.CareProfileID)}
               className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-lg hover:shadow-lg transition-all flex items-center gap-2 text-xs"
             >
               <FaPlus className="text-xs" /> Thêm con
@@ -89,10 +89,10 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
         ) : (
           <div className="space-y-2">
             {rels.map(r => (
-              <div key={r.relativeID} className="bg-gray-50 rounded-lg p-3 flex items-center justify-between cursor-pointer group" onClick={() => onViewDetailRelative && onViewDetailRelative(r)}>
+              <div key={r.relativeID || r.RelativeID} className="bg-gray-50 rounded-lg p-3 flex items-center justify-between cursor-pointer group" onClick={() => onViewDetailRelative && onViewDetailRelative(r)}>
                 <div>
-                  <p className="font-medium text-purple-600 hover:underline">{r.relativeName}</p>
-                  <p className="text-xs text-gray-500">{r.dateOfBirth || 'N/A'}</p>
+                  <p className="font-medium text-purple-600 hover:underline">{r.relativeName || r.relative_Name || r.Relative_Name}</p>
+                  <p className="text-xs text-gray-500">{r.dateOfBirth || r.DateOfBirth || 'N/A'}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`px-2 py-1 rounded-full text-xs font-semibold ${((r.status || '').toLowerCase() === 'active')
@@ -104,7 +104,7 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
                   <button
                     className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-purple-600 transition opacity-80 group-hover:opacity-100"
                     title="Sửa người thân"
-                    onClick={e => { e.stopPropagation(); handleOpenEditRelative && handleOpenEditRelative(r, care.careProfileID); }}
+                    onClick={e => { e.stopPropagation(); handleOpenEditRelative && handleOpenEditRelative(r, care.careProfileID || care.CareProfileID); }}
                   >
                     <FaEdit />
                   </button>

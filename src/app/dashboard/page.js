@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import authService from '@/services/auth/authService';
+import { AuthContext } from '@/context/AuthContext';
 import AdminDashboard from './components/admin/AdminDashboard';
 import NurseDashboard from './components/nurse/NurseDashboard';
 import ManagerDashboard from './components/manager/ManagerDashboard';
@@ -12,35 +12,33 @@ import Sidebar from './components/Sidebar';
 export default function Dashboard() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const { user, logout } = useContext(AuthContext);
 
   useEffect(() => {
     // Kiểm tra xác thực và chuyển hướng nếu chưa đăng nhập
     const checkAuth = () => {
-      if (!authService.isAuthenticated()) {
+      if (!user) {
         router.push('/auth/login');
         return;
       }
 
-      const currentUser = authService.getCurrentUser();
       // Bổ sung kiểm tra trạng thái user
       if (
-        !currentUser ||
-        currentUser.deletedAt !== null && currentUser.deletedAt !== undefined && currentUser.deletedAt !== 'NULL' && currentUser.deletedAt !== '' ||
-        (currentUser.status && currentUser.status !== 'active')
+        !user ||
+        user.deletedAt !== null && user.deletedAt !== undefined && user.deletedAt !== 'NULL' && user.deletedAt !== '' ||
+        (user.status && user.status !== 'active')
       ) {
-        authService.logout && authService.logout(); // Nếu có hàm logout thì gọi
+        logout();
         localStorage.clear();
         router.push('/auth/login');
         return;
       }
-      setUser(currentUser);
       setLoading(false);
     };
 
     checkAuth();
-  }, [router]);
+  }, [router, user, logout]);
 
   if (loading) {
     return (

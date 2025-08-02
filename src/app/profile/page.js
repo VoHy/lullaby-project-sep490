@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState, useContext } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { FaUser, FaUsers, FaWallet } from "react-icons/fa";
+import { FaUser, FaUsers } from "react-icons/fa";
+// import { FaWallet } from "react-icons/fa";
 import accountsService from '@/services/api/accountService';
 import { AuthContext } from "@/context/AuthContext";
 import ProfileCard from './components/ProfileCard';
@@ -25,13 +26,13 @@ const TabNavigation = () => {
       href: '/profile/patient',
       active: pathname === '/profile/patient',
     },
-    {
-      id: 'wallet',
-      name: 'Ví điện tử',
-      icon: <FaWallet className="text-sm" />,
-      href: '/wallet',
-      active: pathname === '/wallet',
-    }
+    // {
+    //   id: 'wallet',
+    //   name: 'Ví điện tử',
+    //   icon: <FaWallet className="text-sm" />,
+    //   href: '/wallet',
+    //   active: pathname === '/wallet',
+    // }
   ];
   return (
     <div className="flex flex-wrap gap-2 border-b border-gray-200 mb-8">
@@ -95,22 +96,29 @@ export default function ProfilePage() {
     if (!user) return;
     const loadProfileData = async () => {
       try {
-        console.log('Loading profile for user:', user);
         const accountId = user.accountID || user.AccountID;
+        
+        console.log('User object:', user);
         console.log('Account ID:', accountId);
         
         if (!accountId) {
           console.error('No account ID found in user object');
-          setError('Không tìm thấy ID tài khoản');
+          // Fallback: sử dụng user object từ AuthContext
+          console.log('Using user object from AuthContext as fallback');
+          setProfile(user);
           return;
         }
         
+        console.log('Fetching account with ID:', accountId);
         const account = await accountsService.getAccount(accountId);
-        console.log('Loaded account:', account);
+        console.log('Account data received:', account);
         setProfile(account);
       } catch (err) {
         console.error('Error loading profile data:', err);
-        setError('Không thể tải thông tin tài khoản');
+        // Fallback: sử dụng user object từ AuthContext nếu API fail
+        console.log('API failed, using user object from AuthContext as fallback');
+        setProfile(user);
+        setError(`Không thể tải thông tin tài khoản từ server: ${err.message}`);
       }
     };
     loadProfileData();
@@ -118,10 +126,10 @@ export default function ProfilePage() {
 
   const handleEditClick = () => {
     setEditData({
-      fullName: profile.fullName || profile.full_name || '',
-      phoneNumber: profile.phoneNumber || profile.phone_number || '',
-      avatarUrl: profile.avatarUrl || profile.avatar_url || '',
-      email: profile.email || ''
+      fullName: displayProfile.fullName || displayProfile.full_name || '',
+      phoneNumber: displayProfile.phoneNumber || displayProfile.phone_number || '',
+      avatarUrl: displayProfile.avatarUrl || displayProfile.avatar_url || '',
+      email: displayProfile.email || ''
     });
     setIsEditing(true);
     setError('');
@@ -138,8 +146,8 @@ export default function ProfilePage() {
     setError('');
     setSuccess('');
     try {
-      const accountId = profile.accountID || profile.AccountID;
-      const fullData = { ...profile, ...editData };
+      const accountId = displayProfile.accountID || displayProfile.AccountID;
+      const fullData = { ...displayProfile, ...editData };
       await accountsService.updateAccount(accountId, fullData);
       // Gọi lại API lấy profile mới nhất
       const refreshed = await accountsService.getAccount(accountId);
@@ -161,9 +169,12 @@ export default function ProfilePage() {
   if (!user) {
     return <StatusDisplay type="loading" message="Đang tải thông tin tài khoản..." />;
   }
-  if (!profile) {
+  if (!profile && !user) {
     return <StatusDisplay type="error" message="Không tìm thấy thông tin tài khoản." />;
   }
+
+  // Sử dụng profile hoặc user làm fallback
+  const displayProfile = profile || user;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
@@ -186,7 +197,7 @@ export default function ProfilePage() {
         {/* Tab Content */}
         <div className="bg-white rounded-xl shadow-lg">
           <ProfileCard
-            profile={profile}
+            profile={displayProfile}
             isEditing={isEditing}
             editData={editData}
             onEditClick={handleEditClick}
@@ -195,7 +206,7 @@ export default function ProfilePage() {
             onCancel={handleCancel}
             loading={loading}
             error={error}
-            roleName={getRoleName(profile.roleID || profile.role_id)}
+            roleName={getRoleName(displayProfile.roleID || displayProfile.role_id)}
           />
         </div>
       </div>

@@ -1,6 +1,6 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '@/context/AuthContext';
-import walletService from '@/services/api/walletService';
+// import walletService from '@/services/api/walletService';
 
 export const useWallet = () => {
   const { user } = useContext(AuthContext);
@@ -12,13 +12,13 @@ export const useWallet = () => {
     const fetchWalletData = async () => {
       try {
         setLoading(true);
-        const walletData = await walletService.getWallets();
+        // const walletData = await walletService.getWallets();
         // Find user's wallet
         const userWallet = walletData.find(w => w.AccountID === user?.AccountID);
         setWallet(userWallet || null);
         // Get transaction history for user's wallet
         if (userWallet) {
-          const historyData = await walletService.getWalletHistories(userWallet.WalletID);
+          // const historyData = await walletService.getWalletHistories(userWallet.WalletID);
           setTransactions(historyData || []);
         } else {
           setTransactions([]);

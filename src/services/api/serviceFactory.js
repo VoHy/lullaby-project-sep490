@@ -1,6 +1,24 @@
 // Simple Service Factory - Tạo service với pattern đơn giản
 const createService = (endpoint, entityName, isCustomEndpoint = false) => {
   const baseUrl = `/api/${endpoint}`;
+  
+  // Utility function để lấy token từ localStorage
+  const getAuthToken = () => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('token');
+    }
+    return null;
+  };
+
+  // Utility function để tạo headers với token
+  const getAuthHeaders = () => {
+    const token = getAuthToken();
+    return {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    };
+  };
+  
   // Xác định method name dựa trên entityName
   const getMethodName = () => {
     if (entityName === 'Account') return 'getAllAccounts';
@@ -19,8 +37,8 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     if (entityName === 'ServiceTask') return 'getServiceTasks';
     if (entityName === 'ServiceType') return 'getServiceTypes';
     if (entityName === 'TransactionHistory') return 'getTransactionHistories';
-    if (entityName === 'Wallet') return 'getWallets';
-    if (entityName === 'WalletHistory') return 'getWalletHistories';
+    // if (entityName === 'Wallet') return 'getWallets';
+    // if (entityName === 'WalletHistory') return 'getWalletHistories';
     if (entityName === 'WorkSchedule') return 'getWorkSchedules';
     if (entityName === 'BlogCategory') return 'getBlogCategories';
     if (entityName === 'NursingSpecialistServiceType') return 'getNursingSpecialistServiceTypes';
@@ -30,6 +48,7 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     // Default pattern
     return `get${entityName}s`;
   };
+  
   const getByIdMethodName = () => {
     if (entityName === 'Account') return 'getAccount';
     if (entityName === 'Blog') return 'getBlogById';
@@ -47,8 +66,8 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     if (entityName === 'ServiceTask') return 'getServiceTaskById';
     if (entityName === 'ServiceType') return 'getServiceTypeById';
     if (entityName === 'TransactionHistory') return 'getTransactionHistoryById';
-    if (entityName === 'Wallet') return 'getWalletById';
-    if (entityName === 'WalletHistory') return 'getWalletHistoryById';
+    // if (entityName === 'Wallet') return 'getWalletById';
+    // if (entityName === 'WalletHistory') return 'getWalletHistoryById';
     if (entityName === 'WorkSchedule') return 'getWorkScheduleById';
     if (entityName === 'BlogCategory') return 'getBlogCategoryById';
     if (entityName === 'NursingSpecialistServiceType') return 'getNursingSpecialistServiceTypeById';
@@ -58,6 +77,7 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     // Default pattern
     return `get${entityName}ById`;
   };
+  
   const createMethodName = () => {
     if (entityName === 'Account') return 'createAccount';
     if (entityName === 'Blog') return 'createBlog';
@@ -75,8 +95,8 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     if (entityName === 'ServiceTask') return 'createServiceTask';
     if (entityName === 'ServiceType') return 'createServiceType';
     if (entityName === 'TransactionHistory') return 'createTransactionHistory';
-    if (entityName === 'Wallet') return 'createWallet';
-    if (entityName === 'WalletHistory') return 'createWalletHistory';
+    // if (entityName === 'Wallet') return 'createWallet';
+    // if (entityName === 'WalletHistory') return 'createWalletHistory';
     if (entityName === 'WorkSchedule') return 'createWorkSchedule';
     if (entityName === 'BlogCategory') return 'createBlogCategory';
     if (entityName === 'NursingSpecialistServiceType') return 'createNursingSpecialistServiceType';
@@ -86,6 +106,7 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     // Default pattern
     return `create${entityName}`;
   };
+  
   const updateMethodName = () => {
     if (entityName === 'Account') return 'updateAccount';
     if (entityName === 'Blog') return 'updateBlog';
@@ -103,8 +124,8 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     if (entityName === 'ServiceTask') return 'updateServiceTask';
     if (entityName === 'ServiceType') return 'updateServiceType';
     if (entityName === 'TransactionHistory') return 'updateTransactionHistory';
-    if (entityName === 'Wallet') return 'updateWallet';
-    if (entityName === 'WalletHistory') return 'updateWalletHistory';
+    // if (entityName === 'Wallet') return 'updateWallet';
+    // if (entityName === 'WalletHistory') return 'updateWalletHistory';
     if (entityName === 'WorkSchedule') return 'updateWorkSchedule';
     if (entityName === 'BlogCategory') return 'updateBlogCategory';
     if (entityName === 'NursingSpecialistServiceType') return 'updateNursingSpecialistServiceType';
@@ -114,6 +135,7 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     // Default pattern
     return `update${entityName}`;
   };
+  
   const deleteMethodName = () => {
     if (entityName === 'Account') return 'deleteAccount';
     if (entityName === 'Blog') return 'deleteBlog';
@@ -142,17 +164,33 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     // Default pattern
     return `delete${entityName}`;
   };
+  
+  const countMethodName = () => {
+    if (entityName === 'Account') return 'getAccountCount';
+    if (entityName === 'NursingSpecialist') return 'getNursingSpecialistCount';
+    if (entityName === 'ServiceType') return 'getServiceTypeCount';
+    if (entityName === 'Zone') return 'getZoneCount';
+    if (entityName === 'Relative') return 'getRelativeCount';
+    if (entityName === 'CareProfile') return 'getCareProfileCount';
+    // Default pattern
+    return `get${entityName}Count`;
+  };
+  
   return {
     [getMethodName()]: async () => {
       const url = isCustomEndpoint ? `${baseUrl}/getall` : baseUrl;
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: getAuthHeaders()
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `Không thể lấy danh sách ${entityName.toLowerCase()}`);
       return data;
     },
     [getByIdMethodName()]: async (id) => {
       const url = isCustomEndpoint ? `${baseUrl}/get/${id}` : `${baseUrl}/${id}`;
-      const res = await fetch(url);
+      const res = await fetch(url, {
+        headers: getAuthHeaders()
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || `Không thể lấy thông tin ${entityName.toLowerCase()}`);
       return data;
@@ -161,7 +199,7 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
       const url = isCustomEndpoint ? `${baseUrl}/create` : baseUrl;
       const res = await fetch(url, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(data)
       });
       const result = await res.json();
@@ -172,7 +210,7 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
       const url = isCustomEndpoint ? `${baseUrl}/update/${id}` : `${baseUrl}/${id}`;
       const res = await fetch(url, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(data)
       });
       const result = await res.json();
@@ -181,10 +219,22 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     },
     [deleteMethodName()]: async (id) => {
       const url = isCustomEndpoint ? `${baseUrl}/delete/${id}` : `${baseUrl}/${id}`;
-      const res = await fetch(url, { method: 'DELETE' });
+      const res = await fetch(url, { 
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      });
       const result = await res.json();
       if (!res.ok) throw new Error(result.error || `Xóa ${entityName.toLowerCase()} thất bại`);
       return result;
+    },
+    [countMethodName()]: async () => {
+      const url = `${baseUrl}/count`;
+      const res = await fetch(url, {
+        headers: getAuthHeaders()
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Không thể lấy số lượng ${entityName.toLowerCase()}`);
+      return data;
     }
   };
 };

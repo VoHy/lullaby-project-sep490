@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FaWallet } from 'react-icons/fa';
-import { useWallet } from './hooks/useWallet';
+// import { FaWallet } from 'react-icons/fa';
+// import { useWallet } from './hooks/useWallet';
 import { useRouter, usePathname } from "next/navigation";
 import { FaUser, FaUsers } from "react-icons/fa";
 import { 
@@ -33,13 +33,13 @@ const TabNavigation = () => {
       href: '/profile/patient',
       active: pathname === '/profile/patient',
     },
-    {
-      id: 'wallet',
-      name: 'Ví điện tử',
-      icon: <FaWallet className="text-sm" />,
-      href: '/wallet',
-      active: pathname === '/wallet',
-    }
+    // {
+    //   id: 'wallet',
+    //   name: 'Ví điện tử',
+    //   icon: <FaWallet className="text-sm" />,
+    //   href: '/wallet',
+    //   active: pathname === '/wallet',
+    // }
   ];
   return (
     <div className="flex flex-wrap gap-2 border-b border-gray-200 mb-8">
@@ -62,7 +62,12 @@ const TabNavigation = () => {
 };
 
 export default function WalletPage(props) {
-  const { wallet, transactions, loading, handleDeposit } = useWallet();
+  // const { wallet, transactions, loading, handleDeposit } = useWallet();
+  // Temporary mock data
+  const wallet = null;
+  const transactions = [];
+  const loading = false;
+  const handleDeposit = () => {};
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');

@@ -47,12 +47,12 @@ export default function PatientCareProfileList({ careProfiles, relativesList, zo
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filteredCareProfiles.map(care => (
             <PatientCareProfileCard
-              key={care.careProfileID}
+              key={care.careProfileID || care.CareProfileID}
               care={care}
               relativesList={relativesList}
               zones={zones}
-              relFilter={relativesFilter[care.careProfileID] || 'all'}
-              setRelFilter={val => setRelativesFilter(f => ({ ...f, [care.careProfileID]: val }))}
+              relFilter={relativesFilter[care.careProfileID || care.CareProfileID] || 'all'}
+              setRelFilter={val => setRelativesFilter(f => ({ ...f, [care.careProfileID || care.CareProfileID]: val }))}
               handleOpenForm={handleOpenForm}
               onViewDetailCareProfile={onViewDetailCareProfile}
               onViewDetailRelative={onViewDetailRelative}

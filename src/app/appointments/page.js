@@ -1,15 +1,15 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { FaCalendar, FaPlus } from 'react-icons/fa';
-import authService from '@/services/auth/authService';
+import { AuthContext } from '@/context/AuthContext';
 import bookingService from '@/services/api/bookingService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import careProfileService from '@/services/api/careProfileService';
-import customerTaskService from '@/services/api/customerTaskService';
-import customerPackageService from '@/services/api/customerPackageService';
+import customizeTaskService from '@/services/api/customizeTaskService';
+import customizePackageService from '@/services/api/customizePackageService';
 import invoiceService from '@/services/api/invoiceService';
 import {
   AppointmentCard,
@@ -32,8 +32,8 @@ export default function AppointmentsPage() {
   const [serviceTypes, setServiceTypes] = useState([]);
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
-  const [customerTasks, setCustomerTasks] = useState([]);
-  const [customerPackages, setCustomerPackages] = useState([]);
+  const [customizeTasks, setCustomizeTasks] = useState([]);
+  const [customizePackages, setCustomizePackages] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -41,9 +41,10 @@ export default function AppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const router = useRouter();
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
-    if (!authService.isAuthenticated()) {
+    if (!user) {
       router.push('/auth/login');
       return;
     }
@@ -51,7 +52,6 @@ export default function AppointmentsPage() {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const user = authService.getCurrentUser();
         
         const [
           bookings, 
@@ -66,8 +66,8 @@ export default function AppointmentsPage() {
           serviceTypeService.getServiceTypes(),
           nursingSpecialistService.getNursingSpecialists(),
           careProfileService.getCareProfiles(),
-          customerTaskService.getCustomerTasks(),
-          customerPackageService.getCustomerPackages(),
+          customizeTaskService.getCustomizeTasks(),
+          customizePackageService.getCustomizePackages(),
           invoiceService.getInvoices()
         ]);
 
@@ -84,8 +84,8 @@ export default function AppointmentsPage() {
         setServiceTypes(services);
         setNursingSpecialists(specialists);
         setCareProfiles(careProfileData);
-        setCustomerTasks(taskData);
-        setCustomerPackages(packageData);
+        setCustomizeTasks(taskData);
+        setCustomizePackages(packageData);
         setInvoices(invoiceData);
       } catch (error) {
         console.error('Error fetching appointments:', error);
@@ -95,7 +95,7 @@ export default function AppointmentsPage() {
     };
 
     fetchData();
-  }, [router]);
+  }, [router, user]);
 
   // Filter appointments based on search and filters
   const filteredAppointments = filterAppointments(appointments, searchText, statusFilter, dateFilter);
@@ -112,8 +112,8 @@ export default function AppointmentsPage() {
 
   // Get detailed booking information
   const getBookingDetails = (bookingId) => {
-    const tasks = customerTasks.filter(task => task.BookingID === bookingId);
-    const packages = customerPackages.filter(pkg => pkg.BookingID === bookingId);
+    const tasks = customizeTasks.filter(task => task.BookingID === bookingId);
+    const packages = customizePackages.filter(pkg => pkg.BookingID === bookingId);
     
     return {
       tasks,
@@ -125,7 +125,7 @@ export default function AppointmentsPage() {
 
   // Get services for a booking
   const getBookingServices = (bookingId) => {
-    const tasks = customerTasks.filter(task => task.BookingID === bookingId);
+    const tasks = customizeTasks.filter(task => task.BookingID === bookingId);
     const services = tasks.map(task => {
       const service = serviceTypes.find(s => s.ServiceID === task.ServiceID);
       const nurse = nursingSpecialists.find(n => n.NursingID === task.NursingID);
@@ -141,7 +141,7 @@ export default function AppointmentsPage() {
 
   // Get packages for a booking
   const getBookingPackages = (bookingId) => {
-    const packages = customerPackages.filter(pkg => pkg.BookingID === bookingId);
+    const packages = customizePackages.filter(pkg => pkg.BookingID === bookingId);
     return packages.map(pkg => ({
       packageName: pkg.Name,
       description: pkg.Description,

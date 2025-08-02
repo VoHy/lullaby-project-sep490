@@ -1,6 +1,6 @@
 import { FaEdit, FaSave, FaTimes, FaUser, FaEnvelope, FaPhone, FaCalendar, FaShieldAlt } from "react-icons/fa";
 
-export default function ProfileCard({ profile, isEditing, editData, onEditClick, onInputChange, onSave, onCancel, loading, error   }) {
+export default function ProfileCard({ profile, isEditing, editData, onEditClick, onInputChange, onSave, onCancel, loading, error, roleName }) {
   if (!profile) return null;
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-8">
@@ -13,7 +13,7 @@ export default function ProfileCard({ profile, isEditing, editData, onEditClick,
           />
         </div>
         <h2 className="text-2xl font-bold text-gray-800 mt-4">{profile.fullName || profile.full_name}</h2>
-        {/* <p className="text-gray-600">{profile.role_id}</p> */}
+        <p className="text-gray-600">{roleName}</p>
       </div>
       {isEditing ? (
         <div className="space-y-4">
@@ -118,13 +118,13 @@ export default function ProfileCard({ profile, isEditing, editData, onEditClick,
             <FaShieldAlt className="text-blue-500" />
             <div>
               <p className="text-sm text-gray-600">Trạng thái</p>
-              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                profile.status === "active" 
-                  ? "bg-green-100 text-green-700" 
-                  : "bg-red-100 text-red-700"
-              }`}>
-                {profile.status === "active" ? "Đang hoạt động" : "Ngừng hoạt động"}
-              </span>
+                             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                 (profile.status || '').toLowerCase() === "active" 
+                   ? "bg-green-100 text-green-700" 
+                   : "bg-red-100 text-red-700"
+               }`}>
+                 {(profile.status || '').toLowerCase() === "active" ? "Đang hoạt động" : "Ngừng hoạt động"}
+               </span>
             </div>
           </div>
           <button 

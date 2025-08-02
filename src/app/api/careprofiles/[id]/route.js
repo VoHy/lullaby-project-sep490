@@ -2,42 +2,125 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
   try {
-    const { id } = await params;
-    const res = await fetch(`http://localhost:5294/api/careprofiles/get/${id}`);
-    const data = await res.json();
-    return Response.json(data, { status: res.status });
+    const { id } = params;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
+    
+    const response = await fetch(`${backendUrl}/api/careprofiles/${id}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      
+      try {
+        const errorData = JSON.parse(errorText);
+        return NextResponse.json(
+          { error: errorData.message || `Không thể lấy thông tin care profile` },
+          { status: response.status }
+        );
+      } catch (parseError) {
+        console.error('Failed to parse error response as JSON:', parseError);
+        return NextResponse.json(
+          { error: `Server error: ${response.status} - ${errorText.substring(0, 100)}` },
+          { status: response.status }
+        );
+      }
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
-    return Response.json({ error: 'Không thể lấy thông tin care profile' }, { status: 500 });
+    console.error('Proxy error:', error);
+    return NextResponse.json(
+      { error: `Không thể kết nối đến server: ${error.message}` },
+      { status: 500 }
+    );
   }
 }
 
 export async function PUT(request, { params }) {
   try {
-    const { id } = await params;
+    const { id } = params;
     const body = await request.json();
-    const res = await fetch(`http://localhost:5294/api/careprofiles/update/${id}`, {
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
+    
+    const response = await fetch(`${backendUrl}/api/careprofiles/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify(body)
     });
-    const data = await res.json();
-    return Response.json(data, { status: res.status });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      
+      try {
+        const errorData = JSON.parse(errorText);
+        return NextResponse.json(
+          { error: errorData.message || `Cập nhật care profile thất bại` },
+          { status: response.status }
+        );
+      } catch (parseError) {
+        console.error('Failed to parse error response as JSON:', parseError);
+        return NextResponse.json(
+          { error: `Server error: ${response.status} - ${errorText.substring(0, 100)}` },
+          { status: response.status }
+        );
+      }
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
-    return Response.json({ error: 'Không thể cập nhật care profile' }, { status: 500 });
+    console.error('Proxy error:', error);
+    return NextResponse.json(
+      { error: `Không thể kết nối đến server: ${error.message}` },
+      { status: 500 }
+    );
   }
 }
 
 export async function DELETE(request, { params }) {
   try {
-    const { id } = await params;
-    const res = await fetch(`http://localhost:5294/api/careprofiles/delete/${id}`, {
+    const { id } = params;
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
+    
+    const response = await fetch(`${backendUrl}/api/careprofiles/${id}`, {
       method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
-    const data = await res.json();
-    return Response.json(data, { status: res.status });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      
+      try {
+        const errorData = JSON.parse(errorText);
+        return NextResponse.json(
+          { error: errorData.message || `Xóa care profile thất bại` },
+          { status: response.status }
+        );
+      } catch (parseError) {
+        console.error('Failed to parse error response as JSON:', parseError);
+        return NextResponse.json(
+          { error: `Server error: ${response.status} - ${errorText.substring(0, 100)}` },
+          { status: response.status }
+        );
+      }
+    }
+
+    const data = await response.json();
+    return NextResponse.json(data);
   } catch (error) {
-    return Response.json({ error: 'Không thể xóa care profile' }, { status: 500 });
+    console.error('Proxy error:', error);
+    return NextResponse.json(
+      { error: `Không thể kết nối đến server: ${error.message}` },
+      { status: 500 }
+    );
   }
-} 
+}

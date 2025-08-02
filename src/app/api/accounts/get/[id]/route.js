@@ -1,60 +1,36 @@
 import { NextResponse } from 'next/server';
 
-// Lưu trữ dữ liệu tạm thời cho mock
-let mockManagerData = {
-  1: {
-    id: 1,
-    accountID: 1,
-    fullName: 'Koh',
-    email: 'koh@example.com',
-    phoneNumber: '0393252054',
-    role_id: 3,
-    status: 'active',
-    zoneID: 1,
-    zoneName: 'Quận 2',
-    created_at: '2025-07-29T10:38:09.000Z',
-    updated_at: null
-  }
-};
-
 export async function GET(request, { params }) {
   try {
     const { id } = await params;
-    const res = await fetch(`http://localhost:5294/api/accounts/get/${id}`);
-    const data = await res.json();
-    return Response.json(data, { status: res.status });
-  } catch (error) {
-    return Response.json({ error: 'Không thể lấy thông tin tài khoản' }, { status: 500 });
-  }
-}
+    console.log('Getting account with ID:', id);
 
-export async function PUT(request, { params }) {
-  try {
-    const { id } = await params;
-    const body = await request.json();
-    const res = await fetch(`http://localhost:5294/api/accounts/update/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(body),
+    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
+    const response = await fetch(`${backendUrl}/api/accounts/get/${id}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' },
     });
-    const data = await res.json();
-    return Response.json(data, { status: res.status });
-  } catch (error) {
-    return Response.json({ error: 'Không thể cập nhật tài khoản' }, { status: 500 });
-  }
-}
 
-export async function DELETE(request, { params }) {
-  try {
-    const { id } = await params;
-    const res = await fetch(`http://localhost:5294/api/accounts/delete/${id}`, {
-      method: 'DELETE',
-    });
-    const data = await res.json();
-    return Response.json(data, { status: res.status });
+    console.log('Backend response status:', response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log('Backend error text:', errorText);
+
+      try {
+        const errorData = JSON.parse(errorText);
+        return NextResponse.json({ error: errorData.message || 'Không thể lấy thông tin account' }, { status: response.status });
+      } catch (parseError) {
+        console.error('Failed to parse error response as JSON:', parseError);
+        return NextResponse.json({ error: `Server error: ${response.status} - ${errorText.substring(0, 100)}` }, { status: response.status });
+      }
+    }
+
+    const data = await response.json();
+    console.log('Backend success data:', data);
+    return NextResponse.json(data);
   } catch (error) {
-    return Response.json({ error: 'Không thể xóa tài khoản' }, { status: 500 });
+    console.error('Proxy error:', error);
+    return NextResponse.json({ error: `Không thể kết nối đến server: ${error.message}` }, { status: 500 });
   }
 } 
