@@ -1,7 +1,7 @@
 "use client";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMemo, useEffect, useState, useContext } from "react";
-import customerPackageService from '@/services/api/customerPackageService';
+// import customizePackageService from '@/services/api/customizePackageService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 // import walletService from '@/services/api/walletService';
@@ -56,7 +56,7 @@ export default function PaymentPage() {
           careProfilesData,
           walletsData
         ] = await Promise.all([
-          customerPackageService.getCustomerPackages(),
+          // customizePackageService.getCustomizePackages(),
           serviceTypeService.getServiceTypes(),
           serviceTaskService.getServiceTasks(),
           nursingSpecialistService.getNursingSpecialists(),

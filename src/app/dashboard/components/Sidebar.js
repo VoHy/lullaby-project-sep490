@@ -39,13 +39,20 @@ const Sidebar = ({ user }) => {
       { name: 'Ghi chú y tế', path: '/dashboard?tab=medicalnote', icon: faNotesMedical, color: 'text-blue-500', tab: 'medicalnote' },
       { name: 'Thông báo', path: '/dashboard?tab=notifications', icon: faBell, color: 'text-green-500', tab: 'notifications' },
       { name: 'Hồ sơ cá nhân', path: '/dashboard?tab=profile', icon: faUser, color: 'text-pink-500', tab: 'profile' },
-
     ],
-    4: [ // Manager
+    3: [ // Manager - Sửa lại role_id cho Manager
       { name: 'Quản lý Nurse', path: '/dashboard?tab=nurse', icon: faUserNurse, color: 'text-blue-500', tab: 'nurse' },
       { name: 'Quản lý Specialist', path: '/dashboard?tab=specialist', icon: faUserMd, color: 'text-pink-500', tab: 'specialist' },
       { name: 'Quản lý Booking', path: '/dashboard?tab=booking', icon: faCalendarAlt, color: 'text-green-500', tab: 'booking' },
-      { name: 'Quản lý Khu vực', path: '/dashboard?tab=zone', icon: faMapLocationDot, color: 'text-red-500', tab: 'zone' },
+    ],
+    4: [ // Customer
+      { name: 'Tổng quan', path: '/dashboard?tab=overview', icon: faChartBar, color: 'text-purple-500', tab: 'overview' },
+      { name: 'Lịch của tôi', path: '/dashboard?tab=schedule', icon: faCalendarAlt, color: 'text-green-500', tab: 'schedule' },
+      { name: 'Lịch sử lịch hẹn', path: '/dashboard?tab=bookings', icon: faStethoscope, color: 'text-red-500', tab: 'bookings' },
+      { name: 'Hồ sơ khách hàng', path: '/dashboard?tab=patients', icon: faNotesMedical, color: 'text-blue-500', tab: 'patients' },
+      { name: 'Ghi chú y tế', path: '/dashboard?tab=medicalnote', icon: faNotesMedical, color: 'text-blue-500', tab: 'medicalnote' },
+      { name: 'Thông báo', path: '/dashboard?tab=notifications', icon: faBell, color: 'text-green-500', tab: 'notifications' },
+      { name: 'Hồ sơ cá nhân', path: '/dashboard?tab=profile', icon: faUser, color: 'text-pink-500', tab: 'profile' },
     ],
     5: [ // Specialist
       { name: 'Tổng quan', path: '/dashboard?tab=overview', icon: faChartBar, color: 'text-purple-500', tab: 'overview' },
@@ -64,7 +71,7 @@ const Sidebar = ({ user }) => {
       1: 'Administrator',
       2: 'NursingSpecialist',
       3: 'Manager',
-      4: 'Customer'
+      4: 'Customer',
     };
     return roleMap[role_id] || 'User';
   };
@@ -129,54 +136,63 @@ const Sidebar = ({ user }) => {
       {/* Navigation Menu */}
       <nav className="mt-4 px-2 flex-1">
         <div className="space-y-1">
-          {currentMenuItems.map((item, index) => {
-            // Determine if this item is active
-            let isActive = false;
-            if (item.tab) {
-              isActive = pathname.startsWith('/dashboard') && currentTab === item.tab;
-            } else {
-              isActive = pathname === item.path;
-            }
-            return (
-              <Link
-                key={item.path}
-                href={item.path}
-                className={`
-                  group flex items-center px-3 py-2 rounded-lg transition-all duration-300
-                  text-sm
-                  hover:bg-gradient-to-r hover:from-pink-100 hover:to-purple-100
-                  hover:shadow-md hover:scale-105 transform
-                  ${isActive
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg font-bold'
-                    : 'bg-white text-gray-700 hover:text-purple-700'}
-                  animate-slideIn
-                `}
-                style={{ animationDelay: `${index * 100}ms` }}
-              >
-                <div className={`
-                  flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-300
-                  ${isActive
-                    ? 'bg-white/20 text-white'
-                    : `bg-gradient-to-br from-white to-gray-50 ${item.color} group-hover:scale-110 shadow-sm`}
-                `}>
-                  <FontAwesomeIcon
-                    icon={item.icon}
-                    className="text-lg"
-                  />
-                </div>
-                {!isCollapsed && (
-                  <div className="ml-3 flex-1 flex items-center">
-                    <span className="font-medium text-sm tracking-wide">
-                      {item.name}
-                    </span>
+          {currentMenuItems.length > 0 ? (
+            currentMenuItems.map((item, index) => {
+              // Determine if this item is active
+              let isActive = false;
+              if (item.tab) {
+                isActive = pathname.startsWith('/dashboard') && currentTab === item.tab;
+              } else {
+                isActive = pathname === item.path;
+              }
+              return (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  className={`
+                    group flex items-center px-3 py-2 rounded-lg transition-all duration-300
+                    text-sm
+                    hover:bg-gradient-to-r hover:from-pink-100 hover:to-purple-100
+                    hover:shadow-md hover:scale-105 transform
+                    ${isActive
+                      ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg font-bold'
+                      : 'bg-white text-gray-700 hover:text-purple-700'}
+                    animate-slideIn
+                  `}
+                  style={{ animationDelay: `${index * 100}ms` }}
+                >
+                  <div className={`
+                    flex items-center justify-center w-9 h-9 rounded-lg transition-all duration-300
+                    ${isActive
+                      ? 'bg-white/20 text-white'
+                      : `bg-gradient-to-br from-white to-gray-50 ${item.color} group-hover:scale-110 shadow-sm`}
+                  `}>
+                    <FontAwesomeIcon
+                      icon={item.icon}
+                      className="text-lg"
+                    />
                   </div>
-                )}
-                {!isCollapsed && isActive && (
-                  <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
-                )}
-              </Link>
-            );
-          })}
+                  {!isCollapsed && (
+                    <div className="ml-3 flex-1 flex items-center">
+                      <span className="font-medium text-sm tracking-wide">
+                        {item.name}
+                      </span>
+                    </div>
+                  )}
+                  {!isCollapsed && isActive && (
+                    <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
+                  )}
+                </Link>
+              );
+            })
+          ) : (
+            // Hiển thị thông báo nếu không có menu items
+            <div className="text-center py-8">
+              <div className="text-gray-400 text-4xl mb-2">📋</div>
+              <p className="text-gray-500 text-sm">Không có menu</p>
+              <p className="text-gray-400 text-xs mt-1">Role: {userRole}</p>
+            </div>
+          )}
         </div>
       </nav>
 

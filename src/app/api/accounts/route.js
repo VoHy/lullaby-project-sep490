@@ -3,16 +3,17 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-    const response = await fetch(`${backendUrl}/api/accounts`, {
+
+    const response = await fetch(`${backendUrl}/api/accounts/getall`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
     });
-    
+
     if (!response.ok) {
       const errorText = await response.text();
-      
+
       try {
         const errorData = JSON.parse(errorText);
         return NextResponse.json(
@@ -27,8 +28,9 @@ export async function GET() {
         );
       }
     }
-    
+
     const data = await response.json();
+
     return NextResponse.json(data);
   } catch (error) {
     console.error('Proxy error:', error);

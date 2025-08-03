@@ -19,6 +19,17 @@ const accountService = {
     return data;
   },
 
+  // Thêm method getAllAccounts để lấy tất cả accounts
+  getAllAccounts: async () => {
+    const res = await fetch('/api/accounts/getall', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách accounts');
+    return data;
+  },
+
   // Thêm method getAccountById để lấy thông tin account theo ID
   getAccountById: async (id) => {
     const res = await fetch(`/api/accounts/get/${id}`, {
@@ -54,6 +65,7 @@ const accountService = {
     return result;
   },
 
+  
   registerManager: async (data) => {
     const res = await fetch('/api/accounts/register/manager', {
       method: 'POST',
