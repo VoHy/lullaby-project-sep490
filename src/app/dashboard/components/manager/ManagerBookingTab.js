@@ -4,8 +4,8 @@ import bookingService from '@/services/api/bookingService';
 import accountService from '@/services/api/accountService';
 import careProfileService from '@/services/api/careProfileService';
 import serviceTypeService from '@/services/api/serviceTypeService';
-import customerPackageService from '@/services/api/customerPackageService';
-import customerTaskService from '@/services/api/customerTaskService';
+import customizePackageService from '@/services/api/customizePackageService';
+import customizeTaskService from '@/services/api/customizeTaskService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import zoneDetailService from '@/services/api/zoneDetailService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
@@ -27,8 +27,8 @@ const ManagerBookingTab = () => {
   const [accounts, setAccounts] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
-  const [customerPackages, setCustomerPackages] = useState([]);
-  const [customerTasks, setCustomerTasks] = useState([]);
+  const [customizePackages, setCustomizePackages] = useState([]);
+  const [customizeTasks, setCustomizeTasks] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
   const [zoneDetails, setZoneDetails] = useState([]);
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
@@ -51,8 +51,8 @@ const ManagerBookingTab = () => {
           accountsData,
           careProfilesData,
           serviceTypesData,
-          customerPackagesData,
-          customerTasksData,
+          customizePackagesData,
+          customizeTasksData,
           serviceTasksData,
           zoneDetailsData,
           nursingSpecialistsData,
@@ -62,8 +62,8 @@ const ManagerBookingTab = () => {
           accountService.getAllAccounts(),
           careProfileService.getCareProfiles(),
           serviceTypeService.getServiceTypes(),
-          customerPackageService.getCustomerPackages(),
-          customerTaskService.getCustomerTasks(),
+          customizePackageService.getCustomizePackages(),
+          customizeTaskService.getCustomizeTasks(),
           serviceTaskService.getServiceTasks(),
           zoneDetailService.getZoneDetails(),
           nursingSpecialistService.getNursingSpecialists(),
@@ -74,8 +74,8 @@ const ManagerBookingTab = () => {
         setAccounts(accountsData);
         setCareProfiles(careProfilesData);
         setServiceTypes(serviceTypesData);
-        setCustomerPackages(customerPackagesData);
-        setCustomerTasks(customerTasksData);
+        setCustomizePackages(customizePackagesData);
+        setCustomizeTasks(customizeTasksData);
         setServiceTasks(serviceTasksData);
         setZoneDetails(zoneDetailsData);
         setNursingSpecialists(nursingSpecialistsData);
@@ -102,14 +102,14 @@ const ManagerBookingTab = () => {
     let service = null;
     let packageInfo = null;
     if (booking.CustomizePackageID) {
-      packageInfo = customerPackages.find(p => p.CustomizePackageID === booking.CustomizePackageID);
+      packageInfo = customizePackages.find(p => p.CustomizePackageID === booking.CustomizePackageID);
       service = serviceTypes.find(s => s.ServiceID === packageInfo?.ServiceID);
     } else if (booking.CareProfileID) {
       service = serviceTypes.find(s => s.ServiceID === booking.CareProfileID);
     }
-    // Lấy các dịch vụ con/lẻ thực tế từ CustomerTask
-    const customerTasksOfBooking = customerTasks.filter(t => t.BookingID === booking.BookingID);
-    const serviceTasksOfBooking = customerTasksOfBooking.map(task => {
+    // Lấy các dịch vụ con/lẻ thực tế từ CustomizeTask
+    const customizeTasksOfBooking = customizeTasks.filter(t => t.BookingID === booking.BookingID);
+    const serviceTasksOfBooking = customizeTasksOfBooking.map(task => {
       const serviceTask = serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
       const assignedNurse = nursingSpecialists.find(n => n.NursingID === task.NursingID);
       const assignedAccount = accounts.find(acc => acc.AccountID === assignedNurse?.AccountID);

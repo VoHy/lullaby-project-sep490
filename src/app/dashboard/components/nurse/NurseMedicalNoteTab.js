@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import careProfileService from '@/services/api/careProfileService';
 import bookingService from '@/services/api/bookingService';
-import customerTaskService from '@/services/api/customerTaskService';
+import customizeTaskService from '@/services/api/customizeTaskService';
 import serviceTaskService from '@/services/api/serviceTaskService';
-import customerPackageService from '@/services/api/customerPackageService';
+import customizePackageService from '@/services/api/customizePackageService';
 
 const NurseMedicalNoteTab = ({ medicalNotes, patients }) => {
   const [notes, setNotes] = useState(medicalNotes);
@@ -17,9 +17,9 @@ const NurseMedicalNoteTab = ({ medicalNotes, patients }) => {
   });
   const [careProfiles, setCareProfiles] = useState([]);
   const [bookings, setBookings] = useState([]);
-  const [customerTasks, setCustomerTasks] = useState([]);
+  const [customizeTasks, setCustomizeTasks] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
-  const [customerPackages, setCustomerPackages] = useState([]);
+  const [customizePackages, setCustomizePackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -27,18 +27,18 @@ const NurseMedicalNoteTab = ({ medicalNotes, patients }) => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [careProfilesData, bookingsData, customerTasksData, serviceTasksData, customerPackagesData] = await Promise.all([
+        const [careProfilesData, bookingsData, customizeTasksData, serviceTasksData, customizePackagesData] = await Promise.all([
           careProfileService.getAllCareProfiles(),
           bookingService.getAllBookings(),
-          customerTaskService.getAllCustomerTasks(),
+          customizeTaskService.getAllCustomizeTasks(),
           serviceTaskService.getAllServiceTasks(),
-          customerPackageService.getAllCustomerPackages()
+          customizePackageService.getAllCustomizePackages()
         ]);
         setCareProfiles(careProfilesData);
         setBookings(bookingsData);
-        setCustomerTasks(customerTasksData);
+        setCustomizeTasks(customizeTasksData);
         setServiceTasks(serviceTasksData);
-        setCustomerPackages(customerPackagesData);
+        setCustomizePackages(customizePackagesData);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Không thể tải dữ liệu. Vui lòng thử lại.');
@@ -58,11 +58,11 @@ const NurseMedicalNoteTab = ({ medicalNotes, patients }) => {
       .sort((a, b) => Math.abs(new Date(note.CreatedAt) - new Date(a.WorkDate)) - Math.abs(new Date(note.CreatedAt) - new Date(b.WorkDate)))[0];
   };
 
-  // Hàm tìm dịch vụ con (ServiceTask) từ booking và CustomerTask
+  // Hàm tìm dịch vụ con (ServiceTask) từ booking và CustomizeTask
   const findServiceTaskForNote = (note, booking) => {
-    // Tìm dịch vụ con (ServiceTask) từ booking và CustomerTask
+    // Tìm dịch vụ con (ServiceTask) từ booking và CustomizeTask
     if (!booking) return null;
-    const task = customerTasks.find(t => t.BookingID === booking.BookingID && t.CareProfileID === note.CareProfileID);
+    const task = customizeTasks.find(t => t.BookingID === booking.BookingID && t.CareProfileID === note.CareProfileID);
     if (!task) return null;
     return serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
   };
@@ -112,7 +112,7 @@ const NurseMedicalNoteTab = ({ medicalNotes, patients }) => {
           const patient = careProfiles.find(p => p.CareProfileID === note.CareProfileID);
           const booking = findBookingForNote(note);
           const serviceTask = findServiceTaskForNote(note, booking);
-          const packageObj = booking ? customerPackages.find(pkg => pkg.CustomizePackageID === booking.CustomizePackageID) : null;
+          const packageObj = booking ? customizePackages.find(pkg => pkg.CustomizePackageID === booking.CustomizePackageID) : null;
           return (
             <div
               key={note.MedicalNoteID}
@@ -145,7 +145,7 @@ const NurseMedicalNoteTab = ({ medicalNotes, patients }) => {
         const patient = careProfiles.find(p => p.CareProfileID === selectedNote.CareProfileID);
         const booking = findBookingForNote(selectedNote);
         const serviceTask = findServiceTaskForNote(selectedNote, booking);
-        const packageObj = booking ? customerPackages.find(pkg => pkg.CustomizePackageID === booking.CustomizePackageID) : null;
+        const packageObj = booking ? customizePackages.find(pkg => pkg.CustomizePackageID === booking.CustomizePackageID) : null;
         return (
           <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg relative animate-fade-in">

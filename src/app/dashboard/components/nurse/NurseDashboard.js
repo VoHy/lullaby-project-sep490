@@ -16,7 +16,7 @@ import notificationService from '@/services/api/notificationService';
 import workScheduleService from '@/services/api/workScheduleService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import medicalNoteService from '@/services/api/medicalNoteService';
-import customerTaskService from '@/services/api/customerTaskService';
+import customizeTaskService from '@/services/api/customizeTaskService';
 
 const NurseDashboard = ({ initialTab }) => {
   const router = useRouter();
@@ -58,14 +58,14 @@ const NurseDashboard = ({ initialTab }) => {
         // Load tất cả data song song
         const [
           allBookings,
-          allCustomerTasks,
+          allCustomizeTasks,
           allWorkSchedules,
           allCareProfiles,
           allNotifications,
           allMedicalNotes
         ] = await Promise.all([
           bookingService.getBookings(),
-          customerTaskService.getCustomerTasks(),
+          customizeTaskService.getCustomizeTasks(),
           workScheduleService.getWorkSchedules(),
           careProfileService.getCareProfiles(),
           notificationService.getNotifications(),
@@ -73,8 +73,8 @@ const NurseDashboard = ({ initialTab }) => {
         ]);
 
         // Lọc data theo nursingID
-        const userCustomerTasks = allCustomerTasks.filter(task => task.NursingID === nursingID);
-        const bookingIDs = [...new Set(userCustomerTasks.map(task => task.BookingID))];
+        const userCustomizeTasks = allCustomizeTasks.filter(task => task.NursingID === nursingID);
+        const bookingIDs = [...new Set(userCustomizeTasks.map(task => task.BookingID))];
         const filteredBookings = allBookings.filter(b => bookingIDs.includes(b.BookingID));
         
         const filteredWorkSchedules = allWorkSchedules.filter(ws => ws.NursingID === nursingID);

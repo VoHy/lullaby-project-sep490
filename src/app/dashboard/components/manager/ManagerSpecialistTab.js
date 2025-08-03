@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useContext } from 'react';
-import accounts from '@/mock/Account';
-import nursingSpecialists from '@/mock/NursingSpecialist';
-import zones from '@/mock/Zone';
+import accountService from '@/services/api/accountService';
+import nursingSpecialistService from '@/services/api/nursingSpecialistService';
+import zoneService from '@/services/api/zoneService';
 import { AuthContext } from '@/context/AuthContext';
 
 const ManagerSpecialistTab = () => {
@@ -30,7 +30,7 @@ const ManagerSpecialistTab = () => {
   // Lấy khu vực mà manager hiện tại quản lý
   const getManagedZone = () => {
     if (!currentManagerId) return null;
-    return zones.find(zone => zone.AccountID === currentManagerId);
+    return zoneService.getZones().find(zone => zone.AccountID === currentManagerId);
   };
 
   // Lọc specialist thuộc khu vực quản lý của manager
@@ -39,12 +39,12 @@ const ManagerSpecialistTab = () => {
     if (!managedZone) return [];
 
     // Lấy danh sách specialist thuộc khu vực quản lý
-    const specialistsInZone = nursingSpecialists.filter(ns => 
+    const specialistsInZone = nursingSpecialistService.getNursingSpecialists().filter(ns => 
       ns.ZoneID === managedZone.ZoneID && ns.Major === 'Chuyên gia'
     );
 
     // Lấy thông tin account của các specialist này
-    const specialistAccounts = accounts.filter(acc => 
+    const specialistAccounts = accountService.getAllAccounts().filter(acc => 
       acc.role_id === 2 && specialistsInZone.some(ns => ns.AccountID === acc.AccountID)
     );
 
@@ -64,7 +64,7 @@ const ManagerSpecialistTab = () => {
   }, [currentManagerId]);
 
   const handleView = (specialist) => {
-    const detail = nursingSpecialists.find(n => n.AccountID === specialist.AccountID);
+    const detail = nursingSpecialistService.getNursingSpecialists().find(n => n.AccountID === specialist.AccountID);
     setDetailData({ ...specialist, ...detail });
     setEditStatus(specialist.status);
     setShowDetail(true);

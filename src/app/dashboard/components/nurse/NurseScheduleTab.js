@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, format, isSameMonth, isSameDay, isWithinInterval, parseISO } from 'date-fns';
 import holidayService from '@/services/api/holidayService';
 import careProfileService from '@/services/api/careProfileService';
-import customerPackageService from '@/services/api/customerPackageService';
+import customizePackageService from '@/services/api/customizePackageService';
 import { FaRegClock, FaFlag, FaCalendarCheck } from 'react-icons/fa';
 
 const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
@@ -11,7 +11,7 @@ const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [holidays, setHolidays] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
-  const [customerPackages, setCustomerPackages] = useState([]);
+  const [customizePackages, setCustomizePackages] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
@@ -19,14 +19,14 @@ const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [holidaysData, careProfilesData, customerPackagesData] = await Promise.all([
+        const [holidaysData, careProfilesData, customizePackagesData] = await Promise.all([
           holidayService.getAllHolidays(),
           careProfileService.getAllCareProfiles(),
-          customerPackageService.getAllCustomerPackages()
+          customizePackageService.getAllCustomizePackages()
         ]);
         setHolidays(holidaysData);
         setCareProfiles(careProfilesData);
-        setCustomerPackages(customerPackagesData);
+        setCustomizePackages(customizePackagesData);
       } catch (err) {
         console.error('Error fetching data:', err);
         setError('Không thể tải dữ liệu. Vui lòng thử lại.');
@@ -251,7 +251,7 @@ const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
             {selectedEvent && selectedEvent.type === 'booking' && (() => {
               const b = selectedEvent.bookingObj;
               const patient = careProfiles.find(p => p.CareProfileID === b.CareProfileID);
-              const customerPackage = customerPackages.find(pkg => pkg.CustomizePackageID === b.CustomizePackageID);
+              const customizePackage = customizePackages.find(pkg => pkg.CustomizePackageID === b.CustomizePackageID);
               return (
                 <div className="mt-4 p-4 bg-green-50 rounded shadow">
                   <h4 className="text-lg font-bold text-green-700 mb-2">Chi tiết lịch hẹn #{b.BookingID}</h4>

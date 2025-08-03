@@ -10,8 +10,9 @@ import { useState, useEffect } from 'react';
 import careProfileService from '@/services/api/careProfileService';
 import accountService from '@/services/api/accountService';
 import serviceTypeService from '@/services/api/serviceTypeService';
-import customerPackageService from '@/services/api/customerPackageService';
-import customerTaskService from '@/services/api/customerTaskService';
+// import bookingService from '@/services/api/bookingService';
+import customizePackageService from '@/services/api/customizePackageService';
+import customizeTaskService from '@/services/api/customizeTaskService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 
@@ -20,8 +21,8 @@ const BookingsTab = ({ bookings }) => {
   const [careProfiles, setCareProfiles] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
-  const [customerPackages, setCustomerPackages] = useState([]);
-  const [customerTasks, setCustomerTasks] = useState([]);
+  const [customizePackages, setCustomizePackages] = useState([]);
+  const [customizeTasks, setCustomizeTasks] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -38,16 +39,16 @@ const BookingsTab = ({ bookings }) => {
           careProfilesData,
           accountsData,
           serviceTypesData,
-          customerPackagesData,
-          customerTasksData,
+          customizePackagesData,
+          customizeTasksData,
           serviceTasksData,
           nursingSpecialistsData
         ] = await Promise.all([
           careProfileService.getCareProfiles(),
           accountService.getAllAccounts(),
           serviceTypeService.getServiceTypes(),
-          customerPackageService.getCustomerPackages(),
-          customerTaskService.getCustomerTasks(),
+          customizePackageService.getCustomizePackages(),
+          customizeTaskService.getCustomizeTasks(),
           serviceTaskService.getServiceTasks(),
           nursingSpecialistService.getNursingSpecialists()
         ]);
@@ -55,8 +56,8 @@ const BookingsTab = ({ bookings }) => {
         setCareProfiles(careProfilesData);
         setAccounts(accountsData);
         setServiceTypes(serviceTypesData);
-        setCustomerPackages(customerPackagesData);
-        setCustomerTasks(customerTasksData);
+        setCustomizePackages(customizePackagesData);
+        setCustomizeTasks(customizeTasksData);
         setServiceTasks(serviceTasksData);
         setNursingSpecialists(nursingSpecialistsData);
       } catch (error) {
@@ -76,13 +77,13 @@ const BookingsTab = ({ bookings }) => {
     let service = null;
     let packageInfo = null;
     if (booking.CustomizePackageID) {
-      packageInfo = customerPackages.find(p => p.CustomizePackageID === booking.CustomizePackageID);
+      packageInfo = customizePackages.find(p => p.CustomizePackageID === booking.CustomizePackageID);
       service = serviceTypes.find(s => s.ServiceID === packageInfo?.ServiceID);
     } else if (booking.CareProfileID) {
       service = serviceTypes.find(s => s.ServiceID === booking.CareProfileID);
     }
-    const customerTasksOfBooking = customerTasks.filter(t => t.BookingID === booking.BookingID);
-    const serviceTasksOfBooking = customerTasksOfBooking.map(task => {
+    const customizeTasksOfBooking = customizeTasks.filter(t => t.BookingID === booking.BookingID);
+    const serviceTasksOfBooking = customizeTasksOfBooking.map(task => {
       const serviceTask = serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
       const nurse = nursingSpecialists.find(n => n.NursingID === task.NursingID);
       return {

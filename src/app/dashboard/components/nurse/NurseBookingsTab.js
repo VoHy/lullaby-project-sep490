@@ -1,14 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import careProfileService from '@/services/api/careProfileService';
-import customerPackageService from '@/services/api/customerPackageService';
-import customerTaskService from '@/services/api/customerTaskService';
+import customizePackageService from '@/services/api/customizePackageService';
+import customizeTaskService from '@/services/api/customizeTaskService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 
 const NurseBookingsTab = ({ nurseBookings }) => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [careProfiles, setCareProfiles] = useState([]);
-  const [customerPackages, setCustomerPackages] = useState([]);
-  const [customerTasks, setCustomerTasks] = useState([]);
+  const [customizePackages, setCustomizePackages] = useState([]);
+  const [customizeTasks, setCustomizeTasks] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -17,15 +17,15 @@ const NurseBookingsTab = ({ nurseBookings }) => {
     const fetchData = async () => {
       try {
         setLoading(true);
-        const [careProfilesData, customerPackagesData, customerTasksData, serviceTasksData] = await Promise.all([
+        const [careProfilesData, customizePackagesData, customizeTasksData, serviceTasksData] = await Promise.all([
           careProfileService.getAllCareProfiles(),
-          customerPackageService.getAllCustomerPackages(),
-          customerTaskService.getAllCustomerTasks(),
+          customizePackageService.getAllCustomizePackages(),
+          customizeTaskService.getAllCustomizeTasks(),
           serviceTaskService.getAllServiceTasks()
         ]);
         setCareProfiles(careProfilesData);
-        setCustomerPackages(customerPackagesData);
-        setCustomerTasks(customerTasksData);
+        setCustomizePackages(customizePackagesData);
+        setCustomizeTasks(customizeTasksData);
         setServiceTasks(serviceTasksData);
       } catch (err) {
         console.error('Error fetching data:', err);
@@ -41,12 +41,12 @@ const NurseBookingsTab = ({ nurseBookings }) => {
   // Lấy thông tin chi tiết booking
   const getBookingDetail = (booking) => {
     const patient = careProfiles.find(p => p.CareProfileID === booking.CareProfileID);
-    const customerPackage = customerPackages.find(pkg => pkg.CustomizePackageID === booking.CustomizePackageID);
-    // Lấy các dịch vụ con thực tế từ CustomerTask
-    const customerTasksOfBooking = customerTasks.filter(
+    const customizePackage = customizePackages.find(pkg => pkg.CustomizePackageID === booking.CustomizePackageID);
+    // Lấy các dịch vụ con thực tế từ CustomizeTask
+    const customizeTasksOfBooking = customizeTasks.filter(
       t => t.BookingID === booking.BookingID
     );
-    const serviceTasksOfBooking = customerTasksOfBooking.map(task => {
+    const serviceTasksOfBooking = customizeTasksOfBooking.map(task => {
       const serviceTask = serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
       return {
         ...serviceTask,
@@ -56,7 +56,7 @@ const NurseBookingsTab = ({ nurseBookings }) => {
         status: task.Status
       };
     });
-    return { patient, customerPackage, serviceTasksOfBooking };
+    return { patient, customizePackage, serviceTasksOfBooking };
   };
 
   if (loading) {
@@ -110,14 +110,14 @@ const NurseBookingsTab = ({ nurseBookings }) => {
             )}
             {nurseBookings.map(b => {
               const patient = careProfiles.find(p => p.CareProfileID === b.CareProfileID);
-              const customerPackage = customerPackages.find(pkg => pkg.CustomizePackageID === b.CustomizePackageID);
+              const customizePackage = customizePackages.find(pkg => pkg.CustomizePackageID === b.CustomizePackageID);
               return (
                 <tr key={b.BookingID} className="border-t hover:bg-purple-50 transition">
                   <td className="px-4 py-2 text-center font-semibold">#{b.BookingID}</td>
                   <td className="px-4 py-2 text-center">{patient?.ProfileName || '-'}</td>
                   <td className="px-4 py-2 text-center">
-                    {customerPackage?.Name
-                      ? customerPackage.Name
+                    {customizePackage?.Name
+                      ? customizePackage.Name
                       : (
                         (() => {
                           const { serviceTasksOfBooking } = getBookingDetail(b);
@@ -160,7 +160,7 @@ const NurseBookingsTab = ({ nurseBookings }) => {
 
       {/* Modal chi tiết booking */}
       {selectedBooking && (() => {
-        const { patient, customerPackage, serviceTasksOfBooking } = getBookingDetail(selectedBooking);
+        const { patient, customizePackage, serviceTasksOfBooking } = getBookingDetail(selectedBooking);
         return (
           <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
             <div className="bg-white rounded-lg p-6 w-full max-w-lg shadow-lg relative animate-fade-in">
@@ -175,8 +175,8 @@ const NurseBookingsTab = ({ nurseBookings }) => {
                 <span className="font-semibold">Địa chỉ:</span> {patient?.Address}
               </div>
               <div className="mb-3">
-                <span className="font-semibold">Gói dịch vụ:</span> {customerPackage?.Name || '-'}<br />
-                <span className="text-xs text-gray-500">{customerPackage?.Description}</span>
+                <span className="font-semibold">Gói dịch vụ:</span> {customizePackage?.Name || '-'}<br />
+                <span className="text-xs text-gray-500">{customizePackage?.Description}</span>
               </div>
               <div className="mb-3">
                 <span className="font-semibold">Dịch vụ chi tiết:</span>
