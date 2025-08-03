@@ -52,7 +52,7 @@ const RevenueTab = ({ revenue, bookings }) => {
               <span className="font-semibold text-green-600">45%</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <span className="text-gray-800">Điều dưỡng tại nhà</span>
+              <span className="text-gray-800">Y tá tại nhà</span>
               <span className="font-semibold text-blue-600">30%</span>
             </div>
             <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">

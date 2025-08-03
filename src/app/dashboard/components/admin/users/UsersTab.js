@@ -135,7 +135,7 @@ const UsersTab = () => {
       value: accounts.filter(acc => String(acc.roleID) === '2').length,
       icon: faUserPlus,
       color: 'from-purple-500 to-pink-500',
-      subtitle: 'Chuyên gia điều dưỡng',
+      subtitle: 'Chuyên gia',
       trend: 8
     },
     {

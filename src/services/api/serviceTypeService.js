@@ -19,6 +19,30 @@ const serviceTypeService = {
     return data;
   },
 
+  // Create service type
+  createServiceType: async (data) => {
+    const res = await fetch('/api/servicetypes/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Tạo service type thất bại');
+    return result;
+  },
+
+  // Update service type
+  updateServiceType: async (id, data) => {
+    const res = await fetch(`/api/servicetypes/update/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Cập nhật service type thất bại');
+    return result;
+  },
+
   // Count method
   getServiceTypeCount: async () => {
     const res = await fetch('/api/servicetypes/count', {
@@ -66,15 +90,47 @@ const serviceTypeService = {
   },
 
   // Soft delete service type
-  softDeleteServiceType: async (id, data) => {
-    const res = await fetch(`/api/servicetypes/softdelete/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Soft delete service type thất bại');
-    return result;
+  softDeleteServiceType: async (id, data = {}) => {
+    try {
+      const res = await fetch(`/api/servicetypes/softdelete/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        try {
+          const errorData = JSON.parse(errorText);
+          
+          // Nếu dịch vụ đã được đánh dấu removed, không coi là lỗi
+          if (errorData.error && errorData.error.includes('already marked as removed')) {
+            console.log('Service already marked as removed, treating as success');
+            return { message: 'Service type already deleted', alreadyDeleted: true };
+          }
+          
+          throw new Error(errorData.error || 'Soft delete service type thất bại');
+        } catch (parseError) {
+          throw new Error(`Server error: ${res.status} - ${errorText.substring(0, 100)}`);
+        }
+      }
+
+      const responseText = await res.text();
+      if (!responseText) {
+        return { message: 'Service type deleted successfully' };
+      }
+
+      try {
+        const result = JSON.parse(responseText);
+        return result;
+      } catch (parseError) {
+        console.warn('Response is not valid JSON, treating as success');
+        return { message: 'Service type deleted successfully' };
+      }
+    } catch (error) {
+      console.error('Soft delete error:', error);
+      throw error;
+    }
   }
 };
 
