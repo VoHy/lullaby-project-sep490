@@ -6,7 +6,7 @@ export default function PatientCareProfileList({ careProfiles, relativesList, zo
   const filteredCareProfiles = careProfileFilter === 'all'
     ? careProfiles
     : careProfiles.filter(c =>
-        (c.status || c.Status || '').toLowerCase() === careProfileFilter.toLowerCase()
+        (c.status).toLowerCase() === careProfileFilter.toLowerCase()
       );
   return (
     <>

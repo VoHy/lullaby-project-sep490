@@ -208,13 +208,18 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     },
     [updateMethodName()]: async (id, data) => {
       const url = isCustomEndpoint ? `${baseUrl}/update/${id}` : `${baseUrl}/${id}`;
+      
       const res = await fetch(url, {
         method: 'PUT',
         headers: getAuthHeaders(),
         body: JSON.stringify(data)
       });
+      
       const result = await res.json();
-      if (!res.ok) throw new Error(result.error || `Cập nhật ${entityName.toLowerCase()} thất bại`);
+      
+      if (!res.ok) {
+        throw new Error(result.error || `Cập nhật ${entityName.toLowerCase()} thất bại`);
+      }
       return result;
     },
     [deleteMethodName()]: async (id) => {

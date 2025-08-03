@@ -1,12 +1,11 @@
 "use client";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useMemo, useContext, useEffect } from "react";
-// Thay thế import mock data bằng services
 import serviceTypeService from '@/services/api/serviceTypeService';
 import serviceTaskService from '@/services/api/serviceTaskService';
-import workScheduleService from '@/services/api/workScheduleService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import careProfileService from '@/services/api/careProfileService';
+// import workScheduleService from '@/services/api/workScheduleService';
 import {
   BookingHeader,
   PackageInfo,
@@ -27,11 +26,14 @@ export default function BookingPage() {
   // State cho API data
   const [serviceTypes, setServiceTypes] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
-  const [workSchedules, setWorkSchedules] = useState([]);
+  // const [workSchedules, setWorkSchedules] = useState([]);
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // Mock data cho workSchedules API chưa hoàn thiện
+  const [workSchedules] = useState([]);
 
   // Load data từ API
   useEffect(() => {
@@ -43,20 +45,17 @@ export default function BookingPage() {
         const [
           serviceTypesData,
           serviceTasksData,
-          workSchedulesData,
           nursingSpecialistsData,
           careProfilesData
         ] = await Promise.all([
           serviceTypeService.getServiceTypes(),
           serviceTaskService.getServiceTasks(),
-          workScheduleService.getWorkSchedules(),
           nursingSpecialistService.getNursingSpecialists(),
           careProfileService.getCareProfiles()
         ]);
 
         setServiceTypes(serviceTypesData);
         setServiceTasks(serviceTasksData);
-        setWorkSchedules(workSchedulesData);
         setNursingSpecialists(nursingSpecialistsData);
         setCareProfiles(careProfilesData);
       } catch (error) {
@@ -77,15 +76,15 @@ export default function BookingPage() {
   let childServices = [];
 
   if (packageId) {
-    detail = serviceTypes.find(s => s.ServiceID === Number(packageId));
-    const tasks = serviceTasks.filter(t => t.Package_ServiceID === Number(packageId));
-    childServices = tasks.map(t => serviceTypes.find(s => s.ServiceID === t.Child_ServiceID)).filter(Boolean);
+    detail = serviceTypes.find(s => s.serviceID === Number(packageId));
+    const tasks = serviceTasks.filter(t => t.packageServiceID === Number(packageId));
+    childServices = tasks.map(t => serviceTypes.find(s => s.serviceID === t.childServiceID)).filter(Boolean);
   } else if (serviceId) {
     // Có thể là 1 dịch vụ hoặc nhiều dịch vụ lẻ (danh sách id)
     if (serviceId.includes(',')) {
-      childServices = serviceId.split(',').map(id => serviceTypes.find(st => st.ServiceID === Number(id))).filter(Boolean);
+      childServices = serviceId.split(',').map(id => serviceTypes.find(st => st.serviceID === Number(id))).filter(Boolean);
     } else {
-      detail = serviceTypes.find(s => s.ServiceID === Number(serviceId));
+      detail = serviceTypes.find(s => s.serviceID === Number(serviceId));
     }
   }
 
@@ -104,16 +103,16 @@ export default function BookingPage() {
   }, [datetime]);
 
   // Lấy danh sách CareProfile của user hiện tại (chỉ lấy active)
-  const userCareProfiles = user ? careProfiles.filter(p => p.AccountID === user.AccountID && p.Status === 'active') : [];
+  const userCareProfiles = user ? careProfiles.filter(p => p.accountID === user.accountID && p.status === 'active') : [];
   
   // Reset selectedCareProfile nếu nó không active
-  if (selectedCareProfile && selectedCareProfile.Status !== 'active') {
+  if (selectedCareProfile && selectedCareProfile.status !== 'active') {
     setSelectedCareProfile(null);
   }
 
   // Lấy ZoneID của user (giả sử lấy từ careProfiles)
-  const userProfile = user ? careProfiles.find(p => p.AccountID === user.AccountID) : careProfiles[0];
-  const userZoneID = userProfile?.ZoneDetailID || 1;
+  const userProfile = user ? careProfiles.find(p => p.accountID === user.accountID) : careProfiles[0];
+  const userZoneID = userProfile?.zoneDetailID || 1;
 
   // State chọn nhân sự cho từng dịch vụ
   const [selectedStaff, setSelectedStaff] = useState({}); // {serviceId: {type: 'nurse'|'specialist', id: id}}
@@ -134,9 +133,9 @@ export default function BookingPage() {
   let total = 0;
   if (packageId && detail) {
     // Tổng tiền là giá của gói, không phải cộng các dịch vụ con
-    total = detail.Price || 0;
+    total = detail.price || 0;
   } else if (!packageId && selectedServicesList.length > 0) {
-    total = selectedServicesList.reduce((sum, s) => sum + (s.Price || 0), 0);
+    total = selectedServicesList.reduce((sum, s) => sum + (s.price || 0), 0);
   }
 
   // Lọc nhân sự rảnh theo ZoneID và workSchedules (có ca trực, status active, đúng ngày user chọn)
@@ -144,15 +143,16 @@ export default function BookingPage() {
     if (!isDatetimeValid) return [];
     const targetDate = datetime.split('T')[0];
     // Lấy danh sách nhân sự cùng ZoneID, active
-    const available = nursingSpecialists.filter(n => n.ZoneID === userZoneID && n.Status === 'active');
-    // Lọc theo lịch rảnh (workSchedules)
-    return available.filter(n =>
-      workSchedules.some(ws =>
-        ws.NursingID === n.NursingID &&
-        ws.WorkDate.startsWith(targetDate) &&
-        ws.Status === 'active'
-      )
-    );
+    const available = nursingSpecialists.filter(n => n.zoneID === userZoneID && n.status === 'active');
+    // Lọc theo lịch rảnh (workSchedules) - comment lại vì workSchedules API chưa hoàn thiện
+    // return available.filter(n =>
+    //   workSchedules.some(ws =>
+    //     ws.nursingID === n.nursingID &&
+    //     ws.workDate.startsWith(targetDate) &&
+    //     ws.status === 'active'
+    //   )
+    // );
+    return available; // Trả về tất cả nhân sự available vì workSchedules API chưa hoàn thiện
   };
 
   const handleSelectStaff = (serviceId, type, id) => {
@@ -188,7 +188,7 @@ export default function BookingPage() {
     }
     
     // Validate CareProfile status
-    if (selectedCareProfile.Status !== 'active') {
+    if (selectedCareProfile.status !== 'active') {
       setCareProfileError("Hồ sơ người thân không hoạt động. Vui lòng chọn hồ sơ khác hoặc kích hoạt hồ sơ này.");
       return;
     }
@@ -207,7 +207,7 @@ export default function BookingPage() {
     }
     params.set("datetime", datetime);
     params.set("note", note);
-    params.set("careProfileId", selectedCareProfile.CareProfileID);
+    params.set("careProfileId", selectedCareProfile.careProfileID);
     // Truyền selectedStaff (object) sang payment
     params.set("selectedStaff", encodeURIComponent(JSON.stringify(
       Object.fromEntries(
@@ -216,8 +216,8 @@ export default function BookingPage() {
           {
             ...staff,
             name: (() => {
-              const found = nursingSpecialists.find(n => n.NursingID === Number(staff.id));
-              return found ? found.FullName : '';
+              const found = nursingSpecialists.find(n => n.nursingID === Number(staff.id));
+              return found ? found.fullName : '';
             })()
           }
         ])

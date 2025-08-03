@@ -212,6 +212,10 @@ const ServicesTab = () => {
     setShowPackageDetailModal(true);
   };
 
+  const handlePackageUpdate = () => {
+    loadServices(); // Reload services after package update
+  };
+
   const openServiceDetailModal = (service) => {
     setSelectedService(service);
     setShowServiceDetailModal(true);
@@ -370,6 +374,27 @@ const ServicesTab = () => {
           </div>
         ) : (
           <div className="p-6">
+            {/* Hướng dẫn cho gói dịch vụ */}
+            {activeServiceTab === 'packages' && (
+              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start">
+                  <div className="flex-shrink-0">
+                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                  <div className="ml-3">
+                    <h4 className="text-sm font-medium text-blue-800">Hướng dẫn tạo gói dịch vụ</h4>
+                    <div className="mt-2 text-sm text-blue-700">
+                      <p className="mb-1">1. Tạo gói dịch vụ với thông tin cơ bản</p>
+                      <p className="mb-1">2. Sau khi tạo, nhấn "Xem chi tiết" để thêm các dịch vụ con</p>
+                      <p>3. Chỉ các dịch vụ đơn lẻ (isPackage: false) mới có thể được thêm vào gói</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+            
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-gray-800">
                 {activeServiceTab === 'services' ? 'Danh sách dịch vụ' : 'Danh sách gói dịch vụ'}
@@ -419,6 +444,7 @@ const ServicesTab = () => {
         isOpen={showPackageDetailModal}
         onClose={() => setShowPackageDetailModal(false)}
         packageService={selectedPackage}
+        onUpdate={handlePackageUpdate}
       />
 
       <ServiceDetailModal

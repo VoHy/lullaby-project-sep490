@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 export async function GET(request, { params }) {
   try {
     const { id } = await params;
-    console.log('Getting account with ID:', id);
 
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     const response = await fetch(`${backendUrl}/api/accounts/get/${id}`, {
@@ -11,11 +10,8 @@ export async function GET(request, { params }) {
       headers: { 'Content-Type': 'application/json' },
     });
 
-    console.log('Backend response status:', response.status);
-
     if (!response.ok) {
       const errorText = await response.text();
-      console.log('Backend error text:', errorText);
 
       try {
         const errorData = JSON.parse(errorText);
@@ -27,7 +23,6 @@ export async function GET(request, { params }) {
     }
 
     const data = await response.json();
-    console.log('Backend success data:', data);
     return NextResponse.json(data);
   } catch (error) {
     console.error('Proxy error:', error);

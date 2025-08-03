@@ -6,10 +6,8 @@ import { FaSearch } from 'react-icons/fa';
 const SearchFilter = ({ searchText, setSearchText, selectedCategory, setSelectedCategory }) => {
   const categories = [
     { id: 'all', name: 'Tất cả', icon: '🏥' },
-    { id: 'elderly-care', name: 'Chăm sóc người cao tuổi', icon: '👴' },
-    { id: 'rehabilitation', name: 'Phục hồi chức năng', icon: '🏃' },
-    { id: 'post-surgery', name: 'Chăm sóc sau phẫu thuật', icon: '🩺' },
-    { id: 'health-monitoring', name: 'Giám sát sức khỏe', icon: '📊' }
+    { id: 'nurse', name: 'Y tá', icon: '👩‍⚕️' },
+    { id: 'specialist', name: 'Chuyên gia', icon: '👨‍⚕️' }
   ];
 
   return (

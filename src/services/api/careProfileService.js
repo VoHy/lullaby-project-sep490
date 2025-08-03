@@ -40,6 +40,37 @@ const careProfileService = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách care profiles');
     return data;
+  },
+
+  updateCareProfile: async (id, data) => {
+    const res = await fetch(`/api/careprofiles/update/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const responseData = await res.json();
+    if (!res.ok) throw new Error(responseData.error || 'Không thể cập nhật care profile');
+    return responseData;
+  },
+
+  getCareProfileById: async (id) => {
+    const res = await fetch(`/api/careprofiles/get/${id}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const responseData = await res.json();
+    if (!res.ok) throw new Error(responseData.error || 'Không thể lấy thông tin care profile');
+    return responseData;
+  },
+
+  deleteCareProfile: async (id) => {
+    const res = await fetch(`/api/careprofiles/delete/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const responseData = await res.json();
+    if (!res.ok) throw new Error(responseData.error || 'Không thể xóa care profile');
+    return responseData;
   }
 };
 

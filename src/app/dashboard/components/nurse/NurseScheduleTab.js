@@ -315,9 +315,9 @@ import { FaRegClock, FaFlag, FaCalendarCheck } from 'react-icons/fa';
 // };
  const NurseScheduleTab = () => {
   return (
-    <div>
+  <div>
       <h1>Nurse Schedule Tab</h1>
-    </div>
-  );
- };
+  </div>
+);
+};
 export default NurseScheduleTab; 

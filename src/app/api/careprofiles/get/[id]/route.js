@@ -1,17 +1,15 @@
 import { NextResponse } from 'next/server';
 
-export async function PUT(request, { params }) {
+export async function GET(request, { params }) {
   try {
-    const { id } = await params;
-    const body = await request.json();
+    const { id } = params;
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
-    const response = await fetch(`${backendUrl}/api/servicetypes/update/${id}`, {
-      method: 'PUT',
+    const response = await fetch(`${backendUrl}/api/careprofiles/get/${id}`, {
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body)
     });
 
     if (!response.ok) {
@@ -20,7 +18,7 @@ export async function PUT(request, { params }) {
       try {
         const errorData = JSON.parse(errorText);
         return NextResponse.json(
-          { error: errorData.message || 'Cập nhật service type thất bại' },
+          { error: errorData.message || `Không thể lấy thông tin care profile` },
           { status: response.status }
         );
       } catch (parseError) {

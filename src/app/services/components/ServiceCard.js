@@ -2,6 +2,63 @@
 
 import { motion } from 'framer-motion';
 import { FaStar, FaClock, FaEye, FaShoppingCart, FaCheck, FaTimes, FaTag } from 'react-icons/fa';
+import { useState, useEffect } from 'react';
+
+// Component để hiển thị danh sách dịch vụ con trong gói
+const PackageServicesList = ({ packageId, getServicesOfPackage }) => {
+  const [services, setServices] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const loadServices = async () => {
+      try {
+        setLoading(true);
+        const packageServices = await getServicesOfPackage(packageId);
+        setServices(packageServices);
+      } catch (error) {
+        console.error('Error loading package services:', error);
+        setServices([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadServices();
+  }, [packageId, getServicesOfPackage]);
+
+  if (loading) {
+    return (
+      <div className="text-center py-4">
+        <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-purple-500 mx-auto mb-2"></div>
+        <p className="text-sm text-gray-500">Đang tải dịch vụ con...</p>
+      </div>
+    );
+  }
+
+  if (services.length === 0) {
+    return (
+      <div className="text-center py-4">
+        <p className="text-sm text-gray-500">Chưa có dịch vụ con nào trong gói</p>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      {services.map(child => (
+        <div key={child.serviceID} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+          <div>
+            <span className="font-medium text-blue-700">{child.serviceName}</span>
+            <p className="text-xs text-gray-500">{child.description}</p>
+          </div>
+          <span className="text-sm font-bold text-pink-600">
+            {child.price?.toLocaleString('vi-VN')} VNĐ
+          </span>
+        </div>
+      ))}
+    </>
+  );
+};
 
 const ServiceCard = ({ 
   service, 
@@ -21,7 +78,7 @@ const ServiceCard = ({
     return { rating: 5.0, count: 0 };
   };
 
-  const rating = getRating(service.ServiceID);
+  const rating = getRating(service.serviceID);
 
   return (
     <motion.div
@@ -47,7 +104,7 @@ const ServiceCard = ({
       {/* Card Content */}
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-xl font-bold text-gray-900">{service.ServiceName}</h3>
+          <h3 className="text-xl font-bold text-gray-900">{service.serviceName}</h3>
           <div className="flex items-center gap-1">
             <FaStar className="text-yellow-400 text-sm" />
             <span className="text-sm font-semibold text-gray-700">{rating.rating}</span>
@@ -55,17 +112,17 @@ const ServiceCard = ({
           </div>
         </div>
 
-        <p className="text-gray-600 text-sm mb-4 leading-relaxed">{service.Description}</p>
+        <p className="text-gray-600 text-sm mb-4 leading-relaxed">{service.description}</p>
 
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2 text-sm text-gray-500">
             <FaClock className={type === 'package' ? 'text-purple-500' : 'text-blue-500'} />
-            {service.Duration}
+            {service.duration} phút
           </div>
           <div className={`text-2xl font-bold ${
             type === 'package' ? 'text-purple-600' : 'text-blue-600'
           }`}>
-            {service.Price.toLocaleString('vi-VN')}đ
+            {service.price?.toLocaleString('vi-VN')} VNĐ
           </div>
         </div>
 
@@ -79,7 +136,7 @@ const ServiceCard = ({
                 ? 'bg-purple-500 text-white hover:bg-purple-600'
                 : 'bg-blue-500 text-white hover:bg-blue-600'
             }`}
-            onClick={() => onSelect(service.ServiceID)}
+            onClick={() => onSelect(service.serviceID)}
             disabled={isDisabled}
           >
             {isSelected ? (
@@ -109,7 +166,7 @@ const ServiceCard = ({
                   ? 'bg-pink-500 hover:bg-pink-600' 
                   : 'bg-blue-500 hover:bg-blue-600'
               }`}
-              onClick={() => onBook(service.ServiceID, type)}
+              onClick={() => onBook(service.serviceID, type)}
               disabled={isDisabled}
             >
               <FaShoppingCart className="text-sm" />
@@ -119,7 +176,7 @@ const ServiceCard = ({
         </div>
 
         {/* Expandable Services List for Packages */}
-        {type === 'package' && expandedPackage === service.ServiceID && (
+        {type === 'package' && expandedPackage === service.serviceID && (
           <motion.div
             initial={{ opacity: 0, height: 0 }}
             animate={{ opacity: 1, height: 'auto' }}
@@ -131,17 +188,7 @@ const ServiceCard = ({
               Dịch vụ trong gói:
             </h4>
             <div className="space-y-2">
-              {getServicesOfPackage(service.ServiceID).map(child => (
-                <div key={child.ServiceID} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                  <div>
-                    <span className="font-medium text-blue-700">{child.ServiceName}</span>
-                    <p className="text-xs text-gray-500">{child.Description}</p>
-                  </div>
-                  <span className="text-sm font-bold text-pink-600">
-                    {child.Price.toLocaleString('vi-VN')}đ
-                  </span>
-                </div>
-              ))}
+              <PackageServicesList packageId={service.serviceID} getServicesOfPackage={getServicesOfPackage} />
             </div>
           </motion.div>
         )}
@@ -150,9 +197,9 @@ const ServiceCard = ({
         {type === 'package' && (
           <button
             className="w-full mt-3 py-2 text-sm text-purple-600 hover:text-purple-700 transition-colors"
-            onClick={() => onToggleExpand(service.ServiceID)}
+            onClick={() => onToggleExpand(service.serviceID)}
           >
-            {expandedPackage === service.ServiceID ? 'Thu gọn' : 'Xem chi tiết gói'}
+            {expandedPackage === service.serviceID ? 'Thu gọn' : 'Xem chi tiết gói'}
           </button>
         )}
       </div>

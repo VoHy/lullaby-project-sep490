@@ -10,7 +10,7 @@ const serviceTaskService = {
 
   // Thêm method getServiceTasks để đảm bảo
   getServiceTasks: async () => {
-    const res = await fetch('/api/servicetasks', {
+    const res = await fetch('/api/servicetasks/getall', {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });
@@ -20,7 +20,7 @@ const serviceTaskService = {
   },
 
   getServiceTaskById: async (id) => {
-    const res = await fetch(`/api/servicetasks/${id}`, {
+    const res = await fetch(`/api/servicetasks/get/${id}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });

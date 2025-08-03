@@ -39,10 +39,10 @@ const ServiceSection = ({
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {services.map((service, index) => (
           <ServiceCard
-            key={service.ServiceID}
+            key={service.serviceID}
             service={service}
             index={index}
-            isSelected={selectedItems.includes(service.ServiceID)}
+            isSelected={selectedItems.includes(service.serviceID)}
             onSelect={onSelect}
             onDetail={onDetail}
             onBook={onBook}

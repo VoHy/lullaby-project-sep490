@@ -13,7 +13,7 @@ export async function PUT(request, { params }) {
       headers: { 'Content-Type': 'application/json' },
       body: requestBody,
     });
-
+    
     if (!response.ok) {
       const errorText = await response.text();
 

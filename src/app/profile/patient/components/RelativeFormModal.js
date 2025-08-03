@@ -24,10 +24,12 @@ export default function RelativeFormModal({ open, onClose, onSave, formData, onC
 
     // Đảm bảo có đủ dữ liệu cần thiết
     const submitData = {
+      careProfileID: formData.careProfileID,
       relativeName: formData.relativeName,
       dateOfBirth: formatDateForAPI(formData.dateOfBirth),
       gender: formData.gender || 'male',
       note: formData.note || '',
+      createdAt: new Date().toISOString(),
       status: formData.status || 'active',
       image: formData.image || '/images/hero-bg.jpg'
     };

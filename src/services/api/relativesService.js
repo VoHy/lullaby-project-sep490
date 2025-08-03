@@ -61,15 +61,7 @@ const relativesService = {
       body: JSON.stringify(data)
     });
     
-    const responseText = await res.text();
-    
-    let responseData;
-    try {
-      responseData = JSON.parse(responseText);
-    } catch (parseError) {
-      console.error('Failed to parse response as JSON:', parseError);
-      throw new Error(`Invalid response format: ${responseText}`);
-    }
+    const responseData = await res.json();
     
     if (!res.ok) {
       throw new Error(responseData.error || 'Không thể cập nhật relative');

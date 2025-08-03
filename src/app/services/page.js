@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
 // import customizePackageService from '@/services/api/customizePackageService';
 import serviceTypeService from '@/services/api/serviceTypeService';
-// import serviceTaskService from '@/services/api/serviceTaskService';
+import serviceTaskService from '@/services/api/serviceTaskService';
 // import feedbackService from '@/services/api/feedbackService';
 import { 
   SearchFilter, 
@@ -15,7 +15,7 @@ import { useRouter } from 'next/navigation';
 
 export default function ServicesPage() {
   const [serviceTypes, setServiceTypes] = useState([]);
-  // const [serviceTasks, setServiceTasks] = useState([]);
+  const [serviceTasks, setServiceTasks] = useState([]);
   // const [feedbacks, setFeedbacks] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedServices, setSelectedServices] = useState([]);
@@ -24,20 +24,37 @@ export default function ServicesPage() {
   const [serviceDetail, setServiceDetail] = useState(null);
   const [packageDetail, setPackageDetail] = useState(null);
   const [expandedPackage, setExpandedPackage] = useState(null);
+  const [loading, setLoading] = useState(true);
   const router = useRouter();
 
   // Lấy dữ liệu từ API
   useEffect(() => {
-    // Lấy tất cả service types (bao gồm cả gói và dịch vụ lẻ)
-    serviceTypeService.getServiceTypes().then(setServiceTypes);
+    const loadServices = async () => {
+      try {
+        setLoading(true);
+        // Lấy tất cả service types từ API servicetypes/getall
+        const services = await serviceTypeService.getServiceTypes();
+        console.log('Loaded services:', services);
+        setServiceTypes(services);
 
-    // Lấy danh sách service task (liên kết giữa package và service lẻ)
-    // serviceTaskService.getServiceTasks().then(setServiceTasks);
+        // Lấy danh sách service task (liên kết giữa package và service lẻ)
+        const tasks = await serviceTaskService.getServiceTasks();
+        console.log('Loaded service tasks:', tasks);
+        setServiceTasks(tasks);
 
-    // Lấy feedbacks cho dịch vụ
-    // fetch('/api/feedbacks')
-    //   .then(res => res.json())
-    //   .then(data => setFeedbacks(Array.isArray(data) ? data : []));
+        // Lấy feedbacks cho dịch vụ
+        // fetch('/api/feedbacks')
+        //   .then(res => res.json())
+        //   .then(data => setFeedbacks(Array.isArray(data) ? data : []));
+      } catch (error) {
+        console.error('Error loading services:', error);
+        setServiceTypes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadServices();
   }, []);
 
   // Khi chọn package thì reset chọn service lẻ
@@ -61,15 +78,21 @@ export default function ServicesPage() {
   };
 
   // Tách dịch vụ lẻ và package
-  const singleServices = serviceTypes.filter(s => !s.IsPackage && (s.Status === 'active' || s.Status === 'Inactive'));
-  const servicePackages = serviceTypes.filter(s => s.IsPackage && (s.Status === 'active' || s.Status === 'Inactive'));
+  const singleServices = serviceTypes.filter(s => !s.isPackage && s.status === 'active');
+  const servicePackages = serviceTypes.filter(s => s.isPackage && s.status === 'active');
 
   // Lấy dịch vụ lẻ thuộc về 1 package từ API
-  function getServicesOfPackage(packageId) {
-    // Tạm thời return empty array vì serviceTasks API chưa hoàn thiện
-    // const tasks = serviceTasks.filter(t => t.Package_ServiceID === packageId);
-    // return tasks.map(task => serviceTypes.find(s => s.ServiceID === task.Child_ServiceID)).filter(Boolean);
-    return [];
+  async function getServicesOfPackage(packageId) {
+    try {
+      const tasks = await serviceTaskService.getServiceTasksByPackage(packageId);
+      return tasks.map(task => {
+        const childServiceId = task.child_ServiceID || task.childServiceID;
+        return serviceTypes.find(s => s.serviceID === childServiceId);
+      }).filter(Boolean);
+    } catch (error) {
+      console.error('Error getting services of package:', error);
+      return [];
+    }
   }
 
   const handleToggleExpand = (pkgId) => {
@@ -79,9 +102,9 @@ export default function ServicesPage() {
   // Search/filter logic with category
   const filterService = (item) => {
     const text = searchText.toLowerCase();
-    const categoryMatch = selectedCategory === 'all' || item.Category === selectedCategory;
-    const textMatch = item.ServiceName.toLowerCase().includes(text) ||
-                     (item.Description || '').toLowerCase().includes(text);
+    const categoryMatch = selectedCategory === 'all' || item.major === selectedCategory;
+    const textMatch = item.serviceName?.toLowerCase().includes(text) ||
+                     (item.description || '').toLowerCase().includes(text);
     return categoryMatch && textMatch;
   };
 
@@ -90,6 +113,7 @@ export default function ServicesPage() {
 
   // Tính rating từ feedbacks API
   const getRating = (serviceId) => {
+    // Comment lại vì feedbacks API chưa hoàn thiện
     // const fb = feedbacks.filter(f => f.ServiceID === serviceId);
     // if (!fb.length) return { rating: 5.0, count: 0 };
     // const rating = (fb.reduce((sum, f) => sum + (f.Rating || 5), 0) / fb.length).toFixed(1);
@@ -107,6 +131,17 @@ export default function ServicesPage() {
       router.push(`/booking?service=${serviceId}`);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang tải dịch vụ...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -135,33 +170,50 @@ export default function ServicesPage() {
         />
 
         {/* Service Packages Section */}
-        <ServiceSection
-          title="Gói dịch vụ"
-          services={filteredServicePackages}
-          type="package"
-          selectedItems={selectedPackage ? [selectedPackage] : []}
-          onSelect={handleSelectPackage}
-          onDetail={setPackageDetail}
-          onBook={handleBook}
-          isDisabled={selectedServices.length > 0}
-          expandedPackage={expandedPackage}
-          onToggleExpand={handleToggleExpand}
-          getServicesOfPackage={getServicesOfPackage}
-          getRating={getRating}
-        />
+        {filteredServicePackages.length > 0 && (
+          <ServiceSection
+            title="Gói dịch vụ"
+            services={filteredServicePackages}
+            type="package"
+            selectedItems={selectedPackage ? [selectedPackage] : []}
+            onSelect={handleSelectPackage}
+            onDetail={setPackageDetail}
+            onBook={handleBook}
+            isDisabled={selectedServices.length > 0}
+            expandedPackage={expandedPackage}
+            onToggleExpand={handleToggleExpand}
+            getServicesOfPackage={getServicesOfPackage}
+            getRating={getRating}
+          />
+        )}
 
         {/* Single Services Section */}
-        <ServiceSection
-          title="Dịch vụ lẻ"
-          services={filteredSingleServices}
-          type="service"
-          selectedItems={selectedServices}
-          onSelect={handleToggleService}
-          onDetail={setServiceDetail}
-          onBook={handleBook}
-          isDisabled={!!selectedPackage}
-          getRating={getRating}
-        />
+        {filteredSingleServices.length > 0 && (
+          <ServiceSection
+            title="Dịch vụ lẻ"
+            services={filteredSingleServices}
+            type="service"
+            selectedItems={selectedServices}
+            onSelect={handleToggleService}
+            onDetail={setServiceDetail}
+            onBook={handleBook}
+            isDisabled={!!selectedPackage}
+            getRating={getRating}
+          />
+        )}
+
+        {/* Empty State */}
+        {filteredServicePackages.length === 0 && filteredSingleServices.length === 0 && (
+          <div className="text-center py-16">
+            <div className="text-gray-400 text-6xl mb-4">🏥</div>
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">
+              Không tìm thấy dịch vụ nào
+            </h3>
+            <p className="text-gray-500">
+              Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc
+            </p>
+          </div>
+        )}
 
         {/* Multi-Service Booking Button */}
         <MultiServiceBooking selectedServices={selectedServices} />
