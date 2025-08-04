@@ -173,7 +173,7 @@ const ManagerDashboard = ({ user }) => {
       )}
 
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Chào mừng Manager: {user.full_name}</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-6">Chào mừng Manager: {user.fullName}</h2>
 
         {/* Dashboard Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">

@@ -44,11 +44,37 @@ export const AuthProvider = ({ children }) => {
     setToken(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    // Redirect về trang chủ và refresh
-    router.push('/');
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
+    
+    // Clear all application cache
+    const clearAllCache = () => {
+      // Clear booking cache
+      localStorage.removeItem('booking_services');
+      localStorage.removeItem('booking_tasks');
+      localStorage.removeItem('booking_cache_time');
+      localStorage.removeItem('booking_care_profiles');
+      localStorage.removeItem('booking_care_cache_time');
+      localStorage.removeItem('booking_nurses');
+      localStorage.removeItem('booking_nurses_cache_time');
+      
+      // Clear services cache
+      localStorage.removeItem('services_data');
+      localStorage.removeItem('services_cache_time');
+      
+      // Clear dashboard cache
+      localStorage.removeItem('dashboard_data');
+      localStorage.removeItem('dashboard_cache_time');
+      
+      // Clear any other app cache
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.includes('_cache') || key.includes('_data')) {
+          localStorage.removeItem(key);
+        }
+      });
+    };
+    
+    clearAllCache();
+    router.push('/auth/login');
   };
 
   return (

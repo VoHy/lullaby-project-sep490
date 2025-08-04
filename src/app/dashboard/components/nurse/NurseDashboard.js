@@ -18,11 +18,10 @@ import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 // import medicalNoteService from '@/services/api/medicalNoteService';
 // import customizeTaskService from '@/services/api/customizeTaskService';
 
-const NurseDashboard = ({ initialTab }) => {
+const NurseDashboard = ({ user, initialTab }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(initialTab || 'overview');
-  const { user } = useContext(AuthContext);
 
   // State cho API data
   const [nurseBookings, setNurseBookings] = useState([]);
