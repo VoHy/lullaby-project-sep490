@@ -4,7 +4,7 @@ import { useState, useContext } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AuthContext } from '../../../context/AuthContext';
-// // import WalletIcon from './WalletIcon';
+import WalletIcon from './WalletIcon';
 
 export default function Header() {
   const pathname = usePathname();
@@ -155,6 +155,15 @@ export default function Header() {
                     Lịch hẹn
                   </Link>
                   <Link
+                    href="/wallet"
+                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/wallet')
+                        ? 'border-blue-500 text-gray-900'
+                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
+                      }`}
+                  >
+                    Ví điện tử
+                  </Link>
+                  <Link
                     href="/payment/history"
                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/payment/history')
                         ? 'border-blue-500 text-gray-900'
@@ -177,9 +186,8 @@ export default function Header() {
             </nav>
           </div>
           <div className="flex items-center gap-4">
-            {/* Wallet Icon - chỉ hiển thị cho user đã đăng nhập */}
-            {/* Wallet Icon - chỉ hiển thị cho user đã đăng nhập */}
-            {/* {user && <WalletIcon />} */}
+            {/* Wallet Icon - chỉ hiển thị cho customer đã đăng nhập */}
+            <WalletIcon />
             
             {user ? (
               <div className="relative">
@@ -371,6 +379,16 @@ export default function Header() {
                 onClick={() => setIsMenuOpen(false)}
               >
                 Lịch hẹn
+              </Link>
+              <Link
+                href="/wallet"
+                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/wallet')
+                    ? 'border-blue-500 text-blue-700 bg-blue-50'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
+                  }`}
+                onClick={() => setIsMenuOpen(false)}
+              >
+                Ví điện tử
               </Link>
               <Link
                 href="/profile/patient"

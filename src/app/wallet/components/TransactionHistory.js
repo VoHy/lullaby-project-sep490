@@ -1,7 +1,32 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { FaHistory, FaArrowUp, FaArrowDown, FaUser, FaCalendar } from 'react-icons/fa';
+import { FaHistory, FaArrowUp, FaArrowDown, FaCalendar } from 'react-icons/fa';
+
+// Utility function để lấy transaction ID một cách nhất quán
+const getTransactionId = (transaction) => {
+  return transaction?.transactionHistoryID || transaction?.TransactionHistoryID;
+};
+
+// Utility function để lấy transaction amount một cách nhất quán
+const getTransactionAmount = (transaction) => {
+  return transaction?.amount || transaction?.Amount || 0;
+};
+
+// Utility function để lấy transaction note một cách nhất quán
+const getTransactionNote = (transaction) => {
+  return transaction?.note || transaction?.Note || 'Giao dịch';
+};
+
+// Utility function để lấy transaction status một cách nhất quán
+const getTransactionStatus = (transaction) => {
+  return transaction?.status || transaction?.Status || 'pending';
+};
+
+// Utility function để lấy transaction date một cách nhất quán
+const getTransactionDate = (transaction) => {
+  return transaction?.transactionDate || transaction?.TransactionDate || new Date();
+};
 
 const TransactionHistory = ({ transactions, searchText, setSearchText, filterStatus, setFilterStatus }) => {
   const formatDate = (dateString) => {
@@ -33,10 +58,10 @@ const TransactionHistory = ({ transactions, searchText, setSearchText, filterSta
   };
 
   const filteredTransactions = transactions.filter(transaction => {
-    const matchesSearch = transaction.Note.toLowerCase().includes(searchText.toLowerCase()) ||
-                         transaction.Transferrer.toLowerCase().includes(searchText.toLowerCase()) ||
-                         transaction.Receiver.toLowerCase().includes(searchText.toLowerCase());
-    const matchesStatus = filterStatus === 'all' || transaction.Status === filterStatus;
+    const note = getTransactionNote(transaction);
+    
+    const matchesSearch = note.toLowerCase().includes(searchText.toLowerCase());
+    const matchesStatus = filterStatus === 'all' || getTransactionStatus(transaction) === filterStatus;
     return matchesSearch && matchesStatus;
   });
 
@@ -80,52 +105,56 @@ const TransactionHistory = ({ transactions, searchText, setSearchText, filterSta
         </div>
       ) : (
         <div className="space-y-3 max-h-96 overflow-y-auto">
-          {filteredTransactions.map((transaction, index) => (
-            <motion.div
-              key={transaction.TransactionHistoryID}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.05 }}
-              className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    transaction.Amount > 0 ? 'bg-green-100' : 'bg-red-100'
-                  }`}>
-                    {transaction.Amount > 0 ? (
-                      <FaArrowUp className="text-green-600 text-sm" />
-                    ) : (
-                      <FaArrowDown className="text-red-600 text-sm" />
-                    )}
-                  </div>
-                  <div>
-                    <h4 className="font-semibold text-gray-900">{transaction.Note}</h4>
-                    <div className="flex items-center gap-3 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <FaUser className="text-xs" />
-                        {transaction.Transferrer} → {transaction.Receiver}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <FaCalendar className="text-xs" />
-                        {formatDate(transaction.TransactionDate)}
-                      </span>
+          {filteredTransactions.map((transaction, index) => {
+            const transactionId = getTransactionId(transaction);
+            const amount = getTransactionAmount(transaction);
+            const note = getTransactionNote(transaction);
+            const status = getTransactionStatus(transaction);
+            const date = getTransactionDate(transaction);
+            
+            return (
+              <motion.div
+                key={transactionId}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: index * 0.05 }}
+                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                      amount > 0 ? 'bg-green-100' : 'bg-red-100'
+                    }`}>
+                      {amount > 0 ? (
+                        <FaArrowUp className="text-green-600 text-sm" />
+                      ) : (
+                        <FaArrowDown className="text-red-600 text-sm" />
+                      )}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-gray-900">{note}</h4>
+                      <div className="flex items-center gap-3 text-xs text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <FaCalendar className="text-xs" />
+                          {formatDate(date)}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                <div className="text-right">
-                  <div className={`font-bold ${
-                    transaction.Amount > 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {transaction.Amount > 0 ? '+' : ''}{transaction.Amount.toLocaleString('vi-VN')}đ
+                  <div className="text-right">
+                    <div className={`font-bold ${
+                      amount > 0 ? 'text-green-600' : 'text-red-600'
+                    }`}>
+                      {amount > 0 ? '+' : ''}{amount.toLocaleString('vi-VN')}đ
+                    </div>
+                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                      {getStatusText(status)}
+                    </span>
                   </div>
-                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(transaction.Status)}`}>
-                    {getStatusText(transaction.Status)}
-                  </span>
                 </div>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            );
+          })}
         </div>
       )}
     </motion.div>

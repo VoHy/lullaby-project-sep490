@@ -2,7 +2,7 @@
 import { useEffect, useState, useContext } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { FaUser, FaUsers } from "react-icons/fa";
-// import { FaWallet } from "react-icons/fa";
+import { FaWallet } from "react-icons/fa";
 import accountsService from '@/services/api/accountService';
 import { AuthContext } from "@/context/AuthContext";
 import ProfileCard from './components/ProfileCard';
@@ -26,13 +26,13 @@ const TabNavigation = () => {
       href: '/profile/patient',
       active: pathname === '/profile/patient',
     },
-    // {
-    //   id: 'wallet',
-    //   name: 'Ví điện tử',
-    //   icon: <FaWallet className="text-sm" />,
-    //   href: '/wallet',
-    //   active: pathname === '/wallet',
-    // }
+    {
+      id: 'wallet',
+      name: 'Ví điện tử',
+      icon: <FaWallet className="text-sm" />,
+      href: '/wallet',
+      active: pathname === '/wallet',
+    }
   ];
   return (
     <div className="flex flex-wrap gap-2 border-b border-gray-200 mb-8">

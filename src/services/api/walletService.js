@@ -3,6 +3,11 @@ import { createService } from './serviceFactory';
 // Tạo base service với factory
 const baseWalletService = createService('wallet', 'Wallet', true);
 
+// Utility function để lấy walletID một cách nhất quán
+const getWalletId = (wallet) => {
+  return wallet?.walletID || wallet?.WalletID;
+};
+
 // Thêm method đặc biệt
 const walletService = {
   // Base CRUD methods từ factory
@@ -31,11 +36,11 @@ const walletService = {
   },
 
   // Create wallet for account
-  createWallet: async (accountId, walletData) => {
+  createWallet: async (accountId) => {
     const res = await fetch(`/api/wallet/${accountId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(walletData)
+      body: JSON.stringify({}) // Empty body as per API spec
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Tạo wallet thất bại');
@@ -97,6 +102,14 @@ const walletService = {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Vô hiệu hóa wallet thất bại');
     return data;
+  },
+
+  // Get wallet by account ID
+  getWalletByAccountId: async (accountId) => {
+    const wallets = await walletService.getAllWallets();
+    return wallets.find(wallet => 
+      (wallet.accountID === accountId) || (wallet.AccountID === accountId)
+    );
   }
 };
 
