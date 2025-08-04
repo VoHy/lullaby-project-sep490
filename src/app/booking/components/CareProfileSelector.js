@@ -24,7 +24,7 @@ export default function CareProfileSelector({
             Tạo hồ sơ người thân
           </button>
         </div>
-      ) : careProfiles.filter(p => p.status === 'active').length === 0 ? (
+      ) : careProfiles.filter(p => p.status === 'active' || p.status === 'Active').length === 0 ? (
         <div className="text-center py-6">
           <div className="text-gray-400 text-6xl mb-4">⚠️</div>
           <p className="text-gray-600 mb-2">Tất cả hồ sơ người thân đều không hoạt động</p>
@@ -38,7 +38,7 @@ export default function CareProfileSelector({
         </div>
       ) : (
         <div className="space-y-3">
-          {careProfiles.filter(p => p.status === 'active').map((profile) => (
+          {careProfiles.filter(p => p.status === 'active' || p.status === 'Active').map((profile) => (
             <div
               key={profile.careProfileID}
               className={`border rounded-xl p-4 cursor-pointer transition-all ${selectedCareProfile?.careProfileID === profile.careProfileID
@@ -57,12 +57,12 @@ export default function CareProfileSelector({
                   <div className="flex items-center justify-between mb-2">
                     <h3 className="font-bold text-gray-800">{profile.profileName}</h3>
                     <span
-                      className={`px-2 py-1 rounded-full text-xs font-semibold ${profile.status === "active"
+                      className={`px-2 py-1 rounded-full text-xs font-semibold ${profile.status === "active" || profile.status === "Active"
                           ? "bg-green-100 text-green-700"
                           : "bg-red-100 text-red-700"
                         }`}
                     >
-                      {profile.status === "active" ? "Hoạt động" : "Ngừng hoạt động"}
+                      {profile.status === "active" || profile.status === "Active" ? "Hoạt động" : "Ngừng hoạt động"}
                     </span>
                   </div>
                   <div className="space-y-1 text-sm text-gray-600">

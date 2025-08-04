@@ -103,10 +103,10 @@ export default function BookingPage() {
   }, [datetime]);
 
   // Lấy danh sách CareProfile của user hiện tại (chỉ lấy active)
-  const userCareProfiles = user ? careProfiles.filter(p => p.accountID === user.accountID && p.status === 'active') : [];
+  const userCareProfiles = user ? careProfiles.filter(p => p.accountID === user.accountID && (p.status === 'active' || p.status === 'Active')) : [];
   
   // Reset selectedCareProfile nếu nó không active
-  if (selectedCareProfile && selectedCareProfile.status !== 'active') {
+  if (selectedCareProfile && selectedCareProfile.status !== 'active' && selectedCareProfile.status !== 'Active') {
     setSelectedCareProfile(null);
   }
 
@@ -188,7 +188,7 @@ export default function BookingPage() {
     }
     
     // Validate CareProfile status
-    if (selectedCareProfile.status !== 'active') {
+    if (selectedCareProfile.status !== 'active' && selectedCareProfile.status !== 'Active') {
       setCareProfileError("Hồ sơ người thân không hoạt động. Vui lòng chọn hồ sơ khác hoặc kích hoạt hồ sơ này.");
       return;
     }

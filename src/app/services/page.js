@@ -34,12 +34,10 @@ export default function ServicesPage() {
         setLoading(true);
         // Lấy tất cả service types từ API servicetypes/getall
         const services = await serviceTypeService.getServiceTypes();
-        console.log('Loaded services:', services);
         setServiceTypes(services);
 
         // Lấy danh sách service task (liên kết giữa package và service lẻ)
         const tasks = await serviceTaskService.getServiceTasks();
-        console.log('Loaded service tasks:', tasks);
         setServiceTasks(tasks);
 
         // Lấy feedbacks cho dịch vụ
