@@ -256,15 +256,23 @@ export default function BookingPage() {
   let childServices = [];
 
   if (packageId) {
-    detail = serviceTypes.find(s => s.serviceID === Number(packageId));
-    const tasks = serviceTasks.filter(t => t.packageServiceID === Number(packageId));
-    childServices = tasks.map(t => serviceTypes.find(s => s.serviceID === t.childServiceID)).filter(Boolean);
+    detail = serviceTypes.find(s => s.serviceID === Number(packageId) || s.ServiceID === Number(packageId));
+    const tasks = serviceTasks.filter(t => 
+      t.packageServiceID === Number(packageId) || 
+      t.Package_ServiceID === Number(packageId) ||
+      t.package_ServiceID === Number(packageId)
+    );
+    childServices = tasks.map(t => {
+      const childServiceId = t.childServiceID || t.Child_ServiceID || t.child_ServiceID;
+      const foundService = serviceTypes.find(s => s.serviceID === childServiceId || s.ServiceID === childServiceId);
+      return foundService;
+    }).filter(Boolean);
   } else if (serviceId) {
     // Có thể là 1 dịch vụ hoặc nhiều dịch vụ lẻ (danh sách id)
     if (serviceId.includes(',')) {
-      childServices = serviceId.split(',').map(id => serviceTypes.find(st => st.serviceID === Number(id))).filter(Boolean);
+      childServices = serviceId.split(',').map(id => serviceTypes.find(st => st.serviceID === Number(id) || st.ServiceID === Number(id))).filter(Boolean);
     } else {
-      detail = serviceTypes.find(s => s.serviceID === Number(serviceId));
+      detail = serviceTypes.find(s => s.serviceID === Number(serviceId) || s.ServiceID === Number(serviceId));
     }
   }
 
@@ -308,14 +316,16 @@ export default function BookingPage() {
   } else if (serviceId && detail) {
     selectedServicesList = [detail];
   }
+  
+
 
   // Tính tổng tiền
   let total = 0;
   if (packageId && detail) {
     // Tổng tiền là giá của gói, không phải cộng các dịch vụ con
-    total = detail.price || 0;
+    total = detail.price || detail.Price || 0;
   } else if (!packageId && selectedServicesList.length > 0) {
-    total = selectedServicesList.reduce((sum, s) => sum + (s.price || 0), 0);
+    total = selectedServicesList.reduce((sum, s) => sum + (s.price || s.Price || 0), 0);
   }
 
   // Lọc nhân sự rảnh theo ZoneID và workSchedules (có ca trực, status active, đúng ngày user chọn)

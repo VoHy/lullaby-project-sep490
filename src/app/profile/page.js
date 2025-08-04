@@ -98,25 +98,16 @@ export default function ProfilePage() {
       try {
         const accountId = user.accountID || user.AccountID;
         
-        console.log('User object:', user);
-        console.log('Account ID:', accountId);
-        
         if (!accountId) {
           console.error('No account ID found in user object');
-          // Fallback: sử dụng user object từ AuthContext
-          console.log('Using user object from AuthContext as fallback');
           setProfile(user);
           return;
         }
         
-        console.log('Fetching account with ID:', accountId);
         const account = await accountsService.getAccount(accountId);
-        console.log('Account data received:', account);
         setProfile(account);
       } catch (err) {
         console.error('Error loading profile data:', err);
-        // Fallback: sử dụng user object từ AuthContext nếu API fail
-        console.log('API failed, using user object from AuthContext as fallback');
         setProfile(user);
         setError(`Không thể tải thông tin tài khoản từ server: ${err.message}`);
       }
@@ -149,7 +140,6 @@ export default function ProfilePage() {
       const accountId = displayProfile.accountID || displayProfile.AccountID;
       const fullData = { ...displayProfile, ...editData };
       await accountsService.updateAccount(accountId, fullData);
-      // Gọi lại API lấy profile mới nhất
       const refreshed = await accountsService.getAccount(accountId);
       setProfile(refreshed);
       setIsEditing(false);
@@ -173,7 +163,6 @@ export default function ProfilePage() {
     return <StatusDisplay type="error" message="Không tìm thấy thông tin tài khoản." />;
   }
 
-  // Sử dụng profile hoặc user làm fallback
   const displayProfile = profile || user;
 
   return (

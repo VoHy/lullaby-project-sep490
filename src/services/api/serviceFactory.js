@@ -37,8 +37,7 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     if (entityName === 'ServiceTask') return 'getServiceTasks';
     if (entityName === 'ServiceType') return 'getServiceTypes';
     if (entityName === 'TransactionHistory') return 'getTransactionHistories';
-    // if (entityName === 'Wallet') return 'getWallets';
-    // if (entityName === 'WalletHistory') return 'getWalletHistories';
+    if (entityName === 'Wallet') return 'getWallets';
     if (entityName === 'WorkSchedule') return 'getWorkSchedules';
     if (entityName === 'BlogCategory') return 'getBlogCategories';
     if (entityName === 'NursingSpecialistServiceType') return 'getNursingSpecialistServiceTypes';
@@ -66,8 +65,7 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     if (entityName === 'ServiceTask') return 'getServiceTaskById';
     if (entityName === 'ServiceType') return 'getServiceTypeById';
     if (entityName === 'TransactionHistory') return 'getTransactionHistoryById';
-    // if (entityName === 'Wallet') return 'getWalletById';
-    // if (entityName === 'WalletHistory') return 'getWalletHistoryById';
+    if (entityName === 'Wallet') return 'getWalletById';
     if (entityName === 'WorkSchedule') return 'getWorkScheduleById';
     if (entityName === 'BlogCategory') return 'getBlogCategoryById';
     if (entityName === 'NursingSpecialistServiceType') return 'getNursingSpecialistServiceTypeById';
@@ -95,8 +93,7 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     if (entityName === 'ServiceTask') return 'createServiceTask';
     if (entityName === 'ServiceType') return 'createServiceType';
     if (entityName === 'TransactionHistory') return 'createTransactionHistory';
-    // if (entityName === 'Wallet') return 'createWallet';
-    // if (entityName === 'WalletHistory') return 'createWalletHistory';
+    if (entityName === 'Wallet') return 'createWallet';
     if (entityName === 'WorkSchedule') return 'createWorkSchedule';
     if (entityName === 'BlogCategory') return 'createBlogCategory';
     if (entityName === 'NursingSpecialistServiceType') return 'createNursingSpecialistServiceType';
@@ -124,8 +121,7 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     if (entityName === 'ServiceTask') return 'updateServiceTask';
     if (entityName === 'ServiceType') return 'updateServiceType';
     if (entityName === 'TransactionHistory') return 'updateTransactionHistory';
-    // if (entityName === 'Wallet') return 'updateWallet';
-    // if (entityName === 'WalletHistory') return 'updateWalletHistory';
+    if (entityName === 'Wallet') return 'updateWallet';
     if (entityName === 'WorkSchedule') return 'updateWorkSchedule';
     if (entityName === 'BlogCategory') return 'updateBlogCategory';
     if (entityName === 'NursingSpecialistServiceType') return 'updateNursingSpecialistServiceType';
@@ -154,7 +150,6 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     if (entityName === 'ServiceType') return 'deleteServiceType';
     if (entityName === 'TransactionHistory') return 'deleteTransactionHistory';
     if (entityName === 'Wallet') return 'deleteWallet';
-    if (entityName === 'WalletHistory') return 'deleteWalletHistory';
     if (entityName === 'WorkSchedule') return 'deleteWorkSchedule';
     if (entityName === 'BlogCategory') return 'deleteBlogCategory';
     if (entityName === 'NursingSpecialistServiceType') return 'deleteNursingSpecialistServiceType';

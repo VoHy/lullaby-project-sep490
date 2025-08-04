@@ -17,52 +17,59 @@ export default function ServicesList({
         {packageId ? "Các dịch vụ trong gói" : "Dịch vụ đã chọn"}
       </h2>
       <ul className="space-y-3 md:space-y-4">
-        {selectedServicesList.map((s) => (
-          <li key={s.serviceID} className="bg-white rounded-xl shadow p-3 md:p-4 border flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              <span className="font-bold text-blue-700 text-base md:text-lg">
-                {s.serviceName}
-              </span>
-              {!packageId && (
-                <span className="ml-2 text-pink-600 font-bold text-sm md:text-base">
-                  {s.price?.toLocaleString("vi-VN") ?? ""}
-                  {s.price !== undefined ? " VNĐ" : ""}
+        {selectedServicesList.length === 0 ? (
+          <li className="bg-white rounded-xl shadow p-3 md:p-4 border flex flex-col gap-1">
+            <div className="text-center text-gray-500 py-4">
+              {packageId ? "Gói dịch vụ này chưa có dịch vụ con được cấu hình. Vui lòng liên hệ admin để thêm dịch vụ." : "Không có dịch vụ nào được chọn hoặc đang tải..."}
+            </div>
+          </li>
+        ) : (
+          selectedServicesList.map((s) => (
+            <li key={s.serviceID || s.ServiceID} className="bg-white rounded-xl shadow p-3 md:p-4 border flex flex-col gap-1">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-blue-700 text-base md:text-lg">
+                  {s.serviceName || s.ServiceName}
                 </span>
-              )}
-            </div>
-            <div className="text-gray-500 text-xs md:text-sm">{s.description}</div>
-            <div className="text-gray-500 text-xs md:text-sm flex items-center gap-1">
-              <HiOutlineCalendar /> Thời gian: {s.duration} phút
-            </div>
+                {!packageId && (
+                  <span className="ml-2 text-pink-600 font-bold text-sm md:text-base">
+                    {(s.price || s.Price)?.toLocaleString("vi-VN") ?? ""}
+                    {(s.price || s.Price) !== undefined ? " VNĐ" : ""}
+                  </span>
+                )}
+              </div>
+              <div className="text-gray-500 text-xs md:text-sm">{s.description || s.Description}</div>
+              <div className="text-gray-500 text-xs md:text-sm flex items-center gap-1">
+                <HiOutlineCalendar /> Thời gian: {s.duration || s.Duration} phút
+              </div>
             {isDatetimeValid && (
               <div className="mt-2">
-                                 {getAvailableStaff(s.serviceID).length === 0 ? (
+                                 {getAvailableStaff(s.serviceID || s.ServiceID).length === 0 ? (
                   <div className="text-xs text-gray-400 italic">
                     Không có nhân sự rảnh thời điểm này. Manager sẽ phân công sau.
                   </div>
-                ) : selectedStaff[s.serviceID] ? (
+                ) : selectedStaff[s.serviceID || s.ServiceID] ? (
                   <div className="flex items-center gap-2">
                     <span className="text-green-700 font-semibold">Đã chọn: </span>
                     <span
                       className={`px-2 py-0.5 rounded text-xs font-bold ${
-                        selectedStaff[s.serviceID].type === "nurse"
+                        selectedStaff[s.serviceID || s.ServiceID].type === "nurse"
                           ? "bg-blue-100 text-blue-700"
                           : "bg-pink-100 text-pink-700"
                       }`}
                     >
-                      {selectedStaff[s.serviceID].type === "nurse" ? "Y tá" : "Chuyên gia"}
+                      {selectedStaff[s.serviceID || s.ServiceID].type === "nurse" ? "Y tá" : "Chuyên gia"}
                     </span>
                                          <span className="font-semibold">
                        {(() => {
                          const staff = nursingSpecialists.find(
-                           (n) => n.nursingID === Number(selectedStaff[s.serviceID].id)
+                           (n) => n.nursingID === Number(selectedStaff[s.serviceID || s.ServiceID].id)
                          );
                          return staff ? staff.fullName : "";
                        })()}
                      </span>
                     <button
                       className="ml-2 px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs hover:bg-gray-200 transition"
-                      onClick={() => setStaffPopup({ open: true, serviceId: s.serviceID })}
+                      onClick={() => setStaffPopup({ open: true, serviceId: s.serviceID || s.ServiceID })}
                     >
                       Đổi
                     </button>
@@ -70,7 +77,7 @@ export default function ServicesList({
                 ) : (
                   <button
                     className="px-4 py-1 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:scale-105 shadow transition"
-                    onClick={() => setStaffPopup({ open: true, serviceId: s.serviceID })}
+                    onClick={() => setStaffPopup({ open: true, serviceId: s.serviceID || s.ServiceID })}
                   >
                     Chọn nhân sự
                   </button>
@@ -78,14 +85,15 @@ export default function ServicesList({
               </div>
             )}
           </li>
-        ))}
+        ))
+        )}
       </ul>
       <div className="flex justify-end mt-4 md:mt-6 items-center gap-2">
         <span className="text-base md:text-lg font-semibold">Tổng tiền:</span>
         <span className="text-xl md:text-2xl text-pink-600 font-extrabold flex items-center gap-1">
           <HiOutlineCurrencyDollar />
-          {selectedServicesList.reduce((sum, s) => sum + (s.price || 0), 0) > 0
-            ? selectedServicesList.reduce((sum, s) => sum + (s.price || 0), 0).toLocaleString("vi-VN") + " VNĐ"
+          {selectedServicesList.reduce((sum, s) => sum + (s.price || s.Price || 0), 0) > 0
+            ? selectedServicesList.reduce((sum, s) => sum + (s.price || s.Price || 0), 0).toLocaleString("vi-VN") + " VNĐ"
             : "0 VNĐ"}
         </span>
       </div>

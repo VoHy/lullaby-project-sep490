@@ -1,26 +1,26 @@
 import accountService from './accountService';
-// import walletService from './walletService';
+import walletService from './walletService';
 // import bookingService from './bookingService';
-// import blogService from './blogService';
-// import blogCategoryService from './blogCategoryService';
-// import feedbackService from './feedbackService';
+import blogService from './blogService';
+import blogCategoryService from './blogCategoryService';
+import feedbackService from './feedbackService';
 import roleService from './roleService';
 import serviceTypeService from './serviceTypeService';
 import zoneService from './zoneService';
-// import notificationService from './notificationService';
-// import invoiceService from './invoiceService';
-// import holidayService from './holidayService';
+import notificationService from './notificationService';
+import invoiceService from './invoiceService';
+import holidayService from './holidayService';
 // import workScheduleService from './workScheduleService';
 import careProfileService from './careProfileService';
 // import customizePackageService from './customizePackageService';
 // import customizeTaskService from './customizeTaskService';
-// import medicalNoteService from './medicalNoteService';
+import medicalNoteService from './medicalNoteService';
 import nursingSpecialistService from './nursingSpecialistService';
 import nursingSpecialistServiceTypeService from './nursingSpecialistServiceTypeService';
 import relativesService from './relativesService';
 import serviceTaskService from './serviceTaskService';
-// import transactionHistoryService from './transactionHistoryService';
-// import walletHistoryService from './walletHistoryService';
+import transactionHistoryService from './transactionHistoryService';
+import payOSService from './payOSService';
 import zoneDetailService from './zoneDetailService';
 
 // Utility function để lấy token từ localStorage
@@ -109,28 +109,28 @@ const authService = {
 const apiService = {
   auth: authService,
   account: accountService,
-  // wallet: walletService,
+  wallet: walletService,
   // booking: bookingService,
-  // blog: blogService,
-  // blogCategory: blogCategoryService,
-  // feedback: feedbackService,
+  blog: blogService,
+  blogCategory: blogCategoryService,
+  feedback: feedbackService,
   role: roleService,
   serviceType: serviceTypeService,
   zone: zoneService,
-  // notification: notificationService,
-  // invoice: invoiceService,
-  // holiday: holidayService,
+  notification: notificationService,
+  invoice: invoiceService,
+  holiday: holidayService,
   // workSchedule: workScheduleService,
   careProfile: careProfileService,
   // customizePackage: customizePackageService,
   // customizeTask: customizeTaskService,
-  // medicalNote: medicalNoteService,
+  medicalNote: medicalNoteService,
   nursingSpecialist: nursingSpecialistService,
   nursingSpecialistServiceType: nursingSpecialistServiceTypeService,
   relatives: relativesService,
   serviceTask: serviceTaskService,
-  // transactionHistory: transactionHistoryService,
-  // walletHistory: walletHistoryService,
+  transactionHistory: transactionHistoryService,
+  payOS: payOSService,
   zoneDetail: zoneDetailService,
   // Utility functions
   getAuthToken,
