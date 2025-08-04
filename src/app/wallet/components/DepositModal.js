@@ -3,8 +3,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaPlus, FaTimes } from 'react-icons/fa';
-// import walletService from '@/services/api/walletService';
-// import walletHistoryService from '@/services/api/walletHistoryService';
+
 
 const DepositModal = ({ isOpen, onClose, amount, setAmount, onDeposit, walletId, myWallet }) => {
   const [step, setStep] = useState('input'); // 'input' | 'qr' | 'success'
@@ -32,14 +31,6 @@ const DepositModal = ({ isOpen, onClose, amount, setAmount, onDeposit, walletId,
       const updatedWallets = allWallets.map(w => w.WalletID === myWallet.WalletID ? { ...w, Amount: myWallet.Amount } : w);
       localStorage.setItem('wallets', JSON.stringify(updatedWallets));
       // Tạo lịch sử giao dịch
-              // await walletHistoryService.createWalletHistory({
-        WalletID: myWallet.WalletID,
-        Before: before,
-        Amount: parseFloat(tempAmount),
-        After: myWallet.Amount,
-        Note: 'Nạp tiền ví (QR code)',
-        Status: 'success'
-      });
     }
     setStep('success');
     setLoading(false);

@@ -35,7 +35,10 @@ const blogCategoryService = {
     const res = await fetch('/api/blogcategory', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(blogCategoryData)
+      body: JSON.stringify({
+        categoryName: blogCategoryData.categoryName,
+        description: blogCategoryData.description
+      })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Tạo blog category thất bại');
@@ -47,7 +50,10 @@ const blogCategoryService = {
     const res = await fetch(`/api/blogcategory/${blogCategoryId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(blogCategoryData)
+      body: JSON.stringify({
+        categoryName: blogCategoryData.categoryName,
+        description: blogCategoryData.description
+      })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Cập nhật blog category thất bại');

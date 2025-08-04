@@ -35,7 +35,13 @@ const blogService = {
     const res = await fetch('/api/blog', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(blogData)
+      body: JSON.stringify({
+        title: blogData.title,
+        blogCategoryID: blogData.blogCategoryID,
+        content: blogData.content,
+        image: blogData.image,
+        createdByID: blogData.createdByID
+      })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Tạo blog thất bại');
@@ -47,7 +53,13 @@ const blogService = {
     const res = await fetch(`/api/blog/update/${blogId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(blogData)
+      body: JSON.stringify({
+        title: blogData.title,
+        blogCategoryID: blogData.blogCategoryID,
+        content: blogData.content,
+        image: blogData.image,
+        createdByID: blogData.createdByID
+      })
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Cập nhật blog thất bại');
