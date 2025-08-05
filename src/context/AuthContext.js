@@ -6,31 +6,79 @@ export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
+  const [token, setToken] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const storedUser = localStorage.getItem("user");
-    if (storedUser) setUser(JSON.parse(storedUser));
+    const initializeAuth = () => {
+      try {
+        const storedUser = localStorage.getItem("user");
+        const storedToken = localStorage.getItem("token");
+        
+        if (storedUser) {
+          setUser(JSON.parse(storedUser));
+        }
+        if (storedToken) {
+          setToken(storedToken);
+        }
+      } catch (error) {
+        console.error('Error initializing auth:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    initializeAuth();
   }, []);
 
-  const login = (userData) => {
+  const login = (userData, authToken) => {
     setUser(userData);
+    setToken(authToken);
     localStorage.setItem("user", JSON.stringify(userData));
+    localStorage.setItem("token", authToken);
   };
 
   const logout = () => {
     setUser(null);
+    setToken(null);
     localStorage.removeItem("user");
     localStorage.removeItem("token");
-    // Redirect về trang chủ và refresh
-    router.push('/');
-    setTimeout(() => {
-      window.location.reload();
-    }, 100);
+    
+    // Clear all application cache
+    const clearAllCache = () => {
+      // Clear booking cache
+      localStorage.removeItem('booking_services');
+      localStorage.removeItem('booking_tasks');
+      localStorage.removeItem('booking_cache_time');
+      localStorage.removeItem('booking_care_profiles');
+      localStorage.removeItem('booking_care_cache_time');
+      localStorage.removeItem('booking_nurses');
+      localStorage.removeItem('booking_nurses_cache_time');
+      
+      // Clear services cache
+      localStorage.removeItem('services_data');
+      localStorage.removeItem('services_cache_time');
+      
+      // Clear dashboard cache
+      localStorage.removeItem('dashboard_data');
+      localStorage.removeItem('dashboard_cache_time');
+      
+      // Clear any other app cache
+      const keys = Object.keys(localStorage);
+      keys.forEach(key => {
+        if (key.includes('_cache') || key.includes('_data')) {
+          localStorage.removeItem(key);
+        }
+      });
+    };
+    
+    clearAllCache();
+    router.push('/auth/login');
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider value={{ user, token, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

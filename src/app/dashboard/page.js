@@ -1,89 +1,135 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import authService from '@/services/auth/authService';
+import { useContext, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { AuthContext } from '@/context/AuthContext';
 import AdminDashboard from './components/admin/AdminDashboard';
 import NurseDashboard from './components/nurse/NurseDashboard';
 import ManagerDashboard from './components/manager/ManagerDashboard';
-import SpecialistDashboard from './components/specialist/SpecialistDashboard';
 import Sidebar from './components/Sidebar';
 
-export default function Dashboard() {
+// Skeleton Loading Component
+const DashboardSkeleton = () => (
+  <div className="min-h-screen bg-gray-50">
+    <div className="flex">
+      {/* Sidebar Skeleton */}
+      <div className="w-64 bg-white shadow-lg min-h-screen">
+        <div className="p-6">
+          <div className="h-8 bg-gray-200 rounded mb-6 animate-pulse"></div>
+          <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="h-10 bg-gray-200 rounded animate-pulse"></div>
+            ))}
+          </div>
+        </div>
+      </div>
+      
+      {/* Main Content Skeleton */}
+      <div className="flex-1 p-8">
+        <div className="h-8 bg-gray-200 rounded mb-6 animate-pulse"></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {[1, 2, 3, 4].map(i => (
+            <div key={i} className="bg-white p-6 rounded-lg shadow">
+              <div className="h-6 bg-gray-200 rounded mb-2 animate-pulse"></div>
+              <div className="h-8 bg-gray-200 rounded animate-pulse"></div>
+            </div>
+          ))}
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <div className="h-6 bg-gray-200 rounded mb-4 animate-pulse"></div>
+          <div className="h-64 bg-gray-200 rounded animate-pulse"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
+// Utility function to clear dashboard cache
+const clearDashboardCache = () => {
+  localStorage.removeItem('dashboard_data');
+  localStorage.removeItem('dashboard_cache_time');
+};
+
+export default function DashboardPage() {
+  const { user } = useContext(AuthContext);
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    // Kiểm tra xác thực và chuyển hướng nếu chưa đăng nhập
     const checkAuth = () => {
-      if (!authService.isAuthenticated()) {
+      if (!user) {
         router.push('/auth/login');
         return;
       }
-
-      const currentUser = authService.getCurrentUser();
-      // Bổ sung kiểm tra trạng thái user
-      if (
-        !currentUser ||
-        currentUser.deletedAt !== null && currentUser.deletedAt !== undefined && currentUser.deletedAt !== 'NULL' && currentUser.deletedAt !== '' ||
-        (currentUser.status && currentUser.status !== 'active')
-      ) {
-        authService.logout && authService.logout(); // Nếu có hàm logout thì gọi
-        localStorage.clear();
-        router.push('/auth/login');
-        return;
-      }
-      setUser(currentUser);
       setLoading(false);
     };
 
-    checkAuth();
-  }, [router]);
+    // Delay để đảm bảo AuthContext đã load
+    const timer = setTimeout(checkAuth, 100);
+    return () => clearTimeout(timer);
+  }, [user, router]);
 
   if (loading) {
+    return <DashboardSkeleton />;
+  }
+
+  if (!user) {
+    return null; // Sẽ redirect về login
+  }
+
+  if (error) {
     return (
-      <div className="flex items-center justify-center min-h-[70vh]">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-500"></div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">{error}</h3>
+          <button 
+            onClick={() => {
+              clearDashboardCache();
+              window.location.reload();
+            }} 
+            className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
+          >
+            Thử lại
+          </button>
+        </div>
       </div>
     );
   }
 
-  // Hiển thị dashboard phù hợp theo vai trò
-  const renderDashboardByRole = () => {
-    if (!user) return null;
-    const tabParam = searchParams.get('tab');
-    const userRole = user.roleID || user.role_id;
+  // Render dashboard based on user role
+  const renderDashboard = () => {
+    const roleID = user.roleID;
     
-    switch (userRole) {
+    // Debug: Log user info
+    console.log('Dashboard User:', user);
+    console.log('User Role ID:', roleID);
+    
+    switch (roleID) {
       case 1: // Admin
-        return <AdminDashboard user={user} initialTab={tabParam} />;
+        return <AdminDashboard user={user} />;
       case 2: // NurseSpecialist
-        return <NurseDashboard user={user} initialTab={tabParam} />;
+        return <NurseDashboard user={user} />;
       case 3: // Manager
         return <ManagerDashboard user={user} />;
-      case 4: // Customer
-        return (
-          <div className="text-center py-10">
-            <p className="text-gray-500">Không có quyền truy cập dashboard</p>
-          </div>
-        );
+      case 4: // Customer - redirect to home
+        router.push('/');
+        return null;
       default:
-        return (
-          <div className="text-center py-10">
-            <p className="text-gray-500">Không có quyền truy cập dashboard</p>
-          </div>
-        );
+        router.push('/');
+        return null;
     }
   };
 
-  return (
-    <div className="flex h-screen bg-gray-100">
-      <Sidebar user={user} />
-      <div className="flex-1 overflow-auto">
-        {renderDashboardByRole()}
-      </div>
-    </div>
-  );
+     return (
+     <div className="min-h-screen bg-gray-50">
+       <div className="flex relative">
+         <Sidebar user={user} />
+         <div className="flex-1 relative">
+           {renderDashboard()}
+         </div>
+       </div>
+     </div>
+   );
 } 

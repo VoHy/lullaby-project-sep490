@@ -8,6 +8,51 @@ const accountService = {
   // Base CRUD methods từ factory
   ...baseAccountService,
 
+  // Thêm method getAccount để đảm bảo
+  getAccount: async (id) => {
+    const res = await fetch(`/api/accounts/get/${id}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin account');
+    return data;
+  },
+
+  // Thêm method getAllAccounts để lấy tất cả accounts
+  getAllAccounts: async () => {
+    const res = await fetch('/api/accounts/getall', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách accounts');
+    return data;
+  },
+
+  // Thêm method getAccountById để lấy thông tin account theo ID
+  getAccountById: async (id) => {
+    const res = await fetch(`/api/accounts/get/${id}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin account');
+    return data;
+  },
+
+  // Thêm method updateAccount để đảm bảo
+  updateAccount: async (id, data) => {
+    const res = await fetch(`/api/accounts/update/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Cập nhật account thất bại');
+    return result;
+  },
+
   // === REGISTER METHODS ===
   registerNursingSpecialist: async (data) => {
     const res = await fetch('/api/accounts/register/nursingspecialist', {
@@ -20,6 +65,7 @@ const accountService = {
     return result;
   },
 
+  
   registerManager: async (data) => {
     const res = await fetch('/api/accounts/register/manager', {
       method: 'POST',
@@ -42,6 +88,18 @@ const accountService = {
     return result;
   },
 
+  // === RESET PASSWORD ===
+  resetPassword: async (data) => {
+    const res = await fetch('/api/accounts/reset-password', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Đặt lại mật khẩu thất bại');
+    return result;
+  },
+
   // === BAN/UNBAN METHODS ===
   banAccount: async (id) => {
     const res = await fetch(`/api/accounts/ban/${id}`, {
@@ -53,9 +111,19 @@ const accountService = {
     return result;
   },
 
-  // === DELETE METHOD ===
+  // === DELETE METHODS ===
   deleteAccount: async (id) => {
     const res = await fetch(`/api/accounts/delete/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Xóa tài khoản thất bại');
+    return result;
+  },
+
+  removeAccount: async (id) => {
+    const res = await fetch(`/api/accounts/remove/${id}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' }
     });
@@ -103,6 +171,37 @@ const accountService = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách customers');
+    return data;
+  },
+
+  // === COUNT METHODS ===
+  getNonAdminCount: async () => {
+    const res = await fetch('/api/accounts/count/non-admin', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng non-admin accounts');
+    return data;
+  },
+
+  getManagerCount: async () => {
+    const res = await fetch('/api/accounts/count/managers', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng managers');
+    return data;
+  },
+
+  getCustomerCount: async () => {
+    const res = await fetch('/api/accounts/count/customers', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng customers');
     return data;
   }
 };

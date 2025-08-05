@@ -5,8 +5,14 @@ export default function PaymentInfo({
   myWallet, 
   error, 
   loading, 
-  handleConfirm 
+  handleConfirm,
+  isProcessingPayment
 }) {
+  // Debug wallet info
+  const walletAmount = myWallet?.amount || myWallet?.Amount || 0;
+  const walletStatus = myWallet?.status || myWallet?.Status || 'unknown';
+  const walletAccount = myWallet?.accountID || myWallet?.AccountID || 'unknown';
+
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6">
       <div className="flex items-center gap-3 mb-6">
@@ -31,8 +37,8 @@ export default function PaymentInfo({
           <div className="space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Số dư hiện tại:</span>
-              <span className={`font-bold ${myWallet.Amount < total ? "text-red-500" : "text-green-600"}`}>
-                {myWallet.Amount.toLocaleString()}đ
+              <span className={`font-bold ${walletAmount < total ? "text-red-500" : "text-green-600"}`}>
+                {walletAmount.toLocaleString()}đ
               </span>
             </div>
             <div className="flex justify-between items-center">
@@ -41,18 +47,18 @@ export default function PaymentInfo({
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Số dư sau thanh toán:</span>
-              <span className={`font-bold ${myWallet.Amount < total ? "text-red-500" : "text-green-600"}`}>
-                {(myWallet.Amount - total).toLocaleString()}đ
+              <span className={`font-bold ${walletAmount < total ? "text-red-500" : "text-green-600"}`}>
+                {(walletAmount - total).toLocaleString()}đ
               </span>
             </div>
           </div>
-          {myWallet.Amount < total && (
+          {walletAmount < total && (
             <div className="mt-3 p-3 bg-red-100 rounded-lg">
               <div className="text-red-700 text-sm font-semibold">
                 ⚠️ Số dư ví không đủ để thanh toán!
               </div>
               <div className="text-red-600 text-xs mt-1">
-                Vui lòng nạp thêm {(total - myWallet.Amount).toLocaleString()}đ
+                Vui lòng nạp thêm {(total - walletAmount).toLocaleString()}đ
               </div>
             </div>
           )}
@@ -62,32 +68,79 @@ export default function PaymentInfo({
       {/* Thông báo lỗi */}
       {error && (
         <div className="bg-red-100 border border-red-300 rounded-lg p-4 mb-6">
-          <div className="text-red-700 font-semibold text-center">{error}</div>
+          <div className="text-red-700 font-semibold text-center mb-2">{error}</div>
+          {error.includes('Hóa đơn đã được tạo') && (
+            <div className="text-green-700 text-sm text-center">
+              ✅ Hóa đơn đã được tạo thành công. Bạn có thể thanh toán sau khi nạp thêm tiền.
+            </div>
+          )}
         </div>
       )}
 
+      {/* Thông tin về invoice đã tạo khi không đủ tiền */}
+      {error && error.includes('Hóa đơn đã được tạo') && (
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+          <div className="text-green-800 text-sm">
+            <div className="font-semibold mb-2">📋 Thông tin hóa đơn:</div>
+            <div className="space-y-1 text-xs">
+              <div>• Trạng thái: Chờ thanh toán</div>
+              <div>• Số tiền: {total.toLocaleString()}đ</div>
+              <div>• Booking ID: {window.location.search.includes('bookingId=') ? new URLSearchParams(window.location.search).get('bookingId') : 'N/A'}</div>
+              <div>• Thời gian tạo: {new Date().toLocaleString('vi-VN')}</div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Thông tin về flow mới */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+        <div className="text-blue-800 text-sm">
+          <div className="font-semibold mb-2">ℹ️ Quy trình thanh toán:</div>
+          <div className="space-y-1 text-xs">
+            <div>1. Tạo hóa đơn (luôn luôn)</div>
+            <div>2. Kiểm tra số dư ví</div>
+            <div>3. Nếu đủ tiền: Thanh toán ngay</div>
+            <div>4. Nếu thiếu tiền: Chờ thanh toán sau</div>
+          </div>
+        </div>
+      </div>
+
       {/* Nút thanh toán */}
-      <button
-        className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all duration-200 ${
-          myWallet && myWallet.Amount >= total
-            ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:scale-105 hover:shadow-xl"
-            : "bg-gray-300 text-gray-500 cursor-not-allowed"
-        }`}
-        onClick={handleConfirm}
-        disabled={loading || (myWallet && myWallet.Amount < total)}
-      >
-        {loading ? (
-          <div className="flex items-center justify-center gap-2">
-            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-            Đang xử lý...
-          </div>
-        ) : (
-          <div className="flex items-center justify-center gap-2">
-            <FaWallet />
-            Xác nhận thanh toán bằng ví
-          </div>
-        )}
-      </button>
+      <div className="space-y-3">
+        <button
+          className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all duration-200 ${
+            myWallet && walletAmount >= total
+              ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:scale-105 hover:shadow-xl"
+              : "bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:scale-105 hover:shadow-xl"
+          }`}
+          onClick={handleConfirm}
+          disabled={loading || isProcessingPayment}
+        >
+          {loading || isProcessingPayment ? (
+            <div className="flex items-center justify-center gap-2">
+              <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+              Đang xử lý...
+            </div>
+          ) : (
+            <div className="flex items-center justify-center gap-2">
+              <FaWallet />
+              {myWallet && walletAmount >= total 
+                ? "Xác nhận thanh toán bằng ví" 
+                : "Tạo hóa đơn và chờ thanh toán"
+              }
+            </div>
+          )}
+        </button>
+
+        {/* Nút Hủy */}
+        <button
+          className="w-full py-3 rounded-xl font-bold text-lg border-2 border-gray-300 text-gray-600 hover:bg-gray-50 transition-all duration-200"
+          onClick={() => window.history.back()}
+          disabled={isProcessingPayment}
+        >
+          Hủy
+        </button>
+      </div>
 
       {/* Thông tin bảo mật */}
       <div className="mt-6 text-center">

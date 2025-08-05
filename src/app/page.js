@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import authService from "@/services/auth/authService";
+import { AuthContext } from "@/context/AuthContext";
 import {
   HeroSection,
   StatsSection,
@@ -11,19 +11,15 @@ import {
 } from "./components";
 import SuccessNotification from "./components/SuccessNotification";
 
-export default function Home() {
+function HomeContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [user, setUser] = useState(null);
   const [showWelcome, setShowWelcome] = useState(false);
   const searchParams = useSearchParams();
+  const { user } = useContext(AuthContext);
 
   useEffect(() => {
     const checkAuth = () => {
-      const loggedIn = authService.isAuthenticated();
-      setIsLoggedIn(loggedIn);
-      if (loggedIn) {
-        setUser(authService.getCurrentUser());
-      }
+      setIsLoggedIn(!!user);
     };
 
     checkAuth();
@@ -35,7 +31,7 @@ export default function Home() {
       // Xóa parameter khỏi URL
       window.history.replaceState({}, "", "/");
     }
-  }, [searchParams]);
+  }, [searchParams, user]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -52,5 +48,21 @@ export default function Home() {
       <FeaturesSection />
       <CTASection />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+          <div className="text-center py-12">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Đang tải trang chủ...</p>
+          </div>
+        </div>
+      }>
+      <HomeContent />
+    </Suspense>
   );
 }

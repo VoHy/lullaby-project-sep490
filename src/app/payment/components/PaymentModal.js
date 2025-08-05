@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaTimes, FaCreditCard, FaQrcode, FaCopy, FaCheck } from 'react-icons/fa';
-import walletService from '@/services/api/walletService';
+// import walletService from '@/services/api/walletService';
 
 const PaymentModal = ({ isOpen, onClose, amount, walletId, onSuccess }) => {
   const [step, setStep] = useState('select'); // 'select', 'bank-transfer', 'qr-code', 'processing', 'success'
@@ -66,7 +66,7 @@ const PaymentModal = ({ isOpen, onClose, amount, walletId, onSuccess }) => {
       // Simulate payment processing
       await new Promise(resolve => setTimeout(resolve, 3000));
       
-      const result = await walletService.confirmTransaction(txnId, {});
+      // const result = await walletService.confirmTransaction(txnId, {});
       
       if (result.success) {
         setStep('success');

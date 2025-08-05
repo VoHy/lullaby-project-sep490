@@ -2,55 +2,73 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FaPlus, FaTimes } from 'react-icons/fa';
-import walletService from '@/services/api/walletService';
-import walletHistoryService from '@/services/api/walletHistoryService';
+import { FaPlus, FaTimes, FaCreditCard, FaWallet } from 'react-icons/fa';
 
-const DepositModal = ({ isOpen, onClose, amount, setAmount, onDeposit, walletId, myWallet }) => {
-  const [step, setStep] = useState('input'); // 'input' | 'qr' | 'success'
+const DepositModal = ({ isOpen, onClose, amount, setAmount, onDeposit, walletId, myWallet, error, onPayOSPayment }) => {
+  const [step, setStep] = useState('input'); // 'input' | 'confirm' | 'success'
   const [tempAmount, setTempAmount] = useState('');
-  const [qr, setQr] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [validationError, setValidationError] = useState('');
+  const [paymentMethod, setPaymentMethod] = useState('wallet'); // 'wallet' | 'payos'
 
-  const handleGenerateQR = async () => {
-    if (!tempAmount || parseFloat(tempAmount) <= 0) return;
-    setLoading(true);
-    const qrData = await walletService.generateQRCode(parseFloat(tempAmount), 'bank_transfer');
-    setQr(qrData.qrCodeUrl);
-    setStep('qr');
-    setLoading(false);
+  const validateAmount = (amount) => {
+    const numAmount = parseFloat(amount);
+    if (!amount || isNaN(numAmount)) {
+      return 'Vui lòng nhập số tiền hợp lệ';
+    }
+    if (numAmount < 1000) {
+      return 'Số tiền tối thiểu là 1,000 VNĐ';
+    }
+    if (numAmount > 10000000) {
+      return 'Số tiền tối đa là 10,000,000 VNĐ';
+    }
+    if (numAmount % 1000 !== 0) {
+      return 'Số tiền phải là bội số của 1,000 VNĐ';
+    }
+    return '';
+  };
+
+  const handleAmountChange = (e) => {
+    const value = e.target.value;
+    setTempAmount(value);
+    setValidationError(validateAmount(value));
   };
 
   const handleConfirm = async () => {
-    setLoading(true);
-    // Cộng tiền vào ví (mock)
-    if (myWallet) {
-      const before = myWallet.Amount;
-      myWallet.Amount += parseFloat(tempAmount);
-      // Lưu lại vào localStorage (mock update)
-      const allWallets = JSON.parse(localStorage.getItem('wallets')) || [];
-      const updatedWallets = allWallets.map(w => w.WalletID === myWallet.WalletID ? { ...w, Amount: myWallet.Amount } : w);
-      localStorage.setItem('wallets', JSON.stringify(updatedWallets));
-      // Tạo lịch sử giao dịch
-      await walletHistoryService.createWalletHistory({
-        WalletID: myWallet.WalletID,
-        Before: before,
-        Amount: parseFloat(tempAmount),
-        After: myWallet.Amount,
-        Note: 'Nạp tiền ví (QR code)',
-        Status: 'success'
-      });
+    const error = validateAmount(tempAmount);
+    if (error) {
+      setValidationError(error);
+      return;
     }
-    setStep('success');
-    setLoading(false);
-    if (onDeposit) onDeposit();
+
+    if (paymentMethod === 'payos') {
+      console.log('🧪 Test: Chọn PayOS payment, amount:', tempAmount);
+      if (onPayOSPayment) {
+        onPayOSPayment(tempAmount);
+      }
+      return;
+    }
+
+    console.log('🧪 Test: Bắt đầu nạp tiền trực tiếp, amount:', tempAmount);
+    setLoading(true);
+    try {
+      setAmount(tempAmount); // Ensure parent state is updated for direct deposit
+      await onDeposit();
+      console.log('🧪 Test: Nạp tiền thành công');
+      setStep('success');
+    } catch (error) {
+      console.error('🧪 Test: Lỗi nạp tiền:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleClose = () => {
     setStep('input');
     setTempAmount('');
-    setQr(null);
     setLoading(false);
+    setValidationError('');
+    setPaymentMethod('wallet');
     onClose();
   };
 
@@ -81,6 +99,14 @@ const DepositModal = ({ isOpen, onClose, amount, setAmount, onDeposit, walletId,
             <FaTimes />
           </button>
         </div>
+
+        {/* Hiển thị lỗi nếu có */}
+        {(error || validationError) && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-red-600 text-sm">{error || validationError}</p>
+          </div>
+        )}
+
         {step === 'input' && (
           <div className="space-y-4">
             <div>
@@ -90,11 +116,65 @@ const DepositModal = ({ isOpen, onClose, amount, setAmount, onDeposit, walletId,
               <input
                 type="number"
                 value={tempAmount}
-                onChange={(e) => setTempAmount(e.target.value)}
+                onChange={handleAmountChange}
                 placeholder="Nhập số tiền..."
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                min="1000"
+                step="1000"
+                max="10000000"
               />
+              <div className="mt-1 text-xs text-gray-500">
+                <p>• Số tiền tối thiểu: 1,000 VNĐ</p>
+                <p>• Số tiền tối đa: 10,000,000 VNĐ</p>
+                <p>• Phải là bội số của 1,000 VNĐ</p>
+              </div>
             </div>
+            
+            {myWallet && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <p className="text-sm text-gray-600">Số dư hiện tại: <span className="font-semibold">{myWallet.Amount?.toLocaleString() || '0'} VNĐ</span></p>
+              </div>
+            )}
+
+            {/* Phương thức thanh toán */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Phương thức thanh toán
+              </label>
+              <div className="space-y-2">
+                <label className="flex items-center gap-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="wallet"
+                    checked={paymentMethod === 'wallet'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="text-green-600"
+                  />
+                  <FaWallet className="text-green-500" />
+                  <div>
+                    <span className="font-medium">Nạp trực tiếp</span>
+                    <p className="text-xs text-gray-500">Nạp tiền trực tiếp vào ví (miễn phí)</p>
+                  </div>
+                </label>
+                <label className="flex items-center gap-3 p-3 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    value="payos"
+                    checked={paymentMethod === 'payos'}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="text-blue-600"
+                  />
+                  <FaCreditCard className="text-blue-500" />
+                  <div>
+                    <span className="font-medium">Thanh toán qua PayOS</span>
+                    <p className="text-xs text-gray-500">Chuyển khoản ngân hàng, thẻ ATM, QR Code</p>
+                  </div>
+                </label>
+              </div>
+            </div>
+
             <div className="flex gap-3">
               <button
                 onClick={handleClose}
@@ -103,35 +183,61 @@ const DepositModal = ({ isOpen, onClose, amount, setAmount, onDeposit, walletId,
                 Hủy
               </button>
               <button
-                onClick={handleGenerateQR}
-                disabled={!tempAmount || parseFloat(tempAmount) <= 0 || loading}
+                onClick={() => setStep('confirm')}
+                disabled={!tempAmount || parseFloat(tempAmount) < 1000 || validationError || loading}
                 className="flex-1 px-4 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
-                {loading ? 'Đang tạo mã QR...' : 'Tạo mã QR'}
+                Tiếp tục
               </button>
             </div>
           </div>
         )}
-        {step === 'qr' && (
-          <div className="flex flex-col items-center gap-4">
-            <div className="mb-2 font-semibold text-gray-700">Quét mã QR để nạp tiền</div>
-            {qr && <img src={qr} alt="QR code" className="w-48 h-48 rounded-lg border" />}
-            <button
-              onClick={handleConfirm}
-              className="w-full py-3 bg-green-500 text-white rounded-lg font-bold hover:bg-green-600 mt-2"
-              disabled={loading}
-            >
-              Tôi đã chuyển khoản
-            </button>
+
+        {step === 'confirm' && (
+          <div className="space-y-4">
+            <div className="text-center">
+              <h4 className="font-semibold text-gray-900 mb-2">Xác nhận nạp tiền</h4>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <p className="text-lg font-bold text-blue-600">
+                  {parseFloat(tempAmount).toLocaleString()} VNĐ
+                </p>
+                <p className="text-sm text-gray-600">
+                  Phương thức: {paymentMethod === 'wallet' ? 'Nạp trực tiếp' : 'Thanh toán qua PayOS'}
+                </p>
+                <p className="text-sm text-gray-600">Số tiền sẽ được nạp vào ví của bạn</p>
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <button
+                onClick={() => setStep('input')}
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Quay lại
+              </button>
+              <button
+                onClick={handleConfirm}
+                disabled={loading}
+                className="flex-1 px-4 py-3 bg-green-500 text-white rounded-lg font-medium hover:bg-green-600 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                {loading ? 'Đang xử lý...' : 'Xác nhận nạp tiền'}
+              </button>
+            </div>
           </div>
         )}
+
         {step === 'success' && (
           <div className="flex flex-col items-center gap-4">
-            <div className="text-green-600 text-3xl mb-2">✔</div>
-            <div className="font-bold text-green-700 mb-2">Nạp tiền thành công!</div>
+            <div className="text-green-600 text-4xl mb-2">✓</div>
+            <div className="text-center">
+              <h4 className="font-bold text-green-700 mb-2">Nạp tiền thành công!</h4>
+              <p className="text-gray-600 text-sm">
+                Số tiền {parseFloat(tempAmount).toLocaleString()} VNĐ đã được nạp vào ví của bạn
+              </p>
+            </div>
             <button
               onClick={handleClose}
-              className="w-full py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 mt-2"
+              className="w-full py-3 bg-gray-200 text-gray-700 rounded-lg font-bold hover:bg-gray-300 transition-colors"
             >
               Đóng
             </button>
@@ -142,5 +248,4 @@ const DepositModal = ({ isOpen, onClose, amount, setAmount, onDeposit, walletId,
   );
 };
 
-export default DepositModal;
-// Không có chức năng rút tiền, chỉ cho phép nạp tiền vào ví. 
+export default DepositModal; 

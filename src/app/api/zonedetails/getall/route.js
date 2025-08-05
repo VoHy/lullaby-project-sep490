@@ -7,7 +7,7 @@ export async function GET() {
     
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('Backend error:', errorText);
+      console.error('Backend error:', response.status, response.statusText, errorText);
       return NextResponse.json(
         { error: 'Không thể lấy danh sách chi tiết khu vực' },
         { status: response.status }

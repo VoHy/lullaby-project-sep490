@@ -1,85 +1,147 @@
 import { createService } from './serviceFactory';
 
 // Tạo base service với factory
-const baseWalletService = createService('Wallet', 'Wallet');
+const baseWalletService = createService('wallet', 'Wallet', true);
 
-// Thêm các method đặc biệt
+// Utility function để lấy walletID một cách nhất quán
+const getWalletId = (wallet) => {
+  return wallet?.walletID || wallet?.WalletID;
+};
+
+// Thêm method đặc biệt
 const walletService = {
   // Base CRUD methods từ factory
   ...baseWalletService,
 
-  // === WALLET HISTORY ===
-  getWalletHistories: async (walletId) => {
-    const res = await fetch(`/api/Wallet/${walletId}/histories`);
+  // Get all wallets
+  getAllWallets: async () => {
+    try {
+      const res = await fetch('/api/wallet/getall', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Không thể lấy danh sách wallets');
+      }
+      return data;
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Get wallet by ID
+  getWalletById: async (walletId) => {
+    const res = await fetch(`/api/wallet/${walletId}`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy lịch sử wallet');
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin wallet');
     return data;
   },
 
-  // === THANH TOÁN THẬT ===
-  
-  // Tạo giao dịch nạp tiền
-  createDepositTransaction: async (walletId, amount, paymentMethod) => {
-    const res = await fetch('/api/Wallet/deposit', {
+  // Create wallet for account
+  createWallet: async (accountId) => {
+    const res = await fetch(`/api/wallet/${accountId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        walletId,
-        amount,
-        paymentMethod
-      })
+      body: JSON.stringify({}) // Empty body as per API spec
     });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Tạo giao dịch nạp tiền thất bại');
-    return result;
-  },
-
-  // Lấy danh sách phương thức thanh toán
-  getPaymentMethods: async () => {
-    const res = await fetch('/api/payment-methods');
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách phương thức thanh toán');
+    if (!res.ok) throw new Error(data.error || 'Tạo wallet thất bại');
     return data;
   },
 
-  // Xác nhận giao dịch
-  confirmTransaction: async (transactionId, paymentData) => {
-    const res = await fetch(`/api/transactions/${transactionId}/confirm`, {
-      method: 'POST',
+  // Update wallet amount
+  updateWalletAmount: async (walletId, newAmount) => {
+    const res = await fetch(`/api/wallet/${walletId}`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(paymentData)
+      body: JSON.stringify({ amount: newAmount })
     });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Xác nhận giao dịch thất bại');
-    return result;
-  },
-
-  // Kiểm tra trạng thái giao dịch
-  getTransactionStatus: async (transactionId) => {
-    const res = await fetch(`/api/transactions/${transactionId}/status`);
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể kiểm tra trạng thái giao dịch');
+    if (!res.ok) throw new Error(data.error || 'Không thể cập nhật số dư wallet');
     return data;
   },
 
-  // Lấy thông tin ngân hàng
-  getBankInfo: async () => {
-    const res = await fetch('/api/bank-info');
+  // Delete wallet
+  deleteWallet: async (walletId) => {
+    const res = await fetch(`/api/wallet/${walletId}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' }
+    });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin ngân hàng');
+    if (!res.ok) throw new Error(data.error || 'Xóa wallet thất bại');
     return data;
   },
 
-  // Tạo QR Code thanh toán
-  generateQRCode: async (amount, paymentMethod) => {
-    const res = await fetch('/api/payment/qr-code', {
-      method: 'POST',
+  // Update wallet note
+  updateWalletNote: async (walletId, noteData) => {
+    const res = await fetch(`/api/wallet/updatenote/${walletId}`, {
+      method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount, paymentMethod })
+      body: JSON.stringify(noteData)
     });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Tạo QR Code thất bại');
-    return result;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Cập nhật ghi chú wallet thất bại');
+    return data;
+  },
+
+  // Update wallet amount
+  updateWalletAmount: async (walletId, amountData) => {
+    const res = await fetch(`/api/wallet/updateamount/${walletId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(amountData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Cập nhật số tiền wallet thất bại');
+    return data;
+  },
+
+  // Update wallet amount (alias for updateWalletAmount)
+  // updateAmount: async (walletId, newAmount) => {
+  //   const res = await fetch(`/api/wallet/updateamount/${walletId}`, {
+  //     method: 'PUT',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify({ amount: newAmount })
+  //   });
+  //   const data = await res.json();
+  //   if (!res.ok) throw new Error(data.error || 'Cập nhật số tiền wallet thất bại');
+  //   return data;
+  // },
+
+  // Activate wallet
+  activateWallet: async (walletId) => {
+    const res = await fetch(`/api/wallet/active/${walletId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Kích hoạt wallet thất bại');
+    return data;
+  },
+
+  // Deactivate wallet
+  deactivateWallet: async (walletId) => {
+    const res = await fetch(`/api/wallet/inactive/${walletId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Vô hiệu hóa wallet thất bại');
+    return data;
+  },
+
+  // Get wallet by account ID
+  getWalletByAccountId: async (accountId) => {
+    const wallets = await walletService.getAllWallets();
+    return wallets.find(wallet => 
+      (wallet.accountID === accountId) || (wallet.AccountID === accountId)
+    );
   }
 };
 

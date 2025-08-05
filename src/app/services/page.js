@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
-import customerPackageService from '@/services/api/customerPackageService';
-import serviceTypeService from '@/services/api/serviceTypeService';   
-import serviceTasks from '@/mock/ServiceTask';
-import feedbacks from '@/mock/Feedback';
+// import customizePackageService from '@/services/api/customizePackageService';
+import serviceTypeService from '@/services/api/serviceTypeService';
+import serviceTaskService from '@/services/api/serviceTaskService';
+// import feedbackService from '@/services/api/feedbackService';
 import { 
   SearchFilter, 
   ServiceSection, 
@@ -13,10 +13,56 @@ import {
 } from './components';
 import { useRouter } from 'next/navigation';
 
+// Skeleton Loading Component
+const ServicesSkeleton = () => (
+  <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* Header Skeleton */}
+      <div className="text-center mb-12">
+        <div className="h-12 bg-gray-200 rounded-lg mb-4 animate-pulse"></div>
+        <div className="h-6 bg-gray-200 rounded w-3/4 mx-auto animate-pulse"></div>
+      </div>
+
+      {/* Search Filter Skeleton */}
+      <div className="mb-8">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="h-12 bg-gray-200 rounded-lg flex-1 animate-pulse"></div>
+          <div className="h-12 bg-gray-200 rounded-lg w-48 animate-pulse"></div>
+        </div>
+      </div>
+
+      {/* Services Skeleton */}
+      <div className="space-y-8">
+        {[1, 2].map(section => (
+          <div key={section}>
+            <div className="h-8 bg-gray-200 rounded mb-6 animate-pulse"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map(card => (
+                <div key={card} className="border rounded-xl p-6 bg-white">
+                  <div className="h-48 bg-gray-200 rounded-lg mb-4 animate-pulse"></div>
+                  <div className="h-6 bg-gray-200 rounded mb-2 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+// Utility function to clear services cache
+const clearServicesCache = () => {
+  localStorage.removeItem('services_data');
+  localStorage.removeItem('services_cache_time');
+};
+
 export default function ServicesPage() {
-  const [packages, setPackages] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
-  const [packageServiceTypes, setPackageServiceTypes] = useState([]);
+  const [serviceTasks, setServiceTasks] = useState([]);
+  // const [feedbacks, setFeedbacks] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedServices, setSelectedServices] = useState([]);
   const [searchText, setSearchText] = useState('');
@@ -24,11 +70,61 @@ export default function ServicesPage() {
   const [serviceDetail, setServiceDetail] = useState(null);
   const [packageDetail, setPackageDetail] = useState(null);
   const [expandedPackage, setExpandedPackage] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const router = useRouter();
 
+  // Lấy dữ liệu từ API với caching
   useEffect(() => {
-    customerPackageService.getCustomerPackages().then(setPackages);
-    serviceTypeService.getServiceTypes().then(setServiceTypes);
+    const loadServices = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        
+        // Check cache first
+        const cachedData = localStorage.getItem('services_data');
+        const cacheTime = localStorage.getItem('services_cache_time');
+        const now = Date.now();
+        
+        // Use cache if it's less than 10 minutes old
+        if (cachedData && cacheTime && (now - parseInt(cacheTime)) < 10 * 60 * 1000) {
+          const parsedData = JSON.parse(cachedData);
+          setServiceTypes(parsedData.services);
+          setServiceTasks(parsedData.tasks);
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch fresh data
+        const [services, tasks] = await Promise.all([
+          serviceTypeService.getServiceTypes(),
+          serviceTaskService.getServiceTasks()
+        ]);
+        
+        console.log('Loaded services:', services);
+        console.log('Loaded service tasks:', tasks);
+        
+        setServiceTypes(services);
+        setServiceTasks(tasks);
+        
+        // Cache the data
+        localStorage.setItem('services_data', JSON.stringify({
+          services,
+          tasks
+        }));
+        localStorage.setItem('services_cache_time', now.toString());
+        
+      } catch (error) {
+        console.error('Error loading services:', error);
+        setError('Không thể tải dịch vụ. Vui lòng thử lại sau.');
+        // Clear cache on error
+        clearServicesCache();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadServices();
   }, []);
 
   // Khi chọn package thì reset chọn service lẻ
@@ -52,13 +148,21 @@ export default function ServicesPage() {
   };
 
   // Tách dịch vụ lẻ và package
-  const singleServices = serviceTypes.filter(s => !s.IsPackage && s.Status === 'active');
-  const servicePackages = serviceTypes.filter(s => s.IsPackage && s.Status === 'active');
+  const singleServices = serviceTypes.filter(s => !s.isPackage && s.status === 'active');
+  const servicePackages = serviceTypes.filter(s => s.isPackage && s.status === 'active');
 
-  // Lấy dịch vụ lẻ thuộc về 1 package
-  function getServicesOfPackage(packageId) {
-    const tasks = serviceTasks.filter(t => t.Package_ServiceID === packageId);
-    return tasks.map(task => serviceTypes.find(s => s.ServiceID === task.Child_ServiceID)).filter(Boolean);
+  // Lấy dịch vụ lẻ thuộc về 1 package từ API
+  async function getServicesOfPackage(packageId) {
+    try {
+      const tasks = await serviceTaskService.getServiceTasksByPackage(packageId);
+      return tasks.map(task => {
+        const childServiceId = task.child_ServiceID || task.childServiceID;
+        return serviceTypes.find(s => s.serviceID === childServiceId);
+      }).filter(Boolean);
+    } catch (error) {
+      console.error('Error getting services of package:', error);
+      return [];
+    }
   }
 
   const handleToggleExpand = (pkgId) => {
@@ -68,31 +172,81 @@ export default function ServicesPage() {
   // Search/filter logic with category
   const filterService = (item) => {
     const text = searchText.toLowerCase();
-    const categoryMatch = selectedCategory === 'all' || item.Category === selectedCategory;
-    const textMatch = item.ServiceName.toLowerCase().includes(text) ||
-                     (item.Description || '').toLowerCase().includes(text);
+    const categoryMatch = selectedCategory === 'all' || item.major === selectedCategory;
+    const textMatch = item.serviceName?.toLowerCase().includes(text) ||
+                     (item.description || '').toLowerCase().includes(text);
     return categoryMatch && textMatch;
   };
 
   const filteredServicePackages = servicePackages.filter(filterService);
   const filteredSingleServices = singleServices.filter(filterService);
 
-  // Calculate rating
+  // Tính rating từ feedbacks API
   const getRating = (serviceId) => {
-    const fb = feedbacks.filter(f => f.ServiceID === serviceId);
-    if (!fb.length) return { rating: 5.0, count: 0 };
-    const rating = (fb.reduce((sum, f) => sum + (f.Rating || 5), 0) / fb.length).toFixed(1);
-    return { rating, count: fb.length };
+    // Comment lại vì feedbacks API chưa hoàn thiện
+    // const fb = feedbacks.filter(f => f.ServiceID === serviceId);
+    // if (!fb.length) return { rating: 5.0, count: 0 };
+    // const rating = (fb.reduce((sum, f) => sum + (f.Rating || 5), 0) / fb.length).toFixed(1);
+    // return { rating, count: fb.length };
+    
+    // Tạm thời return rating mặc định vì feedbacks API đã bị comment
+    return { rating: 5.0, count: 0 };
   };
 
   // Handle booking
   const handleBook = (serviceId, type = 'service') => {
     if (type === 'package') {
-      router.push(`/booking?package=${serviceId}`);
+      // Tìm thông tin package
+      const packageInfo = serviceTypes.find(s => s.serviceID === serviceId);
+      if (packageInfo) {
+        const packageData = {
+          serviceName: packageInfo.serviceName,
+          major: packageInfo.major,
+          price: packageInfo.price,
+          duration: packageInfo.duration,
+          description: packageInfo.description,
+          serviceID: packageInfo.serviceID
+        };
+        router.push(`/booking?package=${serviceId}&packageData=${encodeURIComponent(JSON.stringify(packageData))}`);
+      } else {
+        router.push(`/booking?package=${serviceId}`);
+      }
     } else {
-      router.push(`/booking?service=${serviceId}`);
+      // Tìm thông tin service
+      const serviceInfo = serviceTypes.find(s => s.serviceID === serviceId);
+      if (serviceInfo) {
+        const serviceData = {
+          serviceName: serviceInfo.serviceName,
+          major: serviceInfo.major,
+          price: serviceInfo.price,
+          duration: serviceInfo.duration,
+          description: serviceInfo.description,
+          serviceID: serviceInfo.serviceID
+        };
+        router.push(`/booking?service=${serviceId}&serviceData=${encodeURIComponent(JSON.stringify(serviceData))}`);
+      } else {
+        router.push(`/booking?service=${serviceId}`);
+      }
     }
   };
+
+  if (loading) {
+    return <ServicesSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">{error}</h3>
+          <p className="text-gray-500">
+            Vui lòng thử lại sau hoặc liên hệ hỗ trợ nếu vấn đề vẫn tiếp diễn.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
@@ -121,33 +275,50 @@ export default function ServicesPage() {
         />
 
         {/* Service Packages Section */}
-        <ServiceSection
-          title="Gói dịch vụ"
-          services={filteredServicePackages}
-          type="package"
-          selectedItems={selectedPackage ? [selectedPackage] : []}
-          onSelect={handleSelectPackage}
-          onDetail={setPackageDetail}
-          onBook={handleBook}
-          isDisabled={selectedServices.length > 0}
-          expandedPackage={expandedPackage}
-          onToggleExpand={handleToggleExpand}
-          getServicesOfPackage={getServicesOfPackage}
-          getRating={getRating}
-        />
+        {filteredServicePackages.length > 0 && (
+          <ServiceSection
+            title="Gói dịch vụ"
+            services={filteredServicePackages}
+            type="package"
+            selectedItems={selectedPackage ? [selectedPackage] : []}
+            onSelect={handleSelectPackage}
+            onDetail={setPackageDetail}
+            onBook={handleBook}
+            isDisabled={selectedServices.length > 0}
+            expandedPackage={expandedPackage}
+            onToggleExpand={handleToggleExpand}
+            getServicesOfPackage={getServicesOfPackage}
+            getRating={getRating}
+          />
+        )}
 
         {/* Single Services Section */}
-        <ServiceSection
-          title="Dịch vụ lẻ"
-          services={filteredSingleServices}
-          type="service"
-          selectedItems={selectedServices}
-          onSelect={handleToggleService}
-          onDetail={setServiceDetail}
-          onBook={handleBook}
-          isDisabled={!!selectedPackage}
-          getRating={getRating}
-        />
+        {filteredSingleServices.length > 0 && (
+          <ServiceSection
+            title="Dịch vụ lẻ"
+            services={filteredSingleServices}
+            type="service"
+            selectedItems={selectedServices}
+            onSelect={handleToggleService}
+            onDetail={setServiceDetail}
+            onBook={handleBook}
+            isDisabled={!!selectedPackage}
+            getRating={getRating}
+          />
+        )}
+
+        {/* Empty State */}
+        {filteredServicePackages.length === 0 && filteredSingleServices.length === 0 && (
+          <div className="text-center py-16">
+            <div className="text-gray-400 text-6xl mb-4">🏥</div>
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">
+              Không tìm thấy dịch vụ nào
+            </h3>
+            <p className="text-gray-500">
+              Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc
+            </p>
+          </div>
+        )}
 
         {/* Multi-Service Booking Button */}
         <MultiServiceBooking selectedServices={selectedServices} />

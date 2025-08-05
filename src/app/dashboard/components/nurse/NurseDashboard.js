@@ -10,19 +10,18 @@ import NurseNotificationsTab from './NurseNotificationsTab';
 import NurseProfileTab from './NurseProfileTab';
 import NurseMedicalNoteTab from './NurseMedicalNoteTab';
 import { AuthContext } from '@/context/AuthContext';
-import bookingService from '@/services/api/bookingService';
+// import bookingService from '@/services/api/bookingService';
 import careProfileService from '@/services/api/careProfileService';
-import notificationService from '@/services/api/notificationService';
-import workScheduleService from '@/services/api/workScheduleService';
+// import notificationService from '@/services/api/notificationService';
+// import workScheduleService from '@/services/api/workScheduleService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
-import medicalNoteService from '@/services/api/medicalNoteService';
-import customerTaskService from '@/services/api/customerTaskService';
+// import medicalNoteService from '@/services/api/medicalNoteService';
+// import customizeTaskService from '@/services/api/customizeTaskService';
 
-const NurseDashboard = ({ initialTab }) => {
+const NurseDashboard = ({ user, initialTab }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState(initialTab || 'overview');
-  const { user } = useContext(AuthContext);
 
   // State cho API data
   const [nurseBookings, setNurseBookings] = useState([]);
@@ -37,56 +36,56 @@ const NurseDashboard = ({ initialTab }) => {
   // Load data từ API
   useEffect(() => {
     const fetchData = async () => {
-      if (!user?.AccountID) return;
+      if (!user?.accountID) return;
 
       try {
         setLoading(true);
         setError("");
         
         // Lấy thông tin specialist
-        const specialists = await nursingSpecialistService.getNursingSpecialists();
-        const currentSpecialist = specialists.find(n => n.AccountID === user.AccountID);
+        const specialists = await nursingSpecialistService.getAllNursingSpecialists();
+        const currentSpecialist = specialists.find(n => n.accountID === user.accountID);
         setSpecialist(currentSpecialist);
 
-        if (!currentSpecialist?.NursingID) {
+        if (!currentSpecialist?.nursingID) {
           setLoading(false);
           return;
         }
 
-        const nursingID = currentSpecialist.NursingID;
+        const nursingID = currentSpecialist.nursingID;
 
         // Load tất cả data song song
         const [
-          allBookings,
-          allCustomerTasks,
-          allWorkSchedules,
+          // allBookings, // Comment vì bookingService chưa hoàn thiện
+          // allCustomizeTasks,
+          // allWorkSchedules,
           allCareProfiles,
-          allNotifications,
-          allMedicalNotes
+          // allNotifications,
+          // allMedicalNotes
         ] = await Promise.all([
-          bookingService.getBookings(),
-          customerTaskService.getCustomerTasks(),
-          workScheduleService.getWorkSchedules(),
+          // bookingService.getBookings(), // Comment vì API chưa hoàn thiện
+          // customizeTaskService.getAllCustomizeTasks(),
+          // workScheduleService.getAllWorkSchedules(),
           careProfileService.getCareProfiles(),
-          notificationService.getNotifications(),
-          medicalNoteService.getMedicalNotes()
+          // notificationService.getAllNotifications(),
+          // medicalNoteService.getAllMedicalNotes()
         ]);
 
         // Lọc data theo nursingID
-        const userCustomerTasks = allCustomerTasks.filter(task => task.NursingID === nursingID);
-        const bookingIDs = [...new Set(userCustomerTasks.map(task => task.BookingID))];
-        const filteredBookings = allBookings.filter(b => bookingIDs.includes(b.BookingID));
+        // const userCustomizeTasks = allCustomizeTasks.filter(task => task.nursingID === nursingID);
+        // const bookingIDs = [...new Set(userCustomizeTasks.map(task => task.bookingID))]; // Comment vì bookingService chưa hoàn thiện
+        // const filteredBookings = allBookings.filter(b => bookingIDs.includes(b.bookingID)); // Comment vì bookingService chưa hoàn thiện
         
-        const filteredWorkSchedules = allWorkSchedules.filter(ws => ws.NursingID === nursingID);
-        const filteredPatients = allCareProfiles.filter(p => filteredBookings.some(b => b.CareProfileID === p.CareProfileID));
-        const filteredNotifications = allNotifications.filter(n => n.ReceiverID === user.AccountID || n.ReceiverRole === user.role_id);
-        const filteredMedicalNotes = allMedicalNotes.filter(note => note.NursingID === nursingID);
+        // const filteredWorkSchedules = allWorkSchedules.filter(ws => ws.nursingID === nursingID);
+        // const filteredPatients = allCareProfiles.filter(p => filteredBookings.some(b => b.careProfileID === p.careProfileID)); // Comment vì bookingService chưa hoàn thiện
+        // const filteredNotifications = allNotifications.filter(n => n.receiverID === user.accountID || n.receiverRole === user.roleID);
+        // const filteredMedicalNotes = allMedicalNotes.filter(note => note.nursingID === nursingID);
 
-        setNurseBookings(filteredBookings);
-        setNurseWorkSchedules(filteredWorkSchedules);
-        setPatients(filteredPatients);
-        setNotifications(filteredNotifications);
-        setMedicalNotes(filteredMedicalNotes);
+        // setNurseBookings(filteredBookings); // Comment vì bookingService chưa hoàn thiện
+        // setNurseWorkSchedules(filteredWorkSchedules);
+        // setPatients(filteredPatients); // Comment vì bookingService chưa hoàn thiện
+        // setNotifications(filteredNotifications);
+        // setMedicalNotes(filteredMedicalNotes);
 
       } catch (error) {
         console.error('Error fetching nurse dashboard data:', error);
@@ -154,7 +153,7 @@ const NurseDashboard = ({ initialTab }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Chào mừng {user?.full_name || 'User'}!</h2>
+      <h2 className="text-2xl font-bold text-gray-900 mb-4">Chào mừng {user?.fullName || 'User'}!</h2>
       <div className="flex gap-4 mb-6">
         {tabs.map(tab => (
           <button

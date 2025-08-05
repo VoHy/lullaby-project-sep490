@@ -1,23 +1,52 @@
 import React from 'react';
 
-export default function CareProfileFormModal({ open, onClose, onSave, formData, onChange, onAvatarChange, loading, isEdit, zones = [], zonedetails = [], user }) {
+export default function CareProfileFormModal({ open, onClose, onSave, formData, onChange, onAvatarChange, loading, isEdit, zones = [], zoneDetails = [], user }) {
   if (!open) return null;
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Validation
+    if (!formData.profileName && !formData.ProfileName) {
+      alert('Vui lòng nhập tên hồ sơ');
+      return;
+    }
+    if (!formData.dateOfBirth && !formData.DateOfBirth) {
+      alert('Vui lòng nhập ngày sinh');
+      return;
+    }
+    if (!formData.phoneNumber && !formData.PhoneNumber) {
+      alert('Vui lòng nhập số điện thoại');
+      return;
+    }
+    if (!formData.address && !formData.Address) {
+      alert('Vui lòng nhập địa chỉ');
+      return;
+    }
+
+    // Format ngày sinh đúng cách
+    const formatDateForAPI = (dateStr) => {
+      if (!dateStr) return '';
+      // Nếu là dạng YYYY-MM-DD thì chuyển thành ISO string
+      if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
+        return new Date(dateStr).toISOString();
+      }
+      return dateStr;
+    };
+
     // Đảm bảo có đủ dữ liệu cần thiết
     const submitData = {
-      ...formData,
       accountID: user?.accountID || user?.AccountID, // luôn lấy từ user hiện tại
-      zonedetailid: parseInt(formData.zonedetailid) || 1,
+      zoneDetailID: parseInt(formData.zonedetailid) || 1, // Sử dụng zoneDetailID thay vì zonedetailid
       profileName: formData.profileName || formData.ProfileName,
-      dateOfBirth: formData.dateOfBirth || formData.DateOfBirth,
+      dateOfBirth: formatDateForAPI(formData.dateOfBirth || formData.DateOfBirth),
       phoneNumber: formData.phoneNumber || formData.PhoneNumber,
       address: formData.address || formData.Address,
       image: formData.image || '/images/hero-bg.jpg', // truyền ảnh mặc định nếu rỗng
-              note: formData.note || formData.Note || '',
+      note: formData.note || formData.Note || '',
       status: formData.status || formData.Status || 'Active'
     };
+
     onSave(submitData);
   };
 
@@ -68,17 +97,24 @@ export default function CareProfileFormModal({ open, onClose, onSave, formData, 
                   <label className="block text-sm font-medium mb-2 text-gray-700">Khu vực</label>
                   <select name="zonedetailid" value={formData.zonedetailid || formData.ZonedetailID || ''} onChange={onChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm">
                     <option value="">Chọn khu vực</option>
-                    {zonedetails && zonedetails.length > 0 ? zonedetails.map(zd => {
+                    {zoneDetails && zoneDetails.length > 0 ? zoneDetails.map(zd => {
                       const zone = zones.find(z => z.zoneID === zd.zoneID);
                       return (
-                        <option key={zd.zonedetailid} value={zd.zonedetailid}>
-                          {zone ? zone.zoneName : 'Unknown Zone'} - {zd.name}
+                        <option key={zd.zoneDetailID || zd.zonedetailid} value={zd.zoneDetailID || zd.zonedetailid}>
+                          {zone ? zone.zoneName : 'Unknown Zone'} - {zd.name || zd.zoneDetailName}
+                          {zd.note && ` (${zd.note})`}
                         </option>
                       );
                     }) : (
-                      <option value="1">Quận 1 - Phường Bến Nghé</option>
+                      <option value="">Đang tải danh sách khu vực...</option>
                     )}
                   </select>
+                  {zoneDetails && zoneDetails.length === 0 && (
+                    <p className="text-xs text-gray-500 mt-1">Đang tải danh sách khu vực...</p>
+                  )}
+                  {zoneDetails && zoneDetails.length > 0 && (
+                    <p className="text-xs text-green-500 mt-1">Đã tải {zoneDetails.length} khu vực</p>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium mb-2 text-gray-700">Địa chỉ *</label>

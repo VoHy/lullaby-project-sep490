@@ -4,10 +4,10 @@ import { motion } from 'framer-motion';
 import { FaTimes, FaCalendar, FaUser, FaCheck, FaCreditCard, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaInfoCircle } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 
-const AppointmentDetailModal = ({ 
-  appointment, 
-  onClose, 
-  serviceTypes, 
+const AppointmentDetailModal = ({
+  appointment,
+  onClose,
+  serviceTypes,
   nursingSpecialists,
   getServiceNames,
   getNurseNames,
@@ -17,15 +17,17 @@ const AppointmentDetailModal = ({
   getCareProfileName,
   getBookingServices,
   getBookingPackages,
-  getBookingDetails
+  getBookingDetails,
+  getBookingInvoice
 }) => {
   const router = useRouter();
 
   if (!appointment) return null;
 
-  const bookingServices = getBookingServices(appointment.BookingID);
-  const bookingPackages = getBookingPackages(appointment.BookingID);
-  const bookingDetails = getBookingDetails(appointment.BookingID);
+  const bookingServices = getBookingServices(appointment.bookingID);
+  const bookingPackages = getBookingPackages(appointment.bookingID);
+  const bookingDetails = getBookingDetails(appointment.bookingID);
+  const bookingInvoices = getBookingInvoice(appointment.bookingID);
 
   return (
     <motion.div
@@ -48,7 +50,7 @@ const AppointmentDetailModal = ({
         </button>
 
         <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          Chi tiết lịch hẹn #{appointment.BookingID}
+          Chi tiết lịch hẹn #{appointment.bookingID}
         </h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -57,8 +59,8 @@ const AppointmentDetailModal = ({
             {/* Status */}
             <div className="flex items-center justify-between">
               <span className="font-semibold text-gray-700">Trạng thái:</span>
-              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(appointment.Status)}`}>
-                {getStatusText(appointment.Status)}
+              <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(appointment.status)}`}>
+                {getStatusText(appointment.status)}
               </span>
             </div>
 
@@ -67,7 +69,7 @@ const AppointmentDetailModal = ({
               <span className="font-semibold text-gray-700">Người được chăm sóc:</span>
               <div className="flex items-center gap-2 mt-1">
                 <FaUserCircle className="text-purple-500" />
-                <span className="text-gray-900 font-medium">{getCareProfileName(appointment.CareProfileID)}</span>
+                <span className="text-gray-900 font-medium">{getCareProfileName(appointment.careProfileID)}</span>
               </div>
             </div>
 
@@ -76,16 +78,16 @@ const AppointmentDetailModal = ({
               <span className="font-semibold text-gray-700">Ngày giờ:</span>
               <div className="flex items-center gap-2 mt-1">
                 <FaCalendar className="text-purple-500" />
-                <span className="text-gray-900">{formatDate(appointment.WorkDate)}</span>
+                <span className="text-gray-900">{formatDate(appointment.workdate)}</span>
               </div>
             </div>
 
             {/* Note */}
-            {appointment.Note && (
+            {appointment.note && (
               <div>
                 <span className="font-semibold text-gray-700">Ghi chú:</span>
                 <p className="mt-2 text-gray-600 bg-gray-50 p-4 rounded-lg">
-                  {appointment.Note}
+                  {appointment.note}
                 </p>
               </div>
             )}
@@ -94,16 +96,40 @@ const AppointmentDetailModal = ({
             <div>
               <span className="font-semibold text-gray-700">Lịch sử thanh toán:</span>
               <div className="mt-2">
-                <button
-                  className="flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-500 text-white font-medium hover:bg-blue-600 transition-colors"
-                  onClick={() => {
-                    onClose();
-                    router.push('/payment/history');
-                  }}
-                >
-                  <FaCreditCard className="text-sm" />
-                  Xem lịch sử thanh toán
-                </button>
+                {bookingInvoices.length > 0 ? (
+                  <div className="space-y-2">
+                    {bookingInvoices.slice(0, 3).map((invoice, index) => (
+                      <div key={index} className="bg-green-50 rounded-lg p-3">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-gray-600">{invoice.content}</span>
+                          <span className="font-medium text-green-600">
+                            {invoice.totalAmount?.toLocaleString('vi-VN') || '0'}đ
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between text-xs text-gray-500 mt-1">
+                          <span>Trạng thái: {invoice.status === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}</span>
+                          <span>{new Date(invoice.paymentDate).toLocaleDateString('vi-VN')}</span>
+                        </div>
+                      </div>
+                    ))}
+                    {bookingInvoices.length > 3 && (
+                      <button
+                        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-500 text-white text-sm font-medium hover:bg-blue-600 transition-colors"
+                        onClick={() => {
+                          onClose();
+                          router.push('/payment/history');
+                        }}
+                      >
+                        <FaCreditCard className="text-xs" />
+                        Xem tất cả ({bookingInvoices.length})
+                      </button>
+                    )}
+                  </div>
+                ) : (
+                  <div className="text-sm text-gray-500 italic">
+                    Chưa có giao dịch thanh toán
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -129,7 +155,7 @@ const AppointmentDetailModal = ({
                       <p className="text-sm text-gray-600 mb-2">{pkg.description}</p>
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-500">Giá:</span>
-                        <span className="font-bold text-purple-600">{pkg.price.toLocaleString('vi-VN')}đ</span>
+                        <span className="font-bold text-purple-600">{pkg.price?.toLocaleString('vi-VN') || '0'}đ</span>
                       </div>
                     </div>
                   ))}
@@ -158,7 +184,7 @@ const AppointmentDetailModal = ({
                           <FaUser className="text-blue-500 text-xs" />
                           <span className="text-sm text-gray-600">{service.nurseName}</span>
                         </div>
-                        <span className="font-bold text-blue-600">{service.price.toLocaleString('vi-VN')}đ</span>
+                        <span className="font-bold text-blue-600">{service.price?.toLocaleString('vi-VN') || '0'}đ</span>
                       </div>
                     </div>
                   ))}
@@ -174,7 +200,7 @@ const AppointmentDetailModal = ({
                   <span className="font-semibold">Tổng tiền:</span>
                 </div>
                 <span className="text-xl font-bold">
-                  {bookingDetails.totalAmount.toLocaleString('vi-VN')}đ
+                  {appointment.amount?.toLocaleString('vi-VN') || '0'}đ
                 </span>
               </div>
             </div>
@@ -189,7 +215,7 @@ const AppointmentDetailModal = ({
                 <div>• {bookingPackages.length} gói dịch vụ</div>
                 <div>• {bookingServices.length} dịch vụ chi tiết</div>
                 <div>• {bookingServices.filter(s => s.nurseName !== 'Chưa phân công').length} nhân viên đã phân công</div>
-                <div>• Trạng thái: {getStatusText(appointment.Status)}</div>
+                <div>• Trạng thái: {getStatusText(appointment.status)}</div>
               </div>
             </div>
           </div>

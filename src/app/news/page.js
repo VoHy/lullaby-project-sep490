@@ -4,29 +4,41 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { FaSearch, FaCalendar, FaUser, FaEye, FaArrowRight, FaNewspaper, FaFilter } from 'react-icons/fa';
 import blogService from '@/services/api/blogService';
+import blogCategoryService from '@/services/api/blogCategoryService';
 
 export default function NewsPage() {
   const [blogs, setBlogs] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [filteredBlogs, setFilteredBlogs] = useState([]);
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
+  const [categoriesLoading, setCategoriesLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    const fetchBlogs = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
-        const data = await blogService.getBlogs();
-        setBlogs(data);
-        setFilteredBlogs(data);
+        setCategoriesLoading(true);
+        
+        // Fetch blogs và categories song song
+        const [blogsData, categoriesData] = await Promise.all([
+          blogService.getAllBlogs(),
+          blogCategoryService.getAllBlogCategories()
+        ]);
+        
+        setBlogs(blogsData);
+        setFilteredBlogs(blogsData);
+        setCategories(categoriesData);
       } catch (error) {
-        console.error('Error fetching blogs:', error);
+        console.error('Error fetching data:', error);
       } finally {
         setLoading(false);
+        setCategoriesLoading(false);
       }
     };
-    fetchBlogs();
+    fetchData();
   }, []);
 
   // Filter blogs based on search and category
@@ -35,23 +47,29 @@ export default function NewsPage() {
     
     if (searchText) {
       filtered = filtered.filter(blog => 
-        blog.Title.toLowerCase().includes(searchText.toLowerCase()) ||
-        blog.Content?.toLowerCase().includes(searchText.toLowerCase()) ||
-        blog.Category?.toLowerCase().includes(searchText.toLowerCase())
+        blog.title?.toLowerCase().includes(searchText.toLowerCase()) ||
+        blog.content?.toLowerCase().includes(searchText.toLowerCase()) ||
+        blog.BlogCategory?.categoryName?.toLowerCase().includes(searchText.toLowerCase())
       );
     }
     
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(blog => blog.Category === selectedCategory);
+      filtered = filtered.filter(blog => 
+        blog.BlogCategory?.categoryName === selectedCategory
+      );
     }
     
     setFilteredBlogs(filtered);
   }, [blogs, searchText, selectedCategory]);
 
-  // Get unique categories
-  const categories = ['all', ...new Set(blogs.map(blog => blog.Category).filter(Boolean))];
+  // Get unique categories for filter buttons
+  const getCategoryOptions = () => {
+    const categoryNames = categories.map(cat => cat.categoryName).filter(Boolean);
+    return ['all', ...categoryNames];
+  };
 
   const formatDate = (dateString) => {
+    if (!dateString) return 'Chưa có ngày';
     const date = new Date(dateString);
     return date.toLocaleDateString('vi-VN', {
       year: 'numeric',
@@ -63,6 +81,10 @@ export default function NewsPage() {
   const truncateText = (text, maxLength = 120) => {
     if (!text) return '';
     return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+  };
+
+  const getCategoryName = (blog) => {
+    return blog.BlogCategory?.categoryName || 'Tin tức';
   };
 
   if (loading) {
@@ -121,20 +143,27 @@ export default function NewsPage() {
 
             {/* Category Filter */}
             <div className="flex flex-wrap gap-3">
-              {categories.map((category) => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                    selectedCategory === category
-                      ? 'bg-purple-500 text-white shadow-lg'
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  <FaFilter className="text-xs" />
-                  {category === 'all' ? 'Tất cả' : category}
-                </button>
-              ))}
+              {categoriesLoading ? (
+                <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-gray-100 text-gray-500">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-purple-600"></div>
+                  <span>Đang tải danh mục...</span>
+                </div>
+              ) : (
+                getCategoryOptions().map((category) => (
+                  <button
+                    key={category}
+                    onClick={() => setSelectedCategory(category)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                      selectedCategory === category
+                        ? 'bg-purple-500 text-white shadow-lg'
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    <FaFilter className="text-xs" />
+                    {category === 'all' ? 'Tất cả' : category}
+                  </button>
+                ))
+              )}
             </div>
           </div>
         </motion.div>
@@ -169,14 +198,14 @@ export default function NewsPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filteredBlogs.map((blog, idx) => (
               <motion.div
-                key={blog.BlogID}
+                key={blog.blogID}
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: idx * 0.1 }}
                 className="group"
               >
                 <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden cursor-pointer"
-                     onClick={() => router.push(`/news/${blog.BlogID}`)}>
+                     onClick={() => router.push(`/news/${blog.blogID}`)}>
                   
                   {/* Image */}
                   <div className="relative overflow-hidden">
@@ -187,7 +216,7 @@ export default function NewsPage() {
                     />
                     <div className="absolute top-4 left-4">
                       <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-purple-500 text-white">
-                        {blog.Category || 'Tin tức'}
+                        {getCategoryName(blog)}
                       </span>
                     </div>
                   </div>
@@ -195,18 +224,18 @@ export default function NewsPage() {
                   {/* Content */}
                   <div className="p-6">
                     <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-purple-600 transition-colors">
-                      {blog.Title}
+                      {blog.title}
                     </h3>
                     
                     <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed">
-                      {truncateText(blog.Content || blog.Summary || 'Nội dung đang được cập nhật...')}
+                      {truncateText(blog.content || blog.summary || 'Nội dung đang được cập nhật...')}
                     </p>
 
                     {/* Meta Info */}
                     <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
                       <div className="flex items-center gap-2">
                         <FaCalendar className="text-purple-500" />
-                        <span>{formatDate(blog.CreatedAt)}</span>
+                        <span>{formatDate(blog.createdAt)}</span>
                       </div>
                       <div className="flex items-center gap-2">
                         <FaEye className="text-purple-500" />
@@ -224,7 +253,7 @@ export default function NewsPage() {
                         className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 text-white font-medium text-sm hover:bg-purple-600 transition-colors group-hover:gap-3"
                         onClick={(e) => {
                           e.stopPropagation();
-                          router.push(`/news/${blog.BlogID}`);
+                          router.push(`/news/${blog.blogID}`);
                         }}
                       >
                         Xem chi tiết

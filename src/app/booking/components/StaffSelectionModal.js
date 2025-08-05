@@ -28,31 +28,31 @@ export default function StaffSelectionModal({
             <h3 className="font-semibold text-blue-700 mb-2">Y tá</h3>
             <ul className="space-y-2">
               {getAvailableStaff(staffPopup.serviceId)
-                .filter((n) => n.Major && n.Major.toLowerCase().includes("y tá"))
+                .filter((n) => n.major && n.major.toLowerCase().includes("y tá"))
                 .map((n) => (
                   <li
-                    key={n.NursingID}
+                    key={n.nursingID}
                     className="border rounded-xl p-2 flex items-center gap-2 hover:bg-blue-50 cursor-pointer transition"
                     onClick={() =>
-                      handleSelectStaff(staffPopup.serviceId, "nurse", n.NursingID)
+                      handleSelectStaff(staffPopup.serviceId, "nurse", n.nursingID)
                     }
                   >
                     <img
-                      src={n.avatar_url && n.avatar_url !== 'string' ? n.avatar_url : "/images/logo-eldora.png"}
+                      src={n.avatarUrl && n.avatarUrl !== 'string' ? n.avatarUrl : "/images/logo-eldora.png"}
                       alt="avatar"
                       className="w-10 h-10 rounded-full object-cover border-2 border-blue-200"
                     />
                     <div>
-                      <div className="font-semibold text-blue-700">{n.FullName}</div>
+                      <div className="font-semibold text-blue-700">{n.fullName}</div>
                       <div className="text-xs text-gray-500">
-                        Kinh nghiệm: {n.Experience} năm
+                        Kinh nghiệm: {n.experience} năm
                       </div>
-                      <div className="text-xs text-gray-500">{n.Slogan}</div>
+                      <div className="text-xs text-gray-500">{n.slogan}</div>
                     </div>
                   </li>
                 ))}
               {getAvailableStaff(staffPopup.serviceId).filter(
-                (n) => n.Major && n.Major.toLowerCase().includes("y tá")
+                (n) => n.major && n.major.toLowerCase().includes("y tá")
               ).length === 0 && (
                 <li className="text-xs text-gray-400">
                   Không có y tá nào rảnh thời điểm này.
@@ -65,31 +65,31 @@ export default function StaffSelectionModal({
             <h3 className="font-semibold text-pink-700 mb-2">Chuyên gia</h3>
             <ul className="space-y-2">
               {getAvailableStaff(staffPopup.serviceId)
-                .filter((n) => n.Major && !n.Major.toLowerCase().includes("y tá"))
+                .filter((n) => n.major && !n.major.toLowerCase().includes("y tá"))
                 .map((n) => (
                   <li
-                    key={n.NursingID}
+                    key={n.nursingID}
                     className="border rounded-xl p-2 flex items-center gap-2 hover:bg-pink-50 cursor-pointer transition"
                     onClick={() =>
-                      handleSelectStaff(staffPopup.serviceId, "specialist", n.NursingID)
+                      handleSelectStaff(staffPopup.serviceId, "specialist", n.nursingID)
                     }
                   >
                     <img
-                      src={n.avatar_url && n.avatar_url !== 'string' ? n.avatar_url : "/images/logo-eldora.png"}
+                      src={n.avatarUrl && n.avatarUrl !== 'string' ? n.avatarUrl : "/images/logo-eldora.png"}
                       alt="avatar"
                       className="w-10 h-10 rounded-full object-cover border-2 border-pink-200"
                     />
                     <div>
-                      <div className="font-semibold text-pink-700">{n.FullName}</div>
+                      <div className="font-semibold text-pink-700">{n.fullName}</div>
                       <div className="text-xs text-gray-500">
-                        Kinh nghiệm: {n.Experience} năm
+                        Kinh nghiệm: {n.experience} năm
                       </div>
-                      <div className="text-xs text-gray-500">{n.Slogan}</div>
+                      <div className="text-xs text-gray-500">{n.slogan}</div>
                     </div>
                   </li>
                 ))}
               {getAvailableStaff(staffPopup.serviceId).filter(
-                (n) => n.Major && !n.Major.toLowerCase().includes("y tá")
+                (n) => n.major && !n.major.toLowerCase().includes("y tá")
               ).length === 0 && (
                 <li className="text-xs text-gray-400">
                   Không có chuyên gia nào rảnh thời điểm này.

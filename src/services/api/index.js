@@ -13,11 +13,11 @@ export { default as bookingService } from './bookingService';
 // Care Profile Services
 export { default as careProfileService } from './careProfileService';
 
-// Customer Package Services
-export { default as customerPackageService } from './customerPackageService';
+// Customize Package Services
+export { default as customizePackageService } from './customizePackageService';
 
-// Customer Task Services
-export { default as customerTaskService } from './customerTaskService';
+// Customize Task Services
+// export { default as customizeTaskService } from './customizeTaskService';
 
 // Feedback Services
 export { default as feedbackService } from './feedbackService';
@@ -40,6 +40,9 @@ export { default as nursingSpecialistService } from './nursingSpecialistService'
 // Nursing Specialist Service Type Services
 export { default as nursingSpecialistServiceTypeService } from './nursingSpecialistServiceTypeService';
 
+// PayOS Services
+export { default as payOSService } from './payOSService';
+
 // Relatives Services
 export { default as relativesService } from './relativesService';
 
@@ -58,11 +61,8 @@ export { default as transactionHistoryService } from './transactionHistoryServic
 // Wallet Services
 export { default as walletService } from './walletService';
 
-// Wallet History Services
-export { default as walletHistoryService } from './walletHistoryService';
-
 // Work Schedule Services
-export { default as workScheduleService } from './workScheduleService';
+// export { default as workScheduleService } from './workScheduleService';
 
 // Zone Services
 export { default as zoneService } from './zoneService';

@@ -1,7 +1,8 @@
 "use client";
 import { useEffect, useState, useContext } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { FaUser, FaUsers, FaWallet } from "react-icons/fa";
+import { FaUser, FaUsers } from "react-icons/fa";
+import { FaWallet } from "react-icons/fa";
 import accountsService from '@/services/api/accountService';
 import { AuthContext } from "@/context/AuthContext";
 import ProfileCard from './components/ProfileCard';
@@ -85,8 +86,8 @@ export default function ProfilePage() {
     const roles = {
       1: "Quản trị viên",
       2: "Y tá/Chuyên gia", 
-      3: "Người thân",
-      4: "Quản lý"
+      3: "Quản lý",
+      4: "Khách hàng"
     };
     return roles[roleId] || "Khác";
   };
@@ -95,22 +96,20 @@ export default function ProfilePage() {
     if (!user) return;
     const loadProfileData = async () => {
       try {
-        console.log('Loading profile for user:', user);
         const accountId = user.accountID || user.AccountID;
-        console.log('Account ID:', accountId);
         
         if (!accountId) {
           console.error('No account ID found in user object');
-          setError('Không tìm thấy ID tài khoản');
+          setProfile(user);
           return;
         }
         
         const account = await accountsService.getAccount(accountId);
-        console.log('Loaded account:', account);
         setProfile(account);
       } catch (err) {
         console.error('Error loading profile data:', err);
-        setError('Không thể tải thông tin tài khoản');
+        setProfile(user);
+        setError(`Không thể tải thông tin tài khoản từ server: ${err.message}`);
       }
     };
     loadProfileData();
@@ -118,10 +117,10 @@ export default function ProfilePage() {
 
   const handleEditClick = () => {
     setEditData({
-      fullName: profile.fullName || profile.full_name || '',
-      phoneNumber: profile.phoneNumber || profile.phone_number || '',
-      avatarUrl: profile.avatarUrl || profile.avatar_url || '',
-      email: profile.email || ''
+      fullName: displayProfile.fullName || displayProfile.full_name || '',
+      phoneNumber: displayProfile.phoneNumber || displayProfile.phone_number || '',
+      avatarUrl: displayProfile.avatarUrl || displayProfile.avatar_url || '',
+      email: displayProfile.email || ''
     });
     setIsEditing(true);
     setError('');
@@ -138,10 +137,9 @@ export default function ProfilePage() {
     setError('');
     setSuccess('');
     try {
-      const accountId = profile.accountID || profile.AccountID;
-      const fullData = { ...profile, ...editData };
+      const accountId = displayProfile.accountID || displayProfile.AccountID;
+      const fullData = { ...displayProfile, ...editData };
       await accountsService.updateAccount(accountId, fullData);
-      // Gọi lại API lấy profile mới nhất
       const refreshed = await accountsService.getAccount(accountId);
       setProfile(refreshed);
       setIsEditing(false);
@@ -161,9 +159,11 @@ export default function ProfilePage() {
   if (!user) {
     return <StatusDisplay type="loading" message="Đang tải thông tin tài khoản..." />;
   }
-  if (!profile) {
+  if (!profile && !user) {
     return <StatusDisplay type="error" message="Không tìm thấy thông tin tài khoản." />;
   }
+
+  const displayProfile = profile || user;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
@@ -186,7 +186,7 @@ export default function ProfilePage() {
         {/* Tab Content */}
         <div className="bg-white rounded-xl shadow-lg">
           <ProfileCard
-            profile={profile}
+            profile={displayProfile}
             isEditing={isEditing}
             editData={editData}
             onEditClick={handleEditClick}
@@ -195,7 +195,7 @@ export default function ProfilePage() {
             onCancel={handleCancel}
             loading={loading}
             error={error}
-            roleName={getRoleName(profile.roleID || profile.role_id)}
+            roleName={getRoleName(displayProfile.roleID || displayProfile.role_id)}
           />
         </div>
       </div>

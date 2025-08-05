@@ -17,11 +17,12 @@ const AppointmentCard = ({
   getCareProfileName,
   getBookingServices,
   getBookingPackages,
-  getBookingDetails
+  getBookingDetails,
+  getBookingPaymentHistory
 }) => {
-  const bookingServices = getBookingServices(appointment.BookingID);
-  const bookingPackages = getBookingPackages(appointment.BookingID);
-  const bookingDetails = getBookingDetails(appointment.BookingID);
+  const bookingServices = getBookingServices(appointment.bookingID);
+  const bookingPackages = getBookingPackages(appointment.bookingID);
+  const bookingDetails = getBookingDetails(appointment.bookingID);
 
   return (
     <motion.div
@@ -37,10 +38,10 @@ const AppointmentCard = ({
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-gray-900">
-              Lịch hẹn #{appointment.BookingID}
+              Lịch hẹn #{appointment.bookingID}
             </h3>
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.Status)}`}>
-              {getStatusText(appointment.Status)}
+            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
+              {getStatusText(appointment.status)}
             </span>
           </div>
 
@@ -52,7 +53,7 @@ const AppointmentCard = ({
             </h4>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <FaUser className="text-purple-500" />
-              <span className="font-medium">{getCareProfileName(appointment.CareProfileID)}</span>
+              <span className="font-medium">{getCareProfileName(appointment.careProfileID)}</span>
             </div>
           </div>
 
@@ -71,7 +72,7 @@ const AppointmentCard = ({
                       <span className="text-gray-600">{pkg.packageName}</span>
                     </div>
                     <span className="font-medium text-purple-600">
-                      {pkg.price.toLocaleString('vi-VN')}đ
+                      {pkg.price?.toLocaleString('vi-VN') || '0'}đ
                     </span>
                   </div>
                 ))}
@@ -95,7 +96,7 @@ const AppointmentCard = ({
                       <span className="text-xs text-gray-400">({service.nurseName})</span>
                     </div>
                     <span className="font-medium text-blue-600">
-                      {service.price.toLocaleString('vi-VN')}đ
+                      {service.price?.toLocaleString('vi-VN') || '0'}đ
                     </span>
                   </div>
                 ))}
@@ -112,24 +113,24 @@ const AppointmentCard = ({
           <div className="mb-4 p-3 bg-purple-50 rounded-lg">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-gray-700">Tổng tiền:</span>
-              <span className="text-lg font-bold text-purple-600">
-                {bookingDetails.totalAmount.toLocaleString('vi-VN')}đ
-              </span>
+                             <span className="text-lg font-bold text-purple-600">
+                 {appointment.amount?.toLocaleString('vi-VN') || '0'}đ
+               </span>
             </div>
           </div>
 
           {/* Date and Time */}
           <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
             <FaUser className="text-purple-500" />
-            <span>{formatDate(appointment.BookingDate)}</span>
+            <span>{formatDate(appointment.workdate)}</span>
           </div>
 
           {/* Note */}
-          {appointment.Note && (
+          {appointment.note && (
             <div className="mb-4">
               <h4 className="font-semibold text-gray-700 mb-2">Ghi chú:</h4>
               <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                {appointment.Note}
+                {appointment.note}
               </p>
             </div>
           )}

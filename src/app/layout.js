@@ -3,6 +3,8 @@ import "./globals.css";
 import Header from "./components/header/Header";
 import Footer from "./components/footer/Footer";
 import { AuthProvider } from "../context/AuthContext";
+import { WalletProvider } from "../context/WalletContext";
+import WalletDebug from "./components/WalletDebug";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -19,11 +21,14 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${inter.className} antialiased`}>
         <AuthProvider>
-          <Header />
-          <main className="max-w-full mx-auto">
-            {children}
-          </main>
-          <Footer />
+          <WalletProvider>
+            <Header />
+            <main className="max-w-full mx-auto">
+              {children}
+            </main>
+            <Footer />
+            <WalletDebug />
+          </WalletProvider>
         </AuthProvider>
       </body>
     </html>

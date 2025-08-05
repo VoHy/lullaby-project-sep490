@@ -4,16 +4,17 @@ import bookingService from '@/services/api/bookingService';
 import accountService from '@/services/api/accountService';
 import careProfileService from '@/services/api/careProfileService';
 import serviceTypeService from '@/services/api/serviceTypeService';
-import customerPackageService from '@/services/api/customerPackageService';
-import customerTaskService from '@/services/api/customerTaskService';
+import customizePackageService from '@/services/api/customizePackageService';
+import customizeTaskService from '@/services/api/customizeTaskService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import zoneDetailService from '@/services/api/zoneDetailService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import zoneService from '@/services/api/zoneService';
+import notificationService from '@/services/api/notificationService';
 
 const statusOptions = [
   { value: 'pending', label: 'Chờ xử lý' },
-  { value: 'accepted', label: 'Đã nhận' },
+  { value: 'confirmed', label: 'Đã xác nhận' },
   { value: 'completed', label: 'Hoàn thành' },
   { value: 'cancelled', label: 'Đã hủy' },
 ];
@@ -21,14 +22,14 @@ const statusOptions = [
 const ManagerBookingTab = () => {
   const { user } = useContext(AuthContext);
   const currentManagerId = user?.AccountID;
-  
+
   // State cho API data
   const [allBookings, setAllBookings] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
-  const [customerPackages, setCustomerPackages] = useState([]);
-  const [customerTasks, setCustomerTasks] = useState([]);
+  // const [customizePackages, setCustomizePackages] = useState([]);
+  // const [customizeTasks, setCustomizeTasks] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
   const [zoneDetails, setZoneDetails] = useState([]);
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
@@ -36,6 +37,12 @@ const ManagerBookingTab = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+
+  // State cho popup chi tiết
+  const [showDetail, setShowDetail] = useState(false);
+  const [detailData, setDetailData] = useState(null);
+  const [selectedStatus, setSelectedStatus] = useState('');
+  const [taskAssignments, setTaskAssignments] = useState({});
 
   // Load data từ API
   useEffect(() => {
@@ -45,25 +52,24 @@ const ManagerBookingTab = () => {
       try {
         setLoading(true);
         setError("");
-        
+
+        // Gọi API, comment lại các API customizePackageService, customizeTaskService
         const [
           bookingsData,
           accountsData,
-          careProfilesData,
           serviceTypesData,
-          customerPackagesData,
-          customerTasksData,
+          // customizePackagesData,
+          // customizeTasksData,
           serviceTasksData,
           zoneDetailsData,
           nursingSpecialistsData,
           zonesData
         ] = await Promise.all([
-          bookingService.getBookings(),
+          bookingService.getAllBookingsWithCareProfile(),
           accountService.getAllAccounts(),
-          careProfileService.getCareProfiles(),
           serviceTypeService.getServiceTypes(),
-          customerPackageService.getCustomerPackages(),
-          customerTaskService.getCustomerTasks(),
+          // customizePackageService.getCustomizePackages(),
+          // customizeTaskService.getCustomizeTasks(),
           serviceTaskService.getServiceTasks(),
           zoneDetailService.getZoneDetails(),
           nursingSpecialistService.getNursingSpecialists(),
@@ -72,10 +78,9 @@ const ManagerBookingTab = () => {
 
         setAllBookings(bookingsData);
         setAccounts(accountsData);
-        setCareProfiles(careProfilesData);
         setServiceTypes(serviceTypesData);
-        setCustomerPackages(customerPackagesData);
-        setCustomerTasks(customerTasksData);
+        // setCustomizePackages(customizePackagesData);
+        // setCustomizeTasks(customizeTasksData);
         setServiceTasks(serviceTasksData);
         setZoneDetails(zoneDetailsData);
         setNursingSpecialists(nursingSpecialistsData);
@@ -97,35 +102,61 @@ const ManagerBookingTab = () => {
   const allSpecialists = accounts.filter(acc => acc.role_id === 2 && nursingSpecialists.find(s => s.AccountID === acc.AccountID));
 
   function getBookingDetail(booking) {
-    const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
-    const account = accounts.find(a => a.AccountID === careProfile?.AccountID);
+    // Sử dụng thông tin careProfile từ booking data thay vì tìm kiếm riêng
+    const careProfile = booking.careProfile;
+    const account = accounts.find(a => a.AccountID === careProfile?.accountID);
     let service = null;
     let packageInfo = null;
-    if (booking.CustomizePackageID) {
-      packageInfo = customerPackages.find(p => p.CustomizePackageID === booking.CustomizePackageID);
-      service = serviceTypes.find(s => s.ServiceID === packageInfo?.ServiceID);
-    } else if (booking.CareProfileID) {
-      service = serviceTypes.find(s => s.ServiceID === booking.CareProfileID);
+
+    // Comment lại các logic liên quan tới customizePackages, customizeTasks
+    // if (booking.Package_ServiceID) {
+    //   packageInfo = customizePackages.find(p => p.CustomizePackageID === booking.Package_ServiceID);
+    //   service = serviceTypes.find(s => s.ServiceID === packageInfo?.ServiceID);
+    // } else if (booking.ServiceTaskID) {
+    //   const serviceTask = serviceTasks.find(st => st.ServiceTaskID === booking.ServiceTaskID);
+    //   service = serviceTypes.find(s => s.ServiceID === serviceTask?.ServiceID);
+    // }
+
+    // // Lấy các dịch vụ con/lẻ thực tế từ CustomizeTask
+    // const customizeTasksOfBooking = customizeTasks.filter(t => t.BookingID === booking.BookingID);
+    // const serviceTasksOfBooking = customizeTasksOfBooking.map(task => {
+    //   const serviceTask = serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
+    //   const assignedNurse = nursingSpecialists.find(n => n.NursingID === task.NursingID);
+    //   const assignedAccount = accounts.find(acc => acc.AccountID === assignedNurse?.AccountID);
+
+    //   return {
+    //     ...serviceTask,
+    //     price: task.Price,
+    //     quantity: task.Quantity,
+    //     total: task.Total,
+    //     status: task.Status,
+    //     assignedNurseId: assignedNurse?.NursingID,
+    //     assignedNurseName: assignedAccount?.full_name,
+    //     assignedNurseRole: assignedNurse?.Major,
+    //     hasAssignedNurse: !!assignedNurse
+    //   };
+    // });
+
+    // Tạm thời chỉ trả về các trường cơ bản, không dùng customizePackages/customizeTasks
+    let serviceTasksOfBooking = [];
+    if (booking.ServiceTaskID) {
+      const serviceTask = serviceTasks.find(st => st.ServiceTaskID === booking.ServiceTaskID);
+      if (serviceTask) {
+        service = serviceTypes.find(s => s.ServiceID === serviceTask.ServiceID);
+        serviceTasksOfBooking = [{
+          ...serviceTask,
+          price: serviceTask.Price,
+          quantity: serviceTask.Quantity,
+          total: serviceTask.Total,
+          status: serviceTask.Status,
+          assignedNurseId: null,
+          assignedNurseName: null,
+          assignedNurseRole: null,
+          hasAssignedNurse: false
+        }];
+      }
     }
-    // Lấy các dịch vụ con/lẻ thực tế từ CustomerTask
-    const customerTasksOfBooking = customerTasks.filter(t => t.BookingID === booking.BookingID);
-    const serviceTasksOfBooking = customerTasksOfBooking.map(task => {
-      const serviceTask = serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
-      const assignedNurse = nursingSpecialists.find(n => n.NursingID === task.NursingID);
-      const assignedAccount = accounts.find(acc => acc.AccountID === assignedNurse?.AccountID);
-      
-      return {
-        ...serviceTask,
-        price: task.Price,
-        quantity: task.Quantity,
-        total: task.Total,
-        status: task.Status,
-        assignedNurseId: assignedNurse?.NursingID,
-        assignedNurseName: assignedAccount?.full_name,
-        assignedNurseRole: assignedNurse?.Major,
-        hasAssignedNurse: !!assignedNurse
-      };
-    });
+
     return { careProfile, account, service, packageInfo, serviceTasksOfBooking };
   }
 
@@ -134,19 +165,19 @@ const ManagerBookingTab = () => {
     // Lấy khu vực mà manager hiện tại quản lý
     const managedZone = zones.find(zone => zone.AccountID === currentManagerId);
     if (!managedZone) return [];
-    
+
     // Lọc booking có care profile thuộc khu vực quản lý
     const filteredBookings = bookings.filter(booking => {
-      const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
+      const careProfile = booking.careProfile;
       if (!careProfile) return false;
-      
-      const zoneDetail = zoneDetails.find(z => z.ZoneDetailID === careProfile.ZoneDetailID);
+
+      const zoneDetail = zoneDetails.find(z => z.ZoneDetailID === careProfile.zoneDetailID);
       if (!zoneDetail) return false;
-      
+
       // Chỉ hiển thị booking thuộc khu vực quản lý của manager
       return zoneDetail.ZoneID === managedZone.ZoneID;
     });
-    
+
     return filteredBookings;
   }
 
@@ -164,7 +195,7 @@ const ManagerBookingTab = () => {
     const zoneDetail = zoneDetails.find(z => z.ZoneDetailID === careProfile.ZoneDetailID);
     if (!zoneDetail) return { nurses: [], specialists: [] };
     const zoneId = zoneDetail.ZoneID;
-    
+
     const nurses = allNurses.filter(acc => {
       const n = nursingSpecialists.find(n => n.AccountID === acc.AccountID);
       return n && n.ZoneID === zoneId && n.Major === 'Y tá';
@@ -175,6 +206,101 @@ const ManagerBookingTab = () => {
     });
     return { nurses, specialists };
   }
+
+  const handleViewDetail = (booking) => {
+    setDetailData(booking);
+    setSelectedNurse('');
+    setSelectedSpecialist('');
+    setSelectedStatus(booking.Status);
+    setTaskAssignments({});
+    setShowDetail(true);
+  };
+
+  const handleCloseDetail = () => {
+    setShowDetail(false);
+    setDetailData(null);
+  };
+
+  const handleTaskAssign = (taskId, type, value) => {
+    setTaskAssignments(prev => {
+      // Nếu chọn nurse thì clear specialist, chọn specialist thì clear nurse
+      if (type === 'nurse') {
+        return {
+          ...prev,
+          [taskId]: { nurse: value, specialist: '' }
+        };
+      } else if (type === 'specialist') {
+        return {
+          ...prev,
+          [taskId]: { nurse: '', specialist: value }
+        };
+      }
+      return prev;
+    });
+  };
+
+  const handleUpdateStatus = async (bookingId, newStatus) => {
+    try {
+      await bookingService.updateStatus(bookingId, newStatus);
+      
+      // Cập nhật local state
+      setBookings(prev => prev.map(booking => 
+        booking.BookingID === bookingId 
+          ? { ...booking, Status: newStatus }
+          : booking
+      ));
+      
+      if (detailData && detailData.BookingID === bookingId) {
+        setDetailData(prev => ({ ...prev, Status: newStatus }));
+      }
+      
+      alert(`Đã cập nhật trạng thái booking thành: ${statusOptions.find(opt => opt.value === newStatus)?.label}`);
+    } catch (error) {
+      console.error('Error updating booking status:', error);
+      alert('Có lỗi xảy ra khi cập nhật trạng thái booking');
+    }
+  };
+
+  const handleAccept = async () => {
+    if (detailData) {
+      const { serviceTasksOfBooking, careProfile, account } = getBookingDetail(detailData);
+      // Kiểm tra xem tất cả dịch vụ đã có nhân sự chưa
+      const unassignedTasks = serviceTasksOfBooking.filter(task => {
+        const hasExistingNurse = task.hasAssignedNurse;
+        const hasNewAssignment = (taskAssignments[task.ServiceTaskID]?.nurse || taskAssignments[task.ServiceTaskID]?.specialist);
+        return !hasExistingNurse && !hasNewAssignment;
+      });
+      
+      if (unassignedTasks.length > 0) {
+        alert(`Vui lòng chọn nhân sự cho các dịch vụ sau:\n${unassignedTasks.map(task => `- ${task.Description}`).join('\n')}`);
+        return;
+      }
+      
+      try {
+        // Cập nhật status booking thành confirmed
+        await handleUpdateStatus(detailData.BookingID, 'confirmed');
+        
+        // Gửi thông báo cho customer
+        const notificationData = {
+          AccountID: account.AccountID,
+          Title: 'Booking đã được xác nhận',
+          Content: `Booking #${detailData.BookingID} của ${careProfile.ProfileName} đã được manager xác nhận và sẵn sàng thực hiện.`,
+          Type: 'booking_confirmed',
+          IsRead: false,
+          CreatedAt: new Date().toISOString(),
+          UpdatedAt: new Date().toISOString()
+        };
+        
+        await notificationService.createNotification(notificationData);
+        
+        setShowDetail(false);
+        alert('Đã xác nhận booking và gửi thông báo cho customer!');
+      } catch (error) {
+        console.error('Error accepting booking:', error);
+        alert('Có lỗi xảy ra khi xác nhận booking');
+      }
+    }
+  };
 
   // Loading state
   if (loading) {
@@ -199,72 +325,6 @@ const ManagerBookingTab = () => {
       </div>
     );
   }
-
-  const handleViewDetail = (booking) => {
-    setDetailData(booking);
-    setSelectedNurse('');
-    setSelectedSpecialist('');
-    setSelectedStatus(booking.Status);
-    setTaskAssignments({});
-    setShowDetail(true);
-  };
-  
-  const handleCloseDetail = () => {
-    setShowDetail(false);
-    setDetailData(null);
-  };
-  
-  const handleTaskAssign = (taskId, type, value) => {
-    setTaskAssignments(prev => {
-      // Nếu chọn nurse thì clear specialist, chọn specialist thì clear nurse
-      if (type === 'nurse') {
-        return {
-          ...prev,
-          [taskId]: { nurse: value, specialist: '' }
-        };
-      } else if (type === 'specialist') {
-        return {
-          ...prev,
-          [taskId]: { nurse: '', specialist: value }
-        };
-      }
-      return prev;
-    });
-  };
-  
-  const handleAccept = () => {
-    if (detailData) {
-      const { serviceTasksOfBooking } = getBookingDetail(detailData);
-      // Kiểm tra xem tất cả dịch vụ đã có nhân sự chưa
-      const unassignedTasks = serviceTasksOfBooking.filter(task => {
-        const hasExistingNurse = task.hasAssignedNurse;
-        const hasNewAssignment = (taskAssignments[task.ServiceTaskID]?.nurse || taskAssignments[task.ServiceTaskID]?.specialist);
-        return !hasExistingNurse && !hasNewAssignment;
-      });
-      if (unassignedTasks.length > 0) {
-        alert(`Vui lòng chọn nhân sự cho các dịch vụ sau:\n${unassignedTasks.map(task => `- ${task.Description}`).join('\n')}`);
-        return;
-      }
-      // Hiển thị kết quả gán nhân sự (chỉ lấy 1 nhân sự cho mỗi dịch vụ)
-      const result = serviceTasksOfBooking.map(task => {
-        let nhansu = '';
-        if (task.assignedNurseName) {
-          nhansu = `${task.assignedNurseName} (${task.assignedNurseRole})`;
-        } else if (taskAssignments[task.ServiceTaskID]?.nurse) {
-          const nurse = allNurses.find(n => n.AccountID === Number(taskAssignments[task.ServiceTaskID]?.nurse));
-          nhansu = nurse ? `${nurse.full_name} (Y tá)` : 'Chưa chọn';
-        } else if (taskAssignments[task.ServiceTaskID]?.specialist) {
-          const specialist = allSpecialists.find(s => s.AccountID === Number(taskAssignments[task.ServiceTaskID]?.specialist));
-          nhansu = specialist ? `${specialist.full_name} (Chuyên gia)` : 'Chưa chọn';
-        } else {
-          nhansu = 'Chưa chọn';
-        }
-        return `- ${task.Description}: ${nhansu}`;
-      }).join('\n');
-      alert(`Đã accept booking với nhân sự:\n${result}`);
-      setShowDetail(false);
-    }
-  };
 
   return (
     <div>
@@ -299,10 +359,11 @@ const ManagerBookingTab = () => {
                   <div className="text-xs text-gray-500">Email: {account?.email || '-'}</div>
                 </td>
                 <td className="px-6 py-4">
-                  {packageInfo
+                  {/* Comment lại logic packageInfo, chỉ hiển thị service name hoặc serviceTasksOfBooking */}
+                  {/* {packageInfo
                     ? packageInfo.Name
-                    : (
-                      serviceTasksOfBooking && serviceTasksOfBooking.length > 1
+                    : ( */}
+                      {serviceTasksOfBooking && serviceTasksOfBooking.length > 1
                         ? (
                           <ul className="space-y-1">
                             {serviceTasksOfBooking.map((task, idx) => (
@@ -314,14 +375,14 @@ const ManagerBookingTab = () => {
                           </ul>
                         )
                         : (serviceTasksOfBooking[0]?.Description || service?.ServiceName || '-')
-                    )
+                    /* ) */
                   }
                 </td>
                 <td className="px-6 py-4">
                   <span className={` inline-block min-w-[80px] px-2 py-0.5 rounded-full text-xs font-semibold text-center shadow-sm 
                   ${booking.Status === 'completed' ? 'bg-green-100 text-green-800' :
                       booking.Status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        booking.Status === 'accepted' ? 'bg-blue-100 text-blue-800' :
+                        booking.Status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
                           'bg-red-100 text-red-800'
                     }`}>
                     {statusOptions.find(opt => opt.value === booking.Status)?.label || booking.Status}
@@ -339,7 +400,7 @@ const ManagerBookingTab = () => {
       {/* Popup chi tiết booking */}
       {showDetail && detailData && (() => {
         const { careProfile, account, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(detailData);
-        const isPackage = !!detailData.CustomizePackageID;
+        const isPackage = !!detailData.Package_ServiceID;
         // Lọc nurse/specialist cùng khu vực
         const { nurses, specialists } = getFilteredNursesSpecialists(careProfile);
         return (
@@ -384,21 +445,22 @@ const ManagerBookingTab = () => {
                     <div className="space-y-3">
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Dịch vụ</div>
-                        <div className="text-gray-800 font-medium">{packageInfo ? packageInfo.Name : (service?.ServiceName || '-')}</div>
+                        {/* <div className="text-gray-800 font-medium">{packageInfo ? packageInfo.Name : (service?.ServiceName || '-')}</div> */}
+                        <div className="text-gray-800 font-medium">{service?.ServiceName || '-'}</div>
                       </div>
-                      {packageInfo && (
+                      {/* {packageInfo && (
                         <div>
                           <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Mô tả</div>
                           <div className="text-gray-800 text-sm leading-relaxed">{packageInfo.Description}</div>
                         </div>
-                      )}
+                      )} */}
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ngày đặt</div>
                         <div className="text-gray-800">{detailData.CreatedAt ? new Date(detailData.CreatedAt).toLocaleString('vi-VN') : '-'}</div>
                       </div>
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ngày làm việc</div>
-                        <div className="text-gray-800">{detailData.WorkDate ? new Date(detailData.WorkDate).toLocaleString('vi-VN') : '-'}</div>
+                        <div className="text-gray-800">{detailData.AppointmentDate ? new Date(detailData.AppointmentDate).toLocaleString('vi-VN') : '-'}</div>
                       </div>
                     </div>
                   </div>
@@ -426,6 +488,12 @@ const ManagerBookingTab = () => {
                           ))}
                         </select>
                       </div>
+                      <button
+                        onClick={() => handleUpdateStatus(detailData.BookingID, selectedStatus)}
+                        className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
+                      >
+                        Cập nhật trạng thái
+                      </button>
                     </div>
                   </div>
                 </div>
