@@ -3,11 +3,11 @@
 import { useState, useContext } from 'react';
 import { FaWallet, FaPlus } from 'react-icons/fa';
 import { AuthContext } from '../../../context/AuthContext';
-import { useWallet } from '../../wallet/hooks/useWallet';
+import { useWalletContext } from '../../../context/WalletContext';
 
 export default function WalletIcon() {
   const { user } = useContext(AuthContext);
-  const { wallet, loading } = useWallet();
+  const { wallet, loading } = useWalletContext();
   const [showTooltip, setShowTooltip] = useState(false);
 
   // Chỉ hiển thị cho customer (roleID = 4)

@@ -5,7 +5,8 @@ export default function PaymentInfo({
   myWallet, 
   error, 
   loading, 
-  handleConfirm 
+  handleConfirm,
+  isProcessingPayment
 }) {
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6">
@@ -74,9 +75,9 @@ export default function PaymentInfo({
             : "bg-gray-300 text-gray-500 cursor-not-allowed"
         }`}
         onClick={handleConfirm}
-        disabled={loading || (myWallet && myWallet.Amount < total)}
+        disabled={loading || (myWallet && myWallet.Amount < total) || isProcessingPayment}
       >
-        {loading ? (
+        {loading || isProcessingPayment ? (
           <div className="flex items-center justify-center gap-2">
             <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
             Đang xử lý...

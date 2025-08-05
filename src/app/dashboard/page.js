@@ -113,7 +113,7 @@ export default function DashboardPage() {
         return <NurseDashboard user={user} />;
       case 3: // Manager
         return <ManagerDashboard user={user} />;
-      case 4: // Customer
+      case 4: // Customer - redirect to home
         router.push('/');
         return null;
       default:

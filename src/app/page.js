@@ -1,12 +1,12 @@
 'use client';
 
-import { useEffect, useState, useContext } from 'react';
+import { useEffect, useState, useContext, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { AuthContext } from '@/context/AuthContext';
 import { HeroSection, StatsSection, FeaturesSection, CTASection } from './components';
 import SuccessNotification from './components/SuccessNotification';
 
-export default function Home() {
+function HomeContent() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
   const searchParams = useSearchParams();
@@ -43,5 +43,20 @@ export default function Home() {
       <FeaturesSection />
       <CTASection />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+        <div className="text-center py-12">
+          <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang tải trang chủ...</p>
+        </div>
+      </div>
+    }>
+      <HomeContent />
+    </Suspense>
   );
 }

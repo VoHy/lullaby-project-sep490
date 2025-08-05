@@ -41,11 +41,11 @@ export default function ServiceInfo({
 
           {/* Child Services */}
           {childServices.length > 0 && (
-            <div className="mt-4">
+            <div className="mt-4">  
               <h4 className="font-semibold text-gray-700 mb-3">Các dịch vụ trong gói:</h4>
               <div className="space-y-3">
                 {childServices.map((s, idx) => (
-                  <div key={s.ServiceID || idx} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+                  <div key={s.serviceID || idx} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
                     <div className="flex justify-between items-start mb-2">
                       <span className="font-bold text-blue-700">{s.ServiceName}</span>
                       <span className="text-pink-600 font-semibold">{(s.Price || 0).toLocaleString()}đ</span>
@@ -55,10 +55,10 @@ export default function ServiceInfo({
                       <FaClock />
                       <span>{s.Duration}</span>
                     </div>
-                    {getStaffInfo(s.ServiceID) && (
+                    {getStaffInfo && getStaffInfo(s.serviceID) && (
                       <div className="flex items-center gap-2 text-green-700 text-xs mt-2">
                         <FaUserMd />
-                        <span>{getStaffInfo(s.ServiceID).name} ({getStaffInfo(s.ServiceID).type === 'nurse' ? 'Y tá' : 'Chuyên gia'})</span>
+                        <span>{getStaffInfo(s.serviceID).name} ({getStaffInfo(s.serviceID).type === 'nurse' ? 'Y tá' : 'Chuyên gia'})</span>
                       </div>
                     )}
                   </div>
@@ -74,16 +74,16 @@ export default function ServiceInfo({
           <h3 className="text-lg font-bold text-gray-700 mb-3">Dịch vụ lẻ</h3>
           <div className="space-y-3">
             {selectedServices.map((s) => (
-              <div key={s.ServiceID} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
+              <div key={s.serviceID} className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm">
                 <div className="flex justify-between items-start mb-2">
                   <span className="font-bold text-blue-700">{s.ServiceName}</span>
                   <span className="text-pink-600 font-semibold">{(s.Price || 0).toLocaleString()}đ</span>
                 </div>
                 <div className="text-gray-600 text-sm mb-2">{s.Description}</div>
-                {getStaffInfo(s.ServiceID) && (
+                {getStaffInfo && getStaffInfo(s.serviceID) && (
                   <div className="flex items-center gap-2 text-green-700 text-xs">
                     <FaUserMd />
-                    <span>{getStaffInfo(s.ServiceID).name} ({getStaffInfo(s.ServiceID).type === 'nurse' ? 'Y tá' : 'Chuyên gia'})</span>
+                    <span>{getStaffInfo(s.serviceID).name} ({getStaffInfo(s.serviceID).type === 'nurse' ? 'Y tá' : 'Chuyên gia'})</span>
                   </div>
                 )}
               </div>

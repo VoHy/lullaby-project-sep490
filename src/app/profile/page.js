@@ -86,8 +86,8 @@ export default function ProfilePage() {
     const roles = {
       1: "Quản trị viên",
       2: "Y tá/Chuyên gia", 
-      3: "Người thân",
-      4: "Quản lý"
+      3: "Quản lý",
+      4: "Khách hàng"
     };
     return roles[roleId] || "Khác";
   };

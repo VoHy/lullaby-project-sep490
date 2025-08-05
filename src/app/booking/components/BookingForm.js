@@ -12,7 +12,8 @@ export default function BookingForm({
   careProfiles,
   selectedCareProfile,
   setSelectedCareProfile,
-  careProfileError
+  careProfileError,
+  isProcessingPayment
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -66,9 +67,16 @@ export default function BookingForm({
       <button
         className="w-full py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 text-white font-extrabold text-lg shadow-lg hover:scale-105 hover:shadow-xl transition mt-1 disabled:opacity-60"
         onClick={handlePayment}
-        disabled={!isDatetimeValid || !selectedCareProfile}
+        disabled={!isDatetimeValid || !selectedCareProfile || isProcessingPayment}
       >
-        Thanh toán
+        {isProcessingPayment ? (
+          <div className="flex items-center justify-center gap-2">
+            <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            Đang xử lý...
+          </div>
+        ) : (
+          'Thanh toán'
+        )}
       </button>
     </div>
   );

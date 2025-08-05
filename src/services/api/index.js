@@ -8,13 +8,13 @@ export { default as blogService } from './blogService';
 export { default as blogCategoryService } from './blogCategoryService';
 
 // Booking Services
-// export { default as bookingService } from './bookingService';
+export { default as bookingService } from './bookingService';
 
 // Care Profile Services
 export { default as careProfileService } from './careProfileService';
 
 // Customize Package Services
-// export { default as customizePackageService } from './customizePackageService';
+export { default as customizePackageService } from './customizePackageService';
 
 // Customize Task Services
 // export { default as customizeTaskService } from './customizeTaskService';

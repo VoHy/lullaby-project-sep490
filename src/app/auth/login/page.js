@@ -51,7 +51,7 @@ export default function LoginPage() {
         } else if (roleID === 3) { // Manager
           router.push('/dashboard');
         } else if (roleID === 4) { // Customer
-          router.push('/?welcome=true');
+          router.push('/');
         } else {
           router.push('/');
         }
@@ -100,7 +100,7 @@ export default function LoginPage() {
         } else if (roleID === 3) { // Manager
           router.push('/dashboard');
         } else if (roleID === 4) { // Customer
-          router.push('/?welcome=true');
+          router.push('/');
         } else {
           router.push('/');
         }

@@ -1,11 +1,11 @@
 "use client";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useState, useMemo, useContext, useEffect } from "react";
+import { useState, useMemo, useContext, useEffect, Suspense } from "react";
 import serviceTypeService from '@/services/api/serviceTypeService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import careProfileService from '@/services/api/careProfileService';
-// import workScheduleService from '@/services/api/workScheduleService';
+import bookingService from '@/services/api/bookingService';
 import {
   BookingHeader,
   PackageInfo,
@@ -97,252 +97,135 @@ const BookingSkeleton = () => (
   </div>
 );
 
-export default function BookingPage() {
-  const [datetime, setDatetime] = useState("");
+function BookingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useContext(AuthContext);
-  const serviceId = searchParams.get('service');
-  const packageId = searchParams.get('package');
 
-  // State cho API data
-  const [serviceTypes, setServiceTypes] = useState([]);
-  const [serviceTasks, setServiceTasks] = useState([]);
-  // const [workSchedules, setWorkSchedules] = useState([]);
-  const [nursingSpecialists, setNursingSpecialists] = useState([]);
+  // URL parameters
+  const packageId = searchParams.get("packageId");
+  const serviceId = searchParams.get("serviceId");
+
+  // State management
+  const [services, setServices] = useState([]);
+  const [packages, setPackages] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [nursingSpecialists, setNursingSpecialists] = useState([]);
+  const [selectedCareProfile, setSelectedCareProfile] = useState(null);
+  const [datetime, setDatetime] = useState("");
+  const [note, setNote] = useState("");
+  const [selectedStaff, setSelectedStaff] = useState({});
+  const [staffPopup, setStaffPopup] = useState({ show: false, serviceId: null });
 
-  // Separate loading states for better UX
+  // Loading states
+  const [loading, setLoading] = useState(true);
   const [servicesLoading, setServicesLoading] = useState(true);
   const [careProfilesLoading, setCareProfilesLoading] = useState(true);
   const [nursesLoading, setNursesLoading] = useState(true);
 
-  // Mock data cho workSchedules API chưa hoàn thiện
-  const [workSchedules] = useState([]);
-
-  // Load services data first (most important)
-  useEffect(() => {
-    const loadServices = async () => {
-      try {
-        setServicesLoading(true);
-        
-        // Check cache first
-        const cachedServices = localStorage.getItem('booking_services');
-        const cachedTasks = localStorage.getItem('booking_tasks');
-        const cacheTime = localStorage.getItem('booking_cache_time');
-        const now = Date.now();
-        
-        // Use cache if it's less than 5 minutes old
-        if (cachedServices && cachedTasks && cacheTime && (now - parseInt(cacheTime)) < 5 * 60 * 1000) {
-          setServiceTypes(JSON.parse(cachedServices));
-          setServiceTasks(JSON.parse(cachedTasks));
-          setServicesLoading(false);
-          return;
-        }
-        
-        const [serviceTypesData, serviceTasksData] = await Promise.all([
-          serviceTypeService.getServiceTypes(),
-          serviceTaskService.getServiceTasks()
-        ]);
-        
-        setServiceTypes(serviceTypesData);
-        setServiceTasks(serviceTasksData);
-        
-        // Cache the data
-        localStorage.setItem('booking_services', JSON.stringify(serviceTypesData));
-        localStorage.setItem('booking_tasks', JSON.stringify(serviceTasksData));
-        localStorage.setItem('booking_cache_time', now.toString());
-        
-      } catch (error) {
-        console.error('Error loading services:', error);
-        setError('Không thể tải thông tin dịch vụ. Vui lòng thử lại sau.');
-        // Clear cache on error
-        clearBookingCache();
-      } finally {
-        setServicesLoading(false);
-      }
-    };
-
-    if (user) {
-      loadServices();
-    }
-  }, [user]);
-
-  // Load care profiles after services
-  useEffect(() => {
-    const loadCareProfiles = async () => {
-      try {
-        setCareProfilesLoading(true);
-        
-        // Check cache for care profiles
-        const cachedProfiles = localStorage.getItem('booking_care_profiles');
-        const cacheTime = localStorage.getItem('booking_care_cache_time');
-        const now = Date.now();
-        
-        // Use cache if it's less than 2 minutes old (care profiles change more frequently)
-        if (cachedProfiles && cacheTime && (now - parseInt(cacheTime)) < 2 * 60 * 1000) {
-          setCareProfiles(JSON.parse(cachedProfiles));
-          setCareProfilesLoading(false);
-          return;
-        }
-        
-        const careProfilesData = await careProfileService.getCareProfiles();
-        setCareProfiles(careProfilesData);
-        
-        // Cache the data
-        localStorage.setItem('booking_care_profiles', JSON.stringify(careProfilesData));
-        localStorage.setItem('booking_care_cache_time', now.toString());
-        
-      } catch (error) {
-        console.error('Error loading care profiles:', error);
-        // Don't set main error, just log
-      } finally {
-        setCareProfilesLoading(false);
-      }
-    };
-
-    if (user && !servicesLoading) {
-      loadCareProfiles();
-    }
-  }, [user, servicesLoading]);
-
-  // Load nurses last (least critical for initial display)
-  useEffect(() => {
-    const loadNurses = async () => {
-      try {
-        setNursesLoading(true);
-        
-        // Check cache for nurses
-        const cachedNurses = localStorage.getItem('booking_nurses');
-        const cacheTime = localStorage.getItem('booking_nurses_cache_time');
-        const now = Date.now();
-        
-        // Use cache if it's less than 10 minutes old (nurses change less frequently)
-        if (cachedNurses && cacheTime && (now - parseInt(cacheTime)) < 10 * 60 * 1000) {
-          setNursingSpecialists(JSON.parse(cachedNurses));
-          setNursesLoading(false);
-          return;
-        }
-        
-        const nursingSpecialistsData = await nursingSpecialistService.getNursingSpecialists();
-        setNursingSpecialists(nursingSpecialistsData);
-        
-        // Cache the data
-        localStorage.setItem('booking_nurses', JSON.stringify(nursingSpecialistsData));
-        localStorage.setItem('booking_nurses_cache_time', now.toString());
-        
-      } catch (error) {
-        console.error('Error loading nurses:', error);
-        // Don't set main error, just log
-      } finally {
-        setNursesLoading(false);
-      }
-    };
-
-    if (user && !servicesLoading) {
-      loadNurses();
-    }
-  }, [user, servicesLoading]);
-
-  // Update main loading state
-  useEffect(() => {
-    setLoading(servicesLoading || careProfilesLoading || nursesLoading);
-  }, [servicesLoading, careProfilesLoading, nursesLoading]);
-
-  // Lấy thông tin dịch vụ lẻ hoặc package
-  let detail = null;
-  let childServices = [];
-
-  if (packageId) {
-    detail = serviceTypes.find(s => s.serviceID === Number(packageId) || s.ServiceID === Number(packageId));
-    const tasks = serviceTasks.filter(t => 
-      t.packageServiceID === Number(packageId) || 
-      t.Package_ServiceID === Number(packageId) ||
-      t.package_ServiceID === Number(packageId)
-    );
-    childServices = tasks.map(t => {
-      const childServiceId = t.childServiceID || t.Child_ServiceID || t.child_ServiceID;
-      const foundService = serviceTypes.find(s => s.serviceID === childServiceId || s.ServiceID === childServiceId);
-      return foundService;
-    }).filter(Boolean);
-  } else if (serviceId) {
-    // Có thể là 1 dịch vụ hoặc nhiều dịch vụ lẻ (danh sách id)
-    if (serviceId.includes(',')) {
-      childServices = serviceId.split(',').map(id => serviceTypes.find(st => st.serviceID === Number(id) || st.ServiceID === Number(id))).filter(Boolean);
-    } else {
-      detail = serviceTypes.find(s => s.serviceID === Number(serviceId) || s.ServiceID === Number(serviceId));
-    }
-  }
-
-  // Form state
-  const [note, setNote] = useState("");
-  const [selectedNurses, setSelectedNurses] = useState([]);
-  const [selectedCareProfile, setSelectedCareProfile] = useState(null);
+  // Error states
+  const [error, setError] = useState("");
   const [careProfileError, setCareProfileError] = useState("");
 
-  // Kiểm tra ngày giờ hợp lệ cho dịch vụ lẻ (cách hiện tại ít nhất 30 phút)
+  // Payment state
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  // Load services and packages
+  const loadServices = async () => {
+    try {
+      setServicesLoading(true);
+      const servicesData = await serviceTypeService.getAllServiceTypes();
+      setServices(servicesData);
+    } catch (error) {
+      console.error("Error loading services:", error);
+      setError("Không thể tải danh sách dịch vụ");
+    } finally {
+      setServicesLoading(false);
+    }
+  };
+
+  // Load care profiles
+  const loadCareProfiles = async () => {
+    try {
+      setCareProfilesLoading(true);
+      const careProfilesData = await careProfileService.getCareProfiles();
+      setCareProfiles(careProfilesData);
+    } catch (error) {
+      console.error("Error loading care profiles:", error);
+      setError("Không thể tải hồ sơ người thân");
+    } finally {
+      setCareProfilesLoading(false);
+    }
+  };
+
+  // Load nursing specialists
+  const loadNurses = async () => {
+    try {
+      setNursesLoading(true);
+      const nursesData = await nursingSpecialistService.getAllNursingSpecialists();
+      setNursingSpecialists(nursesData);
+    } catch (error) {
+      console.error("Error loading nurses:", error);
+      setError("Không thể tải danh sách điều dưỡng viên");
+    } finally {
+      setNursesLoading(false);
+    }
+  };
+
+  // Load all data on component mount
+  useEffect(() => {
+    const loadAllData = async () => {
+      setLoading(true);
+      await Promise.all([
+        loadServices(),
+        loadCareProfiles(),
+        loadNurses()
+      ]);
+      setLoading(false);
+    };
+
+    loadAllData();
+  }, []);
+
+  // Computed values
+  const userCareProfiles = useMemo(() => {
+    if (!user || !careProfiles.length) return [];
+    return careProfiles.filter(cp => cp.AccountID === user.AccountID);
+  }, [user, careProfiles]);
+
+  const selectedServicesList = useMemo(() => {
+    if (!serviceId || !services.length) return [];
+    const serviceIds = serviceId.split(',').map(id => parseInt(id.trim()));
+    return services.filter(service => serviceIds.includes(service.serviceTypeID));
+  }, [serviceId, services]);
+
+  const detail = useMemo(() => {
+    if (!packageId || !packages.length) return null;
+    return packages.find(p => p.serviceTypeID === parseInt(packageId));
+  }, [packageId, packages]);
+
+  const total = useMemo(() => {
+    if (packageId && detail) {
+      return detail.price || 0;
+    } else if (serviceId && selectedServicesList.length > 0) {
+      return selectedServicesList.reduce((sum, service) => sum + (service.price || 0), 0);
+    }
+    return 0;
+  }, [packageId, detail, serviceId, selectedServicesList]);
+
   const isDatetimeValid = useMemo(() => {
     if (!datetime) return false;
-    const selected = new Date(datetime);
+    const selectedDate = new Date(datetime);
     const now = new Date();
-    return selected.getTime() - now.getTime() >= 30 * 60 * 1000;
+    const minTime = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes from now
+    return selectedDate >= minTime;
   }, [datetime]);
 
-  // Lấy danh sách CareProfile của user hiện tại (chỉ lấy active)
-  const userCareProfiles = user ? careProfiles.filter(p => p.accountID === user.accountID && (p.status === 'active' || p.status === 'Active')) : [];
-  
-  // Reset selectedCareProfile nếu nó không active
-  if (selectedCareProfile && selectedCareProfile.status !== 'active' && selectedCareProfile.status !== 'Active') {
-    setSelectedCareProfile(null);
-  }
-
-  // Lấy ZoneID của user (giả sử lấy từ careProfiles)
-  const userProfile = user ? careProfiles.find(p => p.accountID === user.accountID) : careProfiles[0];
-  const userZoneID = userProfile?.zoneDetailID || 1;
-
-  // State chọn nhân sự cho từng dịch vụ
-  const [selectedStaff, setSelectedStaff] = useState({}); // {serviceId: {type: 'nurse'|'specialist', id: id}}
-  const [staffPopup, setStaffPopup] = useState({ open: false, serviceId: null });
-
-  // Lấy danh sách dịch vụ đã chọn
-  // selectedServicesList: luôn là mảng các dịch vụ lẻ (nếu là package thì là childServices, nếu là dịch vụ lẻ thì là [detail], nếu là nhiều dịch vụ lẻ thì là childServices)
-  let selectedServicesList = [];
-  if (packageId && detail) {
-    selectedServicesList = childServices;
-  } else if (serviceId && serviceId.includes(',')) {
-    selectedServicesList = childServices;
-  } else if (serviceId && detail) {
-    selectedServicesList = [detail];
-  }
-  
-
-
-  // Tính tổng tiền
-  let total = 0;
-  if (packageId && detail) {
-    // Tổng tiền là giá của gói, không phải cộng các dịch vụ con
-    total = detail.price || detail.Price || 0;
-  } else if (!packageId && selectedServicesList.length > 0) {
-    total = selectedServicesList.reduce((sum, s) => sum + (s.price || s.Price || 0), 0);
-  }
-
-  // Lọc nhân sự rảnh theo ZoneID và workSchedules (có ca trực, status active, đúng ngày user chọn)
+  // Staff selection functions
   const getAvailableStaff = (serviceId) => {
-    if (!isDatetimeValid) return [];
-    const targetDate = datetime.split('T')[0];
-    // Lấy danh sách nhân sự cùng ZoneID, active
-    const available = nursingSpecialists.filter(n => n.zoneID === userZoneID && n.status === 'active');
-    // Lọc theo lịch rảnh (workSchedules) - comment lại vì workSchedules API chưa hoàn thiện
-    // return available.filter(n =>
-    //   workSchedules.some(ws =>
-    //     ws.nursingID === n.nursingID &&
-    //     ws.workDate.startsWith(targetDate) &&
-    //     ws.status === 'active'
-    //   )
-    // );
-    return available; // Trả về tất cả nhân sự available vì workSchedules API chưa hoàn thiện
+    return nursingSpecialists.filter(nurse => 
+      nurse.serviceTypes && nurse.serviceTypes.some(st => st.serviceTypeID === parseInt(serviceId))
+    );
   };
 
   const handleSelectStaff = (serviceId, type, id) => {
@@ -350,18 +233,23 @@ export default function BookingPage() {
       ...prev,
       [serviceId]: { type, id }
     }));
-    setStaffPopup({ open: false, serviceId: null });
+    setStaffPopup({ show: false, serviceId: null });
   };
 
-  // Chọn/bỏ chọn nurse
   const handleToggleNurse = (id) => {
-    setSelectedNurses(prev =>
-      prev.includes(id) ? prev.filter(nid => nid !== id) : [...prev, id]
-    );
+    setSelectedStaff(prev => {
+      const newState = { ...prev };
+      Object.keys(newState).forEach(key => {
+        if (newState[key] && newState[key].id === id) {
+          delete newState[key];
+        }
+      });
+      return newState;
+    });
   };
 
-  // Xử lý thanh toán
-  const handlePayment = () => {
+  // Payment handling
+  const handlePayment = async () => {
     setError("");
     setCareProfileError("");
     
@@ -388,32 +276,60 @@ export default function BookingPage() {
       return;
     }
 
-    const params = new URLSearchParams();
-    if (packageId) {
-      params.set("package", packageId);
-    } else if (serviceId) {
-      // Truyền services (danh sách id, kể cả 1 dịch vụ lẻ)
-      params.set("services", serviceId);
-    }
-    params.set("datetime", datetime);
-    params.set("note", note);
-    params.set("careProfileId", selectedCareProfile.careProfileID);
-    // Truyền selectedStaff (object) sang payment
-    params.set("selectedStaff", encodeURIComponent(JSON.stringify(
-      Object.fromEntries(
-        Object.entries(selectedStaff).map(([serviceId, staff]) => [
-          serviceId,
-          {
-            ...staff,
-            name: (() => {
-              const found = nursingSpecialists.find(n => n.nursingID === Number(staff.id));
-              return found ? found.fullName : '';
-            })()
+    try {
+      setIsProcessingPayment(true);
+      
+      // Xác định loại booking (package hoặc service)
+      const isPackage = packageId && !serviceId;
+      
+      let createdBooking;
+      
+      if (isPackage) {
+        // Package booking - sử dụng CreatePackageBooking API
+        const packageBookingData = {
+          careProfileID: parseInt(selectedCareProfile.careProfileID),
+          amount: parseInt(total),
+          workdate: datetime,
+          customizePackageCreateDto: {
+            serviceID: parseInt(packageId),
+            quantity: 1
           }
-        ])
-      )
-    )));
-    router.push(`/payment?${params.toString()}`);
+        };
+
+        console.log('Package Booking Data:', JSON.stringify(packageBookingData, null, 2));
+        createdBooking = await bookingService.createPackageBooking(packageBookingData);
+      } else {
+        // Service booking - sử dụng CreateServiceBooking API
+        const serviceIds = serviceId ? serviceId.split(',').map(id => parseInt(id.trim())) : [];
+        const services = serviceIds.map(id => ({
+          serviceID: id,
+          quantity: 1
+        }));
+        
+        const serviceBookingData = {
+          careProfileID: parseInt(selectedCareProfile.careProfileID),
+          amount: parseInt(total),
+          workdate: datetime,
+          customizePackageCreateDtos: services
+        };
+
+        console.log('Service Booking Data:', JSON.stringify(serviceBookingData, null, 2));
+        createdBooking = await bookingService.createServiceBooking(serviceBookingData);
+      }
+      
+      if (createdBooking) {
+        // Chuyển sang trang payment với booking ID
+        const bookingId = createdBooking.bookingID || createdBooking.id;
+        router.push(`/payment?bookingId=${bookingId}`);
+      } else {
+        setError("Không thể tạo booking. Vui lòng thử lại sau.");
+      }
+    } catch (error) {
+      console.error("Error creating booking:", error);
+      setError("Có lỗi xảy ra khi tạo booking. Vui lòng thử lại sau.");
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   // Loading state khi đang fetch data
@@ -515,11 +431,12 @@ export default function BookingPage() {
                 selectedCareProfile={selectedCareProfile}
                 setSelectedCareProfile={setSelectedCareProfile}
                 careProfileError={careProfileError}
+                isProcessingPayment={isProcessingPayment}
               />
             </div>
           </div>
 
-        {/* Popup chọn nhân sự */}
+          {/* Popup chọn nhân sự */}
           <StaffSelectionModal
             staffPopup={staffPopup}
             setStaffPopup={setStaffPopup}
@@ -527,8 +444,29 @@ export default function BookingPage() {
             handleSelectStaff={handleSelectStaff}
             nursingSpecialists={nursingSpecialists}
           />
-          </div>
+
+
+        </div>
       </div>
     </div>
   );
 }
+
+export default function BookingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-pink-50 to-blue-50 py-8">
+        <div className="max-w-5xl mx-auto px-2 md:px-4">
+          <div className="bg-white rounded-2xl shadow-xl p-4 md:p-8 relative overflow-hidden">
+            <div className="text-center py-12">
+              <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+              <p className="text-gray-600">Đang tải trang đặt lịch...</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    }>
+      <BookingContent />
+    </Suspense>
+  );
+} 

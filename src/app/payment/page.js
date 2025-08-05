@@ -1,10 +1,12 @@
 "use client";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useMemo, useEffect, useState, useContext } from "react";
+import { useMemo, useEffect, useState, useContext, Suspense } from "react";
 // import customizePackageService from '@/services/api/customizePackageService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
-// import walletService from '@/services/api/walletService';
+import bookingService from '@/services/api/bookingService';
+import walletService from '@/services/api/walletService';
+import transactionHistoryService from '@/services/api/transactionHistoryService';
 import { AuthContext } from "@/context/AuthContext";
 
 // Thay thế import mock data bằng services
@@ -18,16 +20,12 @@ import {
   PaymentSuccessModal
 } from './components';
 
-export default function PaymentPage() {
+function PaymentContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const packageId = searchParams.get("package");
-  const services = searchParams.get("services");
-  const datetime = searchParams.get("datetime");
-  const note = searchParams.get("note");
-  const nurses = searchParams.get("nurses"); // dạng "1,2"
-  const careProfileId = searchParams.get("careProfileId");
+  const bookingId = searchParams.get("bookingId");
 
+  const [booking, setBooking] = useState(null);
   const [packages, setPackages] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
@@ -40,6 +38,7 @@ export default function PaymentPage() {
   const { user } = useContext(AuthContext);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastInvoiceId, setLastInvoiceId] = useState(null);
+  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
 
   // Load data từ API
   useEffect(() => {
@@ -61,7 +60,7 @@ export default function PaymentPage() {
           serviceTaskService.getServiceTasks(),
           nursingSpecialistService.getNursingSpecialists(),
           careProfileService.getCareProfiles(),
-          // walletService.getWallets()
+          walletService.getAllWallets()
         ]);
 
         setPackages(packagesData);
@@ -69,7 +68,19 @@ export default function PaymentPage() {
         setServiceTasks(serviceTasksData);
         setNursingSpecialists(nursingSpecialistsData);
         setCareProfiles(careProfilesData);
-        setWallets([]); // Commented out wallet functionality
+        setWallets(walletsData); // Commented out wallet functionality
+
+        // Nếu có bookingId, fetch booking data
+        if (bookingId) {
+          try {
+            const bookingData = await bookingService.getBookingById(bookingId);
+            console.log('Booking data received:', bookingData);
+            setBooking(bookingData);
+          } catch (error) {
+            console.error('Error fetching booking:', error);
+            setError('Không thể tải thông tin đặt lịch. Vui lòng thử lại sau.');
+          }
+        }
       } catch (error) {
         console.error('Error fetching payment data:', error);
         setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
@@ -81,83 +92,179 @@ export default function PaymentPage() {
     if (user) {
       fetchData();
     }
-  }, [user]);
+  }, [user, bookingId]);
 
-  let selectedPackage = null;
-  let selectedServices = [];
-  let selectedNurses = [];
+  // Tính toán dữ liệu từ booking
+  const bookingData = useMemo(() => {
+    if (!booking) return null;
 
-  if (packageId) {
-    selectedPackage = packages.find((pkg) => pkg.package_id === Number(packageId));
-  }
+    console.log('Processing booking data:', booking);
+    console.log('Available serviceTypes:', serviceTypes.length);
+    console.log('Available serviceTasks:', serviceTasks.length);
 
-  // Lấy danh sách dịch vụ lẻ từ param 'services'
-  if (searchParams.get("services")) {
-    const serviceIds = searchParams.get("services").split(",").map(Number);
-    selectedServices = serviceTypes.filter((st) => serviceIds.includes(st.ServiceID));
-  }
+    let selectedPackage = null;
+    let selectedServices = [];
+    let total = 0;
+    let childServices = [];
 
-  if (nurses) {
-    const nurseIds = nurses.split(",").map(Number);
-    selectedNurses = nursingSpecialists.filter(n => nurseIds.includes(n.nursing_id));
-  }
+    // Xác định loại booking (package hoặc service) - hỗ trợ nhiều field name
+    const packageServiceId = booking.Package_ServiceID || booking.packageServiceID || booking.package_ServiceID;
+    const serviceTaskId = booking.ServiceTaskID || booking.serviceTaskID || booking.service_TaskID;
+    const serviceId = booking.ServiceID || booking.serviceID || booking.service_ID;
+    const careProfileId = booking.CareProfileID || booking.careProfileID || booking.care_ProfileID;
+    const appointmentDate = booking.AppointmentDate || booking.appointmentDate || booking.appointment_Date;
+    const note = booking.Note || booking.note;
+    const status = booking.Status || booking.status;
+    const paymentStatus = booking.PaymentStatus || booking.paymentStatus;
+    const totalAmount = booking.TotalAmount || booking.totalAmount || booking.total_Amount;
 
-  // Nếu là package, lấy detail từ serviceTypes (ServiceID=packageId)
-  let packageDetail = null;
-  if (packageId) {
-    packageDetail = serviceTypes.find(s => s.ServiceID === Number(packageId));
-  }
-
-  // Tính tổng tiền
-  let total = 0;
-  if (packageId && packageDetail) {
-    total = packageDetail.Price || 0;
-  } else if (selectedServices.length > 0) {
-    total = selectedServices.reduce((sum, s) => sum + (s.Price || 0), 0);
-  }
-
-  // Tìm ví active của user hiện tại
-  const myWallet = useMemo(() => {
-    if (!user) return null;
-    return wallets.find(w => w.AccountID === user.AccountID && w.Status === "active");
-  }, [wallets, user]);
-
-  // Parse selectedStaff nếu có (truyền qua URL dạng JSON hoặc stringified object)
-  let selectedStaff = {};
-  try {
-    const staffParam = searchParams.get("selectedStaff");
-    if (staffParam) {
-      selectedStaff = JSON.parse(decodeURIComponent(staffParam));
+    if (packageServiceId) {
+      // Package booking
+      selectedPackage = serviceTypes.find(s => 
+        s.ServiceID === packageServiceId || 
+        s.serviceID === packageServiceId ||
+        s.service_ID === packageServiceId
+      );
+      total = totalAmount || selectedPackage?.Price || selectedPackage?.price || 0;
+      
+      // Lấy dịch vụ con của package
+      const tasks = serviceTasks.filter(t => 
+        t.Package_ServiceID === packageServiceId || 
+        t.packageServiceID === packageServiceId ||
+        t.package_ServiceID === packageServiceId
+      );
+      childServices = tasks.map(t => {
+        const childServiceId = t.Child_ServiceID || t.childServiceID || t.child_ServiceID;
+        return serviceTypes.find(s => 
+          s.ServiceID === childServiceId || 
+          s.serviceID === childServiceId ||
+          s.service_ID === childServiceId
+        );
+      }).filter(Boolean);
+    } else if (serviceTaskId) {
+      // Service booking via ServiceTask
+      const serviceTask = serviceTasks.find(t => 
+        t.ServiceTaskID === serviceTaskId || 
+        t.serviceTaskID === serviceTaskId ||
+        t.service_TaskID === serviceTaskId
+      );
+      if (serviceTask) {
+        const taskServiceId = serviceTask.ServiceID || serviceTask.serviceID || serviceTask.service_ID;
+        const serviceType = serviceTypes.find(s => 
+          s.ServiceID === taskServiceId || 
+          s.serviceID === taskServiceId ||
+          s.service_ID === taskServiceId
+        );
+        selectedServices = [serviceType].filter(Boolean);
+        total = totalAmount || serviceType?.Price || serviceType?.price || 0;
+      }
+    } else if (serviceId) {
+      // Service booking directly via ServiceID
+      const serviceType = serviceTypes.find(s => 
+        s.ServiceID === serviceId || 
+        s.serviceID === serviceId ||
+        s.service_ID === serviceId
+      );
+      selectedServices = [serviceType].filter(Boolean);
+      total = totalAmount || serviceType?.Price || serviceType?.price || 0;
     }
-  } catch (e) {}
 
-  // Lấy danh sách dịch vụ con nếu là package
-  let childServices = [];
-  if (packageId) {
-    const tasks = serviceTasks.filter(t => t.Package_ServiceID === Number(packageId));
-    childServices = tasks.map(t => serviceTypes.find(s => s.ServiceID === t.Child_ServiceID)).filter(Boolean);
-  }
+    const selectedCareProfile = careProfiles.find(cp => 
+      cp.CareProfileID === careProfileId || 
+      cp.careProfileID === careProfileId ||
+      cp.care_ProfileID === careProfileId
+    );
 
-  // Lấy thông tin CareProfile
-  const selectedCareProfile = careProfiles.find(cp => cp.CareProfileID === Number(careProfileId));
+    console.log('Processed booking data:', {
+      selectedPackage,
+      selectedServices,
+      total,
+      childServices,
+      selectedCareProfile,
+      datetime: appointmentDate,
+      note,
+      status,
+      paymentStatus
+    });
+
+    return {
+      selectedPackage,
+      selectedServices,
+      total,
+      childServices,
+      selectedCareProfile,
+      datetime: appointmentDate,
+      note,
+      status,
+      paymentStatus
+    };
+  }, [booking, serviceTypes, serviceTasks, careProfiles]);
 
   // Lấy thông tin nhân sự cho từng dịch vụ
   const getStaffInfo = (serviceId) => {
+    if (!booking?.SelectedStaff && !booking?.selectedStaff) return null;
+    
+    const selectedStaff = booking.SelectedStaff || booking.selectedStaff || {};
     const staff = selectedStaff[serviceId];
     if (!staff) return null;
     
-    const specialist = nursingSpecialists.find(n => n.NursingID === Number(staff.id));
+    const specialist = nursingSpecialists.find(n => 
+      n.NursingID === Number(staff.id) || 
+      n.nursingID === Number(staff.id) ||
+      n.nursing_ID === Number(staff.id)
+    );
     return {
-      name: specialist?.FullName || 'Không xác định',
-      role: specialist?.Major || 'Nhân viên',
+      name: specialist?.FullName || specialist?.fullName || 'Không xác định',
+      role: specialist?.Major || specialist?.major || 'Nhân viên',
       type: staff.type
     };
   };
 
   const handleConfirm = async () => {
-    // Logic xử lý thanh toán
-    setShowSuccessModal(true);
-    setLastInvoiceId(Math.floor(Math.random() * 1000000));
+    try {
+      setIsProcessingPayment(true);
+      setError('');
+      
+      // Kiểm tra ví của user
+      if (!wallets || wallets.length === 0) {
+        setError('Không thể tải thông tin ví. Vui lòng thử lại sau.');
+        return;
+      }
+
+      const userWallet = wallets.find(w => (w.accountID === user.accountID || w.AccountID === user.accountID) && w.status === "active");
+      if (!userWallet) {
+        setError('Bạn chưa có ví hoặc ví không hoạt động. Vui lòng liên hệ admin.');
+        return;
+      }
+
+      // Kiểm tra số dư
+      const walletAmount = userWallet.Amount || userWallet.amount;
+      if (walletAmount < bookingData?.total) {
+        setError('Số dư trong ví không đủ để thanh toán. Vui lòng nạp thêm tiền.');
+        return;
+      }
+
+      // Sử dụng transactionHistoryService để thanh toán hóa đơn
+      const paymentData = {
+        walletID: userWallet.WalletID || userWallet.walletID,
+        invoiceID: bookingId
+      };
+
+      // Gọi API thanh toán hóa đơn
+      await transactionHistoryService.invoicePayment(bookingId, paymentData);
+
+      // Cập nhật trạng thái booking thành confirmed
+      await bookingService.updateStatus(bookingId, 'CONFIRMED');
+      
+      // Hiển thị modal thành công
+      setShowSuccessModal(true);
+      setLastInvoiceId(bookingId);
+    } catch (error) {
+      console.error('Error confirming payment:', error);
+      setError('Có lỗi xảy ra khi xác nhận thanh toán. Vui lòng thử lại sau.');
+    } finally {
+      setIsProcessingPayment(false);
+    }
   };
 
   // Loading state
@@ -204,17 +311,19 @@ export default function PaymentPage() {
           {/* Left Column */}
           <div className="space-y-6">
             <ServiceInfo 
-              packageDetail={packageDetail}
-              selectedServices={selectedServices}
-              childServices={childServices}
-              total={total}
+              packageId={booking?.serviceId}
+              packageDetail={bookingData?.selectedPackage}
+              selectedServices={bookingData?.selectedServices}
+              childServices={bookingData?.childServices}
+              total={bookingData?.total}
+              getStaffInfo={getStaffInfo}
             />
             
             <AppointmentInfo 
-              datetime={datetime}
-              note={note}
-              selectedCareProfile={selectedCareProfile}
-              selectedStaff={selectedStaff}
+              datetime={bookingData?.datetime}
+              note={bookingData?.note}
+              selectedCareProfile={bookingData?.selectedCareProfile}
+              selectedStaff={bookingData?.selectedStaff}
               getStaffInfo={getStaffInfo}
             />
           </div>
@@ -222,9 +331,10 @@ export default function PaymentPage() {
           {/* Right Column */}
           <div>
             <PaymentInfo 
-              total={total}
-              myWallet={myWallet}
+              total={bookingData?.total}
+              myWallet={wallets && wallets.length > 0 ? wallets.find(w => (w.accountID === user.accountID || w.AccountID === user.accountID) && w.status === "active") : null}
               onConfirm={handleConfirm}
+              isProcessingPayment={isProcessingPayment}
             />
           </div>
         </div>
@@ -236,5 +346,22 @@ export default function PaymentPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function PaymentPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+        <div className="max-w-6xl mx-auto px-4 py-8">
+          <div className="text-center py-12">
+            <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Đang tải trang thanh toán...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <PaymentContent />
+    </Suspense>
   );
 } 

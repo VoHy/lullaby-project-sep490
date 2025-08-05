@@ -5,7 +5,7 @@ export async function GET(request, { params }) {
     const { id } = params;
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
-    const response = await fetch(`${backendUrl}/api/customizepackages/${id}`, {
+    const response = await fetch(`${backendUrl}/api/CustomizePackage/${id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -47,7 +47,7 @@ export async function PUT(request, { params }) {
     const body = await request.json();
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
-    const response = await fetch(`${backendUrl}/api/customizepackages/${id}`, {
+    const response = await fetch(`${backendUrl}/api/CustomizePackage/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
@@ -89,7 +89,7 @@ export async function DELETE(request, { params }) {
     const { id } = params;
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
-    const response = await fetch(`${backendUrl}/api/customizepackages/${id}`, {
+    const response = await fetch(`${backendUrl}/api/CustomizePackage/${id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',

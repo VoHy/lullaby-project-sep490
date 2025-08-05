@@ -3,7 +3,7 @@
 import { useState, useContext } from 'react';
 import { motion } from 'framer-motion';
 import { FaWallet, FaUser, FaUsers } from 'react-icons/fa';
-import { useWallet } from './hooks/useWallet';
+import { useWalletContext } from '../../context/WalletContext';
 import { useRouter, usePathname } from "next/navigation";
 import {
   WalletOverview,
@@ -61,7 +61,7 @@ const TabNavigation = () => {
 };
 
 export default function WalletPage(props) {
-  const { wallet, transactions, loading, error, handleDeposit, refreshWalletData } = useWallet();
+  const { wallet, transactions, loading, error, handleDeposit, refreshWalletData } = useWalletContext();
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showPayOSModal, setShowPayOSModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
@@ -207,7 +207,7 @@ export default function WalletPage(props) {
         >
           <div className="text-lg text-gray-500 mb-2">Số dư ví của bạn</div>
           <div className="text-4xl font-extrabold text-pink-600 mb-4">
-            {wallet.Amount ? wallet.Amount.toLocaleString() : '0'}đ
+            {wallet?.Amount || wallet?.amount || 0}đ
           </div>
           <button
             onClick={onDepositClick}

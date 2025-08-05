@@ -25,8 +25,7 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     if (entityName === 'Blog') return 'getBlogs';
     if (entityName === 'Booking') return 'getBookingServices';
     if (entityName === 'CareProfile') return 'getCareProfiles';
-    if (entityName === 'CustomerPackage') return 'getCustomerPackages';
-    if (entityName === 'CustomerTask') return 'getCustomerTasks';
+    if (entityName === 'CustomizePackage') return 'getCustomizePackages';
     if (entityName === 'Feedback') return 'getFeedbacks';
     if (entityName === 'Holiday') return 'getHolidays';
     if (entityName === 'Invoice') return 'getInvoices';
@@ -53,8 +52,7 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     if (entityName === 'Blog') return 'getBlogById';
     if (entityName === 'Booking') return 'getBookingServiceById';
     if (entityName === 'CareProfile') return 'getCareProfileById';
-    if (entityName === 'CustomerPackage') return 'getCustomerPackageById';
-    if (entityName === 'CustomerTask') return 'getCustomerTaskById';
+    if (entityName === 'CustomizePackage') return 'getCustomizePackageById';
     if (entityName === 'Feedback') return 'getFeedbackById';
     if (entityName === 'Holiday') return 'getHolidayById';
     if (entityName === 'Invoice') return 'getInvoiceById';
@@ -81,8 +79,7 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     if (entityName === 'Blog') return 'createBlog';
     if (entityName === 'Booking') return 'createBookingService';
     if (entityName === 'CareProfile') return 'createCareProfile';
-    if (entityName === 'CustomerPackage') return 'createCustomerPackage';
-    if (entityName === 'CustomerTask') return 'createCustomerTask';
+    if (entityName === 'CustomizePackage') return 'createCustomizePackage';
     if (entityName === 'Feedback') return 'createFeedback';
     if (entityName === 'Holiday') return 'createHoliday';
     if (entityName === 'Invoice') return 'createInvoice';
@@ -109,8 +106,7 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     if (entityName === 'Blog') return 'updateBlog';
     if (entityName === 'Booking') return 'updateBookingService';
     if (entityName === 'CareProfile') return 'updateCareProfile';
-    if (entityName === 'CustomerPackage') return 'updateCustomerPackage';
-    if (entityName === 'CustomerTask') return 'updateCustomerTask';
+    if (entityName === 'CustomizePackage') return 'updateCustomizePackage';
     if (entityName === 'Feedback') return 'updateFeedback';
     if (entityName === 'Holiday') return 'updateHoliday';
     if (entityName === 'Invoice') return 'updateInvoice';
@@ -137,8 +133,7 @@ const createService = (endpoint, entityName, isCustomEndpoint = false) => {
     if (entityName === 'Blog') return 'deleteBlog';
     if (entityName === 'Booking') return 'deleteBookingService';
     if (entityName === 'CareProfile') return 'deleteCareProfile';
-    if (entityName === 'CustomerPackage') return 'deleteCustomerPackage';
-    if (entityName === 'CustomerTask') return 'deleteCustomerTask';
+    if (entityName === 'CustomizePackage') return 'deleteCustomizePackage';
     if (entityName === 'Feedback') return 'deleteFeedback';
     if (entityName === 'Holiday') return 'deleteHoliday';
     if (entityName === 'Invoice') return 'deleteInvoice';

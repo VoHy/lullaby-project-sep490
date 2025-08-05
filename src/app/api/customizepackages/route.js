@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server';
 export async function GET() {
   try {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-    const response = await fetch(`${backendUrl}/api/customizepackages`, {
+    const response = await fetch(`${backendUrl}/api/CustomizePackage/GetAll`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
@@ -44,7 +44,7 @@ export async function POST(request) {
     const body = await request.json();
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
-    const response = await fetch(`${backendUrl}/api/customizepackages`, {
+    const response = await fetch(`${backendUrl}/api/CustomizePackage`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

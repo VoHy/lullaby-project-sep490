@@ -82,6 +82,18 @@ const walletService = {
     return data;
   },
 
+  // Update wallet amount (alias for updateWalletAmount)
+  // updateAmount: async (walletId, newAmount) => {
+  //   const res = await fetch(`/api/wallet/updateamount/${walletId}`, {
+  //     method: 'PUT',
+  //     headers: { 'Content-Type': 'application/json' },
+  //     body: JSON.stringify({ amount: newAmount })
+  //   });
+  //   const data = await res.json();
+  //   if (!res.ok) throw new Error(data.error || 'Cập nhật số tiền wallet thất bại');
+  //   return data;
+  // },
+
   // Activate wallet
   activateWallet: async (walletId) => {
     const res = await fetch(`/api/wallet/active/${walletId}`, {

@@ -47,24 +47,6 @@ export async function POST(request, { params }) {
     const body = await request.json();
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
-    // Tạm thời trả về dữ liệu mẫu để tránh lỗi database
-    const mockWallet = {
-      walletID: parseInt(id),
-      accountID: parseInt(id),
-      amount: 0,
-      status: 'active',
-      note: 'Ví mới tạo',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    return NextResponse.json({
-      message: "Wallet was created successfully.",
-      wallet: mockWallet
-    }, { status: 201 });
-
-    // Code gốc (comment lại để tránh lỗi):
-    /*
     const response = await fetch(`${backendUrl}/api/Wallet/${id}`, {
       method: 'POST',
       headers: {
@@ -93,7 +75,6 @@ export async function POST(request, { params }) {
 
     const data = await response.json();
     return NextResponse.json(data, { status: 201 });
-    */
   } catch (error) {
     console.error('Proxy error:', error);
     return NextResponse.json(
