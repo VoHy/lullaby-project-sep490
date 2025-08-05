@@ -1,4 +1,5 @@
 import { FaPhone, FaMapMarkerAlt, FaStickyNote, FaUsers, FaPlus, FaEdit } from 'react-icons/fa';
+import { formatDateToDDMMYYYY } from '../../utils/dateUtils';
 
 export default function PatientCareProfileCard({ care, relativesList, relFilter, setRelFilter, handleOpenForm, onViewDetailCareProfile, onViewDetailRelative, handleOpenEditCareProfile, handleOpenEditRelative }) {
   // Đồng bộ field chữ thường và chữ hoa
@@ -6,11 +7,6 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
   if (relFilter === 'active') rels = rels.filter(r => (r.status || '').toLowerCase() === 'active');
   if (relFilter === 'inactive') rels = rels.filter(r => (r.status || '').toLowerCase() === 'inactive');
 
-  function formatDate(dateStr) {
-    if (!dateStr) return '';
-    if (dateStr.includes('T')) return dateStr.split('T')[0];
-    return dateStr;
-  }
   return (
     <div className="bg-white rounded-2xl shadow-lg p-6 hover:shadow-xl transition-shadow">
       <div className="flex items-start justify-between mb-4">
@@ -22,7 +18,7 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
           />
           <div>
             <h3 className="text-lg font-bold text-purple-700 hover:underline">{care.profileName}</h3>
-            <p className="text-sm text-gray-500">{formatDate(care.dateOfBirth) || 'N/A'}</p>
+            <p className="text-sm text-gray-500">{formatDateToDDMMYYYY(care.dateOfBirth) || 'N/A'}</p>
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">
@@ -92,7 +88,7 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
               <div key={r.relativeID || r.RelativeID} className="bg-gray-50 rounded-lg p-3 flex items-center justify-between cursor-pointer group" onClick={() => onViewDetailRelative && onViewDetailRelative(r)}>
                 <div>
                   <p className="font-medium text-purple-600 hover:underline">{r.relativeName || r.relative_Name || r.Relative_Name}</p>
-                  <p className="text-xs text-gray-500">{r.dateOfBirth || r.DateOfBirth || 'N/A'}</p>
+                  <p className="text-xs text-gray-500">{formatDateToDDMMYYYY(r.dateOfBirth) || r.DateOfBirth || 'N/A'}</p>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className={`px-2 py-1 rounded-full text-xs font-semibold ${((r.status || '').toLowerCase() === 'active')

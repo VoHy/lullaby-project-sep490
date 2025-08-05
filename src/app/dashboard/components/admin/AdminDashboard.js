@@ -16,7 +16,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import OverviewTab from './OverviewTab';
 import UsersTab from './users/UsersTab';
 import ManagerTab from './manager/ManagerTab';
-import BookingsTab from './BookingsTab';
+import BookingsTab from './booking/BookingsTab';
 import ServicesTab from './services/ServicesTab';
 import RevenueTab from './revenue/RevenueTab';
 import SettingsTab from './settings/SettingsTab';
@@ -82,13 +82,13 @@ const AdminDashboard = ({ user, initialTab }) => {
       const [accountData, specialistData, bookingData, feedbackData] = await Promise.all([
         accountService.getAllAccounts(),
         nursingSpecialistService.getNursingSpecialists(),
-        // bookingService.getBookingServices(),
+        bookingService.getBookingServices(),
         // feedbackService.getFeedbacks()
       ]);
 
       setAccounts(accountData);
       setNursingSpecialists(specialistData);
-      // setBookings(bookingData);
+      setBookings(bookingData);
       // setFeedbacks(feedbackData);
 
       // Calculate revenue

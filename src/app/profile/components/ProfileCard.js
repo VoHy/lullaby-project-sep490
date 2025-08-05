@@ -1,4 +1,5 @@
 import { FaEdit, FaSave, FaTimes, FaUser, FaEnvelope, FaPhone, FaCalendar, FaShieldAlt } from "react-icons/fa";
+import { formatDateToDDMMYYYY } from '../utils/dateUtils';
 
 export default function ProfileCard({ profile, isEditing, editData, onEditClick, onInputChange, onSave, onCancel, loading, error, roleName }) {
   if (!profile) return null;
@@ -110,7 +111,8 @@ export default function ProfileCard({ profile, isEditing, editData, onEditClick,
             <div>
               <p className="text-sm text-gray-600">Ngày tạo</p>
               <p className="font-medium">
-                {profile.createAt || profile.created_at ? new Date(profile.createAt || profile.created_at).toLocaleDateString('vi-VN') : '-'}
+                {profile.createAt || profile.created_at ? 
+                  formatDateToDDMMYYYY(profile.createAt || profile.created_at) : '-'}
               </p>
             </div>
           </div>

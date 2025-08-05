@@ -19,6 +19,17 @@ const bookingService = {
     return data;
   },
 
+  // GET /api/Booking/GetAll with CareProfile information
+  getAllBookingsWithCareProfile: async () => {
+    const res = await fetch('/api/booking/getallwithcareprofile', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách bookings với thông tin care profile');
+    return data;
+  },
+
   // GET /api/Booking/{bookingId}
   getBookingById: async (id) => {
     const res = await fetch(`/api/booking/${id}`, {
@@ -27,6 +38,17 @@ const bookingService = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin booking');
+    return data;
+  },
+
+  // GET /api/Booking/{bookingId} with CareProfile information
+  getBookingByIdWithCareProfile: async (id) => {
+    const res = await fetch(`/api/booking/${id}/withcareprofile`, {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin booking với care profile');
     return data;
   },
 
@@ -153,6 +175,18 @@ const bookingService = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể cập nhật workdate booking');
+    return data;
+  },
+
+  // PUT /api/Booking/UpdateStatus/{bookingId}
+  updateBookingStatus: async (bookingId, statusData) => {
+    const res = await fetch(`/api/booking/updatestatus/${bookingId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(statusData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Cập nhật trạng thái booking thất bại');
     return data;
   },
 

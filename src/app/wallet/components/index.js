@@ -1,5 +1,6 @@
 export { default as WalletOverview } from './WalletOverview';
 export { default as TransactionHistory } from './TransactionHistory';
+export { default as TransactionDetailModal } from './TransactionDetailModal';
 export { default as DepositModal } from './DepositModal';
 export { default as InvoicePaymentModal } from './InvoicePaymentModal';
 export { default as RefundModal } from './RefundModal';

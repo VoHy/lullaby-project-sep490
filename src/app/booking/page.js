@@ -6,6 +6,7 @@ import serviceTaskService from '@/services/api/serviceTaskService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import careProfileService from '@/services/api/careProfileService';
 import bookingService from '@/services/api/bookingService';
+import customizePackageService from '@/services/api/customizePackageService';
 import {
   BookingHeader,
   PackageInfo,
@@ -103,12 +104,19 @@ function BookingContent() {
   const { user } = useContext(AuthContext);
 
   // URL parameters
-  const packageId = searchParams.get("packageId");
-  const serviceId = searchParams.get("serviceId");
+  const packageId = searchParams.get("packageId") || searchParams.get("package");
+  const serviceId = searchParams.get("serviceId") || searchParams.get("service");
+  const packageDataParam = searchParams.get("packageData");
+  const serviceDataParam = searchParams.get("serviceData");
+
+  // Parse service/package data from URL
+  const packageData = packageDataParam ? JSON.parse(decodeURIComponent(packageDataParam)) : null;
+  const serviceData = serviceDataParam ? JSON.parse(decodeURIComponent(serviceDataParam)) : null;
 
   // State management
   const [services, setServices] = useState([]);
   const [packages, setPackages] = useState([]);
+  const [serviceTasks, setServiceTasks] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
   const [selectedCareProfile, setSelectedCareProfile] = useState(null);
@@ -141,6 +149,68 @@ function BookingContent() {
       setError("Không thể tải danh sách dịch vụ");
     } finally {
       setServicesLoading(false);
+    }
+  };
+
+  // Load packages
+  const loadPackages = async () => {
+    try {
+      const packagesData = await customizePackageService.getAllCustomizePackages();
+      setPackages(packagesData);
+    } catch (error) {
+      console.error("Error loading packages:", error);
+      // Không set error vì packages có thể không cần thiết
+    }
+  };
+
+  // Load service tasks
+  const loadServiceTasks = async () => {
+    try {
+      const serviceTasksData = await serviceTaskService.getServiceTasks();
+      setServiceTasks(serviceTasksData);
+    } catch (error) {
+      console.error("Error loading service tasks:", error);
+      // Không set error vì service tasks có thể không cần thiết
+    }
+  };
+
+  // Load service tasks for specific package
+  const loadServiceTasksByPackage = async (packageId) => {
+    try {
+      console.log('Loading service tasks for package:', packageId);
+      const serviceTasksData = await serviceTaskService.getServiceTasksByPackage(packageId);
+      
+      // Lấy thông tin đầy đủ của service cho mỗi service task
+      const enrichedServiceTasks = await Promise.all(
+        serviceTasksData.map(async (task) => {
+          try {
+            // Lấy thông tin service từ child_ServiceID
+            const childServiceId = task.child_ServiceID || task.childServiceID;
+            if (childServiceId) {
+              const serviceInfo = services.find(s => s.serviceID === childServiceId || s.serviceTypeID === childServiceId);
+              if (serviceInfo) {
+                return {
+                  ...task,
+                  serviceName: serviceInfo.serviceName || serviceInfo.ServiceName,
+                  description: task.description || task.Description,
+                  duration: serviceInfo.duration || serviceInfo.Duration,
+                  price: task.price || task.Price,
+                  major: serviceInfo.major || serviceInfo.Major,
+                  isServiceTask: true
+                };
+              }
+            }
+            return task;
+          } catch (error) {
+            console.error('Error enriching service task:', error);
+            return task;
+          }
+        })
+      );
+      
+      setServiceTasks(enrichedServiceTasks);
+    } catch (error) {
+      console.error('Error loading service tasks for package:', error);
     }
   };
 
@@ -178,6 +248,8 @@ function BookingContent() {
       setLoading(true);
       await Promise.all([
         loadServices(),
+        loadPackages(),
+        loadServiceTasks(),
         loadCareProfiles(),
         loadNurses()
       ]);
@@ -187,31 +259,171 @@ function BookingContent() {
     loadAllData();
   }, []);
 
+  // Load service tasks for package
+  useEffect(() => {
+    const loadTasks = async () => {
+      // Chỉ load khi có package và services đã sẵn sàng
+      if (services.length === 0) return;
+      
+      let targetPackageId = null;
+      
+      // Xác định package ID cần load
+      if (packageData && packageData.serviceID) {
+        targetPackageId = packageData.serviceID;
+      } else if (packageId && !serviceId) {
+        targetPackageId = packageId;
+      }
+      
+      // Chỉ load nếu có package ID và chưa có service tasks
+      if (targetPackageId && serviceTasks.length === 0) {
+        console.log('Loading service tasks for package:', targetPackageId);
+        await loadServiceTasksByPackage(targetPackageId);
+      }
+    };
+    
+    loadTasks();
+  }, [packageId, serviceId, packageData, services, serviceTasks.length]);
+
   // Computed values
   const userCareProfiles = useMemo(() => {
     if (!user || !careProfiles.length) return [];
     return careProfiles.filter(cp => cp.AccountID === user.AccountID);
   }, [user, careProfiles]);
 
-  const selectedServicesList = useMemo(() => {
-    if (!serviceId || !services.length) return [];
-    const serviceIds = serviceId.split(',').map(id => parseInt(id.trim()));
-    return services.filter(service => serviceIds.includes(service.serviceTypeID));
-  }, [serviceId, services]);
-
   const detail = useMemo(() => {
-    if (!packageId || !packages.length) return null;
-    return packages.find(p => p.serviceTypeID === parseInt(packageId));
-  }, [packageId, packages]);
+    // Ưu tiên sử dụng data từ URL parameters
+    if (packageData) {
+      return packageData;
+    }
+    if (serviceData) {
+      return serviceData;
+    }
+    
+    // Fallback: Tìm trong services trước
+    if (services.length > 0) {
+      const serviceResult = services.find(p => p.serviceTypeID === parseInt(packageId));
+      if (serviceResult) {
+        return serviceResult;
+      }
+    }
+    
+    // Tìm trong packages nếu không tìm thấy trong services
+    if (packages.length > 0) {
+      const packageResult = packages.find(p => p.customizePackageID === parseInt(packageId));
+      if (packageResult) {
+        return packageResult;
+      }
+    }
+    
+    return null;
+  }, [packageId, services, packages, packageData, serviceData]);
+
+  const selectedServicesList = useMemo(() => {
+    if (!serviceId && !packageId) return [];
+    
+    // Nếu có serviceData từ URL (dịch vụ lẻ đơn)
+    if (serviceData) {
+      return [serviceData];
+    }
+    
+    // Nếu có packageData từ URL (gói dịch vụ)
+    if (packageData) {
+      return [packageData];
+    }
+    
+    // Nếu có serviceId (dịch vụ lẻ - có thể nhiều dịch vụ)
+    if (serviceId && services.length > 0) {
+      const serviceIds = serviceId.split(',').map(id => parseInt(id.trim()));
+      const selectedServices = services.filter(service => 
+        serviceIds.includes(service.serviceID) || serviceIds.includes(service.serviceTypeID)
+      );
+      
+      // Nếu không tìm thấy trong services, thử tìm trong packages
+      if (selectedServices.length === 0 && packages.length > 0) {
+        return packages.filter(pkg => 
+          serviceIds.includes(pkg.customizePackageID)
+        );
+      }
+      
+      return selectedServices;
+    }
+    
+    // Nếu có packageId (gói dịch vụ) - sử dụng serviceTasks đã load
+    if (packageId && serviceTasks.length > 0) {
+      return serviceTasks; // Trả về tất cả service tasks đã load cho package
+    }
+    
+    return [];
+  }, [serviceId, packageId, services, serviceTasks, serviceData, packageData, packages]);
+
+  // Thêm thông tin gói chính vào selectedServicesList khi có package
+  const displayServicesList = useMemo(() => {
+    // Nếu có serviceData (dịch vụ lẻ đơn)
+    if (serviceData) {
+      return [serviceData];
+    }
+    
+    // Nếu có packageData (gói dịch vụ)
+    if (packageData) {
+      const displayList = [packageData];
+      
+      // Thêm service tasks nếu có
+      if (serviceTasks.length > 0) {
+        displayList.push(...serviceTasks);
+      }
+      
+      return displayList;
+    }
+    
+    // Nếu có serviceId (dịch vụ lẻ - có thể nhiều dịch vụ)
+    if (serviceId && selectedServicesList.length > 0) {
+      return selectedServicesList;
+    }
+    
+    // Fallback cho logic cũ - package
+    if (!packageId) return selectedServicesList;
+    
+    // Nếu có package, thêm thông tin gói chính vào đầu danh sách
+    if (detail && selectedServicesList.length > 0) {
+      return [
+        {
+          ...detail,
+          isPackage: true, // Đánh dấu đây là gói chính
+          serviceName: detail.serviceName || detail.ServiceName,
+          description: detail.description || detail.Description,
+          duration: detail.duration || detail.Duration,
+          price: detail.price || detail.Price
+        },
+        ...selectedServicesList
+      ];
+    }
+    
+    return selectedServicesList;
+  }, [packageId, detail, selectedServicesList, serviceData, packageData, serviceTasks, serviceId]);
 
   const total = useMemo(() => {
-    if (packageId && detail) {
-      return detail.price || 0;
-    } else if (serviceId && selectedServicesList.length > 0) {
+    // Nếu có serviceData (dịch vụ lẻ đơn)
+    if (serviceData) {
+      return serviceData.price || 0;
+    }
+    
+    // Nếu có packageData (gói dịch vụ)
+    if (packageData) {
+      return packageData.price || 0;
+    }
+    
+    // Nếu có serviceId (dịch vụ lẻ - có thể nhiều dịch vụ)
+    if (serviceId && selectedServicesList.length > 0) {
       return selectedServicesList.reduce((sum, service) => sum + (service.price || 0), 0);
     }
+    
+    // Fallback cho logic cũ
+    if (packageId && detail) {
+      return detail.price || 0;
+    }
+    
     return 0;
-  }, [packageId, detail, serviceId, selectedServicesList]);
+  }, [packageId, detail, serviceId, selectedServicesList, serviceData, packageData]);
 
   const isDatetimeValid = useMemo(() => {
     if (!datetime) return false;
@@ -403,18 +615,19 @@ function BookingContent() {
           {/* Main 2-column layout */}
           <div className="flex flex-col md:flex-row gap-4 md:gap-8">
             {/* LEFT COLUMN: Info, dịch vụ, tổng tiền */}
-            <div className="md:w-1/2 flex flex-col gap-4">
-              <PackageInfo packageDetail={detail} />
-              <ServicesList
-                selectedServicesList={selectedServicesList}
-                packageId={packageId}
-                isDatetimeValid={isDatetimeValid}
-                getAvailableStaff={getAvailableStaff}
-                selectedStaff={selectedStaff}
-                setSelectedStaff={setSelectedStaff}
-                setStaffPopup={setStaffPopup}
-                nursingSpecialists={nursingSpecialists}
-              />
+                         <div className="md:w-1/2 flex flex-col gap-4">
+               {!packageId && <PackageInfo packageDetail={detail} />}
+                              <ServicesList
+                 selectedServicesList={displayServicesList}
+                 packageId={packageId}
+                 isDatetimeValid={isDatetimeValid}
+                 getAvailableStaff={getAvailableStaff}
+                 selectedStaff={selectedStaff}
+                 setSelectedStaff={setSelectedStaff}
+                 setStaffPopup={setStaffPopup}
+                 nursingSpecialists={nursingSpecialists}
+                 total={total}
+               />
             </div>
 
             {/* RIGHT COLUMN: Form, chọn ngày giờ, ghi chú, thanh toán */}

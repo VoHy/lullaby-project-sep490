@@ -8,7 +8,7 @@ const transactionHistoryService = {
   // Base CRUD methods từ factory
   ...baseTransactionHistoryService,
 
-  // Get all transaction histories
+  // GET /api/TransactionHistory/GetAll
   getAllTransactionHistories: async () => {
     const res = await fetch('/api/transactionhistory/getall', {
       method: 'GET',
@@ -19,7 +19,7 @@ const transactionHistoryService = {
     return data;
   },
 
-  // Get transaction history by ID
+  // GET /api/TransactionHistory/{transactionHistoryId}
   getTransactionHistoryById: async (transactionHistoryId) => {
     const res = await fetch(`/api/transactionhistory/${transactionHistoryId}`, {
       method: 'GET',
@@ -30,7 +30,7 @@ const transactionHistoryService = {
     return data;
   },
 
-  // Delete transaction history
+  // DELETE /api/TransactionHistory/{transactionHistoryId}
   deleteTransactionHistory: async (transactionHistoryId) => {
     const res = await fetch(`/api/transactionhistory/${transactionHistoryId}`, {
       method: 'DELETE',
@@ -41,7 +41,7 @@ const transactionHistoryService = {
     return data;
   },
 
-  // Get all transaction histories by account
+  // GET /api/TransactionHistory/GetAllByAccount/{accountId}
   getAllTransactionHistoriesByAccount: async (accountId) => {
     const res = await fetch(`/api/transactionhistory/getallbyaccount/${accountId}`, {
       method: 'GET',
@@ -52,7 +52,7 @@ const transactionHistoryService = {
     return data;
   },
 
-  // Add money to wallet
+  // POST /api/TransactionHistory/AddMoneyToWallet
   addMoneyToWallet: async (walletData) => {
     const res = await fetch('/api/transactionhistory/addmoneytowallet', {
       method: 'POST',
@@ -64,7 +64,7 @@ const transactionHistoryService = {
     return data;
   },
 
-  // Invoice payment
+  // POST /api/TransactionHistory/InvoicePayment/{invoiceId}
   invoicePayment: async (invoiceId, paymentData) => {
     const res = await fetch(`/api/transactionhistory/invoicepayment/${invoiceId}`, {
       method: 'POST',
@@ -76,7 +76,7 @@ const transactionHistoryService = {
     return data;
   },
 
-  // Refund money to wallet
+  // POST /api/TransactionHistory/RefundMoneyToWallet/{invoiceId}
   refundMoneyToWallet: async (invoiceId, refundData) => {
     const res = await fetch(`/api/transactionhistory/refundmoneytowallet/${invoiceId}`, {
       method: 'POST',
@@ -88,7 +88,7 @@ const transactionHistoryService = {
     return data;
   },
 
-  // Success add to wallet
+  // PUT /api/TransactionHistory/SuccessAddToWallet/{transactionHistoryId}
   successAddToWallet: async (transactionHistoryId) => {
     const res = await fetch(`/api/transactionhistory/successaddtowallet/${transactionHistoryId}`, {
       method: 'PUT',

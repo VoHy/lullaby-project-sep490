@@ -8,7 +8,7 @@ const invoiceService = {
   // Base CRUD methods từ factory
   ...baseInvoiceService,
 
-  // Get all invoices
+  // GET /api/Invoice/GetAll
   getAllInvoices: async () => {
     const res = await fetch('/api/invoice/getall', {
       method: 'GET',
@@ -19,9 +19,9 @@ const invoiceService = {
     return data;
   },
 
-  // Get invoice by ID
-  getInvoiceById: async (invoiceId) => {
-    const res = await fetch(`/api/invoice/${invoiceId}`, {
+  // GET /api/Invoice/{invoiceId}
+  getInvoiceById: async (id) => {
+    const res = await fetch(`/api/invoice/${id}`, {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });
@@ -30,30 +30,18 @@ const invoiceService = {
     return data;
   },
 
-  // Create new invoice
-  createInvoice: async (invoiceData) => {
-    const res = await fetch('/api/invoice', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(invoiceData)
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Tạo invoice thất bại');
-    return data;
-  },
-
-  // Delete invoice
-  deleteInvoice: async (invoiceId) => {
-    const res = await fetch(`/api/invoice/${invoiceId}`, {
+  // DELETE /api/Invoice/{invoiceId}
+  deleteInvoice: async (id) => {
+    const res = await fetch(`/api/invoice/${id}`, {
       method: 'DELETE',
       headers: { 'Content-Type': 'application/json' }
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Xóa invoice thất bại');
+    if (!res.ok) throw new Error(data.error || 'Không thể xóa invoice');
     return data;
   },
 
-  // Get invoice by booking
+  // GET /api/Invoice/GetByBooking/{bookingId}
   getInvoiceByBooking: async (bookingId) => {
     const res = await fetch(`/api/invoice/getbybooking/${bookingId}`, {
       method: 'GET',
@@ -64,29 +52,24 @@ const invoiceService = {
     return data;
   },
 
-  // Get all invoices by account
-  getAllInvoicesByAccount: async (accountId) => {
-    const res = await fetch(`/api/invoice/getallbyaccount/${accountId}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+  // POST /api/Invoice
+  createInvoice: async (invoiceData) => {
+    // Validate required fields
+    if (!invoiceData.bookingID || !invoiceData.content) {
+      throw new Error('bookingID và content là bắt buộc');
+    }
+
+    const res = await fetch('/api/invoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json-patch+json' },
+      body: JSON.stringify(invoiceData)
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách invoices theo account');
+    if (!res.ok) throw new Error(data.error || 'Tạo invoice thất bại');
     return data;
   },
 
-  // Get all invoices by care profile
-  getAllInvoicesByCareProfile: async (careProfileId) => {
-    const res = await fetch(`/api/invoice/getallbycareprofile/${careProfileId}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách invoices theo care profile');
-    return data;
-  },
-
-  // Update invoice status
+  // PUT /api/Invoice/UpdateStatus/{invoiceId}
   updateInvoiceStatus: async (invoiceId, statusData) => {
     const res = await fetch(`/api/invoice/updatestatus/${invoiceId}`, {
       method: 'PUT',

@@ -1,7 +1,10 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaHistory, FaArrowUp, FaArrowDown, FaCalendar } from 'react-icons/fa';
+import TransactionDetailModal from './TransactionDetailModal';
+import transactionHistoryService from '@/services/api/transactionHistoryService';
 
 // Utility function để lấy transaction ID một cách nhất quán
 const getTransactionId = (transaction) => {
@@ -20,7 +23,7 @@ const getTransactionNote = (transaction) => {
 
 // Utility function để lấy transaction status một cách nhất quán
 const getTransactionStatus = (transaction) => {
-  return transaction?.status || transaction?.Status || 'pending';
+  return transaction?.status || transaction?.Status || 'paid';
 };
 
 // Utility function để lấy transaction date một cách nhất quán
@@ -29,6 +32,10 @@ const getTransactionDate = (transaction) => {
 };
 
 const TransactionHistory = ({ transactions, searchText, setSearchText, filterStatus, setFilterStatus }) => {
+  const [selectedTransaction, setSelectedTransaction] = useState(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [loadingDetail, setLoadingDetail] = useState(false);
+  const [loadingTransactionId, setLoadingTransactionId] = useState(null);
   const formatDate = (dateString) => {
     return new Date(dateString).toLocaleDateString('vi-VN', {
       year: 'numeric',
@@ -42,19 +49,39 @@ const TransactionHistory = ({ transactions, searchText, setSearchText, filterSta
   const getStatusColor = (status) => {
     switch (status) {
       case 'success': return 'bg-green-100 text-green-800';
-      case 'pending': return 'bg-yellow-100 text-yellow-800';
+      case 'paid': return 'bg-yellow-100 text-yellow-800';
       case 'failed': return 'bg-red-100 text-red-800';
-      default: return 'bg-gray-100 text-gray-800';
+      default: return 'bg-gray-100 text-gray-800';  
     }
   };
 
   const getStatusText = (status) => {
     switch (status) {
       case 'success': return 'Thành công';
-      case 'pending': return 'Đang xử lý';
+      case 'paid': return 'Đã thanh toán';
       case 'failed': return 'Thất bại';
       default: return 'Không xác định';
     }
+  };
+
+  const handleTransactionClick = async (transaction) => {
+    try {
+      const transactionId = getTransactionId(transaction);
+      setLoadingTransactionId(transactionId);
+      const detailedTransaction = await transactionHistoryService.getTransactionHistoryById(transactionId);
+      setSelectedTransaction(detailedTransaction);
+      setIsModalOpen(true);
+    } catch (error) {
+      console.error('Lỗi khi lấy chi tiết giao dịch:', error);
+      alert('Không thể tải chi tiết giao dịch. Vui lòng thử lại.');
+    } finally {
+      setLoadingTransactionId(null);
+    }
+  };
+
+  const handleCloseModal = () => {
+    setIsModalOpen(false);
+    setSelectedTransaction(null);
   };
 
   const filteredTransactions = transactions.filter(transaction => {
@@ -92,7 +119,7 @@ const TransactionHistory = ({ transactions, searchText, setSearchText, filterSta
           >
             <option value="all">Tất cả</option>
             <option value="success">Thành công</option>
-            <option value="pending">Đang xử lý</option>
+            <option value="paid">Đã thanh toán</option>
             <option value="failed">Thất bại</option>
           </select>
         </div>
@@ -118,45 +145,59 @@ const TransactionHistory = ({ transactions, searchText, setSearchText, filterSta
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.05 }}
-                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow"
+                className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow cursor-pointer hover:bg-gray-50"
+                onClick={() => handleTransactionClick(transaction)}
+                title="Click để xem chi tiết giao dịch"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                      amount > 0 ? 'bg-green-100' : 'bg-red-100'
-                    }`}>
-                      {amount > 0 ? (
-                        <FaArrowUp className="text-green-600 text-sm" />
-                      ) : (
-                        <FaArrowDown className="text-red-600 text-sm" />
-                      )}
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900">{note}</h4>
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
-                        <span className="flex items-center gap-1">
-                          <FaCalendar className="text-xs" />
-                          {formatDate(date)}
-                        </span>
+                                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                        amount > 0 ? 'bg-green-100' : 'bg-red-100'
+                      }`}>
+                        {amount > 0 ? (
+                          <FaArrowUp className="text-green-600 text-sm" />
+                        ) : (
+                          <FaArrowDown className="text-red-600 text-sm" />
+                        )}
+                      </div>
+                      <div>
+                        <h4 className="font-semibold text-gray-900">{note}</h4>
+                        <div className="flex items-center gap-3 text-xs text-gray-500">
+                          <span className="flex items-center gap-1">
+                            <FaCalendar className="text-xs" />
+                            {formatDate(date)}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                  <div className="text-right">
-                    <div className={`font-bold ${
-                      amount > 0 ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      {amount > 0 ? '+' : ''}{amount.toLocaleString('vi-VN')}đ
+                    <div className="text-right">
+                      <div className={`font-bold ${
+                        amount > 0 ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {amount > 0 ? '+' : ''}{amount.toLocaleString('vi-VN')}đ
+                      </div>
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
+                        {getStatusText(status)}
+                      </span>
+                      {loadingTransactionId === transactionId && (
+                        <div className="mt-1 text-xs text-purple-600">
+                          Đang tải...
+                        </div>
+                      )}
                     </div>
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
-                      {getStatusText(status)}
-                    </span>
                   </div>
-                </div>
               </motion.div>
             );
           })}
         </div>
       )}
+
+      {/* Modal chi tiết giao dịch */}
+      <TransactionDetailModal
+        transaction={selectedTransaction}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </motion.div>
   );
 };

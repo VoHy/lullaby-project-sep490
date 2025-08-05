@@ -5,28 +5,8 @@ export async function GET(request, { params }) {
     const { id } = await params;
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
-    // Tạm thời trả về mock data để test
-    const mockBookingData = {
-      bookingID: parseInt(id),
-      serviceID: 1, // Service booking
-      careProfileID: 1,
-      appointmentDate: "2025-08-06T10:00:00.000Z",
-      note: "Ghi chú test",
-      status: "PENDING",
-      paymentStatus: "PENDING",
-      totalAmount: 500000,
-      selectedStaff: {
-        1: {
-          id: 1,
-          type: "nurse"
-        }
-      }
-    };
-
-    return NextResponse.json(mockBookingData);
-
-    // Code gốc (comment lại để test):
-    /*
+    console.log('Fetching booking with ID:', id);
+    
     const response = await fetch(`${backendUrl}/api/Booking/${id}`, {
       method: 'GET',
       headers: {
@@ -34,8 +14,11 @@ export async function GET(request, { params }) {
       },
     });
 
+    console.log('Backend response status:', response.status);
+
     if (!response.ok) {
       const errorText = await response.text();
+      console.log('Backend error response:', errorText.substring(0, 200));
       
       try {
         const errorData = JSON.parse(errorText);
@@ -53,8 +36,8 @@ export async function GET(request, { params }) {
     }
 
     const data = await response.json();
+    console.log('Backend booking data:', data);
     return NextResponse.json(data);
-    */
   } catch (error) {
     console.error('Proxy error:', error);
     return NextResponse.json(

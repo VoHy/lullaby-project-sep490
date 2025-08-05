@@ -5,35 +5,23 @@ export async function POST(request, { params }) {
     const { invoiceId } = await params;
     const body = await request.json();
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-    
+
     const response = await fetch(`${backendUrl}/api/TransactionHistory/InvoicePayment/${invoiceId}`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body)
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      
-      try {
-        const errorData = JSON.parse(errorText);
-        return NextResponse.json(
-          { error: errorData.message || 'Thanh toán invoice thất bại' },
-          { status: response.status }
-        );
-      } catch (parseError) {
-        console.error('Failed to parse error response as JSON:', parseError);
-        return NextResponse.json(
-          { error: `Server error: ${response.status} - ${errorText.substring(0, 100)}` },
-          { status: response.status }
-        );
-      }
+      const errorData = await response.json();
+      return NextResponse.json(
+        { error: errorData.error || `Thanh toán invoice #${invoiceId} thất bại` },
+        { status: response.status }
+      );
     }
 
     const data = await response.json();
-    return NextResponse.json(data, { status: 201 });
+    return NextResponse.json(data);
   } catch (error) {
     console.error('Proxy error:', error);
     return NextResponse.json(

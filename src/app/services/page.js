@@ -196,9 +196,37 @@ export default function ServicesPage() {
   // Handle booking
   const handleBook = (serviceId, type = 'service') => {
     if (type === 'package') {
-      router.push(`/booking?package=${serviceId}`);
+      // Tìm thông tin package
+      const packageInfo = serviceTypes.find(s => s.serviceID === serviceId);
+      if (packageInfo) {
+        const packageData = {
+          serviceName: packageInfo.serviceName,
+          major: packageInfo.major,
+          price: packageInfo.price,
+          duration: packageInfo.duration,
+          description: packageInfo.description,
+          serviceID: packageInfo.serviceID
+        };
+        router.push(`/booking?package=${serviceId}&packageData=${encodeURIComponent(JSON.stringify(packageData))}`);
+      } else {
+        router.push(`/booking?package=${serviceId}`);
+      }
     } else {
-      router.push(`/booking?service=${serviceId}`);
+      // Tìm thông tin service
+      const serviceInfo = serviceTypes.find(s => s.serviceID === serviceId);
+      if (serviceInfo) {
+        const serviceData = {
+          serviceName: serviceInfo.serviceName,
+          major: serviceInfo.major,
+          price: serviceInfo.price,
+          duration: serviceInfo.duration,
+          description: serviceInfo.description,
+          serviceID: serviceInfo.serviceID
+        };
+        router.push(`/booking?service=${serviceId}&serviceData=${encodeURIComponent(JSON.stringify(serviceData))}`);
+      } else {
+        router.push(`/booking?service=${serviceId}`);
+      }
     }
   };
 

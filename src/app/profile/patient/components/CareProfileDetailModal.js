@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import zoneDetailService from '@/services/api/zoneDetailService';
 import zoneService from '@/services/api/zoneService';
+import { formatDateToDDMMYYYY } from '../../utils/dateUtils';
 
 export default function CareProfileDetailModal({ open, onClose, care, zones, zoneDetails, successMessage }) {
   const [detailedZoneDetail, setDetailedZoneDetail] = useState(null);
@@ -66,12 +67,6 @@ export default function CareProfileDetailModal({ open, onClose, care, zones, zon
       })
     : null;
 
-  function formatDate(dateStr) {
-    if (!dateStr) return '';
-    if (dateStr.includes('T')) return dateStr.split('T')[0];
-    return dateStr;
-  }
-
   // Tạo chuỗi hiển thị khu vực
   const getZoneDisplayText = () => {
     // Sử dụng detailed data nếu có
@@ -114,7 +109,7 @@ export default function CareProfileDetailModal({ open, onClose, care, zones, zon
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <div className="text-xs text-gray-500">Ngày sinh</div>
-                <div className="font-medium text-gray-800">{formatDate(care.dateOfBirth) || 'N/A'}</div>
+                <div className="font-medium text-gray-800">{formatDateToDDMMYYYY(care.dateOfBirth) || 'N/A'}</div>
               </div>
               <div>
                 <div className="text-xs text-gray-500">Số điện thoại</div>

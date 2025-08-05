@@ -57,7 +57,6 @@ const ManagerBookingTab = () => {
         const [
           bookingsData,
           accountsData,
-          careProfilesData,
           serviceTypesData,
           // customizePackagesData,
           // customizeTasksData,
@@ -66,9 +65,8 @@ const ManagerBookingTab = () => {
           nursingSpecialistsData,
           zonesData
         ] = await Promise.all([
-          bookingService.getAllBookings(),
+          bookingService.getAllBookingsWithCareProfile(),
           accountService.getAllAccounts(),
-          careProfileService.getCareProfiles(),
           serviceTypeService.getServiceTypes(),
           // customizePackageService.getCustomizePackages(),
           // customizeTaskService.getCustomizeTasks(),
@@ -80,7 +78,6 @@ const ManagerBookingTab = () => {
 
         setAllBookings(bookingsData);
         setAccounts(accountsData);
-        setCareProfiles(careProfilesData);
         setServiceTypes(serviceTypesData);
         // setCustomizePackages(customizePackagesData);
         // setCustomizeTasks(customizeTasksData);
@@ -105,8 +102,9 @@ const ManagerBookingTab = () => {
   const allSpecialists = accounts.filter(acc => acc.role_id === 2 && nursingSpecialists.find(s => s.AccountID === acc.AccountID));
 
   function getBookingDetail(booking) {
-    const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
-    const account = accounts.find(a => a.AccountID === careProfile?.AccountID);
+    // Sử dụng thông tin careProfile từ booking data thay vì tìm kiếm riêng
+    const careProfile = booking.careProfile;
+    const account = accounts.find(a => a.AccountID === careProfile?.accountID);
     let service = null;
     let packageInfo = null;
 
@@ -170,10 +168,10 @@ const ManagerBookingTab = () => {
 
     // Lọc booking có care profile thuộc khu vực quản lý
     const filteredBookings = bookings.filter(booking => {
-      const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
+      const careProfile = booking.careProfile;
       if (!careProfile) return false;
 
-      const zoneDetail = zoneDetails.find(z => z.ZoneDetailID === careProfile.ZoneDetailID);
+      const zoneDetail = zoneDetails.find(z => z.ZoneDetailID === careProfile.zoneDetailID);
       if (!zoneDetail) return false;
 
       // Chỉ hiển thị booking thuộc khu vực quản lý của manager

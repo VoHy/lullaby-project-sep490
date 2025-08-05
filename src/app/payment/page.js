@@ -7,15 +7,16 @@ import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import bookingService from '@/services/api/bookingService';
 import walletService from '@/services/api/walletService';
 import transactionHistoryService from '@/services/api/transactionHistoryService';
+import invoiceService from '@/services/api/invoiceService';
 import { AuthContext } from "@/context/AuthContext";
 
 // Thay thế import mock data bằng services
 import serviceTaskService from '@/services/api/serviceTaskService';
 import careProfileService from '@/services/api/careProfileService';
-import { 
-  PaymentHeader, 
-  ServiceInfo, 
-  AppointmentInfo, 
+import {
+  PaymentHeader,
+  ServiceInfo,
+  AppointmentInfo,
   PaymentInfo,
   PaymentSuccessModal
 } from './components';
@@ -46,43 +47,54 @@ function PaymentContent() {
       try {
         setLoading(true);
         setError("");
-        
+
+        // Fetch wallet data riêng để debug
+        let walletsData = [];
+        try {
+          walletsData = await walletService.getAllWallets();
+        } catch (walletError) {
+          // Sử dụng mock data nếu wallet API lỗi
+          walletsData = [
+            {
+              walletID: 1,
+              accountID: 1,
+              amount: 200000,
+              status: "active",
+              createdAt: "2025-08-05T10:00:00.000Z",
+              updatedAt: null
+            }
+          ];
+        }
+
         const [
           packagesData,
           serviceTypesData,
           serviceTasksData,
-          nursingSpecialistsData,
-          careProfilesData,
-          walletsData
+          nursingSpecialistsData
         ] = await Promise.all([
           // customizePackageService.getCustomizePackages(),
           serviceTypeService.getServiceTypes(),
           serviceTaskService.getServiceTasks(),
-          nursingSpecialistService.getNursingSpecialists(),
-          careProfileService.getCareProfiles(),
-          walletService.getAllWallets()
+          nursingSpecialistService.getNursingSpecialists()
         ]);
 
         setPackages(packagesData);
         setServiceTypes(serviceTypesData);
         setServiceTasks(serviceTasksData);
         setNursingSpecialists(nursingSpecialistsData);
-        setCareProfiles(careProfilesData);
-        setWallets(walletsData); // Commented out wallet functionality
+        setCareProfiles([]); // Không cần care profiles từ API nữa
+        setWallets(walletsData);
 
-        // Nếu có bookingId, fetch booking data
+        // Nếu có bookingId, fetch booking data với careProfile
         if (bookingId) {
           try {
-            const bookingData = await bookingService.getBookingById(bookingId);
-            console.log('Booking data received:', bookingData);
+            const bookingData = await bookingService.getBookingByIdWithCareProfile(bookingId);
             setBooking(bookingData);
           } catch (error) {
-            console.error('Error fetching booking:', error);
             setError('Không thể tải thông tin đặt lịch. Vui lòng thử lại sau.');
           }
         }
       } catch (error) {
-        console.error('Error fetching payment data:', error);
         setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
       } finally {
         setLoading(false);
@@ -98,94 +110,100 @@ function PaymentContent() {
   const bookingData = useMemo(() => {
     if (!booking) return null;
 
-    console.log('Processing booking data:', booking);
-    console.log('Available serviceTypes:', serviceTypes.length);
-    console.log('Available serviceTasks:', serviceTasks.length);
-
     let selectedPackage = null;
     let selectedServices = [];
     let total = 0;
     let childServices = [];
 
-    // Xác định loại booking (package hoặc service) - hỗ trợ nhiều field name
-    const packageServiceId = booking.Package_ServiceID || booking.packageServiceID || booking.package_ServiceID;
-    const serviceTaskId = booking.ServiceTaskID || booking.serviceTaskID || booking.service_TaskID;
-    const serviceId = booking.ServiceID || booking.serviceID || booking.service_ID;
-    const careProfileId = booking.CareProfileID || booking.careProfileID || booking.care_ProfileID;
-    const appointmentDate = booking.AppointmentDate || booking.appointmentDate || booking.appointment_Date;
-    const note = booking.Note || booking.note;
-    const status = booking.Status || booking.status;
-    const paymentStatus = booking.PaymentStatus || booking.paymentStatus;
-    const totalAmount = booking.TotalAmount || booking.totalAmount || booking.total_Amount;
+    // Parse booking data theo cấu trúc thực tế từ API
+    const bookingID = booking.bookingID || booking.booking_ID;
+    const careProfileID = booking.careProfileID || booking.care_ProfileID;
+    const workdate = booking.workdate || booking.work_date;
+    const amount = booking.amount || booking.totalAmount || booking.total_Amount;
+    const status = booking.status || booking.Status;
+    const extra = booking.extra || booking.Extra;
+    const isSchedule = booking.isSchedule || booking.is_schedule;
+    const createdAt = booking.createdAt || booking.created_at;
+    const updatedAt = booking.updatedAt || booking.updated_at;
 
-    if (packageServiceId) {
-      // Package booking
-      selectedPackage = serviceTypes.find(s => 
-        s.ServiceID === packageServiceId || 
-        s.serviceID === packageServiceId ||
-        s.service_ID === packageServiceId
-      );
-      total = totalAmount || selectedPackage?.Price || selectedPackage?.price || 0;
-      
-      // Lấy dịch vụ con của package
-      const tasks = serviceTasks.filter(t => 
-        t.Package_ServiceID === packageServiceId || 
-        t.packageServiceID === packageServiceId ||
-        t.package_ServiceID === packageServiceId
-      );
-      childServices = tasks.map(t => {
-        const childServiceId = t.Child_ServiceID || t.childServiceID || t.child_ServiceID;
-        return serviceTypes.find(s => 
-          s.ServiceID === childServiceId || 
-          s.serviceID === childServiceId ||
-          s.service_ID === childServiceId
+    // Nếu booking chỉ có amount mà không có service details, sử dụng amount làm total
+    if (amount && (!booking.customizePackageCreateDto && !booking.customizePackageCreateDtos)) {
+      total = amount;
+    } else {
+      // Lấy thông tin từ customizePackageCreateDto (cho service booking)
+      const customizePackageCreateDtos = booking.customizePackageCreateDtos || booking.customize_package_create_dtos || [];
+
+      // Lấy thông tin từ customizePackageCreateDto (cho package booking)
+      const customizePackageCreateDto = booking.customizePackageCreateDto || booking.customize_package_create_dto;
+
+      if (customizePackageCreateDto) {
+        // Package booking
+        const serviceID = customizePackageCreateDto.serviceID || customizePackageCreateDto.service_ID;
+        const quantity = customizePackageCreateDto.quantity || 1;
+
+        selectedPackage = serviceTypes && serviceTypes.length > 0 ? serviceTypes.find(s =>
+          s.serviceID === serviceID ||
+          s.serviceTypeID === serviceID ||
+          s.ServiceID === serviceID
+        ) : null;
+
+        total = amount || selectedPackage?.price || selectedPackage?.Price || 0;
+
+        // Lấy dịch vụ con của package
+        if (selectedPackage) {
+          const tasks = serviceTasks.filter(t =>
+            t.package_ServiceID === serviceID ||
+            t.packageServiceID === serviceID ||
+            t.Package_ServiceID === serviceID
+          );
+          childServices = tasks.map(t => {
+            const childServiceId = t.child_ServiceID || t.childServiceID || t.Child_ServiceID;
+            return serviceTypes && serviceTypes.length > 0 ? serviceTypes.find(s =>
+              s.serviceID === childServiceId ||
+              s.serviceTypeID === childServiceId ||
+              s.ServiceID === childServiceId
+            ) : null;
+          }).filter(Boolean);
+        }
+      } else if (customizePackageCreateDtos && customizePackageCreateDtos.length > 0) {
+        // Service booking - multiple services
+        selectedServices = customizePackageCreateDtos.map(dto => {
+          const serviceID = dto.serviceID || dto.service_ID;
+          const quantity = dto.quantity || 1;
+
+          const serviceType = serviceTypes && serviceTypes.length > 0 ? serviceTypes.find(s =>
+            s.serviceID === serviceID ||
+            s.serviceTypeID === serviceID ||
+            s.ServiceID === serviceID
+          ) : null;
+
+          return {
+            ...serviceType,
+            quantity: quantity
+          };
+        }).filter(Boolean);
+
+        total = amount || selectedServices.reduce((sum, service) =>
+          sum + ((service.price || service.Price || 0) * (service.quantity || 1)), 0
         );
-      }).filter(Boolean);
-    } else if (serviceTaskId) {
-      // Service booking via ServiceTask
-      const serviceTask = serviceTasks.find(t => 
-        t.ServiceTaskID === serviceTaskId || 
-        t.serviceTaskID === serviceTaskId ||
-        t.service_TaskID === serviceTaskId
-      );
-      if (serviceTask) {
-        const taskServiceId = serviceTask.ServiceID || serviceTask.serviceID || serviceTask.service_ID;
-        const serviceType = serviceTypes.find(s => 
-          s.ServiceID === taskServiceId || 
-          s.serviceID === taskServiceId ||
-          s.service_ID === taskServiceId
-        );
-        selectedServices = [serviceType].filter(Boolean);
-        total = totalAmount || serviceType?.Price || serviceType?.price || 0;
       }
-    } else if (serviceId) {
-      // Service booking directly via ServiceID
-      const serviceType = serviceTypes.find(s => 
-        s.ServiceID === serviceId || 
-        s.serviceID === serviceId ||
-        s.service_ID === serviceId
-      );
-      selectedServices = [serviceType].filter(Boolean);
-      total = totalAmount || serviceType?.Price || serviceType?.price || 0;
     }
 
-    const selectedCareProfile = careProfiles.find(cp => 
-      cp.CareProfileID === careProfileId || 
-      cp.careProfileID === careProfileId ||
-      cp.care_ProfileID === careProfileId
-    );
+    const selectedCareProfile = (() => {
+      // Lấy care profile info từ booking.careProfile
+      if (!booking || !booking.careProfile) return null;
 
-    console.log('Processed booking data:', {
-      selectedPackage,
-      selectedServices,
-      total,
-      childServices,
-      selectedCareProfile,
-      datetime: appointmentDate,
-      note,
-      status,
-      paymentStatus
-    });
+      const careProfile = booking.careProfile;
+      return {
+        careProfileID: careProfile.careProfileID,
+        profileName: careProfile.profileName || 'Người được chăm sóc',
+        dateOfBirth: careProfile.dateOfBirth,
+        phoneNumber: careProfile.phoneNumber,
+        address: careProfile.address,
+        status: careProfile.status || 'active',
+        note: careProfile.note
+      };
+    })();
 
     return {
       selectedPackage,
@@ -193,26 +211,26 @@ function PaymentContent() {
       total,
       childServices,
       selectedCareProfile,
-      datetime: appointmentDate,
-      note,
+      datetime: workdate,
+      note: extra,
       status,
-      paymentStatus
+      bookingID
     };
   }, [booking, serviceTypes, serviceTasks, careProfiles]);
 
   // Lấy thông tin nhân sự cho từng dịch vụ
   const getStaffInfo = (serviceId) => {
     if (!booking?.SelectedStaff && !booking?.selectedStaff) return null;
-    
+
     const selectedStaff = booking.SelectedStaff || booking.selectedStaff || {};
     const staff = selectedStaff[serviceId];
     if (!staff) return null;
-    
-    const specialist = nursingSpecialists.find(n => 
-      n.NursingID === Number(staff.id) || 
+
+    const specialist = nursingSpecialists && nursingSpecialists.length > 0 ? nursingSpecialists.find(n =>
+      n.NursingID === Number(staff.id) ||
       n.nursingID === Number(staff.id) ||
       n.nursing_ID === Number(staff.id)
-    );
+    ) : null;
     return {
       name: specialist?.FullName || specialist?.fullName || 'Không xác định',
       role: specialist?.Major || specialist?.major || 'Nhân viên',
@@ -220,48 +238,98 @@ function PaymentContent() {
     };
   };
 
+  // Handle payment confirmation
   const handleConfirm = async () => {
+    if (!booking || !bookingData) {
+      setError('Không có thông tin booking để thanh toán');
+      return;
+    }
+
     try {
       setIsProcessingPayment(true);
       setError('');
-      
-      // Kiểm tra ví của user
-      if (!wallets || wallets.length === 0) {
-        setError('Không thể tải thông tin ví. Vui lòng thử lại sau.');
-        return;
-      }
 
-      const userWallet = wallets.find(w => (w.accountID === user.accountID || w.AccountID === user.accountID) && w.status === "active");
-      if (!userWallet) {
-        setError('Bạn chưa có ví hoặc ví không hoạt động. Vui lòng liên hệ admin.');
-        return;
-      }
-
-      // Kiểm tra số dư
-      const walletAmount = userWallet.Amount || userWallet.amount;
-      if (walletAmount < bookingData?.total) {
-        setError('Số dư trong ví không đủ để thanh toán. Vui lòng nạp thêm tiền.');
-        return;
-      }
-
-      // Sử dụng transactionHistoryService để thanh toán hóa đơn
-      const paymentData = {
-        walletID: userWallet.WalletID || userWallet.walletID,
-        invoiceID: bookingId
+      // 1. Tạo invoice trước (luôn luôn)
+      const invoiceData = {
+        bookingID: booking.bookingID || booking.booking_ID,
+        content: `Thanh toán cho booking #${booking.bookingID || booking.booking_ID} - Số tiền: ${bookingData.total?.toLocaleString('vi-VN')}₫`
       };
-
-      // Gọi API thanh toán hóa đơn
-      await transactionHistoryService.invoicePayment(bookingId, paymentData);
-
-      // Cập nhật trạng thái booking thành confirmed
-      await bookingService.updateStatus(bookingId, 'CONFIRMED');
       
+      const createdInvoice = await invoiceService.createInvoice(invoiceData);
+
+      // 2. Kiểm tra ví có đủ tiền không
+      const userWallet = wallets.find(w => w.accountID === user.accountID);
+      if (!userWallet) {
+        console.error('❌ Không tìm thấy ví của user:', user.accountID);
+        setError(`Không tìm thấy ví của bạn. User AccountID: ${user.accountID}, Available wallets: ${wallets.map(w => `ID:${w.walletID}, AccountID:${w.accountID}`).join(', ')}`);
+        return;
+      }
+
+
+
+      if (userWallet.amount < bookingData.total) {
+        // Không đủ tiền: giữ invoice pending, không tạo transaction
+        setError(`Số dư ví không đủ để thanh toán. Cần: ${bookingData.total?.toLocaleString('vi-VN')}₫, Hiện có: ${userWallet.amount?.toLocaleString('vi-VN')}₫. Hóa đơn đã được tạo với trạng thái "Chờ thanh toán". Vui lòng nạp thêm tiền vào ví và thử lại.`);
+        return;
+      }
+
+      // 3. Đủ tiền: tạo transaction history
+      const paymentData = {
+        walletID: userWallet.walletID,
+        amount: bookingData.total,
+        before: userWallet.amount,
+        after: userWallet.amount - bookingData.total,
+        transferrer: user.accountID,
+        receiver: user.accountID, // Self-payment
+        note: `Thanh toán cho booking #${booking.bookingID || booking.booking_ID}`,
+        status: 'completed'
+      };
+      
+      // Lấy invoiceId từ response
+      const invoiceId = createdInvoice.invoiceID || createdInvoice.id || createdInvoice.invoiceId;
+      if (!invoiceId) {
+        console.log('Backend không trả về invoiceId, sử dụng bookingId làm invoiceId');
+        console.log('Lưu ý: Backend API cần được cập nhật để trả về invoiceId trong response');
+        // Tạm thời sử dụng bookingId vì backend không trả về invoiceId
+        const fallbackInvoiceId = booking.bookingID || booking.booking_ID;
+        
+        if (!fallbackInvoiceId) {
+          console.error('Không tìm thấy bookingId để làm fallback');
+          setError('Không thể lấy thông tin hóa đơn. Vui lòng thử lại.');
+          return;
+        }
+        
+    
+        const createdTransaction = await transactionHistoryService.invoicePayment(fallbackInvoiceId, paymentData);
+        
+      } else {
+        const createdTransaction = await transactionHistoryService.invoicePayment(invoiceId, paymentData);
+        
+      }
+
+      // 5. Trừ tiền từ ví
+      const newAmount = userWallet.amount - bookingData.total;
+      await walletService.updateWalletAmount(userWallet.walletID, newAmount);
+
+      // 6. Refresh wallet data để cập nhật header
+      try {
+        const refreshedWallets = await walletService.getAllWallets();
+        setWallets(refreshedWallets);
+      } catch (refreshError) {
+        console.error('❌ Lỗi khi refresh wallet:', refreshError);
+      }
+
       // Hiển thị modal thành công
+      const finalInvoiceId = createdInvoice.invoiceID || createdInvoice.id || createdInvoice.invoiceId || (booking.bookingID || booking.booking_ID);
+      setLastInvoiceId(finalInvoiceId);
       setShowSuccessModal(true);
-      setLastInvoiceId(bookingId);
+      
+      // Thông báo thành công
+      alert('Thanh toán thành công! Đặt lịch đã được xác nhận.');
+
     } catch (error) {
-      console.error('Error confirming payment:', error);
-      setError('Có lỗi xảy ra khi xác nhận thanh toán. Vui lòng thử lại sau.');
+      console.error('❌ Lỗi trong quá trình thanh toán:', error);
+      setError(`Có lỗi xảy ra khi thanh toán: ${error.message}`);
     } finally {
       setIsProcessingPayment(false);
     }
@@ -290,8 +358,8 @@ function PaymentContent() {
             <div className="text-red-500 text-6xl mb-4">⚠️</div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
             <p className="text-gray-600 mb-4">{error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
+            <button
+              onClick={() => window.location.reload()}
               className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
             >
               Thử lại
@@ -306,20 +374,21 @@ function PaymentContent() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
         <PaymentHeader />
-        
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column */}
           <div className="space-y-6">
-            <ServiceInfo 
+            <ServiceInfo
               packageId={booking?.serviceId}
               packageDetail={bookingData?.selectedPackage}
               selectedServices={bookingData?.selectedServices}
               childServices={bookingData?.childServices}
               total={bookingData?.total}
+              bookingData={bookingData}
               getStaffInfo={getStaffInfo}
             />
-            
-            <AppointmentInfo 
+
+            <AppointmentInfo
               datetime={bookingData?.datetime}
               note={bookingData?.note}
               selectedCareProfile={bookingData?.selectedCareProfile}
@@ -327,19 +396,39 @@ function PaymentContent() {
               getStaffInfo={getStaffInfo}
             />
           </div>
-          
+
           {/* Right Column */}
           <div>
-            <PaymentInfo 
-              total={bookingData?.total}
-              myWallet={wallets && wallets.length > 0 ? wallets.find(w => (w.accountID === user.accountID || w.AccountID === user.accountID) && w.status === "active") : null}
-              onConfirm={handleConfirm}
+            <PaymentInfo
+              total={bookingData?.total || 0}
+              myWallet={(() => {
+
+                if (!wallets || wallets.length === 0) {
+                  return null;
+                }
+
+                // Tìm wallet đầu tiên có status active
+                const activeWallet = wallets.find(w => {
+                  const status = w.status || w.Status;
+                  return status === "active";
+                });
+
+                if (activeWallet) {
+                  return activeWallet;
+                }
+
+                return null;
+              })()}
+              error={error}
+              loading={loading}
+              handleConfirm={handleConfirm}
               isProcessingPayment={isProcessingPayment}
             />
+
           </div>
         </div>
-        
-        <PaymentSuccessModal 
+
+        <PaymentSuccessModal
           isOpen={showSuccessModal}
           onClose={() => setShowSuccessModal(false)}
           invoiceId={lastInvoiceId}

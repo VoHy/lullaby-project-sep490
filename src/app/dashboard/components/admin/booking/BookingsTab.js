@@ -10,9 +10,9 @@ import { useState, useEffect } from 'react';
 import careProfileService from '@/services/api/careProfileService';
 import accountService from '@/services/api/accountService';
 import serviceTypeService from '@/services/api/serviceTypeService';
-// import bookingService from '@/services/api/bookingService';
+import bookingService from '@/services/api/bookingService';
 import customizePackageService from '@/services/api/customizePackageService';
-import customizeTaskService from '@/services/api/customizeTaskService';
+// import customizeTaskService from '@/services/api/customizeTaskService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 
@@ -40,7 +40,7 @@ const BookingsTab = ({ bookings }) => {
           accountsData,
           serviceTypesData,
           customizePackagesData,
-          customizeTasksData,
+          // customizeTasksData,
           serviceTasksData,
           nursingSpecialistsData
         ] = await Promise.all([
@@ -48,7 +48,7 @@ const BookingsTab = ({ bookings }) => {
           accountService.getAllAccounts(),
           serviceTypeService.getServiceTypes(),
           customizePackageService.getCustomizePackages(),
-          customizeTaskService.getCustomizeTasks(),
+          // customizeTaskService.getCustomizeTasks(),
           serviceTaskService.getServiceTasks(),
           nursingSpecialistService.getNursingSpecialists()
         ]);
@@ -57,7 +57,7 @@ const BookingsTab = ({ bookings }) => {
         setAccounts(accountsData);
         setServiceTypes(serviceTypesData);
         setCustomizePackages(customizePackagesData);
-        setCustomizeTasks(customizeTasksData);
+        // setCustomizeTasks(customizeTasksData);
         setServiceTasks(serviceTasksData);
         setNursingSpecialists(nursingSpecialistsData);
       } catch (error) {
@@ -82,20 +82,20 @@ const BookingsTab = ({ bookings }) => {
     } else if (booking.CareProfileID) {
       service = serviceTypes.find(s => s.ServiceID === booking.CareProfileID);
     }
-    const customizeTasksOfBooking = customizeTasks.filter(t => t.BookingID === booking.BookingID);
-    const serviceTasksOfBooking = customizeTasksOfBooking.map(task => {
-      const serviceTask = serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
-      const nurse = nursingSpecialists.find(n => n.NursingID === task.NursingID);
-      return {
-        ...serviceTask,
-        price: task.Price,
-        quantity: task.Quantity,
-        total: task.Total,
-        status: task.Status,
-        nurseName: nurse?.FullName,
-        nurseRole: nurse?.Major
-      };
-    });
+    // const customizeTasksOfBooking = customizeTasks.filter(t => t.BookingID === booking.BookingID);
+    // const serviceTasksOfBooking = customizeTasksOfBooking.map(task => {
+    //   const serviceTask = serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
+    //   const nurse = nursingSpecialists.find(n => n.NursingID === task.NursingID);
+    //   return {
+    //     ...serviceTask,
+    //     price: task.Price,
+    //     quantity: task.Quantity,
+    //     total: task.Total,
+    //     status: task.Status,
+    //     nurseName: nurse?.FullName,
+    //     nurseRole: nurse?.Major
+    //   };
+    // });
     return { careProfile, account, service, packageInfo, serviceTasksOfBooking };
   }
 

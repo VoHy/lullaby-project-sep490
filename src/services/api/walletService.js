@@ -15,13 +15,21 @@ const walletService = {
 
   // Get all wallets
   getAllWallets: async () => {
-    const res = await fetch('/api/wallet/getall', {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách wallets');
-    return data;
+    try {
+      const res = await fetch('/api/wallet/getall', {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      const data = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(data.error || 'Không thể lấy danh sách wallets');
+      }
+      return data;
+    } catch (error) {
+      throw error;
+    }
   },
 
   // Get wallet by ID
@@ -44,6 +52,18 @@ const walletService = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Tạo wallet thất bại');
+    return data;
+  },
+
+  // Update wallet amount
+  updateWalletAmount: async (walletId, newAmount) => {
+    const res = await fetch(`/api/wallet/${walletId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ amount: newAmount })
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể cập nhật số dư wallet');
     return data;
   },
 

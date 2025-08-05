@@ -10,7 +10,18 @@ const serviceTypeService = {
 
   // Thêm method getServiceTypes để đảm bảo
   getServiceTypes: async () => {
-    const res = await fetch('/api/servicetypes', {
+    const res = await fetch('/api/servicetypes/getall', {
+      method: 'GET',
+      headers: { 'Content-Type': 'application/json' }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách service types');
+    return data;
+  },
+
+  // Alias cho getAllServiceTypes để tương thích
+  getAllServiceTypes: async () => {
+    const res = await fetch('/api/servicetypes/getall', {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });

@@ -66,8 +66,8 @@ export default function TeamPage() {
   }, []);
 
   // Phân biệt Y tá và Chuyên gia
-  const nurses = nursingSpecialists.filter(m => m && (m.Major || m.major) && (m.Major || m.major).toLowerCase().includes('y tá'));
-  const specialists = nursingSpecialists.filter(m => m && (m.Major || m.major) && !(m.Major || m.major).toLowerCase().includes('y tá'));
+  const nurses = nursingSpecialists.filter(m => m && (m.Major || m.major) && (m.Major || m.major).toLowerCase().includes('nurse'));
+  const specialists = nursingSpecialists.filter(m => m && (m.Major || m.major) && !(m.Major || m.major).toLowerCase().includes('nurse'));
 
   // Map Address hoặc ZoneID sang Zone_name
   const getZoneName = (addressOrZoneID) => {
@@ -199,7 +199,7 @@ export default function TeamPage() {
       />
       <h3 className="text-lg font-bold text-blue-700 mb-1 flex items-center gap-2">
         {member.FullName || member.Nurse_Name || member.fullName}
-        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ml-2 ${(member.Major || member.major) && (member.Major || member.major).toLowerCase().includes('y tá') ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{member.Major || member.major}</span>
+          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ml-2 ${(member.Major || member.major) && (member.Major || member.major).toLowerCase().includes('nurse') ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{member.Major || member.major}</span>
       </h3>
       <div className="flex items-center gap-2 mb-2">
         <span className="text-gray-600 text-sm">{getZoneName(member.ZoneID || member.zoneID || member.Address || member.address)}</span>
@@ -333,11 +333,11 @@ export default function TeamPage() {
                     className="w-28 h-28 rounded-full object-cover mx-auto mb-4 border-4 border-pink-200 shadow-xl"
                   />
                   <div className={`absolute -bottom-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-lg ${
-                    (detailData.Status || detailData.status) === 'Active' 
+                    (detailData.Status || detailData.status) === 'active' 
                       ? 'bg-green-500 text-white' 
                       : 'bg-red-500 text-white'
                   }`}>
-                    {detailData.Status || detailData.status === 'Active' ? '✓' : '✗'}
+                    {detailData.Status || detailData.status === 'active' ? '✓' : '✗'}
                   </div>
                 </div>
                 <h3 className="text-2xl font-bold text-gray-800 mb-2">
