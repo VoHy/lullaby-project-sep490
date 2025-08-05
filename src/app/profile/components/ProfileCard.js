@@ -1,7 +1,8 @@
+import React from 'react';
 import { FaEdit, FaSave, FaTimes, FaUser, FaEnvelope, FaPhone, FaCalendar, FaShieldAlt } from "react-icons/fa";
 import { formatDateToDDMMYYYY } from '../utils/dateUtils';
 
-export default function ProfileCard({ profile, isEditing, editData, onEditClick, onInputChange, onSave, onCancel, loading, error, roleName }) {
+const ProfileCard = React.memo(({ profile, isEditing, editData, onEditClick, onInputChange, onSave, onCancel, loading, error, roleName }) => {
   if (!profile) return null;
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-8">
@@ -140,4 +141,6 @@ export default function ProfileCard({ profile, isEditing, editData, onEditClick,
       )}
     </div>
   );
-} 
+});
+
+export default ProfileCard; 

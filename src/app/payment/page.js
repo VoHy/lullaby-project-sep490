@@ -13,10 +13,10 @@ import { AuthContext } from "@/context/AuthContext";
 // Thay thế import mock data bằng services
 import serviceTaskService from '@/services/api/serviceTaskService';
 import careProfileService from '@/services/api/careProfileService';
-import {
-  PaymentHeader,
-  ServiceInfo,
-  AppointmentInfo,
+import { 
+  PaymentHeader, 
+  ServiceInfo, 
+  AppointmentInfo, 
   PaymentInfo,
   PaymentSuccessModal
 } from './components';
@@ -47,7 +47,7 @@ function PaymentContent() {
       try {
         setLoading(true);
         setError("");
-
+        
         // Fetch wallet data riêng để debug
         let walletsData = [];
         try {
@@ -65,7 +65,7 @@ function PaymentContent() {
             }
           ];
         }
-
+        
         const [
           packagesData,
           serviceTypesData,
@@ -132,7 +132,7 @@ function PaymentContent() {
     } else {
       // Lấy thông tin từ customizePackageCreateDto (cho service booking)
       const customizePackageCreateDtos = booking.customizePackageCreateDtos || booking.customize_package_create_dtos || [];
-
+      
       // Lấy thông tin từ customizePackageCreateDto (cho package booking)
       const customizePackageCreateDto = booking.customizePackageCreateDto || booking.customize_package_create_dto;
 
@@ -140,26 +140,26 @@ function PaymentContent() {
         // Package booking
         const serviceID = customizePackageCreateDto.serviceID || customizePackageCreateDto.service_ID;
         const quantity = customizePackageCreateDto.quantity || 1;
-
-        selectedPackage = serviceTypes && serviceTypes.length > 0 ? serviceTypes.find(s =>
-          s.serviceID === serviceID ||
+        
+        selectedPackage = serviceTypes && serviceTypes.length > 0 ? serviceTypes.find(s => 
+          s.serviceID === serviceID || 
           s.serviceTypeID === serviceID ||
           s.ServiceID === serviceID
         ) : null;
-
+        
         total = amount || selectedPackage?.price || selectedPackage?.Price || 0;
-
+        
         // Lấy dịch vụ con của package
         if (selectedPackage) {
-          const tasks = serviceTasks.filter(t =>
-            t.package_ServiceID === serviceID ||
+          const tasks = serviceTasks.filter(t => 
+            t.package_ServiceID === serviceID || 
             t.packageServiceID === serviceID ||
             t.Package_ServiceID === serviceID
           );
           childServices = tasks.map(t => {
             const childServiceId = t.child_ServiceID || t.childServiceID || t.Child_ServiceID;
-            return serviceTypes && serviceTypes.length > 0 ? serviceTypes.find(s =>
-              s.serviceID === childServiceId ||
+            return serviceTypes && serviceTypes.length > 0 ? serviceTypes.find(s => 
+              s.serviceID === childServiceId || 
               s.serviceTypeID === childServiceId ||
               s.ServiceID === childServiceId
             ) : null;
@@ -170,20 +170,20 @@ function PaymentContent() {
         selectedServices = customizePackageCreateDtos.map(dto => {
           const serviceID = dto.serviceID || dto.service_ID;
           const quantity = dto.quantity || 1;
-
-          const serviceType = serviceTypes && serviceTypes.length > 0 ? serviceTypes.find(s =>
-            s.serviceID === serviceID ||
+          
+          const serviceType = serviceTypes && serviceTypes.length > 0 ? serviceTypes.find(s => 
+            s.serviceID === serviceID || 
             s.serviceTypeID === serviceID ||
             s.ServiceID === serviceID
           ) : null;
-
+          
           return {
             ...serviceType,
             quantity: quantity
           };
         }).filter(Boolean);
-
-        total = amount || selectedServices.reduce((sum, service) =>
+        
+        total = amount || selectedServices.reduce((sum, service) => 
           sum + ((service.price || service.Price || 0) * (service.quantity || 1)), 0
         );
       }
@@ -221,13 +221,13 @@ function PaymentContent() {
   // Lấy thông tin nhân sự cho từng dịch vụ
   const getStaffInfo = (serviceId) => {
     if (!booking?.SelectedStaff && !booking?.selectedStaff) return null;
-
+    
     const selectedStaff = booking.SelectedStaff || booking.selectedStaff || {};
     const staff = selectedStaff[serviceId];
     if (!staff) return null;
-
-    const specialist = nursingSpecialists && nursingSpecialists.length > 0 ? nursingSpecialists.find(n =>
-      n.NursingID === Number(staff.id) ||
+    
+    const specialist = nursingSpecialists && nursingSpecialists.length > 0 ? nursingSpecialists.find(n => 
+      n.NursingID === Number(staff.id) || 
       n.nursingID === Number(staff.id) ||
       n.nursing_ID === Number(staff.id)
     ) : null;
@@ -254,7 +254,7 @@ function PaymentContent() {
         bookingID: booking.bookingID || booking.booking_ID,
         content: `Thanh toán cho booking #${booking.bookingID || booking.booking_ID} - Số tiền: ${bookingData.total?.toLocaleString('vi-VN')}₫`
       };
-      
+
       const createdInvoice = await invoiceService.createInvoice(invoiceData);
 
       // 2. Kiểm tra ví có đủ tiền không
@@ -358,8 +358,8 @@ function PaymentContent() {
             <div className="text-red-500 text-6xl mb-4">⚠️</div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
             <p className="text-gray-600 mb-4">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
+            <button 
+              onClick={() => window.location.reload()} 
               className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
             >
               Thử lại
@@ -374,11 +374,11 @@ function PaymentContent() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
         <PaymentHeader />
-
+        
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column */}
           <div className="space-y-6">
-            <ServiceInfo
+            <ServiceInfo 
               packageId={booking?.serviceId}
               packageDetail={bookingData?.selectedPackage}
               selectedServices={bookingData?.selectedServices}
@@ -387,8 +387,8 @@ function PaymentContent() {
               bookingData={bookingData}
               getStaffInfo={getStaffInfo}
             />
-
-            <AppointmentInfo
+            
+            <AppointmentInfo 
               datetime={bookingData?.datetime}
               note={bookingData?.note}
               selectedCareProfile={bookingData?.selectedCareProfile}
@@ -396,27 +396,27 @@ function PaymentContent() {
               getStaffInfo={getStaffInfo}
             />
           </div>
-
+          
           {/* Right Column */}
           <div>
-            <PaymentInfo
+            <PaymentInfo 
               total={bookingData?.total || 0}
               myWallet={(() => {
-
+                
                 if (!wallets || wallets.length === 0) {
                   return null;
                 }
-
+                
                 // Tìm wallet đầu tiên có status active
                 const activeWallet = wallets.find(w => {
                   const status = w.status || w.Status;
                   return status === "active";
                 });
-
+                
                 if (activeWallet) {
                   return activeWallet;
                 }
-
+                
                 return null;
               })()}
               error={error}
@@ -424,11 +424,11 @@ function PaymentContent() {
               handleConfirm={handleConfirm}
               isProcessingPayment={isProcessingPayment}
             />
-
+            
           </div>
         </div>
-
-        <PaymentSuccessModal
+        
+        <PaymentSuccessModal 
           isOpen={showSuccessModal}
           onClose={() => setShowSuccessModal(false)}
           invoiceId={lastInvoiceId}
