@@ -61,15 +61,17 @@ export const formatPrice = (price) => {
 
 export const filterAppointments = (appointments, searchText, statusFilter, dateFilter) => {
   return appointments.filter(appointment => {
+    const bookingId = appointment.bookingID || appointment.BookingID;
     const matchesSearch = searchText === '' || 
-      appointment.BookingID.toString().includes(searchText) ||
-      appointment.Note?.toLowerCase().includes(searchText.toLowerCase());
+      bookingId.toString().includes(searchText) ||
+      appointment.Note?.toLowerCase().includes(searchText.toLowerCase()) ||
+      appointment.note?.toLowerCase().includes(searchText.toLowerCase());
     
-    const matchesStatus = statusFilter === 'all' || appointment.Status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || appointment.Status === statusFilter || appointment.status === statusFilter;
     
     let matchesDate = true;
-    if (dateFilter !== 'all' && appointment.BookingDate) {
-      const appointmentDate = new Date(appointment.BookingDate);
+    if (dateFilter !== 'all' && (appointment.BookingDate || appointment.workdate)) {
+      const appointmentDate = new Date(appointment.BookingDate || appointment.workdate);
       const today = new Date();
       
       switch (dateFilter) {

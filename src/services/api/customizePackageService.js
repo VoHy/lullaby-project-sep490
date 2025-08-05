@@ -1,6 +1,6 @@
 import { createService } from './serviceFactory';
 
-const customizePackageService = createService('CustomizePackage', 'CustomizePackage');
+const customizePackageService = createService('customizepackages', 'CustomizePackage');
 
 // Thêm các methods đặc biệt cho CustomizePackage
 const customizePackageServiceExtended = {

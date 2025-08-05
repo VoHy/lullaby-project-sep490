@@ -59,15 +59,15 @@ export default function AppointmentsPage() {
         setLoading(true);
       }
       setError(null);
-      
-      console.log('🔄 Fetching appointments data...');
-      
+
+      // Fetching appointments data...
+
       const [
-        bookings, 
-        services, 
-        specialists, 
+        bookings,
+        services,
+        specialists,
         // taskData,
-        // packageData,
+        packageData,
         invoiceData,
         transactionData
       ] = await Promise.all([
@@ -75,12 +75,12 @@ export default function AppointmentsPage() {
         serviceTypeService.getServiceTypes(),
         nursingSpecialistService.getNursingSpecialists(),
         // customizeTaskService.getCustomizeTasks(),
-        // customizePackageService.getAllByBooking(), // Comment out tạm thời vì có lỗi
+        customizePackageService.getAllCustomizePackages(),
         invoiceService.getInvoices(),
         transactionHistoryService.getAllTransactionHistoriesByAccount(user.accountID)
       ]);
 
-      console.log('✅ Data fetched successfully');
+      // Data fetched successfully
 
       // Get user's care profiles từ booking data (optimized)
       const userCareProfiles = bookings
@@ -89,15 +89,16 @@ export default function AppointmentsPage() {
       const userCareProfileIds = new Set(userCareProfiles.map(cp => cp.careProfileID));
 
       // Filter appointments for user's care profiles (optimized with Set)
-      const userAppointments = bookings.filter(booking => 
+      const userAppointments = bookings.filter(booking =>
         userCareProfileIds.has(booking.careProfileID)
       );
-      
+
       setAppointments(userAppointments);
       setServiceTypes(services);
       setNursingSpecialists(specialists);
       // setCustomizeTasks(taskData); // Tạm thời bỏ qua vì service chưa hoàn thiện
-      // setCustomizePackages(packageData); // Comment out tạm thời vì có lỗi
+      // console.log('📦 Package data:', packageData);
+      setCustomizePackages(packageData);
       setInvoices(invoiceData);
       setTransactionHistories(transactionData);
 
@@ -108,13 +109,16 @@ export default function AppointmentsPage() {
           serviceTypes: services,
           nursingSpecialists: specialists,
           // customizeTasks: taskData,
-          // customizePackages: packageData, // Comment out tạm thời vì có lỗi
+          customizePackages: packageData,
           invoices: invoiceData,
           transactionHistories: transactionData,
           timestamp: Date.now()
         };
         localStorage.setItem('appointmentsCache', JSON.stringify(cacheData));
       }
+
+      // Clear cache để force refresh dữ liệu
+      localStorage.removeItem('appointmentsCache');
     } catch (error) {
       console.error('❌ Error fetching appointments:', error);
       setError('Không thể tải dữ liệu. Vui lòng thử lại.');
@@ -137,12 +141,12 @@ export default function AppointmentsPage() {
         const cacheValid = cacheAge < 5 * 60 * 1000; // 5 minutes
 
         if (cacheValid) {
-          console.log('📦 Loading from cache...');
+          // Loading from cache...
           setAppointments(parsed.appointments);
           setServiceTypes(parsed.serviceTypes);
           setNursingSpecialists(parsed.nursingSpecialists);
           // setCustomizeTasks(parsed.customizeTasks);
-          // setCustomizePackages(parsed.customizePackages); // Comment out tạm thời vì có lỗi
+          setCustomizePackages(parsed.customizePackages);
           setInvoices(parsed.invoices);
           setTransactionHistories(parsed.transactionHistories);
           setLoading(false);
@@ -157,16 +161,16 @@ export default function AppointmentsPage() {
   }, [fetchData]);
 
   // Optimized memoized functions for better performance
-  const filteredAppointments = useMemo(() => 
+  const filteredAppointments = useMemo(() =>
     filterAppointments(appointments, searchText, statusFilter, dateFilter),
     [appointments, searchText, statusFilter, dateFilter]
   );
 
   // Memoized helper functions
-  const getServiceNamesWithContext = useCallback((serviceIds) => 
+  const getServiceNamesWithContext = useCallback((serviceIds) =>
     getServiceNames(serviceIds, serviceTypes), [serviceTypes]);
 
-  const getNurseNamesWithContext = useCallback((nurseIds) => 
+  const getNurseNamesWithContext = useCallback((nurseIds) =>
     getNurseNames(nurseIds, nursingSpecialists), [nursingSpecialists]);
 
   // Optimized care profile name lookup with Map
@@ -190,18 +194,22 @@ export default function AppointmentsPage() {
     appointments.forEach(booking => {
       // Tạm thời bỏ qua tasks vì customizeTaskService chưa hoàn thiện
       const tasks = []; // customizeTasks.filter(task => task.BookingID === booking.BookingID);
-      // Tạm thời bỏ qua packages vì có lỗi API
-      const packages = []; // customizePackages.filter(pkg => pkg.BookingID === booking.BookingID);
-      
-      map.set(booking.BookingID, {
+      const packages = customizePackages.filter(pkg => {
+        const pkgBookingId = pkg.bookingID || pkg.BookingID;
+        const bookingId = booking.bookingID || booking.BookingID;
+        return pkgBookingId === bookingId;
+      });
+
+      const bookingId = booking.bookingID || booking.BookingID;
+      map.set(bookingId, {
         tasks,
         packages,
-        totalAmount: tasks.reduce((sum, task) => sum + task.Total, 0) + 
-                     packages.reduce((sum, pkg) => sum + pkg.Total, 0)
+        totalAmount: tasks.reduce((sum, task) => sum + task.Total, 0) +
+          packages.reduce((sum, pkg) => sum + pkg.Total, 0)
       });
     });
     return map;
-  }, [appointments]);
+  }, [appointments, customizePackages]);
 
   const getBookingDetails = useCallback((bookingId) => {
     return bookingDetailsMap.get(bookingId) || { tasks: [], packages: [], totalAmount: 0 };
@@ -213,12 +221,13 @@ export default function AppointmentsPage() {
     // Tạm thời bỏ qua customizeTasks vì service chưa hoàn thiện
     // const serviceMap = new Map(serviceTypes.map(s => [s.ServiceID, s.ServiceName]));
     // const nurseMap = new Map(nursingSpecialists.map(n => [n.NursingID, n.FullName]));
-    
+
     // customizeTasks.forEach(task => {
     //   if (!map.has(task.BookingID)) {
     //     map.set(task.BookingID, []);
     //   }
     //   map.get(task.BookingID).push({
+    //     serviceID: task.ServiceID,
     //     serviceName: serviceMap.get(task.ServiceID) || 'Không xác định',
     //     nurseName: nurseMap.get(task.NursingID) || 'Chưa phân công',
     //     price: task.Total,
@@ -236,20 +245,40 @@ export default function AppointmentsPage() {
   // Optimized packages lookup with memoization
   const bookingPackagesMap = useMemo(() => {
     const map = new Map();
-    // Tạm thời bỏ qua packages vì có lỗi API
-    // customizePackages.forEach(pkg => {
-    //   if (!map.has(pkg.BookingID)) {
-    //     map.set(pkg.BookingID, []);
-    //   }
-    //   map.get(pkg.BookingID).push({
-    //     packageName: pkg.Name,
-    //     description: pkg.Description,
-    //     price: pkg.Total,
-    //     status: pkg.Status
-    //   });
-    // });
+    customizePackages.forEach(pkg => {
+      const bookingId = pkg.bookingID || pkg.BookingID;
+      if (!map.has(bookingId)) {
+        map.set(bookingId, []);
+      }
+      // Tìm service name dựa trên serviceID nếu có
+      let serviceName = pkg.serviceName || pkg.ServiceName;
+      let serviceDescription = pkg.description || pkg.Description;
+      if (pkg.ServiceID || pkg.serviceID) {
+        const serviceID = pkg.ServiceID || pkg.serviceID;
+        // Thử cả number và string comparison
+        const serviceType = serviceTypes.find(st =>
+          st.serviceID === serviceID ||
+          st.serviceID === Number(serviceID) ||
+          Number(st.serviceID) === serviceID
+        );
+        if (serviceType) {
+          serviceName = serviceType.serviceName;
+          serviceDescription = serviceType.description;
+        }
+      }
+
+      map.get(bookingId).push({
+        packageName: pkg.Name || pkg.name,
+        description: pkg.Description || pkg.description,
+        price: pkg.Total || pkg.total || pkg.Price || pkg.price,
+        status: pkg.Status || pkg.status,
+        serviceID: pkg.ServiceID || pkg.serviceID,
+        serviceName: serviceName,
+        serviceDescription: serviceDescription
+      });
+    });
     return map;
-  }, []);
+  }, [customizePackages, serviceTypes]);
 
   const getBookingPackages = useCallback((bookingId) => {
     return bookingPackagesMap.get(bookingId) || [];
@@ -257,7 +286,9 @@ export default function AppointmentsPage() {
 
   // Get invoice for a booking
   const getBookingInvoice = useCallback((bookingId) => {
-    const bookingInvoices = invoices.filter(inv => inv.bookingID === bookingId);
+    const bookingInvoices = invoices.filter(inv =>
+      inv.bookingID === bookingId || inv.booking_ID === bookingId
+    );
     return bookingInvoices;
   }, [invoices]);
 

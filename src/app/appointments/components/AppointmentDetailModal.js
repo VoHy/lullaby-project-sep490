@@ -24,10 +24,11 @@ const AppointmentDetailModal = ({
 
   if (!appointment) return null;
 
-  const bookingServices = getBookingServices(appointment.bookingID);
-  const bookingPackages = getBookingPackages(appointment.bookingID);
-  const bookingDetails = getBookingDetails(appointment.bookingID);
-  const bookingInvoices = getBookingInvoice(appointment.bookingID);
+  const bookingId = appointment.bookingID || appointment.BookingID;
+  const bookingServices = getBookingServices(bookingId);
+  const bookingPackages = getBookingPackages(bookingId);
+  const bookingDetails = getBookingDetails(bookingId);
+  const bookingInvoices = getBookingInvoice(bookingId);
 
   return (
     <motion.div
@@ -50,7 +51,7 @@ const AppointmentDetailModal = ({
         </button>
 
         <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          Chi tiết lịch hẹn #{appointment.bookingID}
+          Chi tiết lịch hẹn #{appointment.bookingID || appointment.BookingID}
         </h2>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -152,11 +153,29 @@ const AppointmentDetailModal = ({
                           {getStatusText(pkg.status)}
                         </span>
                       </div>
-                      <p className="text-sm text-gray-600 mb-2">{pkg.description}</p>
+                      {pkg.description && (
+                        <p className="text-sm text-gray-600 mb-2">{pkg.description}</p>
+                      )}
                       <div className="flex items-center justify-between">
                         <span className="text-sm text-gray-500">Giá:</span>
                         <span className="font-bold text-purple-600">{pkg.price?.toLocaleString('vi-VN') || '0'}đ</span>
                       </div>
+                      {/* Hiển thị thông tin chi tiết nếu có */}
+                      {pkg.serviceID && (
+                        <div className="mt-2 pt-2 border-t border-purple-200">
+                          <div className="text-xs text-gray-500">
+                            ID dịch vụ: {pkg.serviceID}
+                          </div>
+                          {pkg.serviceName && (
+                            <div className="text-xs text-gray-500">
+                              Tên dịch vụ: {pkg.serviceName}
+                            </div>
+                          )}
+                          <div className="text-xs text-gray-500">
+                            Mô tả: {pkg.serviceDescription}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -171,23 +190,34 @@ const AppointmentDetailModal = ({
                   Dịch vụ chi tiết
                 </h3>
                 <div className="space-y-3">
-                  {bookingServices.map((service, index) => (
-                    <div key={index} className="bg-blue-50 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-2">
-                        <h4 className="font-semibold text-blue-700">{service.serviceName}</h4>
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(service.status)}`}>
-                          {getStatusText(service.status)}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between mb-2">
-                        <div className="flex items-center gap-2">
-                          <FaUser className="text-blue-500 text-xs" />
-                          <span className="text-sm text-gray-600">{service.nurseName}</span>
+                  {bookingServices.map((service, index) => {
+                    // Tìm service type dựa trên serviceID
+                    const serviceType = serviceTypes.find(st => st.ServiceID === service.serviceID);
+                    const serviceName = serviceType ? serviceType.ServiceName : service.serviceName || 'Không xác định';
+                    
+                    return (
+                      <div key={index} className="bg-blue-50 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-2">
+                          <h4 className="font-semibold text-blue-700">{serviceName}</h4>
+                          <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(service.status)}`}>
+                            {getStatusText(service.status)}
+                          </span>
                         </div>
-                        <span className="font-bold text-blue-600">{service.price?.toLocaleString('vi-VN') || '0'}đ</span>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-2">
+                            <FaUser className="text-blue-500 text-xs" />
+                            <span className="text-sm text-gray-600">{service.nurseName}</span>
+                          </div>
+                          <span className="font-bold text-blue-600">{service.price?.toLocaleString('vi-VN') || '0'}đ</span>
+                        </div>
+                        {service.serviceID && (
+                          <div className="text-xs text-gray-500 mt-1">
+                            ID dịch vụ: {service.serviceID}
+                          </div>
+                        )}
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}

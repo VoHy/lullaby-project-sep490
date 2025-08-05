@@ -20,9 +20,10 @@ const AppointmentCard = ({
   getBookingDetails,
   getBookingPaymentHistory
 }) => {
-  const bookingServices = getBookingServices(appointment.bookingID);
-  const bookingPackages = getBookingPackages(appointment.bookingID);
-  const bookingDetails = getBookingDetails(appointment.bookingID);
+  const bookingId = appointment.bookingID || appointment.BookingID;
+  const bookingServices = getBookingServices(bookingId);
+  const bookingPackages = getBookingPackages(bookingId);
+  const bookingDetails = getBookingDetails(bookingId);
 
   return (
     <motion.div
@@ -38,7 +39,7 @@ const AppointmentCard = ({
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-gray-900">
-              Lịch hẹn #{appointment.bookingID}
+              Lịch hẹn #{appointment.bookingID || appointment.BookingID}
             </h3>
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
               {getStatusText(appointment.status)}
