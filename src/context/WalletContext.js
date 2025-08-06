@@ -82,15 +82,17 @@ export const WalletProvider = ({ children }) => {
       setWallet(processedWallet);
       console.log('🔍 WalletContext: Set wallet state:', processedWallet);
       
-      // Lấy lịch sử giao dịch nếu có ví
-      if (processedWallet) {
+      // Lấy lịch sử giao dịch - KHÔNG để lỗi này block wallet loading
+      try {
         console.log('🔍 WalletContext: Lấy transaction history cho account:', accountId);
         const historyData = await transactionHistoryService.getAllTransactionHistoriesByAccount(accountId);
         console.log('🔍 WalletContext: Transaction history:', historyData);
-        setTransactions(historyData || []);
-      } else {
-        setTransactions([]);
+        setTransactions(Array.isArray(historyData) ? historyData : []);
+      } catch (historyError) {
+        console.error('⚠️ WalletContext: Transaction history error (non-blocking):', historyError);
+        setTransactions([]); // Set empty array instead of failing
       }
+      
     } catch (error) {
       console.error('❌ WalletContext: Error fetching wallet data:', error);
       setError(error.message);

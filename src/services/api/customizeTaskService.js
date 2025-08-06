@@ -1,80 +1,148 @@
 import { createService } from './serviceFactory';
+// Tạo base service với factory
+const baseCustomizeTaskService = createService('customizetask', 'CustomizeTask', true);
 
-const customizeTaskService = createService('CustomizeTask', 'CustomizeTask', true);
+// Thêm methods đặc biệt cho CustomizeTask
+const customizeTaskService = {
+  // GET /api/CustomizeTask/GetAll
+  getAllCustomizeTasks: async () => {
+    try {
+      console.log('🔄 Fetching all customize tasks...');
+      const res = await fetch('/api/customizetask/getall');
+      
+      // Check if response is OK
+      if (!res.ok) {
+        console.error('❌ API response not ok:', res.status, res.statusText);
+        throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+      }
+      
+      // Check if response is JSON
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        const text = await res.text();
+        console.error('❌ Response is not JSON:', text.substring(0, 200));
+        throw new Error('Server returned non-JSON response');
+      }
+      
+      const data = await res.json();
+      console.log('✅ Fetched customize tasks:', data);
+      return data || [];
+    } catch (error) {
+      console.error('❌ Error fetching customize tasks:', error);
+      // Return empty array instead of throwing to prevent app crash
+      return [];
+    }
+  },
 
-// Thêm các methods đặc biệt cho CustomizeTask
-const customizeTaskServiceExtended = {
-  // Lấy tất cả CustomizeTask
-  getAllCustomizeTasks: customizeTaskService.getCustomizeTasks,
-  
-  // Lấy CustomizeTask theo ID
-  getCustomizeTaskById: customizeTaskService.getCustomizeTaskById,
-  
-  // Xóa CustomizeTask
-  deleteCustomizeTask: customizeTaskService.deleteCustomizeTask,
-  
-  // Lấy tất cả CustomizeTask theo CustomizePackage ID
-  getAllByCustomizePackage: async (customizePackageId) => {
-    const res = await fetch(`/api/customizetasks/getallbycustomizepackage/${customizePackageId}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(typeof window !== 'undefined' && localStorage.getItem('token') && { 
-          'Authorization': `Bearer ${localStorage.getItem('token')}` 
-        })
-      }
-    });
+  // GET /api/CustomizeTask/{customizeTaskId}
+  getCustomizeTaskById: async (customizeTaskId) => {
+    const res = await fetch(`/api/customizetask/${customizeTaskId}`);
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách CustomizeTask theo CustomizePackage');
+    if (!res.ok) throw new Error(data.error || 'Lấy customize task thất bại');
     return data;
   },
-  
-  // Lấy tất cả CustomizeTask theo Booking ID
-  getAllByBooking: async (bookingId) => {
-    const res = await fetch(`/api/customizetasks/getallbybooking/${bookingId}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(typeof window !== 'undefined' && localStorage.getItem('token') && { 
-          'Authorization': `Bearer ${localStorage.getItem('token')}` 
-        })
-      }
+
+  // DELETE /api/CustomizeTask/{customizeTaskId}
+  deleteCustomizeTask: async (customizeTaskId) => {
+    const res = await fetch(`/api/customizetask/${customizeTaskId}`, {
+      method: 'DELETE'
     });
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách CustomizeTask theo Booking');
+    if (!res.ok) throw new Error(data.error || 'Xóa customize task thất bại');
     return data;
   },
-  
-  // Cập nhật Status của CustomizeTask theo CustomizePackage ID
-  updateStatus: async (customizePackageId, status) => {
-    const res = await fetch(`/api/customizetasks/updatestatus/${customizePackageId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(typeof window !== 'undefined' && localStorage.getItem('token') && { 
-          'Authorization': `Bearer ${localStorage.getItem('token')}` 
-        })
-      },
-      body: JSON.stringify({ status })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể cập nhật status của CustomizeTask');
-    return data;
-  },
-  
-  // Cập nhật Nursing cho CustomizeTask
-  updateNursing: async (customizeTaskId, nursingId) => {
-    const res = await fetch(`/api/customizetasks/updatenursing/${customizeTaskId}/${nursingId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(typeof window !== 'undefined' && localStorage.getItem('token') && { 
-          'Authorization': `Bearer ${localStorage.getItem('token')}` 
-        })
+
+  // GET /api/CustomizeTask/GetAllByBooking/{bookingId}
+  getTasksByBooking: async (bookingId) => {
+    try {
+      console.log(`🔄 Fetching tasks for booking ${bookingId}...`);
+      const res = await fetch(`/api/customizetask/getallbybooking/${bookingId}`);
+      
+      if (!res.ok) {
+        console.error('❌ API response not ok:', res.status, res.statusText);
+        return [];
       }
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể cập nhật Nursing cho CustomizeTask');
-    return data;
+      
+      const contentType = res.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        console.error('❌ Response is not JSON for booking:', bookingId);
+        return [];
+      }
+      
+      const data = await res.json();
+      console.log(`✅ Fetched tasks for booking ${bookingId}:`, data);
+      return data || [];
+    } catch (error) {
+      console.error(`❌ Error fetching tasks for booking ${bookingId}:`, error);
+      return [];
+    }
+  },
+
+  // GET /api/CustomizeTask/GetAllByCustomizePackage/{customizePackageId}
+  getTasksByPackage: async (customizePackageId) => {
+    try {
+      const res = await fetch(`/api/customizetask/getallbycustomizepackage/${customizePackageId}`);
+      
+      if (!res.ok) {
+        console.error('❌ API response not ok:', res.status, res.statusText);
+        return [];
+      }
+      
+      const data = await res.json();
+      console.log(`✅ Fetched tasks for package ${customizePackageId}:`, data);
+      return data || [];
+    } catch (error) {
+      console.error(`❌ Error fetching tasks for package ${customizePackageId}:`, error);
+      return [];
+    }
+  },
+
+  // PUT /api/CustomizeTask/UpdateNursing/{customizeTaskId}/{nursingId}
+  updateTaskNursing: async (customizeTaskId, nursingId) => {
+    try {
+      console.log(`🔄 Updating nursing for task ${customizeTaskId} to nursing ${nursingId}`);
+      const res = await fetch(`/api/customizetask/updatenursing/${customizeTaskId}/${nursingId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${res.status}`);
+      }
+      
+      const data = await res.json();
+      console.log(`✅ Updated nursing for task ${customizeTaskId}:`, data);
+      return data;
+    } catch (error) {
+      console.error('❌ Error updating task nursing:', error);
+      throw error;
+    }
+  },
+
+  // PUT /api/CustomizeTask/UpdateStatus/{customizePackageId}
+  updateTaskStatus: async (customizePackageId, statusData) => {
+    try {
+      console.log(`🔄 Updating status for package ${customizePackageId}:`, statusData);
+      const res = await fetch(`/api/customizetask/updatestatus/${customizePackageId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(statusData)
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${res.status}`);
+      }
+      
+      const data = await res.json();
+      console.log(`✅ Updated status for package ${customizePackageId}:`, data);
+      return data;
+    } catch (error) {
+      console.error('❌ Error updating task status:', error);
+      throw error;
+    }
   }
 };
 
-export default customizeTaskServiceExtended; 
+export default customizeTaskService;

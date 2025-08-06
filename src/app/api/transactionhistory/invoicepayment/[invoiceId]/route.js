@@ -3,30 +3,40 @@ import { NextResponse } from 'next/server';
 export async function POST(request, { params }) {
   try {
     const { invoiceId } = await params;
-    const body = await request.json();
+    
+    // Sửa: Không parse body nếu không có
+    let body = null;
+    try {
+      const text = await request.text();
+      if (text && text.trim() !== '') {
+        body = JSON.parse(text);
+      }
+    } catch (parseError) {
+      console.log('No request body or invalid JSON, proceeding without body');
+    }
+    
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
 
+    console.log('Calling backend InvoicePayment with invoiceId:', invoiceId);
+    
     const response = await fetch(`${backendUrl}/api/TransactionHistory/InvoicePayment/${invoiceId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
+      headers: { 
+        'Content-Type': 'application/json'
+      },
+      // Chỉ gửi body nếu có
+      ...(body && { body: JSON.stringify(body) })
     });
 
+    const data = await response.json();
+    
     if (!response.ok) {
-      const errorData = await response.json();
-      return NextResponse.json(
-        { error: errorData.error || `Thanh toán invoice #${invoiceId} thất bại` },
-        { status: response.status }
-      );
+      return Response.json({ error: data.message || 'Payment failed' }, { status: response.status });
     }
 
-    const data = await response.json();
-    return NextResponse.json(data);
+    return Response.json(data);
   } catch (error) {
-    console.error('Proxy error:', error);
-    return NextResponse.json(
-      { error: `Không thể kết nối đến server: ${error.message}` },
-      { status: 500 }
-    );
+    console.error('InvoicePayment error:', error);
+    return Response.json({ error: error.message }, { status: 500 });
   }
-} 
+}

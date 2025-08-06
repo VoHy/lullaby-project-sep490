@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { FaUser, FaCheck, FaEye, FaUserCircle, FaBox, FaStethoscope } from 'react-icons/fa';
-import NurseSelectionModal from './NurseSelectionModal';
+import { FaUser, FaCheck, FaEye, FaUserCircle, FaBox, FaStethoscope, FaTasks } from 'react-icons/fa';
+import TaskList from './TaskList';
 
 const AppointmentCard = ({ 
   appointment, 
@@ -21,22 +21,12 @@ const AppointmentCard = ({
   getCareProfileName,
   getBookingServices,
   getBookingPackages,
-  getBookingDetails,
-  getBookingPaymentHistory
+  getBookingDetails
 }) => {
   const bookingId = appointment.bookingID || appointment.BookingID;
   const bookingServices = getBookingServices(bookingId);
   const bookingPackages = getBookingPackages(bookingId);
   const bookingDetails = getBookingDetails(bookingId);
-  
-  // Get customize tasks for this booking
-  const bookingCustomizeTasks = customizeTasks?.filter(task => 
-    task.bookingID === bookingId || task.BookingID === bookingId
-  ) || [];
-  
-  // State for nurse selection modal
-  const [showNurseModal, setShowNurseModal] = useState(false);
-  const [selectedTaskId, setSelectedTaskId] = useState(null);
 
   return (
     <motion.div
@@ -52,10 +42,10 @@ const AppointmentCard = ({
         <div className="p-6 border-b border-gray-100">
           <div className="flex items-center justify-between mb-4">
             <h3 className="text-xl font-bold text-gray-900">
-              Lịch hẹn #{appointment.bookingID || appointment.BookingID}
+              Lịch hẹn #{bookingId}
             </h3>
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status)}`}>
-              {getStatusText(appointment.status)}
+            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status || appointment.Status)}`}>
+              {getStatusText(appointment.status || appointment.Status)}
             </span>
           </div>
 
@@ -67,8 +57,14 @@ const AppointmentCard = ({
             </h4>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <FaUser className="text-purple-500" />
-              <span className="font-medium">{getCareProfileName(appointment.careProfileID)}</span>
+              <span className="font-medium">{getCareProfileName(appointment.careProfileID || appointment.CareProfileID)}</span>
             </div>
+          </div>
+
+          {/* Date and Time */}
+          <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
+            <FaUser className="text-purple-500" />
+            <span>{formatDate(appointment.workdate || appointment.Workdate || appointment.BookingDate)}</span>
           </div>
 
           {/* Packages */}
@@ -76,50 +72,43 @@ const AppointmentCard = ({
             <div className="mb-4">
               <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
                 <FaBox className="text-purple-500" />
-                Gói dịch vụ:
+                Gói dịch vụ ({bookingPackages.length}):
               </h4>
               <div className="space-y-2">
-                {bookingPackages.map((pkg, index) => (
+                {bookingPackages.slice(0, 2).map((pkg, index) => (
                   <div key={index} className="flex items-center justify-between text-sm">
                     <div className="flex items-center gap-2">
                       <FaCheck className="text-green-500 text-xs" />
                       <span className="text-gray-600">{pkg.packageName}</span>
                     </div>
                     <span className="font-medium text-purple-600">
-                      {pkg.price?.toLocaleString('vi-VN') || '0'}đ
+                      {pkg.price?.toLocaleString('vi-VN') || '0'}₫
                     </span>
                   </div>
                 ))}
+                {bookingPackages.length > 2 && (
+                  <div className="text-xs text-gray-500 italic">
+                    +{bookingPackages.length - 2} gói khác...
+                  </div>
+                )}
               </div>
             </div>
           )}
 
-          {/* Services */}
-          {bookingServices.length > 0 && (
+          {/* Tasks */}
+          {customizeTasks && customizeTasks.length > 0 && (
             <div className="mb-4">
               <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                <FaStethoscope className="text-purple-500" />
-                Dịch vụ chi tiết:
+                <FaTasks className="text-purple-500" />
+                Nhiệm vụ chăm sóc:
               </h4>
-              <div className="space-y-2">
-                {bookingServices.slice(0, 3).map((service, index) => (
-                  <div key={index} className="flex items-center justify-between text-sm">
-                    <div className="flex items-center gap-2">
-                      <FaCheck className="text-green-500 text-xs" />
-                      <span className="text-gray-600">{service.serviceName}</span>
-                      <span className="text-xs text-gray-400">({service.nurseName})</span>
-                    </div>
-                    <span className="font-medium text-blue-600">
-                      {service.price?.toLocaleString('vi-VN') || '0'}đ
-                    </span>
-                  </div>
-                ))}
-                {bookingServices.length > 3 && (
-                  <div className="text-xs text-gray-500 italic">
-                    +{bookingServices.length - 3} dịch vụ khác...
-                  </div>
-                )}
-              </div>
+              <TaskList 
+                bookingId={bookingId}
+                tasks={customizeTasks}
+                onAssignNursing={onAssignNursing}
+                onUpdateStatus={(task) => console.log('Update status:', task)}
+                compact={true}
+              />
             </div>
           )}
 
@@ -127,69 +116,19 @@ const AppointmentCard = ({
           <div className="mb-4 p-3 bg-purple-50 rounded-lg">
             <div className="flex items-center justify-between">
               <span className="font-semibold text-gray-700">Tổng tiền:</span>
-                             <span className="text-lg font-bold text-purple-600">
-                 {appointment.amount?.toLocaleString('vi-VN') || '0'}đ
-               </span>
+              <span className="text-lg font-bold text-purple-600">
+                {(appointment.amount || appointment.Amount || bookingDetails.totalAmount || 0).toLocaleString('vi-VN')}₫
+              </span>
             </div>
-          </div>
-
-          {/* Date and Time */}
-          <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-            <FaUser className="text-purple-500" />
-            <span>{formatDate(appointment.workdate)}</span>
           </div>
 
           {/* Note */}
-          {appointment.note && (
+          {(appointment.note || appointment.Note) && (
             <div className="mb-4">
               <h4 className="font-semibold text-gray-700 mb-2">Ghi chú:</h4>
               <p className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg">
-                {appointment.note}
+                {appointment.note || appointment.Note}
               </p>
-            </div>
-          )}
-
-          {/* Customize Tasks */}
-          {bookingCustomizeTasks.length > 0 && (
-            <div className="mb-4">
-              <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
-                <FaStethoscope className="text-purple-500" />
-                Chi tiết dịch vụ:
-              </h4>
-              <div className="space-y-2">
-                {bookingCustomizeTasks.map((task, index) => (
-                  <div key={index} className="flex items-center justify-between text-sm p-2 bg-gray-50 rounded-lg">
-                    <div className="flex items-center gap-2">
-                      <FaCheck className="text-green-500 text-xs" />
-                      <span className="text-gray-600">{task.serviceTaskName || task.ServiceTaskName || 'Dịch vụ'}</span>
-                      {task.nursingID ? (
-                        <span className="text-xs text-green-600 font-medium">
-                          (Đã phân công: {nursingSpecialists.find(n => n.nursingID === task.nursingID)?.fullName || 'N/A'})
-                        </span>
-                      ) : (
-                        <span className="text-xs text-orange-600 font-medium">(Chưa phân công)</span>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-blue-600">
-                        {task.price?.toLocaleString('vi-VN') || '0'}đ
-                      </span>
-                      {!task.nursingID && (
-                        <button
-                          className="px-2 py-1 rounded bg-purple-500 text-white text-xs hover:bg-purple-600 transition-colors"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedTaskId(task.customizeTaskID || task.CustomizeTaskID);
-                            setShowNurseModal(true);
-                          }}
-                        >
-                          Add Nursing
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
             </div>
           )}
 
@@ -212,24 +151,8 @@ const AppointmentCard = ({
           </div>
         </div>
       </div>
-      
-      {/* Nurse Selection Modal */}
-      <NurseSelectionModal
-        isOpen={showNurseModal}
-        onClose={() => {
-          setShowNurseModal(false);
-          setSelectedTaskId(null);
-        }}
-        onAssign={(taskId, nurseId) => {
-          if (onAssignNursing) {
-            onAssignNursing(taskId, nurseId);
-          }
-        }}
-        nursingSpecialists={nursingSpecialists}
-        customizeTaskId={selectedTaskId}
-      />
     </motion.div>
   );
 };
 
-export default AppointmentCard; 
+export default AppointmentCard;

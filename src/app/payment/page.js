@@ -238,90 +238,128 @@ function PaymentContent() {
       setIsProcessingPayment(true);
       setError('');
 
-      // 1. Tạo invoice trước (luôn luôn)
-      const invoiceData = {
-        bookingID: booking.bookingID || booking.booking_ID,
-        content: `Thanh toán cho booking #${booking.bookingID || booking.booking_ID} - Số tiền: ${bookingData.total?.toLocaleString('vi-VN')}₫`
-      };
+      console.log('🔄 ===== STARTING PAYMENT PROCESS =====');
+      console.log('📋 Booking:', booking);
+      console.log('💰 Amount:', bookingData.total);
 
-      const createdInvoice = await invoiceService.createInvoice(invoiceData);
-
-      // 2. Kiểm tra ví có đủ tiền không
-      const userWallet = wallets.find(w => w.accountID === user.accountID);
+      // 1. Kiểm tra ví
+      const userWallet = wallets.find(w => 
+        (w.accountID || w.AccountID) === (user.accountID || user.AccountID)
+      );
+      
       if (!userWallet) {
-        console.error('❌ Không tìm thấy ví của user:', user.accountID);
-        setError(`Không tìm thấy ví của bạn. User AccountID: ${user.accountID}, Available wallets: ${wallets.map(w => `ID:${w.walletID}, AccountID:${w.accountID}`).join(', ')}`);
+        setError('Không tìm thấy ví của bạn. Vui lòng kiểm tra lại tài khoản.');
         return;
       }
 
+      const walletAmount = userWallet.amount || userWallet.Amount || 0;
+      console.log('💳 Wallet:', { walletID: userWallet.walletID, amount: walletAmount });
 
-
-      if (userWallet.amount < bookingData.total) {
-        // Không đủ tiền: giữ invoice pending, không tạo transaction
-        setError(`Số dư ví không đủ để thanh toán. Cần: ${bookingData.total?.toLocaleString('vi-VN')}₫, Hiện có: ${userWallet.amount?.toLocaleString('vi-VN')}₫. Hóa đơn đã được tạo với trạng thái "Chờ thanh toán". Vui lòng nạp thêm tiền vào ví và thử lại.`);
+      // 2. Kiểm tra số dư
+      if (walletAmount < bookingData.total) {
+        setError(`Số dư ví không đủ để thanh toán. Cần: ${bookingData.total?.toLocaleString('vi-VN')}₫, Hiện có: ${walletAmount?.toLocaleString('vi-VN')}₫`);
         return;
       }
 
-      // 3. Đủ tiền: tạo transaction history
-      const paymentData = {
-        walletID: userWallet.walletID,
-        amount: bookingData.total,
-        before: userWallet.amount,
-        after: userWallet.amount - bookingData.total,
-        transferrer: user.accountID,
-        receiver: user.accountID, // Self-payment
-        note: `Thanh toán cho booking #${booking.bookingID || booking.booking_ID}`,
-        status: 'completed'
+      // 3. Tạo invoice
+      const bookingID = parseInt(booking.bookingID || booking.booking_ID);
+      const invoiceData = {
+        bookingID: bookingID,
+        content: `Thanh toán booking #${bookingID}`
       };
 
-      // Lấy invoiceId từ response
-      const invoiceId = createdInvoice.invoiceID || createdInvoice.id || createdInvoice.invoiceId;
-      if (!invoiceId) {
-        console.log('Backend không trả về invoiceId, sử dụng bookingId làm invoiceId');
-        console.log('Lưu ý: Backend API cần được cập nhật để trả về invoiceId trong response');
-        // Tạm thời sử dụng bookingId vì backend không trả về invoiceId
-        const fallbackInvoiceId = booking.bookingID || booking.booking_ID;
+      console.log('📄 Creating invoice:', invoiceData);
+      const invoiceResponse = await invoiceService.createInvoice(invoiceData);
+      console.log('📄 Invoice response:', invoiceResponse);
 
-        if (!fallbackInvoiceId) {
-          console.error('Không tìm thấy bookingId để làm fallback');
-          setError('Không thể lấy thông tin hóa đơn. Vui lòng thử lại.');
-          return;
+      // 4. Check xem invoice đã paid chưa
+      if (invoiceResponse && typeof invoiceResponse === 'object' && 
+          invoiceResponse.message === 'Invoice paid successfully.') {
+        
+        console.log('✅ Invoice already paid - skipping payment API');
+        
+        // Lấy invoice để có invoiceId
+        try {
+          const existingInvoice = await invoiceService.getInvoiceByBooking(bookingID);
+          if (existingInvoice && existingInvoice.invoiceID) {
+            await handlePaymentSuccess(existingInvoice.invoiceID);
+            return; // Exit early vì đã thành công
+          }
+        } catch (getError) {
+          console.error('Error getting invoice:', getError);
         }
+        
+        // Fallback: coi như thành công với bookingID
+        await handlePaymentSuccess(bookingID);
+        return;
+      }
 
+      // 5. Gọi API InvoicePayment (tự động xử lý payment)
+      console.log('💳 Calling InvoicePayment API...');
+      
+      const paymentResponse = await fetch(`/api/transactionhistory/invoicepayment/${invoiceId}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+        // Không cần body - API tự động xử lý
+      });
 
-        const createdTransaction = await transactionHistoryService.invoicePayment(fallbackInvoiceId, paymentData);
+      console.log('💳 Payment API status:', paymentResponse.status);
 
+      if (paymentResponse.ok) {
+        const paymentData = await paymentResponse.json();
+        console.log('✅ Payment successful:', paymentData);
+        
+        // 6. Success handling
+        await handlePaymentSuccess(invoiceId);
+        
       } else {
-        const createdTransaction = await transactionHistoryService.invoicePayment(invoiceId, paymentData);
-
+        const errorData = await paymentResponse.json();
+        console.error('❌ Payment failed:', errorData);
+        
+        if (errorData.message === "This invoice has already paid.") {
+          // Invoice đã được thanh toán rồi - coi như thành công
+          console.log('✅ Invoice already paid - treating as success');
+          await handlePaymentSuccess(invoiceId);
+        } else {
+          throw new Error(errorData.message || 'Thanh toán thất bại');
+        }
       }
-
-      // 5. Trừ tiền từ ví
-      const newAmount = userWallet.amount - bookingData.total;
-      await walletService.updateWalletAmount(userWallet.walletID, newAmount);
-
-      // 6. Refresh wallet data để cập nhật header
-      try {
-        const refreshedWallets = await walletService.getAllWallets();
-        setWallets(refreshedWallets);
-      } catch (refreshError) {
-        console.error('❌ Lỗi khi refresh wallet:', refreshError);
-      }
-
-      // Hiển thị modal thành công
-      const finalInvoiceId = createdInvoice.invoiceID || createdInvoice.id || createdInvoice.invoiceId || (booking.bookingID || booking.booking_ID);
-      setLastInvoiceId(finalInvoiceId);
-      setShowSuccessModal(true);
-
-      // Thông báo thành công
-      alert('Thanh toán thành công! Đặt lịch đã được xác nhận.');
 
     } catch (error) {
-      console.error('❌ Lỗi trong quá trình thanh toán:', error);
-      setError(`Có lỗi xảy ra khi thanh toán: ${error.message}`);
+      console.error('❌ Payment error:', error);
+      
+      let errorMessage = 'Có lỗi xảy ra khi thanh toán';
+      if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsProcessingPayment(false);
     }
+  };
+
+  // Helper function xử lý thành công
+  const handlePaymentSuccess = async (invoiceId) => {
+    console.log('🎉 Payment successful!');
+
+    // Refresh wallet data
+    try {
+      const refreshedWallets = await walletService.getAllWallets();
+      setWallets(refreshedWallets);
+      console.log('✅ Wallet refreshed');
+    } catch (refreshError) {
+      console.warn('⚠️ Could not refresh wallet:', refreshError);
+    }
+
+    // Show success modal
+    setLastInvoiceId(invoiceId);
+    setShowSuccessModal(true);
+
+    // Auto redirect
+    setTimeout(() => {
+      router.push('/appointments');
+    }, 3000);
   };
 
   // Loading state
@@ -419,8 +457,16 @@ function PaymentContent() {
 
         <PaymentSuccessModal
           isOpen={showSuccessModal}
-          onClose={() => setShowSuccessModal(false)}
+          onClose={() => {
+            setShowSuccessModal(false);
+            router.push('/bookings');
+          }}
           invoiceId={lastInvoiceId}
+          amount={bookingData?.total}
+          onGoToBookings={() => {
+            setShowSuccessModal(false);
+            router.push('/bookings');
+          }}
         />
       </div>
     </div>
@@ -442,4 +488,4 @@ export default function PaymentPage() {
       <PaymentContent />
     </Suspense>
   );
-} 
+}
