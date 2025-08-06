@@ -9,6 +9,7 @@ import walletService from '@/services/api/walletService';
 import transactionHistoryService from '@/services/api/transactionHistoryService';
 import invoiceService from '@/services/api/invoiceService';
 import { AuthContext } from "@/context/AuthContext";
+import { useWalletContext } from "@/context/WalletContext";
 
 // Thay thế import mock data bằng services
 import serviceTaskService from '@/services/api/serviceTaskService';
@@ -37,6 +38,7 @@ function PaymentContent() {
   const [error, setError] = useState("");
 
   const { user } = useContext(AuthContext);
+  const { refreshWalletData } = useWalletContext();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastInvoiceId, setLastInvoiceId] = useState(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -345,9 +347,9 @@ function PaymentContent() {
 
     // Refresh wallet data
     try {
-      const refreshedWallets = await walletService.getAllWallets();
-      setWallets(refreshedWallets);
-      console.log('✅ Wallet refreshed');
+      console.log('🔄 Refreshing wallet data via WalletContext...');
+      await refreshWalletData();
+      console.log('✅ Wallet refreshed via WalletContext');
     } catch (refreshError) {
       console.warn('⚠️ Could not refresh wallet:', refreshError);
     }
@@ -457,13 +459,27 @@ function PaymentContent() {
 
         <PaymentSuccessModal
           isOpen={showSuccessModal}
-          onClose={() => {
+          onClose={async () => {
+            try {
+              console.log('🔄 Refreshing wallet from onClose...');
+              await refreshWalletData();
+              console.log('✅ Wallet refreshed from onClose');
+            } catch (error) {
+              console.warn('⚠️ Could not refresh wallet from onClose:', error);
+            }
             setShowSuccessModal(false);
             router.push('/bookings');
           }}
           invoiceId={lastInvoiceId}
           amount={bookingData?.total}
-          onGoToBookings={() => {
+          onGoToBookings={async () => {
+            try {
+              console.log('🔄 Refreshing wallet from onGoToBookings...');
+              await refreshWalletData();
+              console.log('✅ Wallet refreshed from onGoToBookings');
+            } catch (error) {
+              console.warn('⚠️ Could not refresh wallet from onGoToBookings:', error);
+            }
             setShowSuccessModal(false);
             router.push('/bookings');
           }}

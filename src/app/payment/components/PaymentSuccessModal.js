@@ -1,8 +1,10 @@
 import { FaCheckCircle, FaHistory, FaHome } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
+import { useWalletContext } from '@/context/WalletContext';
 
 export default function PaymentSuccessModal({ isOpen, onClose, invoiceId, amount }) {
   const router = useRouter();
+  const { refreshWalletData } = useWalletContext();
 
   if (!isOpen) return null;
 
@@ -32,13 +34,20 @@ export default function PaymentSuccessModal({ isOpen, onClose, invoiceId, amount
           
           {/* Action Button */}
           <button
-            onClick={() => {
+            onClick={async () => {
+              try {
+                console.log('🔄 Refreshing wallet from PaymentSuccessModal...');
+                await refreshWalletData();
+                console.log('✅ Wallet refreshed from PaymentSuccessModal');
+              } catch (error) {
+                console.warn('⚠️ Could not refresh wallet from modal:', error);
+              }
               onClose();
-              router.push('/bookings');
+              router.push('/appointments'); // Redirect to appointments page
             }}
             className="w-full px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors font-medium"
           >
-            Đi đến trang Booking ngay
+            Đi đến trang lịch hẹn ngay
           </button>
         </div>
       </div>

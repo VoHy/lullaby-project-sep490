@@ -130,16 +130,72 @@ export default function AppointmentsPage() {
   // Handle nurse assignment
   const handleNurseAssignment = async (service, nurseId) => {
     try {
-      // TODO: Implement nurse assignment API call here
-      // await someService.assignNurse(service.serviceID, nurseId);
+      console.log('🔄 Assigning nurse...', { service, nurseId });
+      
+      // Get booking ID
+      const bookingId = selectedAppointment?.bookingID || selectedAppointment?.BookingID;
+      if (!bookingId) {
+        throw new Error('Không tìm thấy booking ID');
+      }
 
+      // Case 1: Package service with taskId (từ service task)
+      if (service.taskId) {
+        // Directly use the taskId from service task
+        const customizeTaskId = service.taskId;
+        console.log('Updating package service task:', customizeTaskId);
+        
+        const { customizeTaskService } = await import('@/services/api');
+        await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId);
+      } 
+      // Case 2: Individual service - need to find corresponding CustomizeTask
+      else {
+        console.log('Finding CustomizeTask for individual service...');
+        
+        // Import customize services
+        const { customizeTaskService, customizePackageService } = await import('@/services/api');
+        
+        // Get all customize packages for this booking
+        const customizePackages = await customizePackageService.getAllByBooking(bookingId);
+        console.log('Customize packages:', customizePackages);
+        
+        // Find the customize package that matches the service
+        const serviceId = service.serviceID || service.serviceTypeID || service.ServiceID;
+        const matchingPackage = customizePackages.find(pkg => 
+          (pkg.serviceID === serviceId) || 
+          (pkg.service_ID === serviceId) || 
+          (pkg.Service_ID === serviceId)
+        );
+        
+        if (!matchingPackage) {
+          throw new Error('Không tìm thấy customize package tương ứng');
+        }
+        
+        // Get all customize tasks for this package
+        const customizePackageId = matchingPackage.customizePackageID || matchingPackage.customize_PackageID;
+        const customizeTasks = await customizeTaskService.getTasksByPackage(customizePackageId);
+        console.log('Customize tasks:', customizeTasks);
+        
+        if (customizeTasks.length === 0) {
+          throw new Error('Không tìm thấy customize task nào');
+        }
+        
+        // For individual service, update the first available task
+        // You might want to add more logic here to select the right task
+        const taskToUpdate = customizeTasks[0];
+        const customizeTaskId = taskToUpdate.customizeTaskID || taskToUpdate.customize_TaskID;
+        
+        console.log('Updating individual service task:', customizeTaskId);
+        await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId);
+      }
+
+      // Success notification
       alert('Đã phân công nurse thành công!');
 
       // Refresh data to show updated assignment
       await fetchData(true);
     } catch (error) {
       console.error(' Error assigning nurse:', error);
-      alert('Có lỗi xảy ra khi phân công nurse. Vui lòng thử lại.');
+      alert(`Có lỗi xảy ra khi phân công nurse: ${error.message}`);
     }
   };
 

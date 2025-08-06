@@ -4,7 +4,9 @@ export default function ServicesList({
   selectedServicesList, 
   packageId, 
   isDatetimeValid, 
-  total 
+  total,
+  quantity = 1, // Quantity cho single service
+  isMultipleServices = false // Flag để biết có phải multiple services không
 }) {
   return (
     <section className="border rounded-2xl p-4 md:p-6 bg-blue-50/60 shadow-sm">
@@ -26,9 +28,15 @@ export default function ServicesList({
                  <span className={`font-bold text-base md:text-lg ${s.isPackage ? 'text-purple-700' : s.isServiceTask ? 'text-blue-700' : 'text-blue-700'}`}>
                    {s.isPackage ? '📦 ' : s.isServiceTask ? '🔹 ' : ''}{s.serviceName || s.ServiceName || s.taskName || s.TaskName || 'Dịch vụ con'}
                  </span>
+                 {/* Hiển thị quantity cho dịch vụ lẻ */}
+                 {!packageId && !s.isPackage && !s.isServiceTask && (s.quantity > 1 || quantity > 1) && (
+                   <span className="bg-blue-100 text-blue-800 px-2 py-1 rounded-full text-xs font-semibold">
+                     x{s.quantity || quantity}
+                   </span>
+                 )}
                  {!packageId && !s.isPackage && !s.isServiceTask && (
                    <span className="ml-2 text-pink-600 font-bold text-sm md:text-base">
-                     {(s.price || s.Price)?.toLocaleString("vi-VN") ?? ""}
+                     {((s.price || s.Price) * (s.quantity || quantity))?.toLocaleString("vi-VN") ?? ""}
                      {(s.price || s.Price) !== undefined ? " VNĐ" : ""}
                    </span>
                  )}
@@ -49,6 +57,12 @@ export default function ServicesList({
                <div className="text-gray-500 text-xs md:text-sm flex items-center gap-1">
                  <HiOutlineCalendar /> Thời gian: {s.duration || s.Duration || s.taskDuration || s.TaskDuration || 'N/A'} phút
                </div>
+               {/* Hiển thị thông tin chi tiết quantity cho dịch vụ lẻ */}
+               {!packageId && !s.isPackage && !s.isServiceTask && (s.quantity > 1 || quantity > 1) && (
+                 <div className="text-blue-600 text-xs md:text-sm font-medium">
+                   {(s.price || s.Price)?.toLocaleString("vi-VN")} VNĐ × {s.quantity || quantity} = {((s.price || s.Price) * (s.quantity || quantity))?.toLocaleString("vi-VN")} VNĐ
+                 </div>
+               )}
           </li>
         ))
         )}

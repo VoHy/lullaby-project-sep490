@@ -13,17 +13,34 @@ const NurseSelectionModal = ({
 }) => {
   const [selectedNurseId, setSelectedNurseId] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const handleAssign = async () => {
-    if (!selectedNurseId) return;
+    console.log('🚀 Handle assign called:', { selectedNurseId, availableNurses, selectedType: typeof selectedNurseId });
+    
+    if (!selectedNurseId) {
+      console.error('❌ No nurse selected!');
+      setError('Vui lòng chọn một nurse trước khi phân công');
+      return;
+    }
     
     setLoading(true);
+    setError(null);
     try {
-      await onAssign(selectedNurseId);
+      // Nếu selectedNurseId là fallback index, tìm nurse thực tế
+      let actualNurseId = selectedNurseId;
+      if (typeof selectedNurseId === 'string' && selectedNurseId.startsWith('nurse-')) {
+        const index = parseInt(selectedNurseId.replace('nurse-', ''));
+        const nurse = availableNurses[index];
+        actualNurseId = nurse?.nurseId || nurse?.nursingSpecialistID || nurse?.nursing_SpecialistID || nurse?.id || nurse?.accountID || selectedNurseId;
+      }
+      
+      console.log('🎯 Assigning nurse:', { originalId: selectedNurseId, actualId: actualNurseId });
+      await onAssign(actualNurseId);
       onClose();
     } catch (error) {
       console.error('Error assigning nurse:', error);
-      alert('Có lỗi xảy ra khi phân công nurse');
+      setError(error.message || 'Có lỗi xảy ra khi phân công nurse');
     } finally {
       setLoading(false);
     }
@@ -33,12 +50,21 @@ const NurseSelectionModal = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
+        onClick={(e) => {
+          // Chỉ đóng modal khi click vào backdrop, không phải modal content
+          if (e.target === e.currentTarget) {
+            onClose();
+          }
+        }}
+      >
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           exit={{ opacity: 0, scale: 0.95 }}
-          className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto"
+          className="bg-white rounded-3xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto relative"
+          onClick={(e) => e.stopPropagation()}
         >
           {/* Header */}
           <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white p-8 rounded-t-3xl">
@@ -51,6 +77,8 @@ const NurseSelectionModal = ({
                 {service && (
                   <p className="text-purple-100 mt-2">
                     Cho dịch vụ: {service.serviceName || service.ServiceName}
+                    {service.customizeTaskId && ` (CustomizeTask ID: ${service.customizeTaskId})`}
+                    {service.packageInstance && ` (Gói #${service.packageInstance})`}
                   </p>
                 )}
               </div>
@@ -87,21 +115,41 @@ const NurseSelectionModal = ({
                 </div>
 
                 <div className="grid gap-4 max-h-96 overflow-y-auto">
-                  {availableNurses.map((nurse) => {
-                    const nurseId = nurse.nursingSpecialistID || nurse.nursing_SpecialistID || nurse.id;
+                  {availableNurses.map((nurse, index) => {
+                    const nurseId = nurse.nurseId || nurse.nursingSpecialistID || nurse.nursing_SpecialistID || nurse.id || nurse.accountID || nurse.Account_ID;
                     const isSelected = selectedNurseId === nurseId;
+                    
+                    console.log('👥 Nurse data:', { 
+                      nurse, 
+                      nurseId, 
+                      isSelected,
+                      selectedNurseId,
+                      allKeys: Object.keys(nurse)
+                    });
                     
                     return (
                       <div
-                        key={nurseId}
+                        key={`nurse-${nurseId || index}`}
                         className={`
-                          p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
+                          p-4 rounded-xl border-2 cursor-pointer transition-all duration-200 select-none
                           ${isSelected 
                             ? 'border-purple-500 bg-purple-50 shadow-lg transform scale-[1.02]' 
                             : 'border-gray-200 hover:border-purple-300 hover:bg-purple-25'
                           }
                         `}
-                        onClick={() => setSelectedNurseId(nurseId)}
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          console.log('🎯 Clicking nurse:', { nurse, nurseId, selectedNurseId });
+                          if (nurseId) {
+                            setSelectedNurseId(nurseId);
+                          } else {
+                            console.error('❌ Nurse ID is undefined!', nurse);
+                            // Fallback - use index nếu không có ID
+                            setSelectedNurseId(`nurse-${index}`);
+                          }
+                        }}
+                        style={{ pointerEvents: 'auto' }}
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-4">
@@ -153,16 +201,34 @@ const NurseSelectionModal = ({
                   })}
                 </div>
 
+                {/* Error Message */}
+                {error && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-red-600 text-sm">{error}</p>
+                  </div>
+                )}
+
                 {/* Actions */}
                 <div className="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-gray-200">
                   <button
-                    onClick={onClose}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Cancel button clicked');
+                      onClose();
+                    }}
                     className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                    style={{ pointerEvents: 'auto' }}
                   >
                     Hủy
                   </button>
                   <button
-                    onClick={handleAssign}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      console.log('Assign button clicked', { selectedNurseId, loading });
+                      handleAssign();
+                    }}
                     disabled={!selectedNurseId || loading}
                     className={`
                       px-6 py-3 rounded-xl font-medium transition-all duration-200
@@ -171,6 +237,7 @@ const NurseSelectionModal = ({
                         : 'bg-gray-300 text-gray-500 cursor-not-allowed'
                       }
                     `}
+                    style={{ pointerEvents: 'auto' }}
                   >
                     {loading ? (
                       <div className="flex items-center gap-2">

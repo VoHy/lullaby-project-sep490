@@ -172,9 +172,9 @@ const TransactionHistory = ({ transactions, searchText, setSearchText, filterSta
                     </div>
                     <div className="text-right">
                       <div className={`font-bold ${
-                        amount > 0 ? 'text-green-600' : 'text-red-600'
+                        amount > 0 ? 'text-red-600' : 'text-green-600'
                       }`}>
-                        {amount > 0 ? '+' : ''}{amount.toLocaleString('vi-VN')}đ
+                        {amount > 0 ? '-' : ''}{amount.toLocaleString('vi-VN')}đ
                       </div>
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(status)}`}>
                         {getStatusText(status)}

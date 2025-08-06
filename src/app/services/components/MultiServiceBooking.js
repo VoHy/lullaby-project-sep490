@@ -4,13 +4,23 @@ import { motion } from 'framer-motion';
 import { FaShoppingCart } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 
-const MultiServiceBooking = ({ selectedServices }) => {
+const MultiServiceBooking = ({ selectedServices, serviceQuantities = {} }) => {
   const router = useRouter();
 
   if (selectedServices.length <= 1) return null;
 
   const handleBooking = () => {
-    router.push(`/booking?service=${selectedServices.join(',')}`);
+    // Tạo object chứa service và quantity
+    const servicesWithQuantities = selectedServices.map(serviceId => ({
+      serviceId,
+      quantity: serviceQuantities[serviceId] || 1
+    }));
+    
+    // Tạo URL params
+    const servicesParam = selectedServices.join(',');
+    const quantitiesParam = servicesWithQuantities.map(s => s.quantity).join(',');
+    
+    router.push(`/booking?service=${servicesParam}&quantities=${quantitiesParam}`);
   };
 
   return (

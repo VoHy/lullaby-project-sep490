@@ -139,8 +139,8 @@ const TransactionDetailModal = ({ transaction, isOpen, onClose }) => {
               </div>
               <div className="text-center">
                 <div className="text-sm text-gray-600 mb-1">Số tiền giao dịch</div>
-                <div className={`text-lg font-bold ${transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}`}>
-                  {transaction.amount > 0 ? '+' : ''}{transaction.amount?.toLocaleString('vi-VN')}₫
+                <div className={`text-lg font-bold ${transaction.amount > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {transaction.amount > 0 ? '-' : ''}{transaction.amount?.toLocaleString('vi-VN')}₫
                 </div>
               </div>
               <div className="text-center">
