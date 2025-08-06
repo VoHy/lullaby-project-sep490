@@ -6,8 +6,6 @@ export async function PUT(request, { params }) {
     const body = await request.json();
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
-    console.log(`Calling backend: ${backendUrl}/api/servicetypes/softdelete/${id}`);
-    
     const response = await fetch(`${backendUrl}/api/servicetypes/softdelete/${id}`, {
       method: 'PUT',
       headers: {
@@ -16,7 +14,6 @@ export async function PUT(request, { params }) {
       body: JSON.stringify(body)
     });
 
-    console.log(`Backend response status: ${response.status}`);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -27,7 +24,6 @@ export async function PUT(request, { params }) {
         
         // Nếu dịch vụ đã được đánh dấu removed, trả về success
         if (errorData.error && errorData.error.includes('already marked as removed')) {
-          console.log('Service already marked as removed, treating as success');
           return NextResponse.json({ 
             message: 'Service type already deleted',
             alreadyDeleted: true 
@@ -49,7 +45,6 @@ export async function PUT(request, { params }) {
 
     // Kiểm tra xem response có content không
     const responseText = await response.text();
-    console.log('Backend response text:', responseText);
     
     if (!responseText) {
       return NextResponse.json({ message: 'Service type deleted successfully' });

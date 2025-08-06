@@ -12,12 +12,9 @@ export async function POST(request, { params }) {
         body = JSON.parse(text);
       }
     } catch (parseError) {
-      console.log('No request body or invalid JSON, proceeding without body');
     }
     
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-
-    console.log('Calling backend InvoicePayment with invoiceId:', invoiceId);
     
     const response = await fetch(`${backendUrl}/api/TransactionHistory/InvoicePayment/${invoiceId}`, {
       method: 'POST',

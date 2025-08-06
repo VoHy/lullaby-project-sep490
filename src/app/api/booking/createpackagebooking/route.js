@@ -5,7 +5,6 @@ export async function POST(request) {
     const body = await request.json();
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
-    console.log('Package Booking Request Body:', JSON.stringify(body, null, 2));
     
     const response = await fetch(`${backendUrl}/api/Booking/CreatePackageBooking`, {
       method: 'POST',
@@ -40,7 +39,6 @@ export async function POST(request) {
           );
           
           if (matchingBooking) {
-            console.log('Booking created successfully despite backend error:', matchingBooking);
             return NextResponse.json(matchingBooking, { status: 201 });
           }
         }

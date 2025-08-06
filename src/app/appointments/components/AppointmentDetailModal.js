@@ -1,402 +1,389 @@
 'use client';
 
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { FaTimes, FaCalendar, FaUser, FaCheck, FaCreditCard, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaInfoCircle, FaTasks, FaUserMd, FaEdit } from 'react-icons/fa';
-import { useRouter } from 'next/navigation';
-import TaskList from './TaskList';
+import React, { useState } from 'react';
+import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaUserMd, FaPlus, FaFileInvoice } from 'react-icons/fa';
 import NurseSelectionModal from './NurseSelectionModal';
 
 const AppointmentDetailModal = ({
-  appointment,
-  onClose,
-  serviceTypes,
-  nursingSpecialists,
-  customizeTasks = [],
-  getServiceNames,
-  getNurseNames,
-  getStatusColor,
-  getStatusText,
-  formatDate,
-  getCareProfileName,
-  getBookingServices,
-  getBookingPackages,
-  getBookingDetails,
-  getBookingInvoice,
-  onAssignNursing,
-  onUpdateTaskStatus
+    appointment,
+    onClose,
+    serviceTypes,
+    serviceTasks,
+    nursingSpecialists,
+    zoneDetails,
+    invoices,
+    customizePackages,
+    getStatusColor,
+    getStatusText,
+    formatDate,
+    onAssignNursing
 }) => {
-  const router = useRouter();
-  const [showNurseModal, setShowNurseModal] = useState(false);
-  const [selectedTaskForNursing, setSelectedTaskForNursing] = useState(null);
+    const [showNurseModal, setShowNurseModal] = useState(false);
+    const [selectedService, setSelectedService] = useState(null);
 
-  if (!appointment) return null;
+    if (!appointment) return null;
 
-  const bookingId = appointment.bookingID || appointment.BookingID;
-  const bookingServices = getBookingServices(bookingId);
-  const bookingPackages = getBookingPackages(bookingId);
-  const bookingDetails = getBookingDetails(bookingId);
-  const bookingInvoices = getBookingInvoice(bookingId);
+    const bookingId = appointment.bookingID || appointment.BookingID;
+    const careProfile = appointment.careProfile;
+    const amount = appointment.amount || appointment.totalAmount || appointment.total_Amount || 0;
 
-  // Handle task nursing assignment
-  const handleAssignNursing = (task) => {
-    console.log('🎯 Opening nurse selection for task:', task);
-    setSelectedTaskForNursing(task);
-    setShowNurseModal(true);
-  };
+    // Lấy invoice cho booking này
+    const bookingInvoice = invoices.find(inv =>
+        inv.bookingID === bookingId || inv.BookingID === bookingId
+    );
 
-  const handleNurseAssignment = async (taskId, nursingId) => {
-    try {
-      await onAssignNursing?.(taskId, nursingId);
-      setShowNurseModal(false);
-      setSelectedTaskForNursing(null);
-    } catch (error) {
-      console.error('Error in modal nurse assignment:', error);
-    }
-  };
+    // Tính toán thông tin dịch vụ và service tasks
+    const getServiceDetails = () => {
+        const bookingId = appointment.bookingID || appointment.BookingID;
 
-  return (
-    <motion.div
-      className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      exit={{ opacity: 0 }}
-    >
-      <motion.div
-        className="bg-white rounded-3xl shadow-2xl max-w-7xl w-full relative max-h-[95vh] overflow-y-auto"
-        initial={{ opacity: 0, scale: 0.9 }}
-        animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.9 }}
-      >
-        {/* Header với gradient */}
-        <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white rounded-t-3xl p-8 relative">
-          <button
-            className="absolute top-6 right-6 text-white hover:bg-white hover:bg-opacity-20 p-3 rounded-full transition-colors"
-            onClick={onClose}
-          >
-            <FaTimes className="text-xl" />
-          </button>
+        // Tìm customize packages theo BookingID
+        const bookingPackages = customizePackages?.filter(pkg =>
+            pkg.bookingID === bookingId ||
+            pkg.BookingID === bookingId ||
+            pkg.booking_ID === bookingId
+        ) || [];
 
-          <div className="pr-16">
-            <h1 className="text-4xl font-bold mb-2">
-              Chi tiết lịch hẹn #{bookingId}
-            </h1>
-            <p className="text-purple-100 text-lg">
-              {formatDate(appointment.workdate || appointment.Workdate || appointment.BookingDate)}
-            </p>
-          </div>
-        </div>
+        if (bookingPackages.length > 0) {
+            const services = bookingPackages.map(pkg => {
+                const serviceId = pkg.serviceID || pkg.service_ID || pkg.Service_ID;
+                const service = serviceTypes.find(s =>
+                    s.serviceID === serviceId ||
+                    s.serviceTypeID === serviceId ||
+                    s.ServiceID === serviceId
+                );
+                return service;
+            }).filter(Boolean);
 
-        {/* Content */}
-        <div className="p-8">
-          <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
-            
-            {/* Left Column - Basic Info */}
-            <div className="xl:col-span-1 space-y-6">
-              
-              {/* Status Card */}
-              <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
-                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
-                  <div className="p-2 bg-blue-500 rounded-lg">
-                    <FaInfoCircle className="text-white text-lg" />
-                  </div>
-                  Thông tin cơ bản
-                </h3>
-                
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-lg font-medium text-gray-700">Trạng thái:</span>
-                    <span className={`px-4 py-2 rounded-full text-base font-semibold ${getStatusColor(appointment.status)}`}>
-                      {getStatusText(appointment.status)}
-                    </span>
-                  </div>
+            // Kiểm tra có package service không dựa trên field isPackage
+            const packageService = services.find(service =>
+                service.isPackage === true
+            );
 
-                  <div>
-                    <span className="text-lg font-medium text-gray-700 block mb-2">Người được chăm sóc:</span>
-                    <div className="flex items-center gap-3 bg-white p-4 rounded-xl border">
-                      <FaUserCircle className="text-purple-500 text-2xl" />
-                      <span className="text-lg font-semibold text-gray-900">
-                        {getCareProfileName(appointment.careProfileID || appointment.CareProfileID)}
-                      </span>
+            if (packageService) {
+                // Package booking
+                const serviceId = packageService.serviceID || packageService.serviceTypeID || packageService.ServiceID;
+                const packageTasks = serviceTasks.filter(task =>
+                    task.package_ServiceID === serviceId ||
+                    task.packageServiceID === serviceId ||
+                    task.Package_ServiceID === serviceId
+                );
+
+                return {
+                    type: 'package',
+                    mainService: packageService,
+                    tasks: packageTasks,
+                    services: []
+                };
+            } else {
+                // Individual services
+                return {
+                    type: 'services',
+                    mainService: null,
+                    tasks: [],
+                    services: services
+                };
+            }
+        }
+
+        return { type: 'unknown', mainService: null, tasks: [], services: [] };
+    };
+
+    const serviceDetails = getServiceDetails();
+
+    // Lọc nurses theo zone
+    const getAvailableNurses = () => {
+        if (!careProfile?.zoneDetailID && !careProfile?.zoneDetail_ID) return nursingSpecialists;
+
+        const careProfileZoneId = careProfile.zoneDetailID || careProfile.zoneDetail_ID;
+
+        return nursingSpecialists.filter(nurse => {
+            const nurseZoneId = nurse.zoneID || nurse.zone_ID || nurse.Zone_ID;
+            return nurseZoneId === careProfileZoneId;
+        });
+    };
+
+    const availableNurses = getAvailableNurses();
+
+    const handleAddNurse = (service) => {
+        setSelectedService(service);
+        setShowNurseModal(true);
+    };
+
+    const handleNurseAssignment = async (nurseId) => {
+        try {
+            if (selectedService) {
+                await onAssignNursing?.(selectedService, nurseId);
+                setShowNurseModal(false);
+                setSelectedService(null);
+            }
+        } catch (error) {
+            console.error('Error assigning nurse:', error);
+        }
+    };
+
+    return (
+        <div
+            className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+        >
+            <div
+                className="bg-white rounded-3xl shadow-2xl max-w-7xl w-full relative max-h-[95vh] overflow-y-auto"
+            >
+                {/* Header */}
+                <div className="bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 text-white rounded-t-3xl p-8 relative">
+                    <button
+                        className="absolute top-6 right-6 text-white hover:bg-white hover:bg-opacity-20 p-3 rounded-full transition-colors"
+                        onClick={onClose}
+                    >
+                        <FaTimes className="text-xl" />
+                    </button>
+
+                    <div className="pr-16">
+                        <h1 className="text-4xl font-bold mb-2">
+                            Chi tiết lịch hẹn #{bookingId}
+                        </h1>
+                        <p className="text-purple-100 text-lg">
+                            {formatDate(appointment.workdate || appointment.Workdate || appointment.BookingDate)}
+                        </p>
                     </div>
-                  </div>
-
-                  <div>
-                    <span className="text-lg font-medium text-gray-700 block mb-2">Ngày giờ:</span>
-                    <div className="flex items-center gap-3 bg-white p-4 rounded-xl border">
-                      <FaCalendar className="text-purple-500 text-xl" />
-                      <span className="text-lg text-gray-900">
-                        {formatDate(appointment.workdate || appointment.Workdate)}
-                      </span>
-                    </div>
-                  </div>
                 </div>
-              </div>
 
-              {/* Total Amount Card */}
-              <div className="bg-gradient-to-br from-green-400 to-blue-500 rounded-2xl p-6 text-white">
-                <div className="flex items-center gap-4">
-                  <div className="p-3 bg-white bg-opacity-20 rounded-xl">
-                    <FaMoneyBillWave className="text-2xl" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-medium opacity-90">Tổng chi phí</h3>
-                    <span className="text-3xl font-bold">
-                      {(appointment.amount || appointment.Amount || bookingDetails.totalAmount || 0).toLocaleString('vi-VN')}₫
-                    </span>
-                  </div>
-                </div>
-              </div>
+                {/* Content */}
+                <div className="p-8">
+                    <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
 
-              {/* Summary Stats */}
-              <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border">
-                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
-                  <FaInfoCircle className="text-purple-500 text-xl" />
-                  Tóm tắt
-                </h3>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-4 bg-white rounded-xl border">
-                    <div className="text-2xl font-bold text-purple-600">{bookingPackages.length}</div>
-                    <div className="text-sm text-gray-600">Gói dịch vụ</div>
-                  </div>
-                  <div className="text-center p-4 bg-white rounded-xl border">
-                    <div className="text-2xl font-bold text-orange-600">{customizeTasks.length}</div>
-                    <div className="text-sm text-gray-600">Nhiệm vụ</div>
-                  </div>
-                  <div className="text-center p-4 bg-white rounded-xl border">
-                    <div className="text-2xl font-bold text-green-600">
-                      {customizeTasks.filter(t => t.isAssigned).length}
-                    </div>
-                    <div className="text-sm text-gray-600">Đã phân công</div>
-                  </div>
-                  <div className="text-center p-4 bg-white rounded-xl border">
-                    <div className="text-2xl font-bold text-red-600">
-                      {customizeTasks.filter(t => !t.isAssigned).length}
-                    </div>
-                    <div className="text-sm text-gray-600">Chưa phân công</div>
-                  </div>
-                </div>
-              </div>
-            </div>
+                        {/* Left Column - Care Profile Info */}
+                        <div className="xl:col-span-1 space-y-6">
 
-            {/* Middle Column - Tasks */}
-            <div className="xl:col-span-1 space-y-6">
-              
-              {/* Tasks Section */}
-              {customizeTasks && customizeTasks.length > 0 && (
-                <div className="bg-gradient-to-br from-orange-50 to-red-50 rounded-2xl p-6 border border-orange-200">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                    <div className="p-2 bg-orange-500 rounded-lg">
-                      <FaTasks className="text-white text-xl" />
-                    </div>
-                    Nhiệm vụ chăm sóc ({customizeTasks.length})
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    {customizeTasks.map((task, index) => (
-                      <div 
-                        key={task.taskId || index}
-                        className="bg-white rounded-xl p-6 border shadow-sm hover:shadow-md transition-all"
-                      >
-                        <div className="flex items-start justify-between mb-4">
-                          <div className="flex-1">
-                            <h4 className="text-lg font-semibold text-gray-900 mb-2">
-                              {task.serviceName || 'Nhiệm vụ chăm sóc'}
-                            </h4>
-                            
-                            <div className="flex items-center gap-2 mb-3">
-                              <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
-                                task.status === 'completed' 
-                                  ? 'bg-green-100 text-green-800'
-                                  : task.status === 'in-progress'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-orange-100 text-orange-800'
-                              }`}>
-                                {task.status === 'completed' ? <FaCheck /> : <FaClock />}
-                                {task.status === 'completed' ? 'Hoàn thành' :
-                                 task.status === 'in-progress' ? 'Đang thực hiện' : 'Chờ xử lý'}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center gap-3 mb-4">
-                              <FaUserMd className={task.isAssigned ? 'text-green-500' : 'text-orange-500'} />
-                              <span className={`text-base font-medium ${task.isAssigned ? 'text-green-600' : 'text-orange-600'}`}>
-                                {task.nursingName}
-                              </span>
-                              {!task.isAssigned && (
-                                <span className="text-xs text-orange-500 bg-orange-50 px-2 py-1 rounded-full font-medium">
-                                  Cần phân công
+                            {/* Status */}
+                            <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
+                                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+                                    <div className="p-2 bg-blue-500 rounded-lg">
+                                        <FaCalendar className="text-white" />
+                                    </div>
+                                    Trạng thái
+                                </h3>
+                                <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(appointment.status || appointment.Status)}`}>
+                                    {getStatusText(appointment.status || appointment.Status)}
                                 </span>
-                              )}
                             </div>
 
-                            {/* Debug info in development */}
-                            {process.env.NODE_ENV === 'development' && (
-                              <div className="text-xs text-gray-400 font-mono mb-3 p-2 bg-gray-50 rounded">
-                                Task ID: {task.taskId} | Order: {task.taskOrder}
-                              </div>
-                            )}
-                          </div>
+                            {/* Care Profile */}
+                            <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
+                                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+                                    <div className="p-2 bg-green-500 rounded-lg">
+                                        <FaUserCircle className="text-white" />
+                                    </div>
+                                    Thông tin người được chăm sóc
+                                </h3>
+                                <div className="space-y-3 text-gray-700">
+                                    <div className="flex items-center gap-3">
+                                        <FaUser className="text-green-500" />
+                                        <span className="font-semibold">{careProfile?.profileName || 'Không xác định'}</span>
+                                    </div>
+                                    {careProfile?.dateOfBirth && (
+                                        <div className="text-sm text-gray-600">
+                                            <strong>Ngày sinh:</strong> {new Date(careProfile.dateOfBirth).toLocaleDateString('vi-VN')}
+                                        </div>
+                                    )}
+                                    {careProfile?.phoneNumber && (
+                                        <div className="text-sm text-gray-600">
+                                            <strong>Số điện thoại:</strong> {careProfile.phoneNumber}
+                                        </div>
+                                    )}
+                                    {careProfile?.address && (
+                                        <div className="text-sm text-gray-600">
+                                            <strong>Địa chỉ:</strong> {careProfile.address}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+
+                            {/* Total Amount */}
+                            <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 border border-yellow-200">
+                                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
+                                    <div className="p-2 bg-yellow-500 rounded-lg">
+                                        <FaMoneyBillWave className="text-white" />
+                                    </div>
+                                    Tổng tiền
+                                </h3>
+                                <div className="text-3xl font-bold text-yellow-600">
+                                    {amount.toLocaleString('vi-VN')}₫
+                                </div>
+                            </div>
                         </div>
 
-                        {/* Action Buttons - Làm to và nổi bật hơn */}
-                        <div className="flex gap-3">
-                          {!task.isAssigned && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAssignNursing(task);
-                              }}
-                              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 font-semibold text-base"
-                            >
-                              <FaUserMd className="text-lg" />
-                              Phân công Nurse
-                            </button>
-                          )}
-                          
-                          {task.isAssigned && task.status !== 'completed' && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                onUpdateTaskStatus?.(task);
-                              }}
-                              className="flex-1 flex items-center justify-center gap-2 px-6 py-3 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-xl hover:shadow-lg hover:scale-105 transition-all duration-200 font-semibold text-base"
-                            >
-                              <FaEdit className="text-lg" />
-                              Cập nhật trạng thái
-                            </button>
-                          )}
+                        {/* Middle Column - Services */}
+                        <div className="xl:col-span-1 space-y-6">
+                            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                                <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white p-6">
+                                    <h3 className="text-xl font-bold flex items-center gap-3">
+                                        {serviceDetails.type === 'package' ? (
+                                            <><FaBox />Gói dịch vụ</>
+                                        ) : (
+                                            <><FaStethoscope />Dịch vụ</>
+                                        )}
+                                    </h3>
+                                </div>
+                                <div className="p-6 space-y-4">
+                                    {serviceDetails.type === 'package' && serviceDetails.mainService && (
+                                        <div className="mb-6">
+                                            <div className="font-semibold text-lg text-gray-900 mb-2">
+                                                {serviceDetails.mainService.serviceName || serviceDetails.mainService.ServiceName}
+                                            </div>
+                                            {serviceDetails.mainService.description && (
+                                                <div className="text-sm text-gray-600 mb-4">
+                                                    {serviceDetails.mainService.description}
+                                                </div>
+                                            )}
 
-                          {task.isAssigned && (
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                handleAssignNursing(task);
-                              }}
-                              className="px-4 py-3 bg-gray-100 text-gray-600 rounded-xl hover:bg-gray-200 transition-colors font-medium"
-                            >
-                              Đổi Nurse
-                            </button>
-                          )}
+                                            {/* Service Tasks of Package */}
+                                            {serviceDetails.tasks.length > 0 ? (
+                                                <div className="space-y-3">
+                                                    <h4 className="font-medium text-gray-800 border-b pb-2">Dịch vụ trong gói:</h4>
+                                                    {serviceDetails.tasks.map((task, index) => {
+                                                        const childService = serviceTypes.find(s =>
+                                                            s.serviceID === (task.childServiceID || task.child_ServiceID || task.Child_ServiceID) ||
+                                                            s.serviceTypeID === (task.childServiceID || task.child_ServiceID || task.Child_ServiceID)
+                                                        );
+
+                                                        return (
+                                                            <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                                                <div className="flex-1">
+                                                                    <div className="font-medium text-gray-800">
+                                                                        Tên: {childService?.serviceName || childService?.ServiceName || 'Dịch vụ không xác định'}
+                                                                    </div>
+                                                                    {childService?.description && (
+                                                                        <div className="text-sm text-gray-600 mt-1">
+                                                                            Mô tả: {childService.description}
+                                                                        </div>
+                                                                    )}
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => handleAddNurse({ ...childService, taskId: task.taskID || task.task_ID })}
+                                                                    className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                                                                >
+                                                                    <FaUserMd className="text-xs" />
+                                                                    Add Nurse
+                                                                </button>
+                                                            </div>
+                                                        );
+                                                    })}
+                                                </div>
+                                            ) : (
+                                                <div className="text-center py-6 bg-gray-50 rounded-lg">
+                                                    <p className="text-gray-500">Không có service tasks nào cho gói này</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {serviceDetails.type === 'services' && serviceDetails.services.length > 0 && (
+                                        <div className="space-y-3">
+                                            <h4 className="font-medium text-gray-800 border-b pb-2">Dịch vụ lẻ:</h4>
+                                            {serviceDetails.services.map((service, index) => (
+                                                <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                                                    <div className="flex-1">
+                                                        <div className="font-medium text-gray-800">
+                                                            {service.serviceName || service.ServiceName}
+                                                        </div>
+                                                        {service.description && (
+                                                            <div className="text-sm text-gray-600 mt-1">
+                                                                {service.description}
+                                                            </div>
+                                                        )}
+                                                        <div className="text-xs text-gray-500 mt-1">
+                                                            Service ID: {service.serviceID || service.serviceTypeID || service.ServiceID}
+                                                        </div>
+                                                    </div>
+                                                    <button
+                                                        onClick={() => handleAddNurse(service)}
+                                                        className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                                                    >
+                                                        <FaUserMd className="text-xs" />
+                                                        Add Nurse
+                                                    </button>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
+
+                                    {serviceDetails.type === 'unknown' && (
+                                        <div className="text-center py-8 bg-gray-50 rounded-lg">
+                                            <FaStethoscope className="mx-auto text-4xl text-gray-300 mb-4" />
+                                            <p className="text-gray-500">Không thể xác định loại dịch vụ</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
 
-            {/* Right Column - Services & Packages */}
-            <div className="xl:col-span-1 space-y-6">
-              
-              {/* Packages */}
-              {bookingPackages.length > 0 && (
-                <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl p-6 border border-purple-200">
-                  <h3 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-3">
-                    <div className="p-2 bg-purple-500 rounded-lg">
-                      <FaBox className="text-white text-xl" />
+                        {/* Right Column - Invoice */}
+                        <div className="xl:col-span-1">
+                            <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden">
+                                <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white p-6">
+                                    <h3 className="text-xl font-bold flex items-center gap-3">
+                                        <FaFileInvoice />
+                                        Hóa đơn
+                                    </h3>
+                                </div>
+                                <div className="p-6">
+                                    {bookingInvoice ? (
+                                        <div className="space-y-4">
+                                            <div className="text-lg font-semibold text-gray-900">
+                                                Hóa đơn #{bookingInvoice.invoiceID || bookingInvoice.invoice_ID}
+                                            </div>
+                                            <div className="space-y-2 text-sm">
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">Ngày tạo:</span>
+                                                    <span className="font-medium">
+                                                        {formatDate(bookingInvoice.paymentDate)}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between">
+                                                    <span className="text-gray-600">Trạng thái:</span>
+                                                    <span className={`font-medium ${(bookingInvoice.status || bookingInvoice.Status) === 'Hoàn thành'
+                                                        ? 'text-green-600'
+                                                        : 'text-orange-600'
+                                                        }`}>
+                                                        {bookingInvoice.status || bookingInvoice.Status || 'Chưa thanh toán'}
+                                                    </span>
+                                                </div>
+                                                <div className="flex justify-between text-lg font-bold border-t pt-2">
+                                                    <span>Tổng tiền:</span>
+                                                    <span className="text-green-600">
+                                                        {(bookingInvoice.totalAmount || bookingInvoice.total_amount || amount).toLocaleString('vi-VN')}₫
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center text-gray-500 py-8">
+                                            <FaFileInvoice className="mx-auto text-4xl mb-4 opacity-50" />
+                                            <p>Chưa có hóa đơn</p>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
                     </div>
-                    Gói dịch vụ ({bookingPackages.length})
-                  </h3>
-                  
-                  <div className="space-y-4">
-                    {bookingPackages.map((pkg, index) => (
-                      <div key={index} className="bg-white rounded-xl p-5 border shadow-sm">
-                        <div className="flex items-center justify-between mb-3">
-                          <h4 className="text-lg font-semibold text-purple-700">{pkg.packageName}</h4>
-                          <span className={`px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(pkg.status)}`}>
-                            {getStatusText(pkg.status)}
-                          </span>
-                        </div>
-                        
-                        {pkg.description && (
-                          <p className="text-base text-gray-600 mb-3">{pkg.description}</p>
-                        )}
-                        
-                        <div className="flex items-center justify-between">
-                          <span className="text-base text-gray-500">Giá:</span>
-                          <span className="text-xl font-bold text-purple-600">
-                            {pkg.price?.toLocaleString('vi-VN') || '0'}₫
-                          </span>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 </div>
-              )}
 
-              {/* Note */}
-              {(appointment.note || appointment.Note) && (
-                <div className="bg-gradient-to-br from-yellow-50 to-orange-50 rounded-2xl p-6 border border-yellow-200">
-                  <h3 className="text-xl font-bold text-gray-900 mb-4">Ghi chú</h3>
-                  <p className="text-lg text-gray-700 leading-relaxed">
-                    {appointment.note || appointment.Note}
-                  </p>
-                </div>
-              )}
-
-              {/* Payment History */}
-              <div className="bg-gradient-to-br from-green-50 to-blue-50 rounded-2xl p-6 border border-green-200">
-                <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
-                  <FaCreditCard className="text-green-500 text-xl" />
-                  Lịch sử thanh toán
-                </h3>
-                
-                {bookingInvoices.length > 0 ? (
-                  <div className="space-y-3">
-                    {bookingInvoices.slice(0, 3).map((invoice, index) => (
-                      <div key={index} className="bg-white rounded-xl p-4 border">
-                        <div className="flex items-center justify-between text-base">
-                          <span className="text-gray-700">{invoice.content}</span>
-                          <span className="font-bold text-green-600">
-                            {invoice.totalAmount?.toLocaleString('vi-VN') || '0'}₫
-                          </span>
-                        </div>
-                        <div className="flex items-center justify-between text-sm text-gray-500 mt-2">
-                          <span>Trạng thái: {invoice.status === 'paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}</span>
-                          <span>{new Date(invoice.paymentDate).toLocaleDateString('vi-VN')}</span>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {bookingInvoices.length > 3 && (
-                      <button
-                        className="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-500 text-white text-base font-semibold hover:bg-blue-600 transition-colors"
-                        onClick={() => {
-                          onClose();
-                          router.push('/payment/history');
+                {/* Nurse Selection Modal */}
+                {showNurseModal && selectedService && (
+                    <NurseSelectionModal
+                        isOpen={showNurseModal}
+                        onClose={() => {
+                            setShowNurseModal(false);
+                            setSelectedService(null);
                         }}
-                      >
-                        <FaCreditCard />
-                        Xem tất cả ({bookingInvoices.length})
-                      </button>
-                    )}
-                  </div>
-                ) : (
-                  <div className="text-base text-gray-500 italic text-center py-4">
-                    Chưa có giao dịch thanh toán
-                  </div>
+                        service={selectedService}
+                        availableNurses={availableNurses}
+                        onAssign={handleNurseAssignment}
+                    />
                 )}
-              </div>
             </div>
-          </div>
         </div>
-
-        {/* Nurse Selection Modal */}
-        <NurseSelectionModal
-          isOpen={showNurseModal}
-          onClose={() => {
-            setShowNurseModal(false);
-            setSelectedTaskForNursing(null);
-          }}
-          onAssign={handleNurseAssignment}
-          nursingSpecialists={nursingSpecialists}
-          customizeTaskId={selectedTaskForNursing?.taskId}
-          taskInfo={selectedTaskForNursing}
-        />
-      </motion.div>
-    </motion.div>
-  );
+    );
 };
 
 export default AppointmentDetailModal;

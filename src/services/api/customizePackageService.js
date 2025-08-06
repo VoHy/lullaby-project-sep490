@@ -4,10 +4,22 @@ const customizePackageService = createService('customizepackages', 'CustomizePac
 
 // Thêm các methods đặc biệt cho CustomizePackage
 const customizePackageServiceExtended = {
-//   ...customizePackageService,
+  ...customizePackageService,
   
   // Lấy tất cả CustomizePackage
-  getAllCustomizePackages: customizePackageService.getCustomizePackages,
+  getCustomizePackages: async () => {
+    const res = await fetch('/api/customizepackages/getall', {
+      headers: {
+        'Content-Type': 'application/json',
+        ...(typeof window !== 'undefined' && localStorage.getItem('token') && { 
+          'Authorization': `Bearer ${localStorage.getItem('token')}` 
+        })
+      }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách CustomizePackage');
+    return data;
+  },
   
   // Lấy CustomizePackage theo ID
   getCustomizePackageById: customizePackageService.getCustomizePackageById,

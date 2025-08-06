@@ -6,7 +6,6 @@ export async function PUT(request, { params }) {
     const body = await request.json();
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
-    console.log('Updating booking status:', bookingId, body);
     
     const response = await fetch(`${backendUrl}/api/Booking/UpdateStatus/${bookingId}`, {
       method: 'PUT',
@@ -16,11 +15,9 @@ export async function PUT(request, { params }) {
       body: JSON.stringify(body)
     });
 
-    console.log('Backend response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.log('Backend error response:', errorText.substring(0, 200));
       
       try {
         const errorData = JSON.parse(errorText);
@@ -38,7 +35,6 @@ export async function PUT(request, { params }) {
     }
 
     const data = await response.json();
-    console.log('Backend booking update data:', data);
     return NextResponse.json(data);
   } catch (error) {
     console.error('Proxy error:', error);

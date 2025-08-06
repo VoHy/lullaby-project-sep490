@@ -84,7 +84,7 @@ export default function useCareProfileManager(router) {
   useEffect(() => {
     const loadData = async () => {
       if (!user) {
-        router.push('/auth/login');
+        router.push('/profile/patient');
         return;
       }
 

@@ -5,7 +5,6 @@ export async function GET(request, { params }) {
     const { walletId } = params;
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
-    console.log('🔍 Wallet API: Lấy ví theo walletID:', walletId);
     
     const response = await fetch(`${backendUrl}/api/Wallet/${walletId}`, {
       method: 'GET',
@@ -14,8 +13,6 @@ export async function GET(request, { params }) {
       },
     });
 
-    console.log('🔍 Wallet API: Response status:', response.status);
-
     if (!response.ok) {
       const errorText = await response.text();
       console.error('🔍 Wallet API: Backend error:', errorText);
@@ -23,7 +20,6 @@ export async function GET(request, { params }) {
     }
 
     const data = await response.json();
-    console.log('🔍 Wallet API: Ví từ backend:', data);
     return NextResponse.json(data);
   } catch (error) {
     console.error('🔍 Wallet API: Error:', error);
@@ -38,9 +34,7 @@ export async function DELETE(request, { params }) {
   try {
     const { walletId } = params;
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-    
-    console.log('🔍 Wallet API: Xóa ví walletID:', walletId);
-    
+        
     const response = await fetch(`${backendUrl}/api/Wallet/${walletId}`, {
       method: 'DELETE',
       headers: {
@@ -48,7 +42,6 @@ export async function DELETE(request, { params }) {
       },
     });
 
-    console.log('🔍 Wallet API: Response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -57,7 +50,6 @@ export async function DELETE(request, { params }) {
     }
 
     const data = await response.json();
-    console.log('🔍 Wallet API: Ví được xóa:', data);
     return NextResponse.json(data);
   } catch (error) {
     console.error('🔍 Wallet API: Error:', error);

@@ -171,7 +171,6 @@ function BookingContent() {
   // Load service tasks for specific package
   const loadServiceTasksByPackage = async (packageId) => {
     try {
-      console.log('Loading service tasks for package:', packageId);
       const serviceTasksData = await serviceTaskService.getServiceTasksByPackage(packageId);
       
       // Lấy thông tin đầy đủ của service cho mỗi service task

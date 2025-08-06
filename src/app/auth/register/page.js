@@ -64,7 +64,6 @@ export default function RegisterPage() {
         });
 
       const data = await response.json();
-      console.log('Registration response:', data);
 
       if (!response.ok) {
         throw new Error(data.error || 'Đăng ký thất bại');
@@ -78,7 +77,6 @@ export default function RegisterPage() {
 
         // Lấy role từ account
         const roleID = data.account.roleID;
-        console.log('User roleID:', roleID);
 
         // Chuyển hướng dựa trên roleID
         if (roleID === 1) {

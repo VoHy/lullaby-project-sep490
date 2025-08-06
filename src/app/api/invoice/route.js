@@ -5,7 +5,6 @@ export async function POST(request) {
     const body = await request.json();
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
-    console.log('Creating invoice with data:', body);
     
     const response = await fetch(`${backendUrl}/api/Invoice`, {
       method: 'POST',
@@ -15,11 +14,9 @@ export async function POST(request) {
       body: JSON.stringify(body)
     });
 
-    console.log('Backend response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.log('Backend error response:', errorText.substring(0, 200));
       
       try {
         const errorData = JSON.parse(errorText);
@@ -37,7 +34,6 @@ export async function POST(request) {
     }
 
     const data = await response.json();
-    console.log('Backend invoice data:', data);
     return NextResponse.json(data);
   } catch (error) {
     console.error('Proxy error:', error);

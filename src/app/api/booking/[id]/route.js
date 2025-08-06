@@ -5,7 +5,6 @@ export async function GET(request, { params }) {
     const { id } = await params;
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
-    console.log('Fetching booking with ID:', id);
     
     const response = await fetch(`${backendUrl}/api/Booking/${id}`, {
       method: 'GET',
@@ -14,11 +13,9 @@ export async function GET(request, { params }) {
       },
     });
 
-    console.log('Backend response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.log('Backend error response:', errorText.substring(0, 200));
       
       try {
         const errorData = JSON.parse(errorText);
@@ -36,7 +33,6 @@ export async function GET(request, { params }) {
     }
 
     const data = await response.json();
-    console.log('Backend booking data:', data);
     return NextResponse.json(data);
   } catch (error) {
     console.error('Proxy error:', error);

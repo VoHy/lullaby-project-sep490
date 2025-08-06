@@ -1,26 +1,25 @@
 'use client';
 
-import { useState } from 'react';
+import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaUserMd, FaTimes, FaCheck, FaPhone, FaStar } from 'react-icons/fa';
+import { FaUserMd, FaTimes, FaCheck, FaPhone, FaStar, FaMapMarkerAlt } from 'react-icons/fa';
 
 const NurseSelectionModal = ({
   isOpen,
   onClose,
   onAssign,
-  nursingSpecialists = [],
-  customizeTaskId,
-  taskInfo = null
+  service,
+  availableNurses = []
 }) => {
   const [selectedNurseId, setSelectedNurseId] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const handleAssign = async () => {
-    if (!selectedNurseId || !customizeTaskId) return;
+    if (!selectedNurseId) return;
     
     setLoading(true);
     try {
-      await onAssign(customizeTaskId, selectedNurseId);
+      await onAssign(selectedNurseId);
       onClose();
     } catch (error) {
       console.error('Error assigning nurse:', error);
@@ -49,15 +48,15 @@ const NurseSelectionModal = ({
                   <FaUserMd className="text-4xl" />
                   Chọn Nurse/Specialist
                 </h2>
-                {taskInfo && (
-                  <p className="text-purple-100 text-lg mt-2">
-                    Cho nhiệm vụ: {taskInfo.serviceName}
+                {service && (
+                  <p className="text-purple-100 mt-2">
+                    Cho dịch vụ: {service.serviceName || service.ServiceName}
                   </p>
                 )}
               </div>
               <button
                 onClick={onClose}
-                className="p-3 text-white hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
+                className="text-white hover:bg-white hover:bg-opacity-20 p-3 rounded-full transition-colors"
               >
                 <FaTimes className="text-xl" />
               </button>
@@ -66,123 +65,126 @@ const NurseSelectionModal = ({
 
           {/* Content */}
           <div className="p-8">
-            {nursingSpecialists.length === 0 ? (
+            {availableNurses.length === 0 ? (
               <div className="text-center py-12">
-                <div className="text-gray-400 text-6xl mb-6">👩‍⚕️</div>
-                <h3 className="text-2xl font-semibold text-gray-700 mb-4">Không có nurse khả dụng</h3>
-                <p className="text-lg text-gray-600">Hiện tại chưa có nurse/specialist nào có thể phân công.</p>
+                <FaUserMd className="mx-auto text-6xl text-gray-300 mb-4" />
+                <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                  Không có nurse nào khả dụng
+                </h3>
+                <p className="text-gray-500">
+                  Hiện tại không có nurse nào trong khu vực này.
+                </p>
               </div>
             ) : (
-              <div className="space-y-4">
+              <>
                 <div className="mb-6">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-2">
-                    Chọn nurse/specialist phù hợp:
+                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
+                    Nurses khả dụng trong khu vực ({availableNurses.length})
                   </h3>
-                  <p className="text-base text-gray-600">
-                    Có {nursingSpecialists.length} nurse/specialist khả dụng
+                  <p className="text-sm text-gray-600">
+                    Chọn một nurse để phân công cho dịch vụ này
                   </p>
                 </div>
-                
-                {nursingSpecialists.map((nurse) => {
-                  const nurseId = nurse.nursingID || nurse.NursingID;
-                  const nurseName = nurse.name || nurse.Name || nurse.fullName || nurse.FullName || `Nurse #${nurseId}`;
-                  const nurseSpec = nurse.specialization || nurse.Specialization || nurse.major || nurse.Major || 'Chăm sóc tổng quát';
-                  const nursePhone = nurse.phoneNumber || nurse.PhoneNumber || nurse.phone || '';
-                  const nurseExperience = nurse.experience || nurse.Experience || '';
-                  
-                  return (
-                    <motion.div
-                      key={nurseId}
-                      onClick={() => setSelectedNurseId(nurseId)}
-                      className={`p-6 border-2 rounded-2xl cursor-pointer transition-all duration-200 hover:shadow-lg ${
-                        selectedNurseId === nurseId
-                          ? 'border-purple-500 bg-gradient-to-br from-purple-50 to-pink-50 shadow-lg'
-                          : 'border-gray-200 hover:border-purple-300 hover:bg-gray-50'
-                      }`}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-3 mb-3">
-                            <div className={`p-3 rounded-xl ${
-                              selectedNurseId === nurseId ? 'bg-purple-500' : 'bg-gray-400'
-                            }`}>
-                              <FaUserMd className="text-white text-xl" />
+
+                <div className="grid gap-4 max-h-96 overflow-y-auto">
+                  {availableNurses.map((nurse) => {
+                    const nurseId = nurse.nursingSpecialistID || nurse.nursing_SpecialistID || nurse.id;
+                    const isSelected = selectedNurseId === nurseId;
+                    
+                    return (
+                      <div
+                        key={nurseId}
+                        className={`
+                          p-4 rounded-xl border-2 cursor-pointer transition-all duration-200
+                          ${isSelected 
+                            ? 'border-purple-500 bg-purple-50 shadow-lg transform scale-[1.02]' 
+                            : 'border-gray-200 hover:border-purple-300 hover:bg-purple-25'
+                          }
+                        `}
+                        onClick={() => setSelectedNurseId(nurseId)}
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-4">
+                            <div className={`
+                              w-12 h-12 rounded-full flex items-center justify-center
+                              ${isSelected ? 'bg-purple-500' : 'bg-gray-200'}
+                            `}>
+                              <FaUserMd className={`text-xl ${isSelected ? 'text-white' : 'text-gray-600'}`} />
                             </div>
                             
                             <div>
-                              <h4 className="text-xl font-bold text-gray-900">{nurseName}</h4>
-                              <p className="text-base text-purple-600 font-medium">{nurseSpec}</p>
-                            </div>
-                            
-                            {selectedNurseId === nurseId && (
-                              <div className="ml-auto">
-                                <div className="p-2 bg-green-500 rounded-full">
-                                  <FaCheck className="text-white text-lg" />
-                                </div>
+                              <h4 className="font-semibold text-gray-900">
+                                {nurse.fullName || nurse.full_name || nurse.name || 'Không có tên'}
+                              </h4>
+                              
+                              <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                                {nurse.phoneNumber && (
+                                  <div className="flex items-center gap-1">
+                                    <FaPhone className="text-xs" />
+                                    <span>{nurse.phoneNumber}</span>
+                                  </div>
+                                )}
+                                
+                                {nurse.rating && (
+                                  <div className="flex items-center gap-1">
+                                    <FaStar className="text-yellow-400 text-xs" />
+                                    <span>{nurse.rating}</span>
+                                  </div>
+                                )}
                               </div>
-                            )}
+                              
+                              {nurse.address && (
+                                <div className="flex items-center gap-1 text-xs text-gray-500 mt-1">
+                                  <FaMapMarkerAlt />
+                                  <span>{nurse.address}</span>
+                                </div>
+                              )}
+                            </div>
                           </div>
                           
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                            {nursePhone && (
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <FaPhone className="text-purple-500" />
-                                <span className="text-base">{nursePhone}</span>
-                              </div>
-                            )}
-                            
-                            {nurseExperience && (
-                              <div className="flex items-center gap-2 text-gray-600">
-                                <FaStar className="text-yellow-500" />
-                                <span className="text-base">{nurseExperience} năm kinh nghiệm</span>
-                              </div>
-                            )}
-                          </div>
-
-                          {/* Additional info */}
-                          <div className="mt-4 p-3 bg-gray-50 rounded-xl">
-                            <p className="text-sm text-gray-600">
-                              ID: {nurseId} • Chuyên môn: {nurseSpec}
-                            </p>
-                          </div>
+                          {isSelected && (
+                            <div className="w-6 h-6 bg-purple-500 rounded-full flex items-center justify-center">
+                              <FaCheck className="text-white text-xs" />
+                            </div>
+                          )}
                         </div>
                       </div>
-                    </motion.div>
-                  );
-                })}
-              </div>
+                    );
+                  })}
+                </div>
+
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-4 mt-8 pt-6 border-t border-gray-200">
+                  <button
+                    onClick={onClose}
+                    className="px-6 py-3 border border-gray-300 rounded-xl text-gray-700 font-medium hover:bg-gray-50 transition-colors"
+                  >
+                    Hủy
+                  </button>
+                  <button
+                    onClick={handleAssign}
+                    disabled={!selectedNurseId || loading}
+                    className={`
+                      px-6 py-3 rounded-xl font-medium transition-all duration-200
+                      ${selectedNurseId && !loading
+                        ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:from-purple-600 hover:to-pink-600 shadow-lg'
+                        : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      }
+                    `}
+                  >
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        Đang phân công...
+                      </div>
+                    ) : (
+                      'Phân công Nurse'
+                    )}
+                  </button>
+                </div>
+              </>
             )}
           </div>
-
-          {/* Footer */}
-          {nursingSpecialists.length > 0 && (
-            <div className="p-8 border-t border-gray-200 bg-gray-50 rounded-b-3xl">
-              <div className="flex gap-4">
-                <button
-                  onClick={onClose}
-                  className="flex-1 px-6 py-4 border-2 border-gray-300 text-gray-700 rounded-xl hover:bg-gray-100 transition-colors text-lg font-semibold"
-                >
-                  Hủy bỏ
-                </button>
-                <button
-                  onClick={handleAssign}
-                  disabled={!selectedNurseId || loading}
-                  className="flex-1 px-6 py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 text-lg font-semibold"
-                >
-                  {loading ? (
-                    <div className="flex items-center justify-center gap-2">
-                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
-                      Đang xử lý...
-                    </div>
-                  ) : (
-                    'Phân công ngay'
-                  )}
-                </button>
-              </div>
-            </div>
-          )}
         </motion.div>
       </div>
     </AnimatePresence>

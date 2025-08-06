@@ -60,8 +60,12 @@ export const formatPrice = (price) => {
 };
 
 export const filterAppointments = (appointments, searchText, statusFilter, dateFilter) => {
+  if (!Array.isArray(appointments)) return [];
+  
   return appointments.filter(appointment => {
-    const bookingId = appointment.bookingID || appointment.BookingID;
+    if (!appointment) return false;
+    
+    const bookingId = appointment.bookingID || appointment.BookingID || '';
     const matchesSearch = searchText === '' || 
       bookingId.toString().includes(searchText) ||
       appointment.Note?.toLowerCase().includes(searchText.toLowerCase()) ||

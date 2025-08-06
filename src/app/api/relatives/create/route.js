@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 export async function POST(request) {
   try {
     const body = await request.json();
-    console.log('Relative create request body:', body);
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     const response = await fetch(`${backendUrl}/api/relatives/create`, {
       method: 'POST',
@@ -11,7 +10,6 @@ export async function POST(request) {
       body: JSON.stringify(body)
     });
     const data = await response.json();
-    console.log('Relative create response:', data);
     if (!response.ok) {
       return NextResponse.json({ error: data.message || 'Tạo người thân thất bại' }, { status: response.status });
     }

@@ -1,7 +1,7 @@
 import { FaCheckCircle, FaHistory, FaHome } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
 
-export default function PaymentSuccessModal({ isOpen, onClose, invoiceId, bookingData }) {
+export default function PaymentSuccessModal({ isOpen, onClose, invoiceId, amount }) {
   const router = useRouter();
 
   if (!isOpen) return null;
@@ -22,7 +22,7 @@ export default function PaymentSuccessModal({ isOpen, onClose, invoiceId, bookin
           <p className="text-gray-600 mb-6">
             Hóa đơn #{invoiceId} đã được thanh toán thành công.
             <br />
-            Số tiền: {bookingData?.total?.toLocaleString('vi-VN')}₫
+            Số tiền: {amount?.toLocaleString('vi-VN')}₫
           </p>
           
           {/* Countdown */}

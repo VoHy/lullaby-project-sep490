@@ -1,11 +1,13 @@
+"use client";
+
+import React from 'react';
+
 export default function TaskList({ 
-  bookingId, 
   tasks = [],
   onAssignNursing,
   onUpdateStatus,
   compact = false 
 }) {
-  console.log(`📋 TaskList for booking ${bookingId}:`, tasks);
   
   if (!tasks || tasks.length === 0) {
     return (

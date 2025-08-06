@@ -4,17 +4,13 @@ export async function PUT(request, { params }) {
   try {
     const { walletId } = params;
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-    
-    console.log('🔍 Wallet API: Hủy kích hoạt ví walletID:', walletId);
-    
+        
     const response = await fetch(`${backendUrl}/api/Wallet/Inactive/${walletId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
       }
     });
-
-    console.log('🔍 Wallet API: Response status:', response.status);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -23,7 +19,6 @@ export async function PUT(request, { params }) {
     }
 
     const data = await response.json();
-    console.log('🔍 Wallet API: Ví được hủy kích hoạt:', data);
     return NextResponse.json(data);
   } catch (error) {
     console.error('🔍 Wallet API: Error:', error);
