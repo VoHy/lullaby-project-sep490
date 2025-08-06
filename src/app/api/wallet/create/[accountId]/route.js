@@ -1,17 +1,18 @@
 import { NextResponse } from 'next/server';
 
-export async function PUT(request, { params }) {
+export async function POST(request, { params }) {
   try {
-    const { walletId } = params;
+    const { accountId } = params;
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
-    console.log('🔍 Wallet API: Hủy kích hoạt ví walletID:', walletId);
+    console.log('🔍 Wallet API: Tạo ví cho accountID:', accountId);
     
-    const response = await fetch(`${backendUrl}/api/Wallet/Inactive/${walletId}`, {
-      method: 'PUT',
+    const response = await fetch(`${backendUrl}/api/Wallet/${accountId}`, {
+      method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-      }
+      },
+      body: JSON.stringify({}) // Empty body as per API spec
     });
 
     console.log('🔍 Wallet API: Response status:', response.status);
@@ -23,7 +24,7 @@ export async function PUT(request, { params }) {
     }
 
     const data = await response.json();
-    console.log('🔍 Wallet API: Ví được hủy kích hoạt:', data);
+    console.log('🔍 Wallet API: Ví được tạo:', data);
     return NextResponse.json(data);
   } catch (error) {
     console.error('🔍 Wallet API: Error:', error);

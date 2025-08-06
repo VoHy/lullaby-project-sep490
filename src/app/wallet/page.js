@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 import { FaWallet, FaUser, FaUsers } from 'react-icons/fa';
 import { useWalletContext } from '../../context/WalletContext';
 import { useRouter, usePathname } from "next/navigation";
+import { AuthContext } from '../../context/AuthContext';
+import walletService from '@/services/api/walletService';
 import {
   WalletOverview,
   TransactionHistory,
@@ -48,8 +50,8 @@ const TabNavigation = () => {
           key={tab.id}
           onClick={() => router.push(tab.href)}
           className={`flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${tab.active
-              ? 'bg-white text-purple-600 border-b-2 border-purple-600 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            ? 'bg-white text-purple-600 border-b-2 border-purple-600 shadow-sm'
+            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
             }`}
         >
           {tab.icon}
@@ -62,6 +64,7 @@ const TabNavigation = () => {
 
 export default function WalletPage(props) {
   const { wallet, transactions, loading, error, handleDeposit, refreshWalletData } = useWalletContext();
+  const { user } = useContext(AuthContext);
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [showPayOSModal, setShowPayOSModal] = useState(false);
   const [depositAmount, setDepositAmount] = useState('');
@@ -73,6 +76,11 @@ export default function WalletPage(props) {
   const onDepositClick = () => {
     setDepositError('');
     setShowDepositModal(true);
+  };
+
+  const formatCurrency = (amount) => {
+    if (!amount && amount !== 0) return '0';
+    return new Intl.NumberFormat('vi-VN').format(amount);
   };
 
   const onDepositConfirm = async () => {
@@ -112,14 +120,13 @@ export default function WalletPage(props) {
 
   // Function test tạo ví thủ công
   const handleCreateWallet = async () => {
-    console.log('🧪 Test: Bắt đầu tạo ví thủ công');
-    console.log('🧪 Test: Wallet state trước khi tạo:', wallet);
     try {
+      if (!user) throw new Error('Bạn cần đăng nhập!');
+      const accountId = user.accountID || user.AccountID;
+      await walletService.createWallet(accountId);
       await refreshWalletData();
-      console.log('🧪 Test: Tạo ví thành công');
-      console.log('🧪 Test: Wallet state sau khi tạo:', wallet);
     } catch (error) {
-      console.error('🧪 Test: Lỗi tạo ví:', error);
+      alert(error.message || 'Tạo ví thất bại!');
     }
   };
 
@@ -197,66 +204,66 @@ export default function WalletPage(props) {
             >
               {refreshing ? 'Đang tải...' : '🔄'}
             </button>
-        </div>
-
-        {/* Card số dư và nạp tiền */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center mb-8"
-        >
-          <div className="text-lg text-gray-500 mb-2">Số dư ví của bạn</div>
-          <div className="text-4xl font-extrabold text-pink-600 mb-4">
-            {wallet?.Amount || wallet?.amount || 0}đ
           </div>
-          <button
-            onClick={onDepositClick}
-            className="px-8 py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold text-lg shadow-lg hover:scale-105 hover:shadow-xl transition"
+
+          {/* Card số dư và nạp tiền */}
+          <motion.div
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center mb-8"
           >
-            Nạp tiền vào ví
-          </button>
-        </motion.div>
+            <div className="text-lg text-gray-500 mb-2">Số dư ví của bạn</div>
+            <div className="text-4xl font-extrabold text-pink-600 mb-4">
+              {formatCurrency(wallet?.Amount || wallet?.amount || 0)}đ
+            </div>
+            <button
+              onClick={onDepositClick}
+              className="px-8 py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold text-lg shadow-lg hover:scale-105 hover:shadow-xl transition"
+            >
+              Nạp tiền vào ví
+            </button>
+          </motion.div>
 
-        {/* Lịch sử giao dịch */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          className="bg-white rounded-2xl shadow-xl p-8"
-        >
-          <h2 className="text-2xl font-bold text-purple-600 mb-4">Lịch sử giao dịch</h2>
-          <TransactionHistory
-            transactions={transactions}
-            searchText={searchText}
-            setSearchText={setSearchText}
-            filterStatus={filterStatus}
-            setFilterStatus={setFilterStatus}
-          />
-        </motion.div>
+          {/* Lịch sử giao dịch */}
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="bg-white rounded-2xl shadow-xl p-8"
+          >
+            <h2 className="text-2xl font-bold text-purple-600 mb-4">Lịch sử giao dịch</h2>
+            <TransactionHistory
+              transactions={transactions}
+              searchText={searchText}
+              setSearchText={setSearchText}
+              filterStatus={filterStatus}
+              setFilterStatus={setFilterStatus}
+            />
+          </motion.div>
+        </div>
       </div>
-    </div>
 
-      {/* Modal nạp tiền */ }
-  <DepositModal
-    isOpen={showDepositModal}
-    onClose={() => setShowDepositModal(false)}
-    amount={depositAmount}
-    setAmount={setDepositAmount}
-    onDeposit={onDepositConfirm}
-    walletId={wallet?.WalletID || wallet?.walletID}
-    myWallet={wallet}
-    error={depositError}
-    onPayOSPayment={onPayOSPayment}
-  />
+      {/* Modal nạp tiền */}
+      <DepositModal
+        isOpen={showDepositModal}
+        onClose={() => setShowDepositModal(false)}
+        amount={depositAmount}
+        setAmount={setDepositAmount}
+        onDeposit={onDepositConfirm}
+        walletId={wallet?.WalletID || wallet?.walletID}
+        myWallet={wallet}
+        error={depositError}
+        onPayOSPayment={onPayOSPayment}
+      />
 
-  {/* Modal PayOS Payment */ }
-  <PayOSPaymentModal
-    isOpen={showPayOSModal}
-    onClose={() => setShowPayOSModal(false)}
-    amount={depositAmount}
-    wallet={wallet}
-    onPaymentSuccess={onPayOSSuccess}
-    error={depositError}
-  />
+      {/* Modal PayOS Payment */}
+      <PayOSPaymentModal
+        isOpen={showPayOSModal}
+        onClose={() => setShowPayOSModal(false)}
+        amount={depositAmount}
+        wallet={wallet}
+        onPaymentSuccess={onPayOSSuccess}
+        error={depositError}
+      />
     </div >
   );
 }

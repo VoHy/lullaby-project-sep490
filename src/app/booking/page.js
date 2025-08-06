@@ -3,7 +3,6 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useState, useMemo, useContext, useEffect, Suspense } from "react";
 import serviceTypeService from '@/services/api/serviceTypeService';
 import serviceTaskService from '@/services/api/serviceTaskService';
-import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import careProfileService from '@/services/api/careProfileService';
 import bookingService from '@/services/api/bookingService';
 import customizePackageService from '@/services/api/customizePackageService';
@@ -11,8 +10,7 @@ import {
   BookingHeader,
   PackageInfo,
   ServicesList,
-  BookingForm,
-  StaffSelectionModal
+  BookingForm
 } from './components';
 import { AuthContext } from "@/context/AuthContext";
 
@@ -118,18 +116,14 @@ function BookingContent() {
   const [packages, setPackages] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
-  const [nursingSpecialists, setNursingSpecialists] = useState([]);
   const [selectedCareProfile, setSelectedCareProfile] = useState(null);
   const [datetime, setDatetime] = useState("");
   const [note, setNote] = useState("");
-  const [selectedStaff, setSelectedStaff] = useState({});
-  const [staffPopup, setStaffPopup] = useState({ show: false, serviceId: null });
 
   // Loading states
   const [loading, setLoading] = useState(true);
   const [servicesLoading, setServicesLoading] = useState(true);
   const [careProfilesLoading, setCareProfilesLoading] = useState(true);
-  const [nursesLoading, setNursesLoading] = useState(true);
 
   // Error states
   const [error, setError] = useState("");
@@ -228,19 +222,7 @@ function BookingContent() {
     }
   };
 
-  // Load nursing specialists
-  const loadNurses = async () => {
-    try {
-      setNursesLoading(true);
-      const nursesData = await nursingSpecialistService.getAllNursingSpecialists();
-      setNursingSpecialists(nursesData);
-    } catch (error) {
-      console.error("Error loading nurses:", error);
-      setError("Không thể tải danh sách điều dưỡng viên");
-    } finally {
-      setNursesLoading(false);
-    }
-  };
+  // Load nursing specialists - REMOVED: Not needed in booking page anymore
 
   // Load all data on component mount
   useEffect(() => {
@@ -250,8 +232,7 @@ function BookingContent() {
         loadServices(),
         loadPackages(),
         loadServiceTasks(),
-        loadCareProfiles(),
-        loadNurses()
+        loadCareProfiles()
       ]);
       setLoading(false);
     };
@@ -433,32 +414,7 @@ function BookingContent() {
     return selectedDate >= minTime;
   }, [datetime]);
 
-  // Staff selection functions
-  const getAvailableStaff = (serviceId) => {
-    return nursingSpecialists.filter(nurse => 
-      nurse.serviceTypes && nurse.serviceTypes.some(st => st.serviceTypeID === parseInt(serviceId))
-    );
-  };
-
-  const handleSelectStaff = (serviceId, type, id) => {
-    setSelectedStaff(prev => ({
-      ...prev,
-      [serviceId]: { type, id }
-    }));
-    setStaffPopup({ show: false, serviceId: null });
-  };
-
-  const handleToggleNurse = (id) => {
-    setSelectedStaff(prev => {
-      const newState = { ...prev };
-      Object.keys(newState).forEach(key => {
-        if (newState[key] && newState[key].id === id) {
-          delete newState[key];
-        }
-      });
-      return newState;
-    });
-  };
+  // Staff selection functions - REMOVED: Staff selection moved to appointment page
 
   // Payment handling
   const handlePayment = async () => {
@@ -569,14 +525,13 @@ function BookingContent() {
                 >
                   Thử lại
                 </button>
-                <button 
-                  onClick={() => {
-                    clearBookingCache();
-                    setError("");
-                    setServicesLoading(true);
-                    setCareProfilesLoading(true);
-                    setNursesLoading(true);
-                  }} 
+                                 <button 
+                   onClick={() => {
+                     clearBookingCache();
+                     setError("");
+                     setServicesLoading(true);
+                     setCareProfilesLoading(true);
+                   }}  
                   className="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg transition-colors"
                 >
                   Làm mới dữ liệu
@@ -621,11 +576,6 @@ function BookingContent() {
                  selectedServicesList={displayServicesList}
                  packageId={packageId}
                  isDatetimeValid={isDatetimeValid}
-                 getAvailableStaff={getAvailableStaff}
-                 selectedStaff={selectedStaff}
-                 setSelectedStaff={setSelectedStaff}
-                 setStaffPopup={setStaffPopup}
-                 nursingSpecialists={nursingSpecialists}
                  total={total}
                />
             </div>
@@ -649,14 +599,7 @@ function BookingContent() {
             </div>
           </div>
 
-          {/* Popup chọn nhân sự */}
-          <StaffSelectionModal
-            staffPopup={staffPopup}
-            setStaffPopup={setStaffPopup}
-            getAvailableStaff={getAvailableStaff}
-            handleSelectStaff={handleSelectStaff}
-            nursingSpecialists={nursingSpecialists}
-          />
+          {/* Popup chọn nhân sự - REMOVED: Staff selection moved to appointment page */}
 
 
         </div>

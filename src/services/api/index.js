@@ -17,7 +17,7 @@ export { default as careProfileService } from './careProfileService';
 export { default as customizePackageService } from './customizePackageService';
 
 // Customize Task Services
-// export { default as customizeTaskService } from './customizeTaskService';
+export { default as customizeTaskService } from './customizeTaskService';
 
 // Feedback Services
 export { default as feedbackService } from './feedbackService';

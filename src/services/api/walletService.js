@@ -45,7 +45,7 @@ const walletService = {
 
   // Create wallet for account
   createWallet: async (accountId) => {
-    const res = await fetch(`/api/wallet/${accountId}`, {
+    const res = await fetch(`/api/wallet/create/${accountId}`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({}) // Empty body as per API spec
@@ -57,7 +57,7 @@ const walletService = {
 
   // Update wallet amount
   updateWalletAmount: async (walletId, newAmount) => {
-    const res = await fetch(`/api/wallet/${walletId}`, {
+    const res = await fetch(`/api/wallet/updateamount/${walletId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ amount: newAmount })
@@ -90,30 +90,6 @@ const walletService = {
     return data;
   },
 
-  // Update wallet amount
-  updateWalletAmount: async (walletId, amountData) => {
-    const res = await fetch(`/api/wallet/updateamount/${walletId}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(amountData)
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Cập nhật số tiền wallet thất bại');
-    return data;
-  },
-
-  // Update wallet amount (alias for updateWalletAmount)
-  // updateAmount: async (walletId, newAmount) => {
-  //   const res = await fetch(`/api/wallet/updateamount/${walletId}`, {
-  //     method: 'PUT',
-  //     headers: { 'Content-Type': 'application/json' },
-  //     body: JSON.stringify({ amount: newAmount })
-  //   });
-  //   const data = await res.json();
-  //   if (!res.ok) throw new Error(data.error || 'Cập nhật số tiền wallet thất bại');
-  //   return data;
-  // },
-
   // Activate wallet
   activateWallet: async (walletId) => {
     const res = await fetch(`/api/wallet/active/${walletId}`, {
@@ -138,10 +114,29 @@ const walletService = {
 
   // Get wallet by account ID
   getWalletByAccountId: async (accountId) => {
-    const wallets = await walletService.getAllWallets();
-    return wallets.find(wallet => 
-      (wallet.accountID === accountId) || (wallet.AccountID === accountId)
-    );
+    try {
+      console.log('🔍 WalletService: Gọi API lấy ví cho accountID:', accountId);
+      const res = await fetch(`/api/wallet/getall`, {
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!res.ok) {
+        if (res.status === 404) {
+          console.log('🔍 WalletService: Không tìm thấy ví cho accountID:', accountId);
+          return null;
+        }
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Không thể lấy thông tin ví');
+      }
+      
+      const wallet = await res.json();
+      console.log('🔍 WalletService: Ví tìm thấy:', wallet);
+      return wallet;
+    } catch (error) {
+      console.error('�� WalletService: Lỗi lấy ví:', error);
+      throw error;
+    }
   }
 };
 

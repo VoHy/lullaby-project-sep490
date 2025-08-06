@@ -35,6 +35,7 @@ export const WalletProvider = ({ children }) => {
       
       const accountId = getAccountId(user);
       console.log('🔍 WalletContext: User account ID:', accountId);
+      console.log('🔍 WalletContext: User object:', user);
       
       if (!accountId) {
         setError('Không tìm thấy thông tin tài khoản');
@@ -44,48 +45,50 @@ export const WalletProvider = ({ children }) => {
       
       // Lấy ví của user
       console.log('🔍 WalletContext: Đang tìm ví cho account ID:', accountId);
-      let userWallet = await walletService.getWalletByAccountId(accountId);
-      console.log('🔍 WalletContext: Ví hiện tại:', userWallet);
+      const response = await walletService.getWalletByAccountId(accountId);
+      console.log('🔍 WalletContext: API Response:', response);
       
-      // Nếu chưa có ví, tạo ví mới
-      if (!userWallet) {
-        console.log('🔍 WalletContext: Tạo ví mới cho user:', accountId);
-        try {
-          const createResult = await walletService.createWallet(accountId);
-          console.log('🔍 WalletContext: Kết quả tạo ví:', createResult);
-          
-          if (createResult.message === "Wallet was created successfully.") {
-            // Lấy lại ví vừa tạo
-            console.log('🔍 WalletContext: Lấy lại ví vừa tạo');
-            userWallet = await walletService.getWalletByAccountId(accountId);
-            console.log('🔍 WalletContext: Ví sau khi tạo:', userWallet);
-          }
-        } catch (createError) {
-          // Nếu lỗi tạo ví (có thể ví đã tồn tại), thử lấy lại
-          console.log('🔍 WalletContext: Lỗi tạo ví, thử lấy lại:', createError.message);
-          userWallet = await walletService.getWalletByAccountId(accountId);
-          console.log('🔍 WalletContext: Ví sau khi lấy lại:', userWallet);
-          
-          // Nếu vẫn không có ví, báo lỗi
-          if (!userWallet) {
-            throw new Error('Không thể tạo hoặc tìm thấy ví');
-          }
+      // Xử lý response - có thể data nằm trong response.data hoặc response trực tiếp
+      let userWallet = null;
+      if (response) {
+        // Kiểm tra nếu response có data property
+        if (response.data) {
+          userWallet = response.data;
+        } else if (response.walletID || response.WalletID || response.amount !== undefined) {
+          // Response trực tiếp là wallet object
+          userWallet = response;
+        } else if (Array.isArray(response) && response.length > 0) {
+          // Response là array, lấy phần tử đầu tiên
+          userWallet = response[0];
         }
-      } else {
-        console.log('🔍 WalletContext: Đã tìm thấy ví:', userWallet);
       }
       
-      setWallet(userWallet || null);
-      console.log('🔍 WalletContext: Set wallet state:', userWallet);
+      console.log('🔍 WalletContext: Processed wallet:', userWallet);
+      
+      if (!userWallet) {
+        throw new Error('Không tìm thấy ví cho tài khoản này');
+      }
+      
+      // Đảm bảo wallet có đủ thông tin cần thiết
+      const processedWallet = {
+        walletID: userWallet.walletID || userWallet.WalletID,
+        accountID: userWallet.accountID || userWallet.AccountID || accountId,
+        amount: userWallet.amount || userWallet.Amount || 0,
+        status: userWallet.status || userWallet.Status || 'active',
+        note: userWallet.note || userWallet.Note || '',
+        ...userWallet // Giữ lại tất cả properties khác
+      };
+      
+      setWallet(processedWallet);
+      console.log('🔍 WalletContext: Set wallet state:', processedWallet);
       
       // Lấy lịch sử giao dịch nếu có ví
-      if (userWallet) {
+      if (processedWallet) {
         console.log('🔍 WalletContext: Lấy transaction history cho account:', accountId);
         const historyData = await transactionHistoryService.getAllTransactionHistoriesByAccount(accountId);
         console.log('🔍 WalletContext: Transaction history:', historyData);
         setTransactions(historyData || []);
       } else {
-        console.log('🔍 WalletContext: Không có ví, set empty transactions');
         setTransactions([]);
       }
     } catch (error) {
@@ -268,4 +271,4 @@ export const WalletProvider = ({ children }) => {
       {children}
     </WalletContext.Provider>
   );
-}; 
+};

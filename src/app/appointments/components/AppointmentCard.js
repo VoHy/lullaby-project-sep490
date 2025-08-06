@@ -1,14 +1,18 @@
 'use client';
 
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaUser, FaCheck, FaEye, FaUserCircle, FaBox, FaStethoscope } from 'react-icons/fa';
+import NurseSelectionModal from './NurseSelectionModal';
 
 const AppointmentCard = ({ 
   appointment, 
   index, 
   serviceTypes, 
   nursingSpecialists, 
+  customizeTasks,
   onSelect,
+  onAssignNursing,
   getServiceNames,
   getNurseNames,
   getStatusColor,
@@ -24,6 +28,15 @@ const AppointmentCard = ({
   const bookingServices = getBookingServices(bookingId);
   const bookingPackages = getBookingPackages(bookingId);
   const bookingDetails = getBookingDetails(bookingId);
+  
+  // Get customize tasks for this booking
+  const bookingCustomizeTasks = customizeTasks?.filter(task => 
+    task.bookingID === bookingId || task.BookingID === bookingId
+  ) || [];
+  
+  // State for nurse selection modal
+  const [showNurseModal, setShowNurseModal] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState(null);
 
   return (
     <motion.div
@@ -136,6 +149,50 @@ const AppointmentCard = ({
             </div>
           )}
 
+          {/* Customize Tasks */}
+          {bookingCustomizeTasks.length > 0 && (
+            <div className="mb-4">
+              <h4 className="font-semibold text-gray-700 mb-2 flex items-center gap-2">
+                <FaStethoscope className="text-purple-500" />
+                Chi tiết dịch vụ:
+              </h4>
+              <div className="space-y-2">
+                {bookingCustomizeTasks.map((task, index) => (
+                  <div key={index} className="flex items-center justify-between text-sm p-2 bg-gray-50 rounded-lg">
+                    <div className="flex items-center gap-2">
+                      <FaCheck className="text-green-500 text-xs" />
+                      <span className="text-gray-600">{task.serviceTaskName || task.ServiceTaskName || 'Dịch vụ'}</span>
+                      {task.nursingID ? (
+                        <span className="text-xs text-green-600 font-medium">
+                          (Đã phân công: {nursingSpecialists.find(n => n.nursingID === task.nursingID)?.fullName || 'N/A'})
+                        </span>
+                      ) : (
+                        <span className="text-xs text-orange-600 font-medium">(Chưa phân công)</span>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-medium text-blue-600">
+                        {task.price?.toLocaleString('vi-VN') || '0'}đ
+                      </span>
+                      {!task.nursingID && (
+                        <button
+                          className="px-2 py-1 rounded bg-purple-500 text-white text-xs hover:bg-purple-600 transition-colors"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedTaskId(task.customizeTaskID || task.CustomizeTaskID);
+                            setShowNurseModal(true);
+                          }}
+                        >
+                          Add Nursing
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Action Button */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-purple-600 font-medium text-sm">
@@ -155,6 +212,22 @@ const AppointmentCard = ({
           </div>
         </div>
       </div>
+      
+      {/* Nurse Selection Modal */}
+      <NurseSelectionModal
+        isOpen={showNurseModal}
+        onClose={() => {
+          setShowNurseModal(false);
+          setSelectedTaskId(null);
+        }}
+        onAssign={(taskId, nurseId) => {
+          if (onAssignNursing) {
+            onAssignNursing(taskId, nurseId);
+          }
+        }}
+        nursingSpecialists={nursingSpecialists}
+        customizeTaskId={selectedTaskId}
+      />
     </motion.div>
   );
 };

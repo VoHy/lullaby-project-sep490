@@ -4,6 +4,8 @@ export async function GET() {
   try {
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
+    console.log('🔍 Wallet API: Gọi backend URL:', `${backendUrl}/api/Wallet/GetAll`);
+    
     const response = await fetch(`${backendUrl}/api/Wallet/GetAll`, {
       method: 'GET',
       headers: {
@@ -11,37 +13,27 @@ export async function GET() {
       },
     });
 
+    console.log('🔍 Wallet API: Response status:', response.status);
+    console.log('🔍 Wallet API: Response headers:', Object.fromEntries(response.headers.entries()));
+
     if (!response.ok) {
       const errorText = await response.text();
-      
-      // Trả về mock data tạm thời nếu API không hoạt động
-      const mockWalletData = [
-        {
-          walletID: 1,
-          accountID: 1,
-          amount: 200000,
-          status: "active",
-          createdAt: "2025-08-05T10:00:00.000Z",
-          updatedAt: null
-        }
-      ];
-      return NextResponse.json(mockWalletData);
+      console.error('🔍 Wallet API: Backend error:', errorText);
+      throw new Error(`Backend error: ${response.status} - ${errorText}`);
     }
 
     const data = await response.json();
+    console.log('🔍 Wallet API: Backend data type:', typeof data);
+    console.log('🔍 Wallet API: Backend data:', data);
+    console.log('🔍 Wallet API: Is array?', Array.isArray(data));
+    console.log('🔍 Wallet API: Data length:', Array.isArray(data) ? data.length : 'Not array');
+    
     return NextResponse.json(data);
   } catch (error) {
-    // Trả về mock data tạm thời nếu có lỗi kết nối
-    const mockWalletData = [
-      {
-        walletID: 1,
-        accountID: 1,
-        amount: 200000,
-        status: "active",
-        createdAt: "2025-08-05T10:00:00.000Z",
-        updatedAt: null
-      }
-    ];
-    return NextResponse.json(mockWalletData);
+    console.error('🔍 Wallet API: Error:', error);
+    return NextResponse.json(
+      { error: `Không thể kết nối đến server: ${error.message}` },
+      { status: 500 }
+    );
   }
 } 

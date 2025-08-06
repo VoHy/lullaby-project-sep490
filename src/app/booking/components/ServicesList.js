@@ -4,11 +4,6 @@ export default function ServicesList({
   selectedServicesList, 
   packageId, 
   isDatetimeValid, 
-  getAvailableStaff, 
-  selectedStaff, 
-  setSelectedStaff, 
-  setStaffPopup, 
-  nursingSpecialists,
   total 
 }) {
   return (
@@ -54,49 +49,6 @@ export default function ServicesList({
                <div className="text-gray-500 text-xs md:text-sm flex items-center gap-1">
                  <HiOutlineCalendar /> Thời gian: {s.duration || s.Duration || s.taskDuration || s.TaskDuration || 'N/A'} phút
                </div>
-                         {isDatetimeValid && !s.isPackage && !s.isServiceTask && (
-               <div className="mt-2">
-                                  {getAvailableStaff(s.serviceID || s.ServiceID || s.serviceTaskID || s.ServiceTaskID).length === 0 ? (
-                   <div className="text-xs text-gray-400 italic">
-                     Không có nhân sự rảnh thời điểm này. Manager sẽ phân công sau.
-                   </div>
-                 ) : selectedStaff[s.serviceID || s.ServiceID || s.serviceTaskID || s.ServiceTaskID] ? (
-                  <div className="flex items-center gap-2">
-                    <span className="text-green-700 font-semibold">Đã chọn: </span>
-                    <span
-                      className={`px-2 py-0.5 rounded text-xs font-bold ${
-                        selectedStaff[s.serviceID || s.ServiceID || s.serviceTaskID || s.ServiceTaskID].type === "nurse"
-                          ? "bg-blue-100 text-blue-700"
-                          : "bg-pink-100 text-pink-700"
-                      }`}
-                    >
-                      {selectedStaff[s.serviceID || s.ServiceID || s.serviceTaskID || s.ServiceTaskID].type === "nurse" ? "Y tá" : "Chuyên gia"}
-                    </span>
-                                         <span className="font-semibold">
-                       {(() => {
-                         const staff = nursingSpecialists.find(
-                           (n) => n.nursingID === Number(selectedStaff[s.serviceID || s.ServiceID || s.serviceTaskID || s.ServiceTaskID].id)
-                         );
-                         return staff ? staff.fullName : "";
-                       })()}
-                     </span>
-                    <button
-                      className="ml-2 px-2 py-0.5 rounded bg-gray-100 text-gray-700 text-xs hover:bg-gray-200 transition"
-                      onClick={() => setStaffPopup({ open: true, serviceId: s.serviceID || s.ServiceID || s.serviceTaskID || s.ServiceTaskID })}
-                    >
-                      Đổi
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    className="px-4 py-1 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:scale-105 shadow transition"
-                    onClick={() => setStaffPopup({ open: true, serviceId: s.serviceID || s.ServiceID || s.serviceTaskID || s.ServiceTaskID })}
-                  >
-                    Chọn nhân sự
-                  </button>
-                )}
-              </div>
-            )}
           </li>
         ))
         )}
