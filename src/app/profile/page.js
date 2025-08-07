@@ -1,49 +1,34 @@
-"use client";
-import { useEffect, useState, useContext } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { FaUser, FaUsers } from "react-icons/fa";
-import { FaWallet } from "react-icons/fa";
+'use client';
+
+import { useContext, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { FaUser, FaUsers, FaWallet } from 'react-icons/fa';
+
+import { AuthContext } from '@/context/AuthContext';
 import accountsService from '@/services/api/accountService';
-import { AuthContext } from "@/context/AuthContext";
 import ProfileCard from './components/ProfileCard';
 
-// Component TabNavigation chuyển route
 const TabNavigation = () => {
   const router = useRouter();
   const pathname = usePathname();
+
   const tabs = [
-    {
-      id: 'profile',
-      name: 'Thông tin cá nhân',
-      icon: <FaUser className="text-sm" />,
-      href: '/profile',
-      active: pathname === '/profile',
-    },
-    {
-      id: 'care-profiles',
-      name: 'Hồ sơ người thân',
-      icon: <FaUsers className="text-sm" />,
-      href: '/profile/patient',
-      active: pathname === '/profile/patient',
-    },
-    {
-      id: 'wallet',
-      name: 'Ví điện tử',
-      icon: <FaWallet className="text-sm" />,
-      href: '/wallet',
-      active: pathname === '/wallet',
-    }
+    { id: 'profile', name: 'Thông tin cá nhân', icon: <FaUser />, href: '/profile' },
+    { id: 'care-profiles', name: 'Hồ sơ người thân', icon: <FaUsers />, href: '/profile/patient' },
+    { id: 'wallet', name: 'Ví điện tử', icon: <FaWallet />, href: '/wallet' },
   ];
+
   return (
     <div className="flex flex-wrap gap-2 border-b border-gray-200 mb-8">
       {tabs.map(tab => (
         <button
           key={tab.id}
           onClick={() => router.push(tab.href)}
-          className={`flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${tab.active
+          className={`flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${
+            pathname === tab.href
               ? 'bg-white text-purple-600 border-b-2 border-purple-600 shadow-sm'
               : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-            }`}
+          }`}
         >
           {tab.icon}
           {tab.name}
@@ -73,53 +58,23 @@ const StatusDisplay = ({ type, message }) => (
 
 export default function ProfilePage() {
   const { user, updateUser } = useContext(AuthContext);
-  const [profile, setProfile] = useState(null);
+
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Helper function để lấy role name
-  const getRoleName = (roleId) => {
-    const roles = {
-      1: "Quản trị viên",
-      2: "Y tá/Chuyên gia",
-      3: "Quản lý",
-      4: "Khách hàng"
-    };
-    return roles[roleId] || "Khác";
-  };
-
-  useEffect(() => {
-    if (!user) return;
-    const loadProfileData = async () => {
-      try {
-        const accountId = user.accountID || user.AccountID;
-
-        if (!accountId) {
-          console.error('No account ID found in user object');
-          setProfile(user);
-          return;
-        }
-
-        const account = await accountsService.getAccount(accountId);
-        setProfile(account);
-      } catch (err) {
-        console.error('Error loading profile data:', err);
-        setProfile(user);
-        setError(`Không thể tải thông tin tài khoản từ server: ${err.message}`);
-      }
-    };
-    loadProfileData();
-  }, [user]);
+  if (!user) {
+    return <StatusDisplay type="loading" message="Đang tải thông tin tài khoản..." />;
+  }
 
   const handleEditClick = () => {
     setEditData({
-      fullName: displayProfile.fullName || '',
-      phoneNumber: displayProfile.phoneNumber || '',
-      avatarUrl: displayProfile.avatarUrl || '',
-      email: displayProfile.email || ''
+      fullName: user.fullName || '',
+      phoneNumber: user.phoneNumber || '',
+      avatarUrl: user.avatarUrl || '',
+      email: user.email || '',
     });
     setIsEditing(true);
     setError('');
@@ -135,22 +90,18 @@ export default function ProfilePage() {
     setLoading(true);
     setError('');
     setSuccess('');
+
     try {
-      const accountId = displayProfile.accountID;
-      const fullData = { ...displayProfile, ...editData };
+      const updatedData = { ...user, ...editData };
+      await accountsService.updateAccount(user.accountID, updatedData);
 
-      await accountsService.updateAccount(accountId, fullData);
-      const refreshed = await accountsService.getAccount(accountId);
-
-      // Update local state
-      setProfile(refreshed);
-
-      // ⚡ QUAN TRỌNG: Update AuthContext để UI refresh ngay lập tức
-      updateUser(refreshed);
+      const refreshedUser = await accountsService.getAccount(user.accountID);
+      updateUser(refreshedUser); // ⚡ Trigger global update
 
       setIsEditing(false);
       setSuccess('Cập nhật thành công!');
     } catch (err) {
+      console.error('Update error:', err);
       setError('Có lỗi khi cập nhật.');
     } finally {
       setLoading(false);
@@ -162,14 +113,15 @@ export default function ProfilePage() {
     setError('');
   };
 
-  if (!user) {
-    return <StatusDisplay type="loading" message="Đang tải thông tin tài khoản..." />;
-  }
-  if (!profile && !user) {
-    return <StatusDisplay type="error" message="Không tìm thấy thông tin tài khoản." />;
-  }
-
-  const displayProfile = profile || user;
+  const getRoleName = (roleID) => {
+    const roles = {
+      1: "Quản trị viên",
+      2: "Y tá/Chuyên gia",
+      3: "Quản lý",
+      4: "Khách hàng"
+    };
+    return roles[roleID] || "Khác";
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
@@ -181,18 +133,21 @@ export default function ProfilePage() {
           </h1>
           <p className="text-gray-600">Quản lý thông tin tài khoản và hồ sơ chăm sóc</p>
         </div>
-        {/* Tab Navigation */}
+
+        {/* Tabs */}
         <TabNavigation />
-        {/* Thông báo thành công */}
+
+        {/* Success message */}
         {success && (
           <div className="text-green-600 bg-green-50 p-3 rounded-lg mb-4 text-center">
             {success}
           </div>
         )}
-        {/* Tab Content */}
+
+        {/* Main content */}
         <div className="bg-white rounded-xl shadow-lg">
           <ProfileCard
-            profile={displayProfile}
+            profile={user}
             isEditing={isEditing}
             editData={editData}
             onEditClick={handleEditClick}
@@ -201,7 +156,7 @@ export default function ProfilePage() {
             onCancel={handleCancel}
             loading={loading}
             error={error}
-            roleName={getRoleName(displayProfile.roleID)}
+            roleName={getRoleName(user.roleID)}
           />
         </div>
       </div>

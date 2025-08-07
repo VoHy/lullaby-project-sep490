@@ -1,18 +1,22 @@
-// API POST /api/accounts/ban/[id] - proxy sang backend .NET, nhận status
+import { proxyRequest } from '@/lib/proxyRequest';
+import { NextResponse } from 'next/server';
 
-export async function POST(request, { params }) {
-  const { id } = await params;
-  // Lấy trạng thái hiện tại từ backend
-  const getRes = await fetch(`http://localhost:5294/api/accounts/get/${id}`);
-  const account = await getRes.json();
-  // Toggle trạng thái
+export async function POST(_request, { params }) {
+  const { id } = params;
+
+  // Lấy thông tin tài khoản hiện tại
+  const getResult = await proxyRequest(`/api/accounts/get/${id}`, 'GET');
+  if (!getResult.ok) {
+    return NextResponse.json(getResult.data, { status: getResult.status });
+  }
+
+  const account = getResult.data;
   const newStatus = account.status === 'active' ? 'banned' : 'active';
-  // Gửi trạng thái mới sang backend
-  const res = await fetch(`http://localhost:5294/api/accounts/ban/${id}`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+
+  // Gửi yêu cầu cập nhật trạng thái mới
+  const banResult = await proxyRequest(`/api/accounts/ban/${id}`, 'POST', {
     body: JSON.stringify({ status: newStatus }),
   });
-  const data = await res.json();
-  return Response.json(data, { status: res.status });
-} 
+
+  return NextResponse.json(banResult.data, { status: banResult.status });
+}

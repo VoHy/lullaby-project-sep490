@@ -1,3 +1,4 @@
+﻿import { proxyRequest } from '@/lib/proxyRequest';
 import { NextResponse } from 'next/server';
 
 export async function GET() {
@@ -38,3 +39,4 @@ export async function GET() {
     );
   }
 }
+
