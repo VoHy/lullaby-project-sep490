@@ -79,7 +79,7 @@ const AdminDashboard = ({ user, initialTab }) => {
       const [accountData, specialistData, bookingData, feedbackData] = await Promise.all([
         accountService.getAllAccounts(),
         nursingSpecialistService.getNursingSpecialists(),
-        bookingService.getBookingServices(),
+        bookingService.getAllBookings(),
         // feedbackService.getFeedbacks()
       ]);
 

@@ -68,15 +68,15 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
   }, []);
 
   function getBookingDetail(booking) {
-    const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
-    const account = accounts.find(a => a.AccountID === careProfile?.AccountID);
+    const careProfile = careProfiles.find(c => c.careProfileID === booking.careProfileID);
+    const account = accounts.find(a => a.accountID === careProfile?.accountID);
     let service = null;
     let packageInfo = null;
     // if (booking.CustomizePackageID) {
     //   packageInfo = customizePackages.find(p => p.CustomizePackageID === booking.CustomizePackageID);
     //   service = serviceTypes.find(s => s.ServiceID === packageInfo?.ServiceID);
     // } else if (booking.CareProfileID) {
-      service = serviceTypes.find(s => s.ServiceID === booking.CareProfileID);
+      service = serviceTypes.find(s => s.serviceID === booking.careProfileID);
     // }
     // const customizeTasksOfBooking = customizeTasks.filter(t => t.BookingID === booking.BookingID);
     const serviceTasksOfBooking = serviceTasks.filter(t => t.BookingID === booking.BookingID);
@@ -84,12 +84,12 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
     const nurse = nursingSpecialists.find(n => n.NursingID === serviceTask.NursingID);
       return {
         ...serviceTask,
-        price: serviceTask.Price,
-        quantity: serviceTask.Quantity,
-        total: serviceTask.Total,
-        status: serviceTask.Status,
-        nurseName: nurse?.FullName,
-      nurseRole: nurse?.Major
+        price: serviceTask.price,
+        quantity: serviceTask.quantity,
+        total: serviceTask.total,
+        status: serviceTask.status,
+        nurseName: nurse?.fullName,
+      nurseRole: nurse?.major
     };
     // });
     return { careProfile, account, service, packageInfo, serviceTasksOfBooking };
@@ -103,7 +103,7 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
         <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative max-h-[90vh] overflow-y-auto">
           <button className="absolute top-4 right-4 text-gray-500 hover:text-pink-500 text-2xl font-bold" onClick={onClose}>&times;</button>
           <div className="mb-6">
-            <h3 className="text-2xl font-bold mb-2">Chi tiết Booking #{booking.BookingID}</h3>
+            <h3 className="text-2xl font-bold mb-2">Chi tiết Booking #{booking.bookingID}</h3>
             <div className="w-20 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded"></div>
           </div>
           
@@ -112,19 +112,19 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
               <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-xl">
                 <h4 className="font-semibold text-blue-800 mb-2">Thông tin khách hàng</h4>
                 <div className="space-y-2 text-sm">
-                  <div><span className="font-medium">Tên:</span> {careProfile?.ProfileName} ({account?.full_name})</div>
-                  <div><span className="font-medium">Điện thoại:</span> {careProfile?.PhoneNumber}</div>
-                  <div><span className="font-medium">Địa chỉ:</span> {careProfile?.Address}</div>
+                  <div><span className="font-medium">Tên:</span> {careProfile?.profileName} ({account?.full_name})</div>
+                  <div><span className="font-medium">Điện thoại:</span> {careProfile?.phoneNumber}</div>
+                  <div><span className="font-medium">Địa chỉ:</span> {careProfile?.address}</div>
                 </div>
               </div>
               
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl">
                 <h4 className="font-semibold text-green-800 mb-2">Thông tin dịch vụ</h4>
                 <div className="space-y-2 text-sm">
-                  <div><span className="font-medium">Dịch vụ:</span> {packageInfo ? packageInfo.Name : (service?.ServiceName || '-')}</div>
-                  {packageInfo && <div><span className="font-medium">Mô tả:</span> {packageInfo.Description}</div>}
-                  <div><span className="font-medium">Ngày đặt:</span> {booking.CreatedAt ? new Date(booking.CreatedAt).toLocaleString('vi-VN') : '-'}</div>
-                  <div><span className="font-medium">Ngày thực hiện:</span> {booking.WorkDate ? new Date(booking.WorkDate).toLocaleString('vi-VN') : '-'}</div>
+                  <div><span className="font-medium">Dịch vụ:</span> {packageInfo ? packageInfo.name : (service?.serviceName || '-')}</div>
+                  {packageInfo && <div><span className="font-medium">Mô tả:</span> {packageInfo.description}</div>}
+                  <div><span className="font-medium">Ngày đặt:</span> {booking.createdAt ? new Date(booking.createdAt).toLocaleString('vi-VN') : '-'}</div>
+                  <div><span className="font-medium">Ngày thực hiện:</span> {booking.workDate ? new Date(booking.workDate).toLocaleString('vi-VN') : '-'}</div>
                 </div>
               </div>
             </div>
@@ -146,7 +146,7 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="font-medium">Tổng tiền:</span>
-                    <span className="text-lg font-bold text-green-600">{booking.Amount?.toLocaleString('vi-VN') || '-'} VND</span>
+                    <span className="text-lg font-bold text-green-600">{booking.amount?.toLocaleString('vi-VN') || '-'} VND</span>
                   </div>
                 </div>
               </div>
@@ -158,7 +158,7 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
                     <ul className="space-y-2">
                       {serviceTasksOfBooking.map((task, idx) => (
                         <li key={idx} className="bg-white p-3 rounded-lg border">
-                          <div className="font-medium text-sm">{task?.Description}</div>
+                          <div className="font-medium text-sm">{task?.description}</div>
                           <div className="flex items-center justify-between text-xs text-gray-600 mt-2">
                             <span className="font-medium">{task?.price?.toLocaleString()}đ</span>
                             {task.nurseName && (
@@ -311,29 +311,29 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
               <div key={booking.BookingID} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
                 <div className="flex items-center space-x-4">
                   <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
-                    {careProfile?.ProfileName?.charAt(0) || '?'}
+                    {careProfile?.profileName?.charAt(0) || '?'}
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-800">{careProfile?.ProfileName || 'N/A'}</p>
+                    <p className="font-semibold text-gray-800">{careProfile?.profileName || 'N/A'}</p>
                     <p className="text-sm text-gray-600">
-                      {packageInfo ? packageInfo.Name : (service?.ServiceName || 'N/A')}
+                      {packageInfo ? packageInfo.name : (service?.serviceName || 'N/A')}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-bold text-green-600">{booking.Amount?.toLocaleString()} VNĐ</p>
+                  <p className="font-bold text-green-600">{booking.amount?.toLocaleString()} VNĐ</p>
                   <p className="text-sm text-gray-500">
-                    {booking.CreatedAt ? new Date(booking.CreatedAt).toLocaleDateString('vi-VN') : 'N/A'}
+                    {booking.createdAt ? new Date(booking.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
                   </p>
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                    booking.Status === 'completed' ? 'bg-green-100 text-green-700' :
-                    booking.Status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                    booking.status === 'completed' ? 'bg-green-100 text-green-700' :
+                    booking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                     'bg-red-100 text-red-700'
                   }`}>
-                    {booking.Status === 'completed' ? 'Hoàn thành' :
-                     booking.Status === 'pending' ? 'Đang xử lý' : 'Đã hủy'}
+                    {booking.status === 'completed' ? 'Hoàn thành' :
+                     booking.status === 'pending' ? 'Đang xử lý' : 'Đã hủy'}
                   </span>
                   <button
                     onClick={() => setSelectedBooking(booking)}
