@@ -22,28 +22,41 @@ export default function ServicesList({
         ) : (
                      selectedServicesList.map((s) => (
              <li key={s.serviceID || s.ServiceID || s.serviceTaskID || s.ServiceTaskID} className={`bg-white rounded-xl shadow p-3 md:p-4 border flex flex-col gap-1 ${s.isPackage ? 'border-purple-300 bg-purple-50' : s.isServiceTask ? 'border-blue-200 bg-blue-50' : ''}`}>
-               <div className="flex items-center gap-2">
-                 <span className={`font-bold text-base md:text-lg ${s.isPackage ? 'text-purple-700' : s.isServiceTask ? 'text-blue-700' : 'text-blue-700'}`}>
-                   {s.isPackage ? '📦 ' : s.isServiceTask ? '🔹 ' : ''}{s.serviceName || s.ServiceName || s.taskName || s.TaskName || 'Dịch vụ con'}
-                 </span>
-                 {!packageId && !s.isPackage && !s.isServiceTask && (
-                   <span className="ml-2 text-pink-600 font-bold text-sm md:text-base">
-                     {(s.price || s.Price)?.toLocaleString("vi-VN") ?? ""}
-                     {(s.price || s.Price) !== undefined ? " VNĐ" : ""}
+               <div className="flex items-center justify-between">
+                 <div className="flex items-center gap-2">
+                   <span className={`font-bold text-base md:text-lg ${s.isPackage ? 'text-purple-700' : s.isServiceTask ? 'text-blue-700' : 'text-blue-700'}`}>
+                     {s.isPackage ? '📦 ' : s.isServiceTask ? '🔹 ' : ''}{s.serviceName || s.ServiceName || s.taskName || s.TaskName || 'Dịch vụ con'}
                    </span>
-                 )}
-                 {s.isPackage && (
-                   <span className="ml-2 text-purple-600 font-bold text-sm md:text-base">
-                     {(s.price || s.Price)?.toLocaleString("vi-VN") ?? ""}
-                     {(s.price || s.Price) !== undefined ? " VNĐ" : ""}
-                   </span>
-                 )}
-                 {s.isServiceTask && (
-                   <span className="ml-2 text-blue-600 font-bold text-sm md:text-base">
-                     {(s.price || s.Price)?.toLocaleString("vi-VN") ?? ""}
-                     {(s.price || s.Price) !== undefined ? " VNĐ" : ""}
-                   </span>
-                 )}
+                   {/* Hiển thị số lượng nếu có */}
+                   {s.quantity && s.quantity > 1 && (
+                     <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">
+                       x{s.quantity}
+                     </span>
+                   )}
+                 </div>
+                 <div className="flex items-center gap-2">
+                   {!packageId && !s.isPackage && !s.isServiceTask && (
+                     <span className="text-pink-600 font-bold text-sm md:text-base">
+                       {(s.price || s.Price)?.toLocaleString("vi-VN") ?? ""}
+                       {(s.price || s.Price) !== undefined ? " VNĐ" : ""}
+                       {s.quantity && s.quantity > 1 && (
+                         <span className="text-xs text-gray-500 ml-1">({((s.price || s.Price) * s.quantity)?.toLocaleString("vi-VN")} VNĐ)</span>
+                       )}
+                     </span>
+                   )}
+                   {s.isPackage && (
+                     <span className="text-purple-600 font-bold text-sm md:text-base">
+                       {(s.price || s.Price)?.toLocaleString("vi-VN") ?? ""}
+                       {(s.price || s.Price) !== undefined ? " VNĐ" : ""}
+                     </span>
+                   )}
+                   {s.isServiceTask && (
+                     <span className="text-blue-600 font-bold text-sm md:text-base">
+                       {(s.price || s.Price)?.toLocaleString("vi-VN") ?? ""}
+                       {(s.price || s.Price) !== undefined ? " VNĐ" : ""}
+                     </span>
+                   )}
+                 </div>
                </div>
                <div className="text-gray-500 text-xs md:text-sm">{s.description || s.Description || s.taskDescription || s.TaskDescription}</div>
                <div className="text-gray-500 text-xs md:text-sm flex items-center gap-1">

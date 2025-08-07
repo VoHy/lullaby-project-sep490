@@ -15,7 +15,9 @@ const ServiceSection = ({
   expandedPackage,
   onToggleExpand,
   getServicesOfPackage,
-  getRating
+  getRating,
+  serviceQuantities = {},
+  onQuantityChange
 }) => {
   return (
     <motion.div
@@ -52,6 +54,8 @@ const ServiceSection = ({
             onToggleExpand={onToggleExpand}
             getServicesOfPackage={getServicesOfPackage}
             getRating={getRating}
+            quantity={serviceQuantities[service.serviceID] || 1}
+            onQuantityChange={onQuantityChange}
           />
         ))}
       </div>

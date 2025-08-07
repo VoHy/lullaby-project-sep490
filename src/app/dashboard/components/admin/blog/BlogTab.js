@@ -17,6 +17,14 @@ const BlogTab = () => {
   const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger để refresh data
   const [loading, setLoading] = useState(false); // Loading state cho các thao tác
   const [stats, setStats] = useState({ blogs: 0, categories: 0 }); // Stats cho hiển thị số lượng
+  
+  // ✅ Cache data để tránh gọi API lại khi switch tab
+  const [cachedData, setCachedData] = useState({
+    blogs: null,
+    categories: null,
+    lastFetch: null
+  });
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const handleBlogSubmit = async (formData) => {
     try {
       setLoading(true);
@@ -105,26 +113,61 @@ const BlogTab = () => {
     }
   };
 
-    // Hàm lấy stats
-  const fetchStats = async () => {
+  // ✅ Centralized data fetching với cache
+  const fetchAllData = async (forceRefresh = false) => {
+    // Kiểm tra cache (5 phút)
+    const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+    const now = Date.now();
+    
+    if (!forceRefresh && cachedData.lastFetch && 
+        (now - cachedData.lastFetch) < CACHE_DURATION && 
+        cachedData.blogs && cachedData.categories) {
+      console.log('📦 Using cached data');
+      return cachedData;
+    }
+
     try {
+      setLoading(true);
+      console.log('🌐 Fetching fresh data from API');
+      
       const [blogsData, categoriesData] = await Promise.all([
         blogService.getAllBlogs(),
         blogCategoryService.getAllBlogCategories()
       ]);
+
+      const newCachedData = {
+        blogs: blogsData,
+        categories: categoriesData,
+        lastFetch: now
+      };
+
+      setCachedData(newCachedData);
       setStats({
         blogs: blogsData.length,
         categories: categoriesData.length
       });
+
+      return newCachedData;
     } catch (error) {
-      console.error('Lỗi khi lấy stats:', error);
+      console.error('Lỗi khi tải dữ liệu:', error);
+      throw error;
+    } finally {
+      setLoading(false);
+      setIsInitialLoad(false);
     }
   };
 
   // Fetch stats khi component mount và khi refreshTrigger thay đổi
   useEffect(() => {
-    fetchStats();
+    fetchAllData(refreshTrigger > 0); // Force refresh khi có action
   }, [refreshTrigger]);
+
+  // Initial load
+  useEffect(() => {
+    if (isInitialLoad) {
+      fetchAllData();
+    }
+  }, [isInitialLoad]);
 
   const handleConfirmDelete = async () => {
     try {
@@ -253,12 +296,17 @@ const BlogTab = () => {
               onActivate={handleBlogActivate}
               onDeactivate={handleBlogDeactivate}
               refreshTrigger={refreshTrigger}
+              cachedBlogs={cachedData.blogs}
+              cachedCategories={cachedData.categories}
+              loading={loading && isInitialLoad}
             />
           ) : (
             <BlogCategoryList
               onEdit={handleCategoryEdit}
               onDelete={handleCategoryDelete}
               refreshTrigger={refreshTrigger}
+              cachedCategories={cachedData.categories}
+              loading={loading && isInitialLoad}
             />
           )}
         </div>

@@ -3,6 +3,7 @@
 import { motion } from 'framer-motion';
 import { FaStar, FaClock, FaEye, FaShoppingCart, FaCheck, FaTimes, FaTag } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
+import QuantitySelector from './QuantitySelector';
 
 // Component để hiển thị danh sách dịch vụ con trong gói
 const PackageServicesList = ({ packageId, getServicesOfPackage }) => {
@@ -71,7 +72,9 @@ const ServiceCard = ({
   type = 'service', // 'service' or 'package'
   expandedPackage,
   onToggleExpand,
-  getServicesOfPackage
+  getServicesOfPackage,
+  quantity = 1,
+  onQuantityChange
 }) => {
   const getRating = (serviceId) => {
     // This should be passed from parent or calculated here
@@ -125,6 +128,16 @@ const ServiceCard = ({
             {service.price?.toLocaleString('vi-VN')} VNĐ
           </div>
         </div>
+
+        {/* Quantity Selector for selected individual services */}
+        {type === 'service' && isSelected && onQuantityChange && (
+          <QuantitySelector
+            quantity={quantity}
+            onQuantityChange={(newQuantity) => onQuantityChange(service.serviceID, newQuantity)}
+            min={1}
+            max={10}
+          />
+        )}
 
         {/* Action Buttons */}
         <div className="space-y-3">

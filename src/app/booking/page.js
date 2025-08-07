@@ -104,12 +104,17 @@ function BookingContent() {
   // URL parameters
   const packageId = searchParams.get("packageId") || searchParams.get("package");
   const serviceId = searchParams.get("serviceId") || searchParams.get("service");
+  const servicesId = searchParams.get("services"); // Thêm parameter services cho multi-service
   const packageDataParam = searchParams.get("packageData");
   const serviceDataParam = searchParams.get("serviceData");
+  const servicesDataParam = searchParams.get("servicesData"); // Thêm parameter servicesData
+  const quantityParam = searchParams.get("quantity"); // Thêm parameter quantity
 
   // Parse service/package data from URL
   const packageData = packageDataParam ? JSON.parse(decodeURIComponent(packageDataParam)) : null;
   const serviceData = serviceDataParam ? JSON.parse(decodeURIComponent(serviceDataParam)) : null;
+  const servicesData = servicesDataParam ? JSON.parse(decodeURIComponent(servicesDataParam)) : null; // Parse servicesData
+  const quantity = quantityParam ? parseInt(quantityParam) || 1 : 1; // Parse quantity
 
   // State management
   const [services, setServices] = useState([]);
@@ -149,7 +154,7 @@ function BookingContent() {
   // Load packages
   const loadPackages = async () => {
     try {
-      const packagesData = await customizePackageService.getAllCustomizePackages();
+      const packagesData = await customizePackageService.getCustomizePackages();
       setPackages(packagesData);
     } catch (error) {
       console.error("Error loading packages:", error);
@@ -298,7 +303,12 @@ function BookingContent() {
   }, [packageId, services, packages, packageData, serviceData]);
 
   const selectedServicesList = useMemo(() => {
-    if (!serviceId && !packageId) return [];
+    if (!serviceId && !servicesId && !packageId) return [];
+    
+    // Nếu có servicesData từ URL (multi-service với số lượng)
+    if (servicesData && Array.isArray(servicesData)) {
+      return servicesData;
+    }
     
     // Nếu có serviceData từ URL (dịch vụ lẻ đơn)
     if (serviceData) {
@@ -308,6 +318,15 @@ function BookingContent() {
     // Nếu có packageData từ URL (gói dịch vụ)
     if (packageData) {
       return [packageData];
+    }
+    
+    // Nếu có servicesId (multi-service không có servicesData)
+    if (servicesId && services.length > 0) {
+      const serviceIds = servicesId.split(',').map(id => parseInt(id.trim()));
+      const selectedServices = services.filter(service => 
+        serviceIds.includes(service.serviceID) || serviceIds.includes(service.serviceTypeID)
+      );
+      return selectedServices;
     }
     
     // Nếu có serviceId (dịch vụ lẻ - có thể nhiều dịch vụ)
@@ -333,13 +352,21 @@ function BookingContent() {
     }
     
     return [];
-  }, [serviceId, packageId, services, serviceTasks, serviceData, packageData, packages]);
+  }, [serviceId, servicesId, packageId, services, serviceTasks, serviceData, packageData, servicesData, packages]);
 
   // Thêm thông tin gói chính vào selectedServicesList khi có package
   const displayServicesList = useMemo(() => {
+    // Nếu có servicesData (multi-service với số lượng)
+    if (servicesData && Array.isArray(servicesData)) {
+      return servicesData;
+    }
+    
     // Nếu có serviceData (dịch vụ lẻ đơn)
     if (serviceData) {
-      return [serviceData];
+      return [{
+        ...serviceData,
+        quantity: quantity // Thêm thông tin số lượng
+      }];
     }
     
     // Nếu có packageData (gói dịch vụ)
@@ -352,6 +379,11 @@ function BookingContent() {
       }
       
       return displayList;
+    }
+    
+    // Nếu có servicesId (multi-service không có servicesData)
+    if (servicesId && selectedServicesList.length > 0) {
+      return selectedServicesList;
     }
     
     // Nếu có serviceId (dịch vụ lẻ - có thể nhiều dịch vụ)
@@ -378,22 +410,35 @@ function BookingContent() {
     }
     
     return selectedServicesList;
-  }, [packageId, detail, selectedServicesList, serviceData, packageData, serviceTasks, serviceId]);
+  }, [packageId, detail, selectedServicesList, serviceData, packageData, serviceTasks, serviceId, servicesId, servicesData, quantity]);
 
   const total = useMemo(() => {
-    // Nếu có serviceData (dịch vụ lẻ đơn)
-    if (serviceData) {
-      return serviceData.price || 0;
+    // Nếu có servicesData (multi-service với số lượng)
+    if (servicesData && Array.isArray(servicesData)) {
+      return servicesData.reduce((sum, service) => {
+        const price = service.price || 0;
+        const qty = service.quantity || 1;
+        return sum + (price * qty);
+      }, 0);
     }
     
-    // Nếu có packageData (gói dịch vụ)
+    // Nếu có serviceData (dịch vụ lẻ đơn)
+    if (serviceData) {
+      return (serviceData.price || 0) * quantity;
+    }
+    
+    // Nếu có packageData (gói dịch vụ) - package không có số lượng
     if (packageData) {
       return packageData.price || 0;
     }
     
-    // Nếu có serviceId (dịch vụ lẻ - có thể nhiều dịch vụ)
-    if (serviceId && selectedServicesList.length > 0) {
-      return selectedServicesList.reduce((sum, service) => sum + (service.price || 0), 0);
+    // Nếu có servicesId hoặc serviceId (dịch vụ lẻ - có thể nhiều dịch vụ)
+    if ((servicesId || serviceId) && selectedServicesList.length > 0) {
+      return selectedServicesList.reduce((sum, service) => {
+        const price = service.price || 0;
+        const qty = service.quantity || 1;
+        return sum + (price * qty);
+      }, 0);
     }
     
     // Fallback cho logic cũ
@@ -402,7 +447,7 @@ function BookingContent() {
     }
     
     return 0;
-  }, [packageId, detail, serviceId, selectedServicesList, serviceData, packageData]);
+  }, [packageId, detail, serviceId, servicesId, selectedServicesList, serviceData, packageData, servicesData, quantity]);
 
   const isDatetimeValid = useMemo(() => {
     if (!datetime) return false;
@@ -446,7 +491,7 @@ function BookingContent() {
       setIsProcessingPayment(true);
       
       // Xác định loại booking (package hoặc service)
-      const isPackage = packageId && !serviceId;
+      const isPackage = packageId && !serviceId && !servicesId;
       
       let createdBooking;
       
@@ -466,22 +511,33 @@ function BookingContent() {
         createdBooking = await bookingService.createPackageBooking(packageBookingData);
       } else {
         // Service booking - sử dụng CreateServiceBooking API với quantity thực tế
-        const serviceIds = serviceId ? serviceId.split(',').map(id => parseInt(id.trim())) : [];
+        let services = [];
         
-        // Lấy quantity thực tế cho mỗi service từ selectedServicesList
-        const services = serviceIds.map((id, index) => {
-          // Tìm service trong selectedServicesList để lấy quantity
-          const serviceInList = selectedServicesList.find(s => 
-            (s.serviceID === id || s.serviceTypeID === id)
-          );
+        if (servicesData && Array.isArray(servicesData)) {
+          // Multi-service với đầy đủ thông tin số lượng
+          services = servicesData.map(service => ({
+            serviceID: service.serviceID,
+            quantity: service.quantity || 1
+          }));
+        } else {
+          // Single service hoặc multi-service fallback
+          const serviceIds = (servicesId || serviceId) ? (servicesId || serviceId).split(',').map(id => parseInt(id.trim())) : [];
           
-          const serviceQuantity = serviceInList?.quantity || serviceQuantities[index] || quantity || 1;
-          
-          return {
-            serviceID: id,
-            quantity: serviceQuantity
-          };
-        });
+          services = serviceIds.map((id) => {
+            // Tìm service trong selectedServicesList để lấy quantity
+            const serviceInList = selectedServicesList.find(s => 
+              (s.serviceID === id || s.serviceTypeID === id)
+            );
+            
+            // Ưu tiên quantity từ serviceInList, sau đó là quantity từ URL parameter
+            const serviceQuantity = serviceInList?.quantity || quantity || 1;
+            
+            return {
+              serviceID: id,
+              quantity: serviceQuantity
+            };
+          });
+        }
         
         const serviceBookingData = {
           careProfileID: parseInt(selectedCareProfile.careProfileID),

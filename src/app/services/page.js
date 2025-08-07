@@ -65,6 +65,7 @@ export default function ServicesPage() {
   // const [feedbacks, setFeedbacks] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedServices, setSelectedServices] = useState([]);
+  const [serviceQuantities, setServiceQuantities] = useState({}); // Thêm state để quản lý số lượng
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [serviceDetail, setServiceDetail] = useState(null);
@@ -131,17 +132,39 @@ export default function ServicesPage() {
     } else {
       setSelectedPackage(pkgId);
       setSelectedServices([]);
+      setServiceQuantities({}); // Reset số lượng dịch vụ
     }
   };
 
   // Khi chọn service lẻ thì reset chọn package
   const handleToggleService = (serviceId) => {
     if (selectedPackage) setSelectedPackage(null);
-    setSelectedServices((prev) =>
-      prev.includes(serviceId)
-        ? prev.filter((id) => id !== serviceId)
-        : [...prev, serviceId]
-    );
+    setSelectedServices((prev) => {
+      if (prev.includes(serviceId)) {
+        // Nếu bỏ chọn dịch vụ, xóa số lượng của nó
+        setServiceQuantities(prevQuantities => {
+          const newQuantities = { ...prevQuantities };
+          delete newQuantities[serviceId];
+          return newQuantities;
+        });
+        return prev.filter((id) => id !== serviceId);
+      } else {
+        // Nếu chọn dịch vụ mới, set số lượng mặc định là 1
+        setServiceQuantities(prevQuantities => ({
+          ...prevQuantities,
+          [serviceId]: 1
+        }));
+        return [...prev, serviceId];
+      }
+    });
+  };
+
+  // Hàm cập nhật số lượng cho dịch vụ
+  const handleQuantityChange = (serviceId, quantity) => {
+    setServiceQuantities(prevQuantities => ({
+      ...prevQuantities,
+      [serviceId]: quantity
+    }));
   };
 
   // Tách dịch vụ lẻ và package
@@ -209,8 +232,9 @@ export default function ServicesPage() {
         router.push(`/booking?package=${serviceId}`);
       }
     } else {
-      // Tìm thông tin service
+      // Tìm thông tin service và số lượng
       const serviceInfo = serviceTypes.find(s => s.serviceID === serviceId);
+      const quantity = serviceQuantities[serviceId] || 1;
       if (serviceInfo) {
         const serviceData = {
           serviceName: serviceInfo.serviceName,
@@ -218,11 +242,12 @@ export default function ServicesPage() {
           price: serviceInfo.price,
           duration: serviceInfo.duration,
           description: serviceInfo.description,
-          serviceID: serviceInfo.serviceID
+          serviceID: serviceInfo.serviceID,
+          quantity: quantity
         };
-        router.push(`/booking?service=${serviceId}&serviceData=${encodeURIComponent(JSON.stringify(serviceData))}`);
+        router.push(`/booking?service=${serviceId}&serviceData=${encodeURIComponent(JSON.stringify(serviceData))}&quantity=${quantity}`);
       } else {
-        router.push(`/booking?service=${serviceId}`);
+        router.push(`/booking?service=${serviceId}&quantity=${quantity}`);
       }
     }
   };
@@ -301,6 +326,8 @@ export default function ServicesPage() {
             onBook={handleBook}
             isDisabled={!!selectedPackage}
             getRating={getRating}
+            serviceQuantities={serviceQuantities}
+            onQuantityChange={handleQuantityChange}
           />
         )}
 
@@ -318,7 +345,11 @@ export default function ServicesPage() {
         )}
 
         {/* Multi-Service Booking Button */}
-        <MultiServiceBooking selectedServices={selectedServices} />
+        <MultiServiceBooking 
+          selectedServices={selectedServices} 
+          serviceQuantities={serviceQuantities}
+          serviceTypes={serviceTypes}
+        />
 
         {/* Service Detail Modal */}
         <DetailModal
