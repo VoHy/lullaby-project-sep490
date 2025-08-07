@@ -68,7 +68,7 @@ export { default as transactionHistoryService } from './transactionHistoryServic
 export { default as walletService } from './walletService';
 
 // Work Schedule Services
-// export { default as workScheduleService } from './workScheduleService';
+export { default as workScheduleService } from './workScheduleService';
 
 // Zone Services
 export { default as zoneService } from './zoneService';
