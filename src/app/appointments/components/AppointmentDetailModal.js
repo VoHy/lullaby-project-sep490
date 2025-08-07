@@ -162,7 +162,31 @@ const AppointmentDetailModal = ({
 
   const availableNurses = getAvailableNurses();
 
+  // Helper function to get nurse info by ID
+  const getNurseInfo = (nursingId) => {
+    if (!nursingId) return null;
+    
+    const nurse = nursingSpecialists.find(n => 
+      n.nursingID === nursingId || 
+      n.nursing_ID === nursingId || 
+      n.Nursing_ID === nursingId
+    );
+    
+    return nurse ? {
+      id: nursingId,
+      name: nurse.fullName || nurse.full_Name || nurse.Full_Name || 'Không có tên',
+      phone: nurse.phoneNumber || nurse.phone_Number,
+      experience: nurse.experience
+    } : {
+      id: nursingId,
+      name: 'Nurse không xác định',
+      phone: null,
+      experience: null
+    };
+  };
+
   const handleAddNurse = (service) => {
+    console.log('🖱️ Add Nurse button clicked!', service);
     setSelectedService(service);
     setShowNurseModal(true);
   };
@@ -320,8 +344,14 @@ const AppointmentDetailModal = ({
                                   )}
                                 </div>
                                 <button
-                                  onClick={() => handleAddNurse({ ...childService, taskId: task.taskID || task.task_ID })}
+                                  onClick={(e) => {
+                                    e.preventDefault();
+                                    e.stopPropagation();
+                                    console.log('🖱️ Package task button clicked!');
+                                    handleAddNurse({ ...childService, taskId: task.taskID || task.task_ID });
+                                  }}
                                   className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                                  style={{ pointerEvents: 'auto', zIndex: 10 }}
                                 >
                                   <FaUserMd className="text-xs" />
                                   Add Nurse
@@ -346,6 +376,7 @@ const AppointmentDetailModal = ({
                       {serviceDetails.services.map((service, index) => {
                         const hasNurse = !!service.nursingID;
                         const isCompleted = service.status === 'completed';
+                        const nurseInfo = hasNurse ? getNurseInfo(service.nursingID) : null;
                         
                         return (
                           <div key={service.serviceInstanceKey || `task-${index}`} 
@@ -370,26 +401,34 @@ const AppointmentDetailModal = ({
                               <div className="text-xs text-gray-500 mt-1">
                                 Status: {service.status}
                               </div>
-                              <div className="text-xs text-gray-500 mt-1">
-                                {service.nursingID && ` | Nurse ID: ${service.nursingID}`}
-                              </div>
+                              {hasNurse && nurseInfo && (
+                                <div className="text-sm text-green-600 mt-2 bg-green-50 p-2 rounded border border-green-200">
+                                  <div className="font-medium">👩‍⚕️ Điều dưỡng: {nurseInfo.name}</div>
+                                  <div className="text-xs text-green-700">
+                                    ID: {nurseInfo.id}
+                                    {nurseInfo.phone && ` | SĐT: ${nurseInfo.phone}`}
+                                    {nurseInfo.experience && ` | Kinh nghiệm: ${nurseInfo.experience}`}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                             {!hasNurse && !isCompleted && (
                               <button
-                                onClick={() => handleAddNurse({
-                                  ...service,
-                                  customizeTaskId: service.customizeTaskId
-                                })}
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  console.log('🖱️ Customize task button clicked!');
+                                  handleAddNurse({
+                                    ...service,
+                                    customizeTaskId: service.customizeTaskId
+                                  });
+                                }}
                                 className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                                style={{ pointerEvents: 'auto', zIndex: 10 }}
                               >
                                 <FaUserMd className="text-xs" />
                                 Add Nurse
                               </button>
-                            )}
-                            {hasNurse && (
-                              <div className="text-sm text-green-600 font-medium">
-                                ✅ Đã phân công
-                              </div>
                             )}
                             {isCompleted && (
                               <div className="text-sm text-gray-500 font-medium">
@@ -427,12 +466,18 @@ const AppointmentDetailModal = ({
                             </div>
                           </div>
                           <button
-                            onClick={() => handleAddNurse({
-                              ...service,
-                              customizePackageId: service.customizePackageId,
-                              instanceNumber: service.instanceNumber
-                            })}
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              console.log('🖱️ Individual service button clicked!');
+                              handleAddNurse({
+                                ...service,
+                                customizePackageId: service.customizePackageId,
+                                instanceNumber: service.instanceNumber
+                              });
+                            }}
                             className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                            style={{ pointerEvents: 'auto', zIndex: 10 }}
                           >
                             <FaUserMd className="text-xs" />
                             Add Nurse

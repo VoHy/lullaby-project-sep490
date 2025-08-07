@@ -135,6 +135,7 @@ export default function AppointmentsPage() {
   // Handle nurse assignment
   const handleNurseAssignment = async (service, nurseId) => {
     try {
+      console.log('🚀 Assigning nurse:', { service, nurseId });
       
       // Get booking ID
       const bookingId = selectedAppointment?.bookingID || selectedAppointment?.BookingID;
@@ -144,30 +145,26 @@ export default function AppointmentsPage() {
 
       // Case 1: If service has customizeTaskId, update that task directly
       if (service.customizeTaskId) {
-        
-        const { customizeTaskService } = await import('@/services/api');
+        console.log('📋 Updating customize task directly:', service.customizeTaskId);
         await customizeTaskService.updateTaskNursing(service.customizeTaskId, nurseId);
       }
       // Case 2: Package service with taskId (từ service task)
       else if (service.taskId) {
+        console.log('📦 Updating package task:', service.taskId);
         // Directly use the taskId from service task
         const customizeTaskId = service.taskId;
-        
-        const { customizeTaskService } = await import('@/services/api');
         await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId);
       } 
       // Case 3: Individual service - need to find corresponding CustomizeTask
       else {
-        
-        // Import customize services
-        const { customizeTaskService, customizePackageService } = await import('@/services/api');
+        console.log('🔍 Finding customize task for individual service');
         
         // Get all customize packages for this booking
-        const customizePackages = await customizePackageService.getAllByBooking(bookingId);
+        const customizePackagesData = await customizePackageService.getAllByBooking(bookingId);
         
         // Find the customize package that matches the service
         const serviceId = service.serviceID || service.serviceTypeID || service.ServiceID;
-        const matchingPackage = customizePackages.find(pkg => 
+        const matchingPackage = customizePackagesData.find(pkg => 
           (pkg.serviceID === serviceId) || 
           (pkg.service_ID === serviceId) || 
           (pkg.Service_ID === serviceId)
@@ -179,15 +176,15 @@ export default function AppointmentsPage() {
         
         // Get all customize tasks for this package
         const customizePackageId = matchingPackage.customizePackageID || matchingPackage.customize_PackageID;
-        const customizeTasks = await customizeTaskService.getTasksByPackage(customizePackageId);
+        const customizeTasksData = await customizeTaskService.getTasksByPackage(customizePackageId);
         
-        if (customizeTasks.length === 0) {
+        if (customizeTasksData.length === 0) {
           throw new Error('Không tìm thấy customize task nào');
         }
         
         // For individual service, update the first available task
         // You might want to add more logic here to select the right task
-        const taskToUpdate = customizeTasks[0];
+        const taskToUpdate = customizeTasksData[0];
         const customizeTaskId = taskToUpdate.customizeTaskID || taskToUpdate.customize_TaskID;
         
         await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId);
