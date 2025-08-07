@@ -1,7 +1,5 @@
 ﻿import { getAuthHeaders } from './serviceUtils';
 
-// Tạo base service với factory
-
 // Thêm method đặc biệt
 const feedbackService = {  // Get all feedbacks
   getAllFeedbacks: async () => {

@@ -40,11 +40,10 @@ const TabNavigation = () => {
         <button
           key={tab.id}
           onClick={() => router.push(tab.href)}
-          className={`flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${
-            tab.active
+          className={`flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${tab.active
               ? 'bg-white text-purple-600 border-b-2 border-purple-600 shadow-sm'
               : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-          }`}
+            }`}
         >
           {tab.icon}
           {tab.name}
@@ -85,7 +84,7 @@ export default function ProfilePage() {
   const getRoleName = (roleId) => {
     const roles = {
       1: "Quản trị viên",
-      2: "Y tá/Chuyên gia", 
+      2: "Y tá/Chuyên gia",
       3: "Quản lý",
       4: "Khách hàng"
     };
@@ -97,13 +96,13 @@ export default function ProfilePage() {
     const loadProfileData = async () => {
       try {
         const accountId = user.accountID || user.AccountID;
-        
+
         if (!accountId) {
           console.error('No account ID found in user object');
           setProfile(user);
           return;
         }
-        
+
         const account = await accountsService.getAccount(accountId);
         setProfile(account);
       } catch (err) {
@@ -117,9 +116,9 @@ export default function ProfilePage() {
 
   const handleEditClick = () => {
     setEditData({
-      fullName: displayProfile.fullName || displayProfile.full_name || '',
-      phoneNumber: displayProfile.phoneNumber || displayProfile.phone_number || '',
-      avatarUrl: displayProfile.avatarUrl || displayProfile.avatar_url || '',
+      fullName: displayProfile.fullName || '',
+      phoneNumber: displayProfile.phoneNumber || '',
+      avatarUrl: displayProfile.avatarUrl || '',
       email: displayProfile.email || ''
     });
     setIsEditing(true);
@@ -137,18 +136,18 @@ export default function ProfilePage() {
     setError('');
     setSuccess('');
     try {
-      const accountId = displayProfile.accountID || displayProfile.AccountID;
+      const accountId = displayProfile.accountID;
       const fullData = { ...displayProfile, ...editData };
-      
+
       await accountsService.updateAccount(accountId, fullData);
       const refreshed = await accountsService.getAccount(accountId);
-      
+
       // Update local state
       setProfile(refreshed);
-      
+
       // ⚡ QUAN TRỌNG: Update AuthContext để UI refresh ngay lập tức
       updateUser(refreshed);
-      
+
       setIsEditing(false);
       setSuccess('Cập nhật thành công!');
     } catch (err) {
@@ -202,7 +201,7 @@ export default function ProfilePage() {
             onCancel={handleCancel}
             loading={loading}
             error={error}
-            roleName={getRoleName(displayProfile.roleID || displayProfile.role_id)}
+            roleName={getRoleName(displayProfile.roleID)}
           />
         </div>
       </div>

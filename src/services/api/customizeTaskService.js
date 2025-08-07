@@ -1,8 +1,8 @@
 ﻿import { getAuthHeaders } from './serviceUtils';
-// Tạo base service với factory
 
 // Thêm methods đặc biệt cho CustomizeTask
-const customizeTaskService = { GET /api/CustomizeTask/GetAll
+const customizeTaskService = { 
+  // GET /api/CustomizeTask/GetAll
   getAllCustomizeTasks: async () => {
     try {
       const res = await fetch('/api/customizetask/getall');

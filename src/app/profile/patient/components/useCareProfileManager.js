@@ -1,364 +1,207 @@
 import { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '@/context/AuthContext';
-import relativesService from '@/services/api/relativesService';
-import zoneService from '@/services/api/zoneService';
-import zoneDetailService from '@/services/api/zoneDetailService';
-import careProfileService from '@/services/api/careProfileService';
+import { useModalManager } from './hooks/useModalManager';
+import { useDataManager } from './hooks/useDataManager';
+import { useFormManager } from './hooks/useFormManager';
 
 export default function useCareProfileManager(router) {
-  // Get user from AuthContext first
   const { user } = useContext(AuthContext);
+  const [successMessage, setSuccessMessage] = useState('');
 
-  // State
-  const [loading, setLoading] = useState(true);
-  const [relativesList, setRelativesList] = useState([]);
-  const [careProfiles, setCareProfiles] = useState([]);
-  const [zones, setZones] = useState([]);
-  const [zonedetailsList, setZonedetailsList] = useState([]);
-  const [careProfileFilter, setCareProfileFilter] = useState('all');
-  const [relativesFilter, setRelativesFilter] = useState({});
-  const [careProfileSuccess, setCareProfileSuccess] = useState('');
+  // Use custom hooks
+  const modalManager = useModalManager();
+  const dataManager = useDataManager(user, router);
+  const formManager = useFormManager();
 
-  // Auto-hide success message after 3 seconds
+  // Auto-hide success message
   useEffect(() => {
-    if (careProfileSuccess) {
-      const timer = setTimeout(() => {
-        setCareProfileSuccess('');
-      }, 3000);
-
+    if (successMessage) {
+      const timer = setTimeout(() => setSuccessMessage(''), 3000);
       return () => clearTimeout(timer);
     }
-  }, [careProfileSuccess]);
+  }, [successMessage]);
 
-  // Modal/form state
-  const [showCareProfileForm, setShowCareProfileForm] = useState(false);
-  const [editCareProfile, setEditCareProfile] = useState(null);
-  const [careProfileForm, setCareProfileForm] = useState({
-    profileName: '', dateOfBirth: '', phoneNumber: '', address: '', zonedetailid: '', customZoneName: '', note: '', status: 'active', image: '',
-  });
-  const [careProfileAvatarFile, setCareProfileAvatarFile] = useState(null);
-  const [careProfileAvatar, setCareProfileAvatar] = useState('');
-  const [careProfileLoading, setCareProfileLoading] = useState(false);
-
-  const [showRelativeForm, setShowRelativeForm] = useState(false);
-  const [editRelative, setEditRelative] = useState(null);
-  const [currentCareID, setCurrentCareID] = useState(null);
-  const [relativeForm, setRelativeForm] = useState({
-    relativeName: '', dateOfBirth: '', gender: '', note: '', status: 'active', image: '',
-  });
-  const [avatarFile, setAvatarFile] = useState(null);
-  const [avatarPreview, setAvatarPreview] = useState('');
-  const [relativeLoading, setRelativeLoading] = useState(false);
-
-  // Modal chi tiết CareProfile
-  const [showCareProfileDetail, setShowCareProfileDetail] = useState(false);
-  const [detailCareProfile, setDetailCareProfile] = useState(null);
-  const handleOpenCareProfileDetail = (care) => {
-    setDetailCareProfile(care);
-    setShowCareProfileDetail(true);
-  };
-  const handleCloseCareProfileDetail = () => {
-    setShowCareProfileDetail(false);
-    setDetailCareProfile(null);
-  };
-  // Modal chi tiết Relative
-  const [showRelativeDetail, setShowRelativeDetail] = useState(false);
-  const [detailRelative, setDetailRelative] = useState(null);
-  const handleOpenRelativeDetail = (relative) => {
-    setDetailRelative(relative);
-    setShowRelativeDetail(true);
-  };
-  const handleCloseRelativeDetail = () => {
-    setShowRelativeDetail(false);
-    setDetailRelative(null);
+  // Integrated handlers
+  const handleOpenCareProfileForm = (item = null) => {
+    formManager.openForm('careProfile', item);
+    modalManager.openModal('careProfileForm');
   };
 
-  // Delete modals
-  const [showDeleteCareProfile, setShowDeleteCareProfile] = useState(false);
-  const [deleteCareProfileId, setDeleteCareProfileId] = useState(null);
-  const [showDeleteRelative, setShowDeleteRelative] = useState(false);
-  const [deleteRelativeId, setDeleteRelativeId] = useState(null);
-  const [deleteLoading, setDeleteLoading] = useState(false);
-
-  // Load data từ API
-  const loadData = async () => {
-    if (!user) {
-      router.push('/profile/patient');
-      return;
-    }
-
-    try {
-      setLoading(true);
-      
-      const [careProfilesData, relativesData, zonesData, zoneDetailsData] = await Promise.all([
-        careProfileService.getCareProfiles().catch(() => []),
-        relativesService.getRelatives().catch(() => []),
-        zoneService.getZones().catch(() => []),
-        zoneDetailService.getAll().catch(() => [])
-      ]);
-
-      // Set data trực tiếp
-      setCareProfiles(Array.isArray(careProfilesData) ? careProfilesData : []);
-      setRelativesList(Array.isArray(relativesData) ? relativesData : []);
-      setZones(Array.isArray(zonesData) ? zonesData : []);
-      setZonedetailsList(Array.isArray(zoneDetailsData) ? zoneDetailsData : []);
-
-    } catch (error) {
-      console.error('Error loading data:', error);
-      setCareProfiles([]);
-      setRelativesList([]);
-      setZones([]);
-      setZonedetailsList([]);
-    } finally {
-      setLoading(false);
-    }
+  const handleOpenRelativeForm = (item = null, careProfileID = null) => {
+    formManager.openForm('relative', item, careProfileID);
+    modalManager.openModal('relativeForm');
   };
 
-  // Load data
-  useEffect(() => {
-    loadData();
-  }, [user]);
-
-  // CareProfile handlers
-  const handleOpenCareProfileForm = (care = null) => {
-    setEditCareProfile(care);
-    setShowCareProfileForm(true);
-    if (care) {
-      setCareProfileForm({
-        ...care,
-        dateOfBirth: formatDateForInput(care.dateOfBirth),
-      });
-      setCareProfileAvatar(care.image || '');
-    } else {
-      setCareProfileForm({ profileName: '', dateOfBirth: '', phoneNumber: '', address: '', zoneDetailID: '', customZoneName: '', note: '', status: 'Active', image: '' });
-      setCareProfileAvatar('');
-    }
-    setCareProfileAvatarFile(null);
-  };
-  const handleCareProfileInputChange = e => {
-    const { name, value } = e.target;
-    setCareProfileForm(prev => ({ ...prev, [name]: value }));
-  };
-  const handleCareProfileAvatarChange = e => {
-    const file = e.target.files[0];
-    if (file) {
-      setCareProfileAvatarFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setCareProfileAvatar(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
   const handleSaveCareProfile = async (dataOrEvent) => {
     let data = dataOrEvent;
     if (dataOrEvent && typeof dataOrEvent.preventDefault === 'function') {
       dataOrEvent.preventDefault();
-      data = { ...careProfileForm, image: careProfileAvatar };
+      data = { ...formManager.forms.careProfile, image: formManager.avatars.careProfile.preview };
     } else {
-      data = { ...data, image: careProfileAvatar };
+      data = { ...data, image: formManager.avatars.careProfile.preview };
     }
 
-    // Format data cho API
-    const submitData = {
-      accountID: user.accountID,
-      zoneDetailID: data.zoneDetailID,
-      profileName: data.profileName || '',
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth).toISOString() : null,
-      phoneNumber: data.phoneNumber || '',
-      address: data.address || '',
-      image: data.image || '',
-      note: data.note || '',
-      status: data.status || 'active'
-    };
+    formManager.updateLoading('careProfile', true);
+    setSuccessMessage('');
 
-    setCareProfileLoading(true);
-    setCareProfileSuccess('');
-    
     try {
-      if (editCareProfile) {
-        // Update
-        await careProfileService.updateCareProfile(
-          editCareProfile.careProfileID || editCareProfile.CareProfileID, 
-          submitData
-        );
-        setCareProfileSuccess('Cập nhật hồ sơ thành công!');
-      } else {
-        // Create
-        await careProfileService.createCareProfile(submitData);
-        setCareProfileSuccess('Tạo hồ sơ thành công!');
-      }
-      
-      // Reload data sau khi thành công
-      await loadData();
-      setShowCareProfileForm(false);
-      
+      const result = await dataManager.saveCareProfile(data, formManager.editItems.careProfile, user);
+      setSuccessMessage(result.message);
+      modalManager.closeModal('careProfileForm');
+      formManager.resetForm('careProfile');
+
+      // Background sync
+      setTimeout(() => dataManager.loadData(), 500);
     } catch (err) {
       console.error('Error saving care profile:', err);
-      setCareProfileSuccess(err.message || 'Có lỗi khi xử lý hồ sơ.');
+      setSuccessMessage(err.message || 'Có lỗi khi xử lý hồ sơ.');
     } finally {
-      setCareProfileLoading(false);
+      formManager.updateLoading('careProfile', false);
     }
   };
 
-  // Relative handlers
-  const handleOpenRelativeForm = (relative = null, careProfileID = null) => {
-    setEditRelative(relative);
-    setShowRelativeForm(true);
-    setCurrentCareID(careProfileID);
-    if (relative) {
-      setRelativeForm({
-        ...relative,
-        dateOfBirth: formatDateForInput(relative.dateOfBirth),
-      });
-      setAvatarPreview(relative.image || '');
-    } else {
-      setRelativeForm({ relativeName: '', dateOfBirth: '', gender: '', note: '', status: 'Active', image: '' });
-      setAvatarPreview('');
-    }
-    setAvatarFile(null);
-  };
-  const handleRelativeInputChange = e => {
-    const { name, value, type, checked } = e.target;
-    setRelativeForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }));
-  };
-  const handleRelativeAvatarChange = e => {
-    const file = e.target.files[0];
-    if (file) {
-      setAvatarFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => setAvatarPreview(reader.result);
-      reader.readAsDataURL(file);
-    }
-  };
   const handleSaveRelative = async (dataOrEvent) => {
     let data = dataOrEvent;
     if (dataOrEvent && typeof dataOrEvent.preventDefault === 'function') {
       dataOrEvent.preventDefault();
-      data = { ...relativeForm, image: avatarPreview };
+      data = { ...formManager.forms.relative, image: formManager.avatars.relative.preview };
     } else {
-      data = { ...data, image: avatarPreview };
+      data = { ...data, image: formManager.avatars.relative.preview };
     }
 
-    const submitData = {
-      ...data,
-      careProfileID: currentCareID,
-      relativeName: data.relativeName,
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth).toISOString() : null,
-      gender: data.gender || 'male',
-      note: data.note || '',
-      status: data.status || 'active'
-    };
+    formManager.updateLoading('relative', true);
+    setSuccessMessage('');
 
-    setRelativeLoading(true);
     try {
-      if (editRelative) {
-        // Update
-        await relativesService.updateRelative(
-          editRelative.relativeID || editRelative.RelativeID || editRelative.relativeid, 
-          submitData
-        );
-        setCareProfileSuccess('Cập nhật người thân thành công!');
-      } else {
-        // Create
-        await relativesService.createRelative(submitData);
-        setCareProfileSuccess('Thêm người thân thành công!');
-      }
-
-      // Reload data
-      await loadData();
-      setShowRelativeForm(false);
-      
+      const result = await dataManager.saveRelative(data, formManager.editItems.relative, formManager.currentCareID);
+      setSuccessMessage(result.message);
+      modalManager.closeModal('relativeForm');
+      formManager.resetForm('relative');
+      await dataManager.loadData();
     } catch (err) {
       console.error('Error saving relative:', err);
-      setCareProfileSuccess(err.message || 'Có lỗi khi xử lý người thân.');
+      setSuccessMessage(err.message || 'Có lỗi khi xử lý người thân.');
     } finally {
-      setRelativeLoading(false);
+      formManager.updateLoading('relative', false);
     }
   };
 
-// Delete handlers
-const handleDeleteCareProfile = id => {
-  setDeleteCareProfileId(id);
-  setShowDeleteCareProfile(true);
-};
+  const handleDeleteCareProfile = (id) => {
+    modalManager.openModal('deleteCareProfile', id);
+  };
 
-const confirmDeleteCareProfile = async () => {
-  setDeleteLoading(true);
-  try {
-    await careProfileService.deleteCareProfile(deleteCareProfileId);
-    setCareProfileSuccess('Xóa hồ sơ thành công!');
+  const confirmDeleteCareProfile = async () => {
+    formManager.updateLoading('delete', true);
+    try {
+      const result = await dataManager.deleteCareProfile(modalManager.deleteIds.careProfile);
+      setSuccessMessage(result.message);
+      modalManager.closeModal('deleteCareProfile');
+      setTimeout(() => dataManager.loadData(), 500);
+    } catch (err) {
+      setSuccessMessage(err.message || 'Có lỗi khi xóa hồ sơ.');
+    } finally {
+      formManager.updateLoading('delete', false);
+    }
+  };
+
+  const handleDeleteRelative = (id) => {
+    modalManager.openModal('deleteRelative', id);
+  };
+
+  const confirmDeleteRelative = async () => {
+    formManager.updateLoading('delete', true);
+    try {
+      const result = await dataManager.deleteRelative(modalManager.deleteIds.relative);
+      setSuccessMessage(result.message);
+      modalManager.closeModal('deleteRelative');
+      await dataManager.loadData();
+    } catch (err) {
+      setSuccessMessage(err.message || 'Có lỗi khi xóa người thân.');
+    } finally {
+      formManager.updateLoading('delete', false);
+    }
+  };
+
+  return {
+    // User & data
+    user,
+    loading: dataManager.loading,
+    careProfiles: dataManager.careProfiles,
+    relativesList: dataManager.relativesList,
+    zones: dataManager.zones,
+    zoneDetails: dataManager.zonedetailsList,
     
-    // Reload data
-    await loadData();
-    setShowDeleteCareProfile(false);
-    setDeleteCareProfileId(null);
-  } catch (err) {
-    setCareProfileSuccess(err.message || 'Có lỗi khi xóa hồ sơ.');
-  } finally {
-    setDeleteLoading(false);
-  }
-};
-
-const handleDeleteRelative = id => {
-  setDeleteRelativeId(id);
-  setShowDeleteRelative(true);
-};
-
-const confirmDeleteRelative = async () => {
-  setDeleteLoading(true);
-  try {
-    await relativesService.deleteRelative(deleteRelativeId);
-    setCareProfileSuccess('Xóa người thân thành công!');
+    // Filters
+    careProfileFilter: dataManager.careProfileFilter,
+    setCareProfileFilter: dataManager.setCareProfileFilter,
+    relativesFilter: dataManager.relativesFilter,
+    setRelativesFilter: dataManager.setRelativesFilter,
     
-    // Reload data
-    await loadData();
-    setShowDeleteRelative(false);
-    setDeleteRelativeId(null);
-  } catch (err) {
-    setCareProfileSuccess(err.message || 'Có lỗi khi xóa người thân.');
-  } finally {
-    setDeleteLoading(false);
-  }
-};
-
-// Hàm đóng modal form
-const handleCloseCareProfileForm = () => setShowCareProfileForm(false);
-const handleCloseRelativeForm = () => setShowRelativeForm(false);
-
-return {
-  user, loading, relativesList, careProfiles, zones, zoneDetails: zonedetailsList, careProfileFilter, setCareProfileFilter, relativesFilter, setRelativesFilter,
-  showCareProfileForm, editCareProfile, careProfileForm, careProfileAvatar, careProfileAvatarFile, careProfileLoading,
-  handleOpenCareProfileForm, handleCareProfileInputChange, handleCareProfileAvatarChange, handleSaveCareProfile,
-  showRelativeForm, editRelative, currentCareID, relativeForm, avatarFile, avatarPreview, relativeLoading,
-  handleOpenRelativeForm, handleRelativeInputChange, handleRelativeAvatarChange, handleSaveRelative,
-  showDeleteCareProfile, deleteCareProfileId, deleteLoading, handleDeleteCareProfile, confirmDeleteCareProfile,
-  showDeleteRelative, deleteRelativeId, handleDeleteRelative, confirmDeleteRelative,
-  setShowDeleteCareProfile, setShowDeleteRelative,
-  handleCloseCareProfileForm,
-  handleCloseRelativeForm,
-  showCareProfileDetail, detailCareProfile, handleOpenCareProfileDetail, handleCloseCareProfileDetail,
-  showRelativeDetail, detailRelative, handleOpenRelativeDetail, handleCloseRelativeDetail,
-  careProfileSuccess,
-  loadData, // Export loadData function để refresh khi cần
-};
-// Hàm chuyển đổi ngày sang định dạng input type="date" (YYYY-MM-DD)
-// Hỗ trợ cả định dạng DD-MM-YYYY và định dạng ISO như 2025-07-29T07:10:37.656
-function formatDateForInput(dateStr) {
-  if (!dateStr) return '';
-  // Nếu là dạng DD-MM-YYYY thì convert
-  if (/^\d{2}-\d{2}-\d{4}$/.test(dateStr)) {
-    const [d, m, y] = dateStr.split('-');
-    return `${y}-${m}-${d}`;
-  }
-  // Nếu là dạng ISO 2025-07-29T07:10:37.656 hoặc 2025-07-29T07:10:37Z
-  if (/^\d{4}-\d{2}-\d{2}T/.test(dateStr)) {
-    // Cắt lấy phần ngày
-    return dateStr.slice(0, 10);
-  }
-  // Nếu là dạng YYYY-MM-DD thì trả về luôn
-  if (/^\d{4}-\d{2}-\d{2}$/.test(dateStr)) {
-    return dateStr;
-  }
-  // Nếu là dạng khác, trả về rỗng
-  return '';
-}
+    // Modals
+    showCareProfileForm: modalManager.modals.careProfileForm,
+    showRelativeForm: modalManager.modals.relativeForm,
+    showCareProfileDetail: modalManager.modals.careProfileDetail,
+    showRelativeDetail: modalManager.modals.relativeDetail,
+    showDeleteCareProfile: modalManager.modals.deleteCareProfile,
+    showDeleteRelative: modalManager.modals.deleteRelative,
+    
+    // Form data
+    editCareProfile: formManager.editItems.careProfile,
+    editRelative: formManager.editItems.relative,
+    careProfileForm: formManager.forms.careProfile,
+    relativeForm: formManager.forms.relative,
+    careProfileAvatar: formManager.avatars.careProfile.preview,
+    careProfileAvatarFile: formManager.avatars.careProfile.file,
+    avatarPreview: formManager.avatars.relative.preview,
+    avatarFile: formManager.avatars.relative.file,
+    currentCareID: formManager.currentCareID,
+    
+    // Loading states
+    careProfileLoading: formManager.loadingStates.careProfile,
+    relativeLoading: formManager.loadingStates.relative,
+    deleteLoading: formManager.loadingStates.delete,
+    
+    // Detail items
+    detailCareProfile: modalManager.detailItems.careProfile,
+    detailRelative: modalManager.detailItems.relative,
+    
+    // Delete IDs
+    deleteCareProfileId: modalManager.deleteIds.careProfile,
+    deleteRelativeId: modalManager.deleteIds.relative,
+    
+    // Messages
+    careProfileSuccess: successMessage, // Keep backward compatibility
+    successMessage,
+    
+    // Handlers
+    handleOpenCareProfileForm,
+    handleOpenRelativeForm,
+    handleSaveCareProfile,
+    handleSaveRelative,
+    handleDeleteCareProfile,
+    confirmDeleteCareProfile,
+    handleDeleteRelative,
+    confirmDeleteRelative,
+    
+    // Input handlers
+    handleCareProfileInputChange: (e) => formManager.handleInputChange('careProfile', e),
+    handleRelativeInputChange: (e) => formManager.handleInputChange('relative', e),
+    handleCareProfileAvatarChange: (e) => formManager.handleAvatarChange('careProfile', e),
+    handleRelativeAvatarChange: (e) => formManager.handleAvatarChange('relative', e),
+    
+    // Modal handlers
+    handleCloseCareProfileForm: () => modalManager.closeModal('careProfileForm'),
+    handleCloseRelativeForm: () => modalManager.closeModal('relativeForm'),
+    handleOpenCareProfileDetail: (item) => modalManager.openModal('careProfileDetail', item),
+    handleCloseCareProfileDetail: () => modalManager.closeModal('careProfileDetail'),
+    handleOpenRelativeDetail: (item) => modalManager.openModal('relativeDetail', item),
+    handleCloseRelativeDetail: () => modalManager.closeModal('relativeDetail'),
+    
+    // Close delete modals (backward compatibility)
+    setShowDeleteCareProfile: (show) => show ? null : modalManager.closeModal('deleteCareProfile'),
+    setShowDeleteRelative: (show) => show ? null : modalManager.closeModal('deleteRelative'),
+    
+    // Utilities
+    loadData: dataManager.loadData
+  };
 }
