@@ -5,6 +5,7 @@ import React from 'react';
 const DebugData = ({ 
   appointment, 
   customizePackages, 
+  customizeTasks,
   serviceTypes 
 }) => {
   const bookingId = appointment?.bookingID || appointment?.BookingID;
@@ -13,6 +14,12 @@ const DebugData = ({
     pkg.bookingID === bookingId ||
     pkg.BookingID === bookingId ||
     pkg.booking_ID === bookingId
+  ) || [];
+
+  const bookingCustomizeTasks = customizeTasks?.filter(task =>
+    task.bookingID === bookingId ||
+    task.BookingID === bookingId ||
+    task.booking_ID === bookingId
   ) || [];
 
   return (
@@ -32,26 +39,37 @@ const DebugData = ({
       </div>
 
       <div className="mb-4">
-        <h4 className="font-bold text-purple-600">Filtered Booking Packages ({bookingPackages.length}):</h4>
+        <h4 className="font-bold text-orange-600">Customize Tasks (All {customizeTasks?.length || 0}):</h4>
+        <pre className="bg-white p-2 rounded max-h-32 overflow-auto">
+          {JSON.stringify(customizeTasks, null, 2)}
+        </pre>
+      </div>
+
+      <div className="mb-4">
+        <h4 className="font-bold text-purple-600">Matched Customize Tasks for BookingID {bookingId}: ({bookingCustomizeTasks.length})</h4>
+        <pre className="bg-white p-2 rounded max-h-32 overflow-auto">
+          {JSON.stringify(bookingCustomizeTasks, null, 2)}
+        </pre>
+      </div>
+
+      <div className="mb-4">
+        <h4 className="font-bold text-indigo-600">Matched Customize Packages for BookingID {bookingId}: ({bookingPackages.length})</h4>
         <pre className="bg-white p-2 rounded max-h-32 overflow-auto">
           {JSON.stringify(bookingPackages, null, 2)}
         </pre>
       </div>
 
       <div className="mb-4">
-        <h4 className="font-bold text-orange-600">Service Types (All {serviceTypes?.length || 0}):</h4>
+        <h4 className="font-bold text-gray-600">Service Types Sample:</h4>
         <pre className="bg-white p-2 rounded max-h-32 overflow-auto">
-          {JSON.stringify(serviceTypes?.map(s => ({
-            id: s.serviceID || s.serviceTypeID || s.ServiceID,
-            name: s.serviceName || s.ServiceName
-          })), null, 2)}
+          {JSON.stringify(serviceTypes?.slice(0, 3), null, 2)}
         </pre>
       </div>
 
       <div className="mb-4">
         <h4 className="font-bold text-pink-600">Service Matching Test:</h4>
-        {bookingPackages.map((pkg, index) => {
-          const serviceId = pkg.serviceID || pkg.service_ID || pkg.Service_ID;
+        {bookingCustomizeTasks.map((task, index) => {
+          const serviceId = task.serviceID || task.service_ID || task.Service_ID;
           const matchedService = serviceTypes?.find(s =>
             s.serviceID === serviceId ||
             s.serviceTypeID === serviceId ||
@@ -60,9 +78,12 @@ const DebugData = ({
           
           return (
             <div key={index} className="bg-white p-2 rounded mb-2">
-              <div>Package {index + 1}: ID={pkg.customizePackageID}, ServiceID={serviceId}, Quantity={pkg.quantity}</div>
+              <div>Task {index + 1}: TaskID={task.customizeTaskID}, ServiceID={serviceId}, Status={task.status}</div>
               <div className={matchedService ? 'text-green-600' : 'text-red-600'}>
                 {matchedService ? `✅ Found: ${matchedService.serviceName || matchedService.ServiceName}` : `❌ No match for ServiceID: ${serviceId}`}
+              </div>
+              <div className="text-xs text-gray-600">
+                NursingID: {task.nursingID || 'None'} | BookingID: {task.bookingID}
               </div>
             </div>
           );

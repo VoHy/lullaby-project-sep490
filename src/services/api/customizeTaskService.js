@@ -42,6 +42,30 @@ const customizeTaskService = {
     return data;
   },
 
+  // POST /api/CustomizeTask
+  createCustomizeTask: async (taskData) => {
+    try {
+      console.log('🔄 Creating customize task:', taskData);
+      const res = await fetch('/api/customizetask', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(taskData)
+      });
+      
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({ error: 'Unknown error' }));
+        throw new Error(errorData.error || `HTTP ${res.status}`);
+      }
+      
+      const data = await res.json();
+      console.log('✅ Created customize task:', data);
+      return data;
+    } catch (error) {
+      console.error('❌ Error creating customize task:', error);
+      throw error;
+    }
+  },
+
   // DELETE /api/CustomizeTask/{customizeTaskId}
   deleteCustomizeTask: async (customizeTaskId) => {
     const res = await fetch(`/api/customizetask/${customizeTaskId}`, {

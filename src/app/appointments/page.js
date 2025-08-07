@@ -11,6 +11,7 @@ import serviceTaskService from '@/services/api/serviceTaskService';
 import invoiceService from '@/services/api/invoiceService';
 import zoneDetailService from '@/services/api/zoneDetailService';
 import customizePackageService from '@/services/api/customizePackageService';
+import customizeTaskService from '@/services/api/customizeTaskService';
 import {
   AppointmentCard,
   AppointmentDetailModal,
@@ -35,6 +36,7 @@ export default function AppointmentsPage() {
   const [zoneDetails, setZoneDetails] = useState([]);
   const [invoices, setInvoices] = useState([]);
   const [customizePackages, setCustomizePackages] = useState([]);
+  const [customizeTasks, setCustomizeTasks] = useState([]);
   const [selectedAppointment, setSelectedAppointment] = useState(null);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -76,6 +78,8 @@ export default function AppointmentsPage() {
 
       const packages = await customizePackageService.getCustomizePackages();
 
+      const customizeTasks = await customizeTaskService.getAllCustomizeTasks();
+
       // Get user's care profiles từ booking data
       const userCareProfiles = bookings
         .map(booking => booking.careProfile)
@@ -97,6 +101,7 @@ export default function AppointmentsPage() {
       setZoneDetails(zones);
       setInvoices(invoiceData);
       setCustomizePackages(packages);
+      setCustomizeTasks(customizeTasks);
 
     } catch (error) {
       console.error('❌ Error fetching appointments:', error);
@@ -138,8 +143,15 @@ export default function AppointmentsPage() {
         throw new Error('Không tìm thấy booking ID');
       }
 
-      // Case 1: Package service with taskId (từ service task)
-      if (service.taskId) {
+      // Case 1: If service has customizeTaskId, update that task directly
+      if (service.customizeTaskId) {
+        console.log('Updating customize task:', service.customizeTaskId);
+        
+        const { customizeTaskService } = await import('@/services/api');
+        await customizeTaskService.updateTaskNursing(service.customizeTaskId, nurseId);
+      }
+      // Case 2: Package service with taskId (từ service task)
+      else if (service.taskId) {
         // Directly use the taskId from service task
         const customizeTaskId = service.taskId;
         console.log('Updating package service task:', customizeTaskId);
@@ -147,7 +159,7 @@ export default function AppointmentsPage() {
         const { customizeTaskService } = await import('@/services/api');
         await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId);
       } 
-      // Case 2: Individual service - need to find corresponding CustomizeTask
+      // Case 3: Individual service - need to find corresponding CustomizeTask
       else {
         console.log('Finding CustomizeTask for individual service...');
         
@@ -327,6 +339,7 @@ export default function AppointmentsPage() {
             zoneDetails={zoneDetails}
             invoices={invoices}
             customizePackages={customizePackages}
+            customizeTasks={customizeTasks}
             getStatusColor={getStatusColor}
             getStatusText={getStatusText}
             formatDate={formatDate}
