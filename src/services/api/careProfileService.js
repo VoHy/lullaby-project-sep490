@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseCareProfileService = createService('careprofiles', 'CareProfile', true);
 
 // Thêm method đặc biệt
-const careProfileService = {
-  // Base CRUD methods từ factory
-  ...baseCareProfileService,
-
-  // Count method
+const careProfileService = {  // Count method
   getCareProfileCount: async () => {
     const res = await fetch('/api/careprofiles/count', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng care profiles');
@@ -23,7 +18,7 @@ const careProfileService = {
   createCareProfile: async (data) => {
     const res = await fetch('/api/careprofiles/create', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     const responseData = await res.json();
@@ -36,7 +31,7 @@ const careProfileService = {
     try {
       const res = await fetch('/api/careprofiles/getall', {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: getAuthHeaders()
       });
       
       const data = await res.json();
@@ -53,7 +48,7 @@ const careProfileService = {
   updateCareProfile: async (id, data) => {
     const res = await fetch(`/api/careprofiles/update/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     const responseData = await res.json();
@@ -64,7 +59,7 @@ const careProfileService = {
   getCareProfileById: async (id) => {
     const res = await fetch(`/api/careprofiles/get/${id}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const responseData = await res.json();
     if (!res.ok) throw new Error(responseData.error || 'Không thể lấy thông tin care profile');
@@ -74,7 +69,7 @@ const careProfileService = {
   deleteCareProfile: async (id) => {
     const res = await fetch(`/api/careprofiles/delete/${id}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const responseData = await res.json();
     if (!res.ok) throw new Error(responseData.error || 'Không thể xóa care profile');
@@ -83,3 +78,4 @@ const careProfileService = {
 };
 
 export default careProfileService; 
+

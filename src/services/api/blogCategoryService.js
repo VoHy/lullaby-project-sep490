@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseBlogCategoryService = createService('blogcategory', 'BlogCategory', true);
 
 // Thêm method đặc biệt
-const blogCategoryService = {
-  // Base CRUD methods từ factory
-  ...baseBlogCategoryService,
-
-  // Get all blog categories
+const blogCategoryService = {  // Get all blog categories
   getAllBlogCategories: async () => {
     const res = await fetch('/api/blogcategory/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách blog categories');
@@ -23,7 +18,7 @@ const blogCategoryService = {
   getBlogCategoryById: async (blogCategoryId) => {
     const res = await fetch(`/api/blogcategory/${blogCategoryId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin blog category');
@@ -34,7 +29,7 @@ const blogCategoryService = {
   createBlogCategory: async (blogCategoryData) => {
     const res = await fetch('/api/blogcategory', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({
         categoryName: blogCategoryData.categoryName,
         description: blogCategoryData.description
@@ -49,7 +44,7 @@ const blogCategoryService = {
   updateBlogCategory: async (blogCategoryId, blogCategoryData) => {
     const res = await fetch(`/api/blogcategory/${blogCategoryId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({
         categoryName: blogCategoryData.categoryName,
         description: blogCategoryData.description
@@ -64,7 +59,7 @@ const blogCategoryService = {
   deleteBlogCategory: async (blogCategoryId) => {
     const res = await fetch(`/api/blogcategory/${blogCategoryId}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Xóa blog category thất bại');
@@ -73,3 +68,4 @@ const blogCategoryService = {
 };
 
 export default blogCategoryService; 
+

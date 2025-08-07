@@ -1,10 +1,8 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 // Tạo base service với factory
-const baseCustomizeTaskService = createService('customizetask', 'CustomizeTask', true);
 
 // Thêm methods đặc biệt cho CustomizeTask
-const customizeTaskService = {
-  // GET /api/CustomizeTask/GetAll
+const customizeTaskService = { GET /api/CustomizeTask/GetAll
   getAllCustomizeTasks: async () => {
     try {
       const res = await fetch('/api/customizetask/getall');
@@ -45,7 +43,7 @@ const customizeTaskService = {
     try {
       const res = await fetch('/api/customizetask', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(taskData)
       });
       
@@ -119,7 +117,7 @@ const customizeTaskService = {
     try {
       const res = await fetch(`/api/customizetask/updatenursing/${customizeTaskId}/${nursingId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' }
+        headers: getAuthHeaders()
       });
       
       if (!res.ok) {
@@ -140,7 +138,7 @@ const customizeTaskService = {
     try {
       const res = await fetch(`/api/customizetask/updatestatus/${customizePackageId}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(statusData)
       });
       
@@ -159,3 +157,4 @@ const customizeTaskService = {
 };
 
 export default customizeTaskService;
+

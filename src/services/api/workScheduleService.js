@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseWorkScheduleService = createService('workschedules', 'WorkSchedule', true);
 
 // Thêm method đặc biệt
-const workScheduleService = {
-  // Base CRUD methods từ factory
-  ...baseWorkScheduleService,
-
-  // Thêm method getWorkSchedules để đảm bảo
+const workScheduleService = {  // Thêm method getWorkSchedules để đảm bảo
   getWorkSchedules: async () => {
     const res = await fetch('/api/workschedules', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách work schedules');
@@ -22,7 +17,7 @@ const workScheduleService = {
   getWorkScheduleById: async (id) => {
     const res = await fetch(`/api/workschedules/${id}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin work schedule');
@@ -31,3 +26,4 @@ const workScheduleService = {
 };
 
 export default workScheduleService; 
+

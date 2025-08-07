@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseServiceTypeService = createService('servicetypes', 'ServiceType', true);
 
 // Thêm method đặc biệt
-const serviceTypeService = {
-  // Base CRUD methods từ factory
-  ...baseServiceTypeService,
-
-  // Thêm method getServiceTypes để đảm bảo
+const serviceTypeService = {  // Thêm method getServiceTypes để đảm bảo
   getServiceTypes: async () => {
     const res = await fetch('/api/servicetypes/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách service types');
@@ -23,7 +18,7 @@ const serviceTypeService = {
   getAllServiceTypes: async () => {
     const res = await fetch('/api/servicetypes/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách service types');
@@ -34,7 +29,7 @@ const serviceTypeService = {
   createServiceType: async (data) => {
     const res = await fetch('/api/servicetypes/create', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     const result = await res.json();
@@ -46,7 +41,7 @@ const serviceTypeService = {
   updateServiceType: async (id, data) => {
     const res = await fetch(`/api/servicetypes/update/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     const result = await res.json();
@@ -58,7 +53,7 @@ const serviceTypeService = {
   getServiceTypeCount: async () => {
     const res = await fetch('/api/servicetypes/count', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng service types');
@@ -69,7 +64,7 @@ const serviceTypeService = {
   getServiceTypesByMajor: async (major) => {
     const res = await fetch(`/api/servicetypes/getbymajor/${major}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy service types theo major');
@@ -80,7 +75,7 @@ const serviceTypeService = {
   createServiceTypePackage: async (data) => {
     const res = await fetch('/api/servicetypes/createpackage', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     const result = await res.json();
@@ -92,7 +87,7 @@ const serviceTypeService = {
   activateServiceType: async (id, data) => {
     const res = await fetch(`/api/servicetypes/activate/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     const result = await res.json();
@@ -105,7 +100,7 @@ const serviceTypeService = {
     try {
       const res = await fetch(`/api/servicetypes/softdelete/${id}`, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(data)
       });
 
@@ -143,3 +138,4 @@ const serviceTypeService = {
 };
 
 export default serviceTypeService; 
+

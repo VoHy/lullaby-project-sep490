@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseTransactionHistoryService = createService('transactionhistory', 'TransactionHistory', true);
 
 // Thêm method đặc biệt
-const transactionHistoryService = {
-  // Base CRUD methods từ factory
-  ...baseTransactionHistoryService,
-
-  // GET /api/TransactionHistory/GetAll
+const transactionHistoryService = {  // GET /api/TransactionHistory/GetAll
   getAllTransactionHistories: async () => {
     const res = await fetch('/api/transactionhistory/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách transaction histories');
@@ -23,7 +18,7 @@ const transactionHistoryService = {
   getTransactionHistoryById: async (transactionHistoryId) => {
     const res = await fetch(`/api/transactionhistory/${transactionHistoryId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin transaction history');
@@ -34,7 +29,7 @@ const transactionHistoryService = {
   deleteTransactionHistory: async (transactionHistoryId) => {
     const res = await fetch(`/api/transactionhistory/${transactionHistoryId}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Xóa transaction history thất bại');
@@ -51,7 +46,7 @@ const transactionHistoryService = {
 
       const res = await fetch(`/api/transactionhistory/getallbyaccount/${accountId}`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: getAuthHeaders()
       });
 
       // Nếu không tìm thấy (404) hoặc không có data, trả về array rỗng
@@ -87,7 +82,7 @@ const transactionHistoryService = {
   addMoneyToWallet: async (walletData) => {
     const res = await fetch('/api/transactionhistory/addmoneytowallet', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(walletData)
     });
     const data = await res.json();
@@ -99,7 +94,7 @@ const transactionHistoryService = {
   invoicePayment: async (invoiceId, paymentData) => {
     const res = await fetch(`/api/transactionhistory/invoicepayment/${invoiceId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(paymentData)
     });
     const data = await res.json();
@@ -111,7 +106,7 @@ const transactionHistoryService = {
   refundMoneyToWallet: async (invoiceId, refundData) => {
     const res = await fetch(`/api/transactionhistory/refundmoneytowallet/${invoiceId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(refundData)
     });
     const data = await res.json();
@@ -123,7 +118,7 @@ const transactionHistoryService = {
   successAddToWallet: async (transactionHistoryId) => {
     const res = await fetch(`/api/transactionhistory/successaddtowallet/${transactionHistoryId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Cập nhật trạng thái thành công thất bại');
@@ -132,3 +127,4 @@ const transactionHistoryService = {
 };
 
 export default transactionHistoryService;
+

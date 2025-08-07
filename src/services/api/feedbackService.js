@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseFeedbackService = createService('feedback', 'Feedback', true);
 
 // Thêm method đặc biệt
-const feedbackService = {
-  // Base CRUD methods từ factory
-  ...baseFeedbackService,
-
-  // Get all feedbacks
+const feedbackService = {  // Get all feedbacks
   getAllFeedbacks: async () => {
     const res = await fetch('/api/feedback/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách feedbacks');
@@ -23,7 +18,7 @@ const feedbackService = {
   getFeedbackById: async (feedbackId) => {
     const res = await fetch(`/api/feedback/${feedbackId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin feedback');
@@ -34,7 +29,7 @@ const feedbackService = {
   updateFeedback: async (feedbackId, feedbackData) => {
     const res = await fetch(`/api/feedback/${feedbackId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(feedbackData)
     });
     const data = await res.json();
@@ -46,7 +41,7 @@ const feedbackService = {
   deleteFeedback: async (feedbackId) => {
     const res = await fetch(`/api/feedback/${feedbackId}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Xóa feedback thất bại');
@@ -57,7 +52,7 @@ const feedbackService = {
   getAllFeedbacksByService: async (serviceId) => {
     const res = await fetch(`/api/feedback/getallbyservice/${serviceId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách feedbacks theo service');
@@ -68,7 +63,7 @@ const feedbackService = {
   getAllFeedbacksByNursing: async (nursingId) => {
     const res = await fetch(`/api/feedback/getallbynursing/${nursingId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách feedbacks theo nursing');
@@ -79,7 +74,7 @@ const feedbackService = {
   getFeedbackByCustomizeTask: async (customizeTaskId) => {
     const res = await fetch(`/api/feedback/getbycustomizetask/${customizeTaskId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy feedback theo customize task');
@@ -90,7 +85,7 @@ const feedbackService = {
   createFeedback: async (feedbackData) => {
     const res = await fetch('/api/feedback', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(feedbackData)
     });
     const data = await res.json();
@@ -100,3 +95,4 @@ const feedbackService = {
 };
 
 export default feedbackService; 
+

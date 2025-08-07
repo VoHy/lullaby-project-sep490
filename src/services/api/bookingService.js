@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseBookingService = createService('booking', 'Booking', true);
 
 // Thêm method đặc biệt
-const bookingService = {
-  // Base CRUD methods từ factory
-  ...baseBookingService,
-
-  // GET /api/Booking/GetAll
+const bookingService = {  // GET /api/Booking/GetAll
   getAllBookings: async () => {
     const res = await fetch('/api/booking/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách bookings');
@@ -23,7 +18,7 @@ const bookingService = {
   getAllBookingsWithCareProfile: async () => {
     const res = await fetch('/api/booking/getallwithcareprofile', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách bookings với thông tin care profile');
@@ -34,7 +29,7 @@ const bookingService = {
   getBookingById: async (id) => {
     const res = await fetch(`/api/booking/${id}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin booking');
@@ -45,7 +40,7 @@ const bookingService = {
   getBookingByIdWithCareProfile: async (id) => {
     const res = await fetch(`/api/booking/${id}/withcareprofile`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin booking với care profile');
@@ -56,7 +51,7 @@ const bookingService = {
   deleteBooking: async (id) => {
     const res = await fetch(`/api/booking/${id}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể xóa booking');
@@ -67,7 +62,7 @@ const bookingService = {
   getAllByCareProfile: async (careProfileId) => {
     const res = await fetch(`/api/booking/getallbycareprofile?careProfileId=${careProfileId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách bookings theo care profile');
@@ -78,7 +73,7 @@ const bookingService = {
   getAllByStatusAndCareProfile: async (status, careProfileId) => {
     const res = await fetch(`/api/booking/getallbystatusandcareprofile?status=${status}&careProfileId=${careProfileId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách bookings theo status và care profile');
@@ -89,7 +84,7 @@ const bookingService = {
   getAllByStatus: async (status) => {
     const res = await fetch(`/api/booking/getallbystatus?status=${status}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách bookings theo status');
@@ -120,7 +115,7 @@ const bookingService = {
 
     const res = await fetch('/api/booking/createservicebooking', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(bookingData)
     });
     const data = await res.json();
@@ -146,7 +141,7 @@ const bookingService = {
 
     const res = await fetch('/api/booking/createpackagebooking', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(bookingData)
     });
     const data = await res.json();
@@ -158,7 +153,7 @@ const bookingService = {
   updateStatus: async (bookingId, status) => {
     const res = await fetch(`/api/booking/updatestatus/${bookingId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ status })
     });
     const data = await res.json();
@@ -170,7 +165,7 @@ const bookingService = {
   updateWorkdate: async (bookingId, workdate) => {
     const res = await fetch(`/api/booking/updateworkdate/${bookingId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ workdate })
     });
     const data = await res.json();
@@ -182,7 +177,7 @@ const bookingService = {
   updateBookingStatus: async (bookingId, statusData) => {
     const res = await fetch(`/api/booking/updatestatus/${bookingId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(statusData)
     });
     const data = await res.json();
@@ -263,3 +258,4 @@ const bookingService = {
 };
 
 export default bookingService; 
+

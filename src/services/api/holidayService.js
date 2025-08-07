@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseHolidayService = createService('holiday', 'Holiday', true);
 
 // Thêm method đặc biệt
-const holidayService = {
-  // Base CRUD methods từ factory
-  ...baseHolidayService,
-
-  // Get all holidays
+const holidayService = {  // Get all holidays
   getAllHolidays: async () => {
     const res = await fetch('/api/holiday/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách holidays');
@@ -23,7 +18,7 @@ const holidayService = {
   getHolidayById: async (holidayId) => {
     const res = await fetch(`/api/holiday/${holidayId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin holiday');
@@ -34,7 +29,7 @@ const holidayService = {
   createHoliday: async (holidayData) => {
     const res = await fetch('/api/holiday', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(holidayData)
     });
     const data = await res.json();
@@ -46,7 +41,7 @@ const holidayService = {
   updateHoliday: async (holidayId, holidayData) => {
     const res = await fetch(`/api/holiday/${holidayId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(holidayData)
     });
     const data = await res.json();
@@ -58,7 +53,7 @@ const holidayService = {
   deleteHoliday: async (holidayId) => {
     const res = await fetch(`/api/holiday/${holidayId}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Xóa holiday thất bại');
@@ -67,3 +62,4 @@ const holidayService = {
 };
 
 export default holidayService; 
+

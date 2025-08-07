@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseRelativesService = createService('relatives', 'Relative', true);
 
 // Thêm method đặc biệt
-const relativesService = {
-  // Base CRUD methods từ factory
-  ...baseRelativesService,
-
-  // Count method
+const relativesService = {  // Count method
   getRelativeCount: async () => {
     const res = await fetch('/api/relatives/count', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng relatives');
@@ -23,7 +18,7 @@ const relativesService = {
   createRelative: async (data) => {
     const res = await fetch('/api/relatives/create', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     const responseData = await res.json();
@@ -35,7 +30,7 @@ const relativesService = {
   getRelatives: async () => {
     const res = await fetch('/api/relatives/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách relatives');
@@ -46,7 +41,7 @@ const relativesService = {
   getRelative: async (id) => {
     const res = await fetch(`/api/relatives/get/${id}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy relative');
@@ -57,7 +52,7 @@ const relativesService = {
   updateRelative: async (id, data) => {
     const res = await fetch(`/api/relatives/update/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     
@@ -72,3 +67,4 @@ const relativesService = {
 };
 
 export default relativesService; 
+

@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseNursingSpecialistService = createService('nursingspecialists', 'NursingSpecialist', true);
 
 // Thêm method đặc biệt
-const nursingSpecialistService = {
-  // Base CRUD methods từ factory
-  ...baseNursingSpecialistService,
-
-  // Thêm method getNursingSpecialists để đảm bảo
+const nursingSpecialistService = {  // Thêm method getNursingSpecialists để đảm bảo
   getNursingSpecialists: async () => {
     const res = await fetch('/api/nursingspecialists', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách nursing specialists');
@@ -22,7 +17,7 @@ const nursingSpecialistService = {
   updateNursingSpecialist: async (id, data) => {
     const res = await fetch(`/api/nursingspecialists/update/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
   },
@@ -31,7 +26,7 @@ const nursingSpecialistService = {
   getAllNursingSpecialists: async () => {
     const res = await fetch('/api/nursingspecialists/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách nursing specialists');
@@ -42,7 +37,7 @@ const nursingSpecialistService = {
   changeNursingSpecialistStatus: async (id, status) => {
     const res = await fetch(`/api/nursingspecialists/changestatus/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ status })
     });
     const result = await res.json();
@@ -54,7 +49,7 @@ const nursingSpecialistService = {
   getNursingSpecialistCount: async () => {
     const res = await fetch('/api/nursingspecialists/count', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng nursing specialists');
@@ -63,3 +58,4 @@ const nursingSpecialistService = {
 };
 
 export default nursingSpecialistService; 
+

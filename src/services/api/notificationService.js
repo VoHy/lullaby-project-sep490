@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseNotificationService = createService('notification', 'Notification', true);
 
 // Thêm method đặc biệt
-const notificationService = {
-  // Base CRUD methods từ factory
-  ...baseNotificationService,
-
-  // Get all notifications
+const notificationService = {  // Get all notifications
   getAllNotifications: async () => {
     const res = await fetch('/api/notification/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách notifications');
@@ -23,7 +18,7 @@ const notificationService = {
   getNotificationById: async (notificationId) => {
     const res = await fetch(`/api/notification/${notificationId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin notification');
@@ -34,7 +29,7 @@ const notificationService = {
   createNotification: async (notificationData) => {
     const res = await fetch('/api/notification', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(notificationData)
     });
     const data = await res.json();
@@ -46,7 +41,7 @@ const notificationService = {
   deleteNotification: async (notificationId) => {
     const res = await fetch(`/api/notification/${notificationId}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Xóa notification thất bại');
@@ -57,7 +52,7 @@ const notificationService = {
   getAllNotificationsByAccount: async (accountId) => {
     const res = await fetch(`/api/notification/getallbyaccount/${accountId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách notifications theo account');
@@ -68,7 +63,7 @@ const notificationService = {
   getUnreadNotificationsByAccount: async (accountId) => {
     const res = await fetch(`/api/notification/getunreadbyaccount/${accountId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách notifications chưa đọc');
@@ -79,7 +74,7 @@ const notificationService = {
   markNotificationAsRead: async (notificationId) => {
     const res = await fetch(`/api/notification/markasread/${notificationId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Đánh dấu notification đã đọc thất bại');
@@ -90,7 +85,7 @@ const notificationService = {
   markAllNotificationsAsReadByAccount: async (accountId) => {
     const res = await fetch(`/api/notification/markallasreadbyaccount/${accountId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Đánh dấu tất cả notifications đã đọc thất bại');
@@ -101,7 +96,7 @@ const notificationService = {
   getUnreadNotificationsCountByAccount: async (accountId) => {
     const res = await fetch(`/api/notification/getunreadcountbyaccount/${accountId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng notifications chưa đọc');
@@ -110,3 +105,4 @@ const notificationService = {
 };
 
 export default notificationService; 
+

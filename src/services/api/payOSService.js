@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const basePayOSService = createService('payos', 'PayOS', true);
 
 // Thêm method đặc biệt
-const payOSService = {
-  // Base CRUD methods từ factory
-  ...basePayOSService,
-
-  // Confirm webhook
+const payOSService = {  // Confirm webhook
   confirmWebhook: async (webhookData) => {
     const res = await fetch('/api/payos/confirmwebhook', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(webhookData)
     });
     const data = await res.json();
@@ -24,7 +19,7 @@ const payOSService = {
   webhookHandler: async (webhookData) => {
     const res = await fetch('/api/payos/webhookhandler', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(webhookData)
     });
     const data = await res.json();
@@ -36,7 +31,7 @@ const payOSService = {
   webhookProcess: async (webhookData) => {
     const res = await fetch('/api/payos/webhookprocess', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(webhookData)
     });
     const data = await res.json();
@@ -48,7 +43,7 @@ const payOSService = {
   deletePayOS: async () => {
     const res = await fetch('/api/payos', {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Xóa PayOS thất bại');
@@ -57,3 +52,4 @@ const payOSService = {
 };
 
 export default payOSService; 
+

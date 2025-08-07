@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseMedicalNoteService = createService('medicalnote', 'MedicalNote', true);
 
 // Thêm method đặc biệt
-const medicalNoteService = {
-  // Base CRUD methods từ factory
-  ...baseMedicalNoteService,
-
-  // Get all medical notes
+const medicalNoteService = {  // Get all medical notes
   getAllMedicalNotes: async () => {
     const res = await fetch('/api/medicalnote/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách medical notes');
@@ -23,7 +18,7 @@ const medicalNoteService = {
   getMedicalNoteById: async (medicalNoteId) => {
     const res = await fetch(`/api/medicalnote/${medicalNoteId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin medical note');
@@ -34,7 +29,7 @@ const medicalNoteService = {
   createMedicalNote: async (medicalNoteData) => {
     const res = await fetch('/api/medicalnote', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(medicalNoteData)
     });
     const data = await res.json();
@@ -46,7 +41,7 @@ const medicalNoteService = {
   updateMedicalNote: async (medicalNoteId, medicalNoteData) => {
     const res = await fetch(`/api/medicalnote/${medicalNoteId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(medicalNoteData)
     });
     const data = await res.json();
@@ -58,7 +53,7 @@ const medicalNoteService = {
   deleteMedicalNote: async (medicalNoteId) => {
     const res = await fetch(`/api/medicalnote/${medicalNoteId}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Xóa medical note thất bại');
@@ -69,7 +64,7 @@ const medicalNoteService = {
   getAllMedicalNotesByAccount: async (accountId) => {
     const res = await fetch(`/api/medicalnote/getallbyaccount/${accountId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách medical notes theo account');
@@ -80,7 +75,7 @@ const medicalNoteService = {
   getAllMedicalNotesByCareProfile: async (careProfileId) => {
     const res = await fetch(`/api/medicalnote/getallbycareprofile/${careProfileId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách medical notes theo care profile');
@@ -89,3 +84,4 @@ const medicalNoteService = {
 };
 
 export default medicalNoteService; 
+

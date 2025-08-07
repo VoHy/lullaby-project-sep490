@@ -1,24 +1,35 @@
-import { createService } from './serviceFactory';
+// Wallet Service - Xử lý tất cả các thao tác liên quan đến ví
 
-// Tạo base service với factory
-const baseWalletService = createService('wallet', 'Wallet', true);
+// Utility function để lấy token từ localStorage
+const getAuthToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('token');
+  }
+  return null;
+};
+
+// Utility function để tạo headers với token
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
 
 // Utility function để lấy walletID một cách nhất quán
 const getWalletId = (wallet) => {
   return wallet?.walletID || wallet?.WalletID;
 };
 
-// Thêm method đặc biệt
 const walletService = {
-  // Base CRUD methods từ factory
-  ...baseWalletService,
 
   // Get all wallets
   getAllWallets: async () => {
     try {
       const res = await fetch('/api/wallet/getall', {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: getAuthHeaders()
       });
       
       const data = await res.json();
@@ -36,7 +47,7 @@ const walletService = {
   getWalletById: async (walletId) => {
     const res = await fetch(`/api/wallet/${walletId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin wallet');
@@ -47,7 +58,7 @@ const walletService = {
   createWallet: async (accountId) => {
     const res = await fetch(`/api/wallet/create/${accountId}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({}) // Empty body as per API spec
     });
     const data = await res.json();
@@ -59,7 +70,7 @@ const walletService = {
   updateWalletAmount: async (walletId, newAmount) => {
     const res = await fetch(`/api/wallet/updateamount/${walletId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify({ amount: newAmount })
     });
     const data = await res.json();
@@ -71,7 +82,7 @@ const walletService = {
   deleteWallet: async (walletId) => {
     const res = await fetch(`/api/wallet/${walletId}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Xóa wallet thất bại');
@@ -82,7 +93,7 @@ const walletService = {
   updateWalletNote: async (walletId, noteData) => {
     const res = await fetch(`/api/wallet/updatenote/${walletId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(noteData)
     });
     const data = await res.json();
@@ -94,7 +105,7 @@ const walletService = {
   activateWallet: async (walletId) => {
     const res = await fetch(`/api/wallet/active/${walletId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Kích hoạt wallet thất bại');
@@ -105,7 +116,7 @@ const walletService = {
   deactivateWallet: async (walletId) => {
     const res = await fetch(`/api/wallet/inactive/${walletId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Vô hiệu hóa wallet thất bại');
@@ -117,7 +128,7 @@ const walletService = {
     try {
       const res = await fetch(`/api/wallet/getall`, {
         method: 'GET',
-        headers: { 'Content-Type': 'application/json' }
+        headers: getAuthHeaders()
       });
       
       if (!res.ok) {

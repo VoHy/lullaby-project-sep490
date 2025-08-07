@@ -1,18 +1,27 @@
-import { createService } from './serviceFactory';
+// Role Service - Xử lý tất cả các thao tác liên quan đến vai trò
 
-// Tạo base service với factory
-const baseRoleService = createService('roles', 'Role', true);
+// Utility function để lấy token từ localStorage
+const getAuthToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('token');
+  }
+  return null;
+};
 
-// Thêm method đặc biệt
+// Utility function để tạo headers với token
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
 const roleService = {
-  // Base CRUD methods từ factory
-  ...baseRoleService,
-
-  // Thêm method getRoles để đảm bảo
   getRoles: async () => {
     const res = await fetch('/api/roles', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách roles');
@@ -22,7 +31,7 @@ const roleService = {
   getRoleById: async (id) => {
     const res = await fetch(`/api/roles/${id}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin role');

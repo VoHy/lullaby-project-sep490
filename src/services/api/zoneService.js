@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseZoneService = createService('zones', 'Zone', true);
 
 // Thêm method đặc biệt
-const zoneService = {
-  // Base CRUD methods từ factory
-  ...baseZoneService,
-
-  // Count method
+const zoneService = {  // Count method
   getZoneCount: async () => {
     const res = await fetch('/api/zones/count', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng zones');
@@ -23,7 +18,7 @@ const zoneService = {
   getZones: async () => {
     const res = await fetch('/api/zones/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách zones');
@@ -32,3 +27,4 @@ const zoneService = {
 };
 
 export default zoneService; 
+

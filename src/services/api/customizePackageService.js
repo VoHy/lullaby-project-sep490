@@ -1,4 +1,4 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 const customizePackageService = createService('customizepackages', 'CustomizePackage');
 
@@ -91,3 +91,4 @@ const customizePackageServiceExtended = {
 };
 
 export default customizePackageServiceExtended; 
+

@@ -1,51 +1,59 @@
-import { createService } from './serviceFactory';
+// Account Service - Xử lý tất cả các thao tác liên quan đến tài khoản
 
-// Tạo base service với factory
-const baseAccountService = createService('accounts', 'Account', true);
+// Utility function để lấy token từ localStorage
+const getAuthToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('token');
+  }
+  return null;
+};
 
-// Thêm các method đặc biệt
+// Utility function để tạo headers với token
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
+
 const accountService = {
-  // Base CRUD methods từ factory
-  ...baseAccountService,
 
-  // Thêm method getAccount để đảm bảo
+  // === BASIC CRUD METHODS ===
   getAccount: async (id) => {
     const res = await fetch(`/api/accounts/get/${id}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin account');
     return data;
   },
 
-  // Thêm method getAllAccounts để lấy tất cả accounts
   getAllAccounts: async () => {
     const res = await fetch('/api/accounts/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách accounts');
     return data;
   },
 
-  // Thêm method getAccountById để lấy thông tin account theo ID
   getAccountById: async (id) => {
     const res = await fetch(`/api/accounts/get/${id}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin account');
     return data;
   },
 
-  // Thêm method updateAccount để đảm bảo
   updateAccount: async (id, data) => {
     const res = await fetch(`/api/accounts/update/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     const result = await res.json();
@@ -57,7 +65,7 @@ const accountService = {
   registerNursingSpecialist: async (data) => {
     const res = await fetch('/api/accounts/register/nursingspecialist', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     const result = await res.json();
@@ -65,11 +73,10 @@ const accountService = {
     return result;
   },
 
-  
   registerManager: async (data) => {
     const res = await fetch('/api/accounts/register/manager', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     const result = await res.json();
@@ -80,7 +87,7 @@ const accountService = {
   registerCustomer: async (data) => {
     const res = await fetch('/api/accounts/register/customer', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     const result = await res.json();
@@ -92,7 +99,7 @@ const accountService = {
   resetPassword: async (data) => {
     const res = await fetch('/api/accounts/reset-password', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     const result = await res.json();
@@ -104,7 +111,7 @@ const accountService = {
   banAccount: async (id) => {
     const res = await fetch(`/api/accounts/ban/${id}`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || 'Ban tài khoản thất bại');
@@ -115,7 +122,7 @@ const accountService = {
   deleteAccount: async (id) => {
     const res = await fetch(`/api/accounts/delete/${id}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || 'Xóa tài khoản thất bại');
@@ -125,7 +132,7 @@ const accountService = {
   removeAccount: async (id) => {
     const res = await fetch(`/api/accounts/remove/${id}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || 'Xóa tài khoản thất bại');
@@ -136,7 +143,7 @@ const accountService = {
   getManagers: async () => {
     const res = await fetch('/api/accounts/managers', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách managers');
@@ -146,7 +153,7 @@ const accountService = {
   getManagerById: async (id) => {
     const res = await fetch(`/api/accounts/get/${id}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin manager');
@@ -156,7 +163,7 @@ const accountService = {
   updateManager: async (id, data) => {
     const res = await fetch(`/api/accounts/update/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     const result = await res.json();
@@ -167,7 +174,7 @@ const accountService = {
   getCustomers: async () => {
     const res = await fetch('/api/accounts/customers', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách customers');
@@ -178,7 +185,7 @@ const accountService = {
   getNonAdminCount: async () => {
     const res = await fetch('/api/accounts/count/non-admin', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng non-admin accounts');
@@ -188,7 +195,7 @@ const accountService = {
   getManagerCount: async () => {
     const res = await fetch('/api/accounts/count/managers', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng managers');
@@ -198,7 +205,7 @@ const accountService = {
   getCustomerCount: async () => {
     const res = await fetch('/api/accounts/count/customers', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng customers');

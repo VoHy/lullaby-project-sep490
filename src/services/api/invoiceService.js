@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseInvoiceService = createService('invoice', 'Invoice', true);
 
 // Thêm method đặc biệt
-const invoiceService = {
-  // Base CRUD methods từ factory
-  ...baseInvoiceService,
-
-  // GET /api/Invoice/GetAll
+const invoiceService = {  // GET /api/Invoice/GetAll
   getAllInvoices: async () => {
     const res = await fetch('/api/invoice/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách invoices');
@@ -23,7 +18,7 @@ const invoiceService = {
   getInvoiceById: async (id) => {
     const res = await fetch(`/api/invoice/${id}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin invoice');
@@ -34,7 +29,7 @@ const invoiceService = {
   deleteInvoice: async (id) => {
     const res = await fetch(`/api/invoice/${id}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể xóa invoice');
@@ -45,7 +40,7 @@ const invoiceService = {
   getInvoiceByBooking: async (bookingId) => {
     const res = await fetch(`/api/invoice/getbybooking/${bookingId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy invoice theo booking');
@@ -73,7 +68,7 @@ const invoiceService = {
   updateInvoiceStatus: async (invoiceId, statusData) => {
     const res = await fetch(`/api/invoice/updatestatus/${invoiceId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(statusData)
     });
     const data = await res.json();
@@ -83,3 +78,4 @@ const invoiceService = {
 };
 
 export default invoiceService; 
+

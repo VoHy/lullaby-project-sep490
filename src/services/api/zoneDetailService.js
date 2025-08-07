@@ -1,15 +1,11 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
-const baseZoneDetailService = createService('zonedetails', 'ZoneDetail', true);
 
-const zoneDetailService = {
-  ...baseZoneDetailService,
-  
-  // Thêm method getZoneDetails riêng để đảm bảo
+const zoneDetailService = {  // Thêm method getZoneDetails riêng để đảm bảo
   getZoneDetails: async () => {
     const res = await fetch('/api/zonedetails/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách zone details');
@@ -20,7 +16,7 @@ const zoneDetailService = {
   getAll: async () => {
     const res = await fetch('/api/zonedetails/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách zone details');
@@ -29,3 +25,4 @@ const zoneDetailService = {
 };
 
 export default zoneDetailService; 
+

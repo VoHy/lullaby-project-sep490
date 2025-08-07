@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseServiceTaskService = createService('servicetasks', 'ServiceTask', true);
 
 // Thêm method đặc biệt
-const serviceTaskService = {
-  // Base CRUD methods từ factory
-  ...baseServiceTaskService,
-
-  // Thêm method getServiceTasks để đảm bảo
+const serviceTaskService = {  // Thêm method getServiceTasks để đảm bảo
   getServiceTasks: async () => {
     const res = await fetch('/api/servicetasks/getall', {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách service tasks');
@@ -22,7 +17,7 @@ const serviceTaskService = {
   getServiceTaskById: async (id) => {
     const res = await fetch(`/api/servicetasks/get/${id}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin service task');
@@ -33,7 +28,7 @@ const serviceTaskService = {
   getServiceTasksByPackage: async (packageServiceId) => {
     const res = await fetch(`/api/servicetasks/getbypackage/${packageServiceId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy service tasks theo package');
@@ -44,7 +39,7 @@ const serviceTaskService = {
   softDeleteServiceTask: async (id, data) => {
     const res = await fetch(`/api/servicetasks/softdelete/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     const result = await res.json();
@@ -56,7 +51,7 @@ const serviceTaskService = {
   createServiceTask: async (data) => {
     const res = await fetch('/api/servicetasks/create', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
     const result = await res.json();
@@ -68,7 +63,7 @@ const serviceTaskService = {
   deleteServiceTask: async (id) => {
     const res = await fetch(`/api/servicetasks/delete/${id}`, {
       method: 'DELETE',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || 'Xóa service task thất bại');
@@ -77,3 +72,4 @@ const serviceTaskService = {
 };
 
 export default serviceTaskService; 
+

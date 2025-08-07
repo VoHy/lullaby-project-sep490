@@ -1,18 +1,13 @@
-import { createService } from './serviceFactory';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 // Tạo base service với factory
-const baseNursingSpecialistServiceTypeService = createService('nursingspecialist-servicetypes', 'NursingSpecialistServiceType', true);
 
 // Thêm method đặc biệt
-const nursingSpecialistServiceTypeService = {
-  // Base CRUD methods từ factory
-  ...baseNursingSpecialistServiceTypeService,
-
-  // Get by nursing ID
+const nursingSpecialistServiceTypeService = {  // Get by nursing ID
   getServiceTypesByNursingId: async (nursingId) => {
     const res = await fetch(`/api/nursingspecialist-servicetypes/getbynursing/${nursingId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy service types theo nursing ID');
@@ -23,7 +18,7 @@ const nursingSpecialistServiceTypeService = {
   getServiceTypesByServiceId: async (serviceId) => {
     const res = await fetch(`/api/nursingspecialist-servicetypes/getbyservice/${serviceId}`, {
       method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+      headers: getAuthHeaders()
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy service types theo service ID');
@@ -32,3 +27,4 @@ const nursingSpecialistServiceTypeService = {
 };
 
 export default nursingSpecialistServiceTypeService; 
+
