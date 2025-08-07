@@ -9,6 +9,7 @@ import walletService from '@/services/api/walletService';
 import transactionHistoryService from '@/services/api/transactionHistoryService';
 import invoiceService from '@/services/api/invoiceService';
 import { AuthContext } from "@/context/AuthContext";
+import { useWalletContext } from "@/context/WalletContext";
 
 // Thay thế import mock data bằng services
 import serviceTaskService from '@/services/api/serviceTaskService';
@@ -37,6 +38,7 @@ function PaymentContent() {
   const [error, setError] = useState("");
 
   const { user } = useContext(AuthContext);
+  const { wallet: contextWallet, refreshWalletData } = useWalletContext();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastInvoiceId, setLastInvoiceId] = useState(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -259,10 +261,15 @@ function PaymentContent() {
       setIsProcessingPayment(true);
       setError('');
 
-      // 1. Kiểm tra ví
-      const userWallet = wallets.find(w => 
-        (w.accountID || w.AccountID) === (user.accountID || user.AccountID)
-      );
+      // 1. Kiểm tra ví từ context trước
+      let userWallet = contextWallet;
+      
+      // Nếu chưa có ví từ context, fallback sang wallets array
+      if (!userWallet) {
+        userWallet = wallets.find(w => 
+          (w.accountID || w.AccountID) === (user.accountID || user.AccountID)
+        );
+      }
       
       if (!userWallet) {
         setError('Không tìm thấy ví của bạn. Vui lòng kiểm tra lại tài khoản.');
@@ -286,27 +293,42 @@ function PaymentContent() {
 
       const invoiceResponse = await invoiceService.createInvoice(invoiceData);
 
-      // 4. Check xem invoice đã paid chưa
-      if (invoiceResponse && typeof invoiceResponse === 'object' && 
-          invoiceResponse.message === 'Invoice paid successfully.') {
-        
-        // Lấy invoice để có invoiceId
-        try {
-          const existingInvoice = await invoiceService.getInvoiceByBooking(bookingID);
-          if (existingInvoice && existingInvoice.invoiceID) {
-            await handlePaymentSuccess(existingInvoice.invoiceID);
-            return; // Exit early vì đã thành công
+      // 4. Lấy invoiceId từ response
+      let invoiceId;
+      
+      if (invoiceResponse && typeof invoiceResponse === 'object') {
+        if (invoiceResponse.message === 'Invoice paid successfully.') {
+          // Invoice đã được thanh toán - lấy existing invoice
+          try {
+            const existingInvoice = await invoiceService.getInvoiceByBooking(bookingID);
+            if (existingInvoice && existingInvoice.invoiceID) {
+              console.log('✅ Invoice already paid, using existing invoiceID:', existingInvoice.invoiceID);
+              await handlePaymentSuccess(existingInvoice.invoiceID);
+              return; // Exit early vì đã thành công
+            }
+          } catch (getError) {
+            console.error('❌ Error getting invoice:', getError);
           }
-        } catch (getError) {
-          console.error('Error getting invoice:', getError);
+          
+          // Fallback: coi như thành công với bookingID
+          await handlePaymentSuccess(bookingID);
+          return;
+        } else {
+          // Invoice mới được tạo - lấy invoiceID
+          invoiceId = invoiceResponse.invoiceID || invoiceResponse.InvoiceID;
+          if (!invoiceId) {
+            console.error('❌ No invoiceID in response:', invoiceResponse);
+            throw new Error('Không thể tạo invoice - không có ID trả về');
+          }
         }
-        
-        // Fallback: coi như thành công với bookingID
-        await handlePaymentSuccess(bookingID);
-        return;
+      } else {
+        console.error('❌ Invalid invoice response:', invoiceResponse);
+        throw new Error('Phản hồi từ server không hợp lệ khi tạo invoice');
       }
 
-      // 5. Gọi API InvoicePayment (tự động xử lý payment)
+      console.log('🎯 Processing payment for invoiceID:', invoiceId);
+
+      // 5. Gọi API InvoicePayment với invoiceId hợp lệ
       
       const paymentResponse = await fetch(`/api/transactionhistory/invoicepayment/${invoiceId}`, {
         method: 'POST',
@@ -322,7 +344,7 @@ function PaymentContent() {
         
       } else {
         const errorData = await paymentResponse.json();
-        console.error(' Payment failed:', errorData);
+        console.error('❌ Payment failed:', errorData);
         
         if (errorData.message === "This invoice has already paid.") {
           // Invoice đã được thanh toán rồi - coi như thành công
@@ -333,7 +355,7 @@ function PaymentContent() {
       }
 
     } catch (error) {
-      console.error(' Payment error:', error);
+      console.error('❌ Payment error:', error);
       
       let errorMessage = 'Có lỗi xảy ra khi thanh toán';
       if (error.message) {
@@ -348,13 +370,14 @@ function PaymentContent() {
 
   // Helper function xử lý thành công
   const handlePaymentSuccess = async (invoiceId) => {
+    console.log('✅ Payment successful for invoice:', invoiceId);
 
-    // Refresh wallet data
+    // Refresh wallet data thông qua WalletContext - điều này sẽ update tất cả components
     try {
-      const refreshedWallets = await walletService.getAllWallets();
-      setWallets(refreshedWallets);
+      await refreshWalletData();
+      console.log('✅ Wallet data refreshed via context');
     } catch (refreshError) {
-      console.warn('⚠️ Could not refresh wallet:', refreshError);
+      console.warn('⚠️ Could not refresh wallet via context:', refreshError);
     }
 
     // Show success modal
@@ -434,7 +457,12 @@ function PaymentContent() {
             <PaymentInfo
               total={bookingData?.total || 0}
               myWallet={(() => {
+                // Ưu tiên contextWallet từ WalletContext
+                if (contextWallet && (contextWallet.status === "active" || contextWallet.Status === "active")) {
+                  return contextWallet;
+                }
 
+                // Fallback sang wallets array nếu contextWallet không có
                 if (!wallets || wallets.length === 0) {
                   return null;
                 }

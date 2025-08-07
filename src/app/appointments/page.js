@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { FaCalendar, FaPlus, FaSync } from 'react-icons/fa';
 import { AuthContext } from '@/context/AuthContext';
+import { useWalletContext } from '@/context/WalletContext';
 import bookingService from '@/services/api/bookingService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
@@ -47,6 +48,7 @@ export default function AppointmentsPage() {
 
   const router = useRouter();
   const { user } = useContext(AuthContext);
+  const { refreshWalletData } = useWalletContext();
 
   // Optimized data fetching with enhanced information
   const fetchData = useCallback(async (isRefresh = false) => {
@@ -102,6 +104,16 @@ export default function AppointmentsPage() {
       setInvoices(invoiceData);
       setCustomizePackages(packages);
       setCustomizeTasks(customizeTasks);
+
+      // Refresh wallet context để đảm bảo wallet data được update
+      if (!isRefresh) {
+        try {
+          await refreshWalletData();
+          console.log('🔄 Wallet context refreshed');
+        } catch (walletError) {
+          console.warn('⚠️ Could not refresh wallet context:', walletError);
+        }
+      }
 
     } catch (error) {
       console.error('❌ Error fetching appointments:', error);

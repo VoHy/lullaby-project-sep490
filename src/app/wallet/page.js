@@ -110,12 +110,20 @@ export default function WalletPage(props) {
   const handleRefresh = async () => {
     setRefreshing(true);
     try {
+      console.log('🔄 Manual refresh triggered');
       await refreshWalletData();
+      console.log('✅ Manual refresh completed');
     } catch (error) {
-      console.error('Refresh error:', error);
+      console.error('❌ Refresh error:', error);
     } finally {
       setRefreshing(false);
     }
+  };
+
+  const handleDebugWallet = () => {
+    console.log('🐛 DEBUG - Current wallet state:', wallet);
+    console.log('🐛 DEBUG - Current transactions state:', transactions);
+    console.log('🐛 DEBUG - Current user:', user);
   };
 
   // Function test tạo ví thủ công
@@ -196,14 +204,23 @@ export default function WalletPage(props) {
               <p className="text-gray-600 text-lg">Quản lý tài khoản và giao dịch của bạn một cách an toàn, tiện lợi.</p>
             </motion.div>
 
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="p-3 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
-              title="Làm mới dữ liệu"
-            >
-              {refreshing ? 'Đang tải...' : '🔄'}
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={handleDebugWallet}
+                className="p-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                title="Debug wallet data"
+              >
+                🐛 Debug
+              </button>
+              <button
+                onClick={handleRefresh}
+                disabled={refreshing}
+                className="p-3 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
+                title="Làm mới dữ liệu"
+              >
+                {refreshing ? 'Đang tải...' : '🔄'}
+              </button>
+            </div>
           </div>
 
           {/* Card số dư và nạp tiền */}

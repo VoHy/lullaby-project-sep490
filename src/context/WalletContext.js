@@ -41,22 +41,34 @@ export const WalletProvider = ({ children }) => {
         return;
       }
       
-      // Lấy ví của user
-      const response = await walletService.getWalletByAccountId(accountId);
+      // Lấy tất cả ví và filter theo accountId
+      const response = await walletService.getAllWallets();
       
-      // Xử lý response - có thể data nằm trong response.data hoặc response trực tiếp
+      console.log('🔍 All wallets response:', response);
+      console.log('🎯 Looking for accountId:', accountId);
+      
+      // Xử lý response và tìm wallet của user
       let userWallet = null;
+      let walletsList = [];
+      
       if (response) {
-        // Kiểm tra nếu response có data property
-        if (response.data) {
-          userWallet = response.data;
+        // Kiểm tra nếu response là array
+        if (Array.isArray(response)) {
+          walletsList = response;
+        } else if (response.data && Array.isArray(response.data)) {
+          walletsList = response.data;
         } else if (response.walletID || response.amount !== undefined) {
-          // Response trực tiếp là wallet object
-          userWallet = response;
-        } else if (Array.isArray(response) && response.length > 0) {
-          // Response là array, lấy phần tử đầu tiên
-          userWallet = response[0];
+          // Response là single wallet object
+          walletsList = [response];
         }
+        
+        // Tìm wallet của user
+        userWallet = walletsList.find(w => {
+          const walletAccountId = w.accountID || w.AccountID;
+          return walletAccountId === accountId;
+        });
+        
+        console.log('👤 User wallet found:', userWallet);
       }
       
       if (!userWallet) {
@@ -65,21 +77,34 @@ export const WalletProvider = ({ children }) => {
       
       // Đảm bảo wallet có đủ thông tin cần thiết
       const processedWallet = {
-        walletID: userWallet.walletID,
-        accountID: userWallet.accountID,
-        amount: userWallet.amount,
-        status: userWallet.status,
-        note: userWallet.note,
+        walletID: userWallet.walletID || userWallet.WalletID,
+        accountID: userWallet.accountID || userWallet.AccountID,
+        amount: userWallet.amount || userWallet.Amount || 0,
+        status: userWallet.status || userWallet.Status || 'active',
+        note: userWallet.note || userWallet.Note || '',
         ...userWallet // Giữ lại tất cả properties khác
       };
       
+      console.log('✅ Processed wallet:', processedWallet);
       setWallet(processedWallet);
       
       // Lấy lịch sử giao dịch - KHÔNG để lỗi này block wallet loading
       try {
+        console.log('📋 Fetching transaction history for accountId:', accountId);
         const historyData = await transactionHistoryService.getAllTransactionHistoriesByAccount(accountId);
-        setTransactions(Array.isArray(historyData) ? historyData : []);
+        console.log('📋 Transaction history received:', historyData);
+        
+        // Xử lý transaction history data
+        let transactionsList = [];
+        if (Array.isArray(historyData)) {
+          transactionsList = historyData;
+        } else if (historyData && historyData.data && Array.isArray(historyData.data)) {
+          transactionsList = historyData.data;
+        }
+        
+        setTransactions(transactionsList);
       } catch (historyError) {
+        console.error('❌ Error fetching transaction history:', historyError);
         setTransactions([]); // Set empty array instead of failing
       }
       
