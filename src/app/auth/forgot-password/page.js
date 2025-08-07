@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import apiService from '@/services/api/apiService';
+import { authService } from '@/services/api';
 import { motion } from "framer-motion";
 
 export default function ForgotPasswordPage() {
@@ -28,7 +28,7 @@ export default function ForgotPasswordPage() {
     setLoading(true);
 
     try {
-      const response = await apiService.auth.forgotPassword(email);
+      const response = await authService.forgotPassword(email);
       if (response.success) {
         setSuccess(response.message);
         setEmail(''); // Xóa email sau khi gửi thành công

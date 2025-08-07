@@ -1,6 +1,9 @@
 // Account Services
 export { default as accountService } from './accountService';
 
+// Auth Services
+export { default as authService } from './authService';
+
 // Blog Services
 export { default as blogService } from './blogService';
 

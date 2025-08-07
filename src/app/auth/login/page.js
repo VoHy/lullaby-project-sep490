@@ -3,7 +3,7 @@
 import { useState, useContext } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import apiService from '@/services/api/apiService';
+import { authService } from '@/services/api';
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { AuthContext } from "../../../context/AuthContext";
@@ -33,7 +33,7 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await apiService.auth.login({
+      const response = await authService.login({
         emailOrPhoneNumber: formData.emailOrPhoneNumber,
         password: formData.password,
       });
@@ -85,7 +85,7 @@ export default function LoginPage() {
       // Giả lập việc lấy token từ Google OAuth
       const fakeGoogleToken = 'fake-google-token-' + Date.now();
 
-      const response = await apiService.auth.loginWithGoogle(fakeGoogleToken);
+      const response = await authService.loginWithGoogle(fakeGoogleToken);
 
 
       if (response.account && response.token) {
