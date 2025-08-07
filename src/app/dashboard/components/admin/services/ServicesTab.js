@@ -42,13 +42,11 @@ const ServicesTab = () => {
   const loadServices = async () => {
     try {
       setLoading(true);
-      const [servicesData, packagesData] = await Promise.all([
-        serviceTypeService.getServiceTypes(),
-        serviceTypeService.getServiceTypes()
-      ]);
+      // Chỉ gọi API một lần, sau đó phân loại dữ liệu
+      const allServicesData = await serviceTypeService.getServiceTypes();
 
-      const singleServices = servicesData.filter(item => !item.isPackage);
-      const packageServices = packagesData.filter(item => item.isPackage);
+      const singleServices = allServicesData.filter(item => !item.isPackage);
+      const packageServices = allServicesData.filter(item => item.isPackage);
 
       setServices(singleServices);
       setPackages(packageServices);
@@ -316,7 +314,7 @@ const ServicesTab = () => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             >
               <option value="all">Tất cả chuyên môn</option>
-              <option value="nurse">Y tá</option>
+              <option value="Nurse">Y tá</option>
               <option value="specialist">Chuyên gia</option>
             </select>
           </div>
@@ -370,26 +368,6 @@ const ServicesTab = () => {
           </div>
         ) : (
           <div className="p-6">
-            {/* Hướng dẫn cho gói dịch vụ */}
-            {activeServiceTab === 'packages' && (
-              <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <svg className="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                  </div>
-                  <div className="ml-3">
-                    <h4 className="text-sm font-medium text-blue-800">Hướng dẫn tạo gói dịch vụ</h4>
-                    <div className="mt-2 text-sm text-blue-700">
-                      <p className="mb-1">1. Tạo gói dịch vụ với thông tin cơ bản</p>
-                      <p className="mb-1">2. Sau khi tạo, nhấn "Xem chi tiết" để thêm các dịch vụ con</p>
-                      <p>3. Chỉ các dịch vụ đơn lẻ (isPackage: false) mới có thể được thêm vào gói</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
 
             <div className="mb-4">
               <h3 className="text-lg font-semibold text-gray-800">

@@ -12,7 +12,7 @@ import accountService from '@/services/api/accountService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 import bookingService from '@/services/api/bookingService';
 import customizePackageService from '@/services/api/customizePackageService';
-// import customizeTaskService from '@/services/api/customizeTaskService';
+import customizeTaskService from '@/services/api/customizeTaskService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 
@@ -40,7 +40,7 @@ const BookingsTab = ({ bookings }) => {
           accountsData,
           serviceTypesData,
           customizePackagesData,
-          // customizeTasksData,
+          customizeTasksData,
           serviceTasksData,
           nursingSpecialistsData
         ] = await Promise.all([
@@ -48,7 +48,7 @@ const BookingsTab = ({ bookings }) => {
           accountService.getAllAccounts(),
           serviceTypeService.getServiceTypes(),
           customizePackageService.getCustomizePackages(),
-          // customizeTaskService.getCustomizeTasks(),
+          customizeTaskService.getAllCustomizeTasks(),
           serviceTaskService.getServiceTasks(),
           nursingSpecialistService.getNursingSpecialists()
         ]);
@@ -57,7 +57,7 @@ const BookingsTab = ({ bookings }) => {
         setAccounts(accountsData);
         setServiceTypes(serviceTypesData);
         setCustomizePackages(customizePackagesData);
-        // setCustomizeTasks(customizeTasksData);
+        setCustomizeTasks(customizeTasksData);
         setServiceTasks(serviceTasksData);
         setNursingSpecialists(nursingSpecialistsData);
       } catch (error) {
@@ -72,30 +72,31 @@ const BookingsTab = ({ bookings }) => {
   }, []);
 
   function getBookingDetail(booking) {
-    const careProfile = careProfiles.find(c => c.CareProfileID === booking.CareProfileID);
-    const account = careProfile ? accounts.find(a => a.AccountID === careProfile.AccountID) : null;
+    const careProfile = careProfiles.find(c => c.careProfileID === booking.careProfileID);
+    const account = careProfile ? accounts.find(a => a.accountID === careProfile.accountID) : null;
     let service = null;
     let packageInfo = null;
-    if (booking.CustomizePackageID) {
-      packageInfo = customizePackages.find(p => p.CustomizePackageID === booking.CustomizePackageID);
-      service = serviceTypes.find(s => s.ServiceID === packageInfo?.ServiceID);
-    } else if (booking.CareProfileID) {
-      service = serviceTypes.find(s => s.ServiceID === booking.CareProfileID);
+    if (booking.customizePackageID) {
+      packageInfo = customizePackages.find(p => p.customizePackageID === booking.customizePackageID);
+      service = serviceTypes.find(s => s.serviceID === packageInfo?.serviceID);
+    } else if (booking.serviceID) {
+      // Sửa logic: sử dụng ServiceID thay vì CareProfileID
+      service = serviceTypes.find(s => s.serviceID === booking.serviceID);
     }
-    // const customizeTasksOfBooking = customizeTasks.filter(t => t.BookingID === booking.BookingID);
-    // const serviceTasksOfBooking = customizeTasksOfBooking.map(task => {
-    //   const serviceTask = serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
-    //   const nurse = nursingSpecialists.find(n => n.NursingID === task.NursingID);
-    //   return {
-    //     ...serviceTask,
-    //     price: task.Price,
-    //     quantity: task.Quantity,
-    //     total: task.Total,
-    //     status: task.Status,
-    //     nurseName: nurse?.FullName,
-    //     nurseRole: nurse?.Major
-    //   };
-    // });
+    const customizeTasksOfBooking = customizeTasks.filter(t => t.bookingID === booking.bookingID);
+    const serviceTasksOfBooking = customizeTasksOfBooking.map(task => {
+      const serviceTask = serviceTasks.find(st => st.serviceTaskID === task.serviceTaskID);
+      const nurse = nursingSpecialists.find(n => n.nursingID === task.nursingID);
+      return {
+        ...serviceTask,
+        price: task.price,
+        quantity: task.quantity,
+        total: task.total,
+        status: task.status,
+        nurseName: nurse?.fullName,
+        nurseRole: nurse?.major
+      };
+    });
     return { careProfile, account, service, packageInfo, serviceTasksOfBooking };
   }
 
@@ -124,15 +125,15 @@ const BookingsTab = ({ bookings }) => {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="font-medium">Tên:</span>
-                    <span>{careProfile ? careProfile.ProfileName : '-'} {account ? `(${account.full_name})` : ''}</span>
+                    <span>{careProfile ? careProfile.profileName : '-'} {account ? `(${account.full_name})` : ''}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-medium">Điện thoại:</span>
-                    <span>{account?.phone_number || careProfile?.PhoneNumber || '-'}</span>
+                    <span>{account?.phone_number || careProfile?.phoneNumber || '-'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-medium">Địa chỉ:</span>
-                    <span className="text-right">{careProfile?.Address || '-'}</span>
+                    <span className="text-right">{careProfile?.address || '-'}</span>
                   </div>
                 </div>
               </div>
@@ -145,27 +146,27 @@ const BookingsTab = ({ bookings }) => {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="font-medium">Dịch vụ:</span>
-                    <span>{packageInfo ? packageInfo.Name : (service?.ServiceName || '-')}</span>
+                    <span>{packageInfo ? packageInfo.Name : (service?.serviceName || '-')}</span>
                   </div>
                   {packageInfo && (
                     <div className="flex justify-between">
                       <span className="font-medium">Mô tả:</span>
-                      <span className="text-right">{packageInfo.Description}</span>
+                      <span className="text-right">{packageInfo.description}</span>
                     </div>
                   )}
                   <div className="flex justify-between">
                     <span className="font-medium">Ngày đặt:</span>
-                    <span>{new Date(booking.BookingDate).toLocaleDateString('vi-VN')}</span>
+                    <span>{new Date(booking.workdate).toLocaleDateString('vi-VN')}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-medium">Trạng thái:</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      booking.Status === 'completed' ? 'bg-green-100 text-green-700' :
-                      booking.Status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                      booking.status === 'completed' ? 'bg-green-100 text-green-700' :
+                      booking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                       'bg-red-100 text-red-700'
                     }`}>
-                      {booking.Status === 'completed' ? 'Hoàn thành' :
-                       booking.Status === 'pending' ? 'Đang xử lý' : 'Đã hủy'}
+                      {booking.status === 'completed' ? 'Hoàn thành' :
+                       booking.status === 'pending' ? 'Đang xử lý' : 'Đã hủy'}
                     </span>
                   </div>
                 </div>
@@ -182,21 +183,21 @@ const BookingsTab = ({ bookings }) => {
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span className="font-medium">Tổng tiền:</span>
-                    <span className="font-bold text-green-600">{booking.TotalPrice?.toLocaleString()} VNĐ</span>
+                    <span className="font-bold text-green-600">{booking.totalPrice?.toLocaleString()} VNĐ</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-medium">Phương thức:</span>
-                    <span>{booking.PaymentMethod || 'Chưa thanh toán'}</span>
+                    <span>{booking.paymentMethod || 'Chưa thanh toán'}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="font-medium">Trạng thái thanh toán:</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                      booking.PaymentStatus === 'paid' ? 'bg-green-100 text-green-700' :
-                      booking.PaymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                      booking.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' :
+                      booking.paymentStatus === 'pending' ? 'bg-yellow-100 text-yellow-700' :
                       'bg-red-100 text-red-700'
                     }`}>
-                      {booking.PaymentStatus === 'paid' ? 'Đã thanh toán' :
-                       booking.PaymentStatus === 'pending' ? 'Chờ thanh toán' : 'Chưa thanh toán'}
+                      {booking.paymentStatus === 'paid' ? 'Đã thanh toán' :
+                       booking.paymentStatus === 'pending' ? 'Chờ thanh toán' : 'Chưa thanh toán'}
                     </span>
                   </div>
                 </div>
@@ -213,7 +214,7 @@ const BookingsTab = ({ bookings }) => {
                       <div key={index} className="bg-white rounded-lg p-3 border border-gray-200">
                         <div className="flex justify-between items-start">
                           <div>
-                            <div className="font-semibold text-gray-800">{task.Description}</div>
+                            <div className="font-semibold text-gray-800">{task.description}</div>
                             <div className="text-sm text-gray-600">
                               {task.nurseName} ({task.nurseRole})
                             </div>
@@ -294,49 +295,58 @@ const BookingsTab = ({ bookings }) => {
   const [statusFilter, setStatusFilter] = useState('all');
 
   // Tính toán thống kê
-  const totalBookings = bookings?.length || 0;
-  const completedBookings = bookings?.filter(b => b.Status === 'completed').length || 0;
-  const pendingBookings = bookings?.filter(b => b.Status === 'pending').length || 0;
-  const totalRevenue = bookings?.reduce((sum, b) => sum + (b.TotalPrice || 0), 0) || 0;
+  const totalBookings = Array.isArray(bookings) ? bookings.length : 0;
+  const completedBookings = Array.isArray(bookings) ? bookings.filter(b => b.Status === 'completed').length : 0;
+  const pendingBookings = Array.isArray(bookings) ? bookings.filter(b => b.Status === 'pending').length : 0;
+  const totalRevenue = Array.isArray(bookings) ? bookings.reduce((sum, b) => sum + (b.TotalPrice || 0), 0) : 0;
 
   // Lọc bookings
-  const filteredBookings = bookings?.filter(booking => {
+  const filteredBookings = Array.isArray(bookings) ? bookings.filter(booking => {
     const matchesSearch = !searchTerm || 
       booking.BookingID.toString().includes(searchTerm) ||
       getBookingDetail(booking).careProfile?.ProfileName?.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || booking.Status === statusFilter;
     return matchesSearch && matchesStatus;
-  }) || [];
+  }) : [];
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard
-          title="Tổng Booking"
-          value={totalBookings}
-          icon={faCalendarAlt}
-          color="from-blue-500 to-cyan-500"
-        />
-        <StatCard
-          title="Hoàn thành"
-          value={completedBookings}
-          icon={faCheckCircle}
-          color="from-green-500 to-emerald-500"
-        />
-        <StatCard
-          title="Đang xử lý"
-          value={pendingBookings}
-          icon={faClock}
-          color="from-yellow-500 to-orange-500"
-        />
-        <StatCard
-          title="Doanh thu"
-          value={`${totalRevenue.toLocaleString()} VNĐ`}
-          icon={faMoneyBill}
-          color="from-purple-500 to-pink-500"
-        />
-      </div>
+      {/* No data message */}
+      {!Array.isArray(bookings) || bookings.length === 0 ? (
+        <div className="text-center py-12">
+          <div className="text-gray-400 text-6xl mb-4">📋</div>
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Không có dữ liệu booking</h3>
+          <p className="text-gray-600">Chưa có booking nào được tạo trong hệ thống.</p>
+        </div>
+      ) : (
+        <>
+          {/* Stats Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard
+              title="Tổng Booking"
+              value={totalBookings}
+              icon={faCalendarAlt}
+              color="from-blue-500 to-cyan-500"
+            />
+            <StatCard
+              title="Hoàn thành"
+              value={completedBookings}
+              icon={faCheckCircle}
+              color="from-green-500 to-emerald-500"
+            />
+            <StatCard
+              title="Đang xử lý"
+              value={pendingBookings}
+              icon={faClock}
+              color="from-yellow-500 to-orange-500"
+            />
+            <StatCard
+              title="Doanh thu"
+              value={`${totalRevenue.toLocaleString()} VNĐ`}
+              icon={faMoneyBill}
+              color="from-purple-500 to-pink-500"
+            />
+          </div>
 
       {/* Filters */}
       <div className="bg-white rounded-xl shadow-lg p-6">
@@ -439,12 +449,14 @@ const BookingsTab = ({ bookings }) => {
         </div>
       </div>
 
-      {/* Detail Modal */}
-      {selectedBooking && (
-        <BookingDetailModal
-          booking={selectedBooking}
-          onClose={() => setSelectedBooking(null)}
-        />
+          {/* Detail Modal */}
+          {selectedBooking && (
+            <BookingDetailModal
+              booking={selectedBooking}
+              onClose={() => setSelectedBooking(null)}
+            />
+          )}
+        </>
       )}
     </div>
   );
