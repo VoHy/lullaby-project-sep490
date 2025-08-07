@@ -22,7 +22,6 @@ const BlogList = ({ onEdit, onDelete, onActivate, onDeactivate, refreshTrigger }
         blogService.getAllBlogs(),
         blogCategoryService.getAllBlogCategories()
       ]);
-      console.log('Blog data from API:', blogsData); // Debug log
       setBlogs(blogsData);
       setCategories(categoriesData);
     } catch (error) {

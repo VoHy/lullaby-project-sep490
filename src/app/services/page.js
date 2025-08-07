@@ -65,7 +65,6 @@ export default function ServicesPage() {
   // const [feedbacks, setFeedbacks] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedServices, setSelectedServices] = useState([]);
-  const [serviceQuantities, setServiceQuantities] = useState({}); // Thêm state cho quantities
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [serviceDetail, setServiceDetail] = useState(null);
@@ -101,9 +100,6 @@ export default function ServicesPage() {
           serviceTypeService.getServiceTypes(),
           serviceTaskService.getServiceTasks()
         ]);
-        
-        console.log('Loaded services:', services);
-        console.log('Loaded service tasks:', tasks);
         
         setServiceTypes(services);
         setServiceTasks(tasks);
@@ -146,14 +142,6 @@ export default function ServicesPage() {
         ? prev.filter((id) => id !== serviceId)
         : [...prev, serviceId]
     );
-  };
-
-  // Handle quantity changes for individual services
-  const handleQuantityChange = (serviceId, quantity) => {
-    setServiceQuantities(prev => ({
-      ...prev,
-      [serviceId]: quantity
-    }));
   };
 
   // Tách dịch vụ lẻ và package
@@ -203,7 +191,7 @@ export default function ServicesPage() {
   };
 
   // Handle booking
-  const handleBook = (serviceId, type = 'service', quantity = 1) => {
+  const handleBook = (serviceId, type = 'service') => {
     if (type === 'package') {
       // Tìm thông tin package
       const packageInfo = serviceTypes.find(s => s.serviceID === serviceId);
@@ -230,12 +218,11 @@ export default function ServicesPage() {
           price: serviceInfo.price,
           duration: serviceInfo.duration,
           description: serviceInfo.description,
-          serviceID: serviceInfo.serviceID,
-          quantity: quantity // Thêm quantity vào service data
+          serviceID: serviceInfo.serviceID
         };
-        router.push(`/booking?service=${serviceId}&quantity=${quantity}&serviceData=${encodeURIComponent(JSON.stringify(serviceData))}`);
+        router.push(`/booking?service=${serviceId}&serviceData=${encodeURIComponent(JSON.stringify(serviceData))}`);
       } else {
-        router.push(`/booking?service=${serviceId}&quantity=${quantity}`);
+        router.push(`/booking?service=${serviceId}`);
       }
     }
   };
@@ -299,8 +286,6 @@ export default function ServicesPage() {
             onToggleExpand={handleToggleExpand}
             getServicesOfPackage={getServicesOfPackage}
             getRating={getRating}
-            serviceQuantities={serviceQuantities}
-            onQuantityChange={handleQuantityChange}
           />
         )}
 
@@ -316,8 +301,6 @@ export default function ServicesPage() {
             onBook={handleBook}
             isDisabled={!!selectedPackage}
             getRating={getRating}
-            serviceQuantities={serviceQuantities}
-            onQuantityChange={handleQuantityChange}
           />
         )}
 
@@ -335,10 +318,7 @@ export default function ServicesPage() {
         )}
 
         {/* Multi-Service Booking Button */}
-        <MultiServiceBooking 
-          selectedServices={selectedServices} 
-          serviceQuantities={serviceQuantities}
-        />
+        <MultiServiceBooking selectedServices={selectedServices} />
 
         {/* Service Detail Modal */}
         <DetailModal

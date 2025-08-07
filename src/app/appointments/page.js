@@ -129,13 +129,12 @@ export default function AppointmentsPage() {
   };
 
   const handleNewAppointment = () => {
-    router.push('/booking');
+    router.push('/services');
   };
 
   // Handle nurse assignment
   const handleNurseAssignment = async (service, nurseId) => {
     try {
-      console.log('🔄 Assigning nurse...', { service, nurseId });
       
       // Get booking ID
       const bookingId = selectedAppointment?.bookingID || selectedAppointment?.BookingID;
@@ -154,21 +153,18 @@ export default function AppointmentsPage() {
       else if (service.taskId) {
         // Directly use the taskId from service task
         const customizeTaskId = service.taskId;
-        console.log('Updating package service task:', customizeTaskId);
         
         const { customizeTaskService } = await import('@/services/api');
         await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId);
       } 
       // Case 3: Individual service - need to find corresponding CustomizeTask
       else {
-        console.log('Finding CustomizeTask for individual service...');
         
         // Import customize services
         const { customizeTaskService, customizePackageService } = await import('@/services/api');
         
         // Get all customize packages for this booking
         const customizePackages = await customizePackageService.getAllByBooking(bookingId);
-        console.log('Customize packages:', customizePackages);
         
         // Find the customize package that matches the service
         const serviceId = service.serviceID || service.serviceTypeID || service.ServiceID;
@@ -185,7 +181,6 @@ export default function AppointmentsPage() {
         // Get all customize tasks for this package
         const customizePackageId = matchingPackage.customizePackageID || matchingPackage.customize_PackageID;
         const customizeTasks = await customizeTaskService.getTasksByPackage(customizePackageId);
-        console.log('Customize tasks:', customizeTasks);
         
         if (customizeTasks.length === 0) {
           throw new Error('Không tìm thấy customize task nào');
@@ -196,7 +191,6 @@ export default function AppointmentsPage() {
         const taskToUpdate = customizeTasks[0];
         const customizeTaskId = taskToUpdate.customizeTaskID || taskToUpdate.customize_TaskID;
         
-        console.log('Updating individual service task:', customizeTaskId);
         await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId);
       }
 
@@ -206,7 +200,7 @@ export default function AppointmentsPage() {
       // Refresh data to show updated assignment
       await fetchData(true);
     } catch (error) {
-      console.error(' Error assigning nurse:', error);
+      console.error('❌ Error assigning nurse:', error);
       alert(`Có lỗi xảy ra khi phân công nurse: ${error.message}`);
     }
   };

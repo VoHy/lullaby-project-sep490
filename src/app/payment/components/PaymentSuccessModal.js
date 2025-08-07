@@ -1,10 +1,8 @@
 import { FaCheckCircle, FaHistory, FaHome } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
-import { useWalletContext } from '@/context/WalletContext';
 
 export default function PaymentSuccessModal({ isOpen, onClose, invoiceId, amount }) {
   const router = useRouter();
-  const { refreshWalletData } = useWalletContext();
 
   if (!isOpen) return null;
 
@@ -34,14 +32,7 @@ export default function PaymentSuccessModal({ isOpen, onClose, invoiceId, amount
           
           {/* Action Button */}
           <button
-            onClick={async () => {
-              try {
-                console.log('🔄 Refreshing wallet from PaymentSuccessModal...');
-                await refreshWalletData();
-                console.log('✅ Wallet refreshed from PaymentSuccessModal');
-              } catch (error) {
-                console.warn('⚠️ Could not refresh wallet from modal:', error);
-              }
+            onClick={() => {
               onClose();
               router.push('/appointments'); // Redirect to appointments page
             }}

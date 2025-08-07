@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import { FaStar, FaClock, FaEye, FaShoppingCart, FaCheck, FaTimes, FaTag } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
-import QuantitySelector from './QuantitySelector';
 
 // Component để hiển thị danh sách dịch vụ con trong gói
 const PackageServicesList = ({ packageId, getServicesOfPackage }) => {
@@ -72,9 +71,7 @@ const ServiceCard = ({
   type = 'service', // 'service' or 'package'
   expandedPackage,
   onToggleExpand,
-  getServicesOfPackage,
-  serviceQuantities = {},
-  onQuantityChange
+  getServicesOfPackage
 }) => {
   const getRating = (serviceId) => {
     // This should be passed from parent or calculated here
@@ -82,17 +79,6 @@ const ServiceCard = ({
   };
 
   const rating = getRating(service.serviceID);
-  const currentQuantity = serviceQuantities[service.serviceID] || 1;
-
-  const handleBookWithQuantity = () => {
-    if (type === 'service') {
-      // Truyền quantity cho dịch vụ lẻ
-      onBook(service.serviceID, type, currentQuantity);
-    } else {
-      // Package không cần quantity
-      onBook(service.serviceID, type);
-    }
-  };
 
   return (
     <motion.div
@@ -136,27 +122,9 @@ const ServiceCard = ({
           <div className={`text-2xl font-bold ${
             type === 'package' ? 'text-purple-600' : 'text-blue-600'
           }`}>
-            {(service.price * currentQuantity)?.toLocaleString('vi-VN')} VNĐ
+            {service.price?.toLocaleString('vi-VN')} VNĐ
           </div>
         </div>
-
-        {/* Quantity Selector for Individual Services */}
-        {type === 'service' && (
-          <div className="mb-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm font-medium text-gray-700">Số lượng:</span>
-              <QuantitySelector
-                serviceId={service.serviceID}
-                initialQuantity={currentQuantity}
-                onQuantityChange={onQuantityChange}
-                disabled={isDisabled}
-              />
-            </div>
-            <div className="text-xs text-gray-500 mt-1 text-right">
-              {service.price?.toLocaleString('vi-VN')} VNĐ x {currentQuantity}
-            </div>
-          </div>
-        )}
 
         {/* Action Buttons */}
         <div className="space-y-3">
@@ -198,7 +166,7 @@ const ServiceCard = ({
                   ? 'bg-pink-500 hover:bg-pink-600' 
                   : 'bg-blue-500 hover:bg-blue-600'
               }`}
-              onClick={handleBookWithQuantity}
+              onClick={() => onBook(service.serviceID, type)}
               disabled={isDisabled}
             >
               <FaShoppingCart className="text-sm" />

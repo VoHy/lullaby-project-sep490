@@ -15,7 +15,6 @@ const PayOSPaymentModal = ({ isOpen, onClose, amount, wallet, onPaymentSuccess, 
   const handleCreatePayment = async () => {
     if (!amount || parseFloat(amount) <= 0) return;
     
-    console.log('🧪 Test: Bắt đầu tạo PayOS payment, amount:', amount);
     setLoading(true);
     try {
       // Tạo payment session với PayOS (mock data vì không có API tạo payment)
@@ -27,15 +26,11 @@ const PayOSPaymentModal = ({ isOpen, onClose, amount, wallet, onPaymentSuccess, 
         status: 'pending'
       };
       
-      console.log('🧪 Test: Tạo mock payment data:', mockPaymentData);
-      
       setPaymentData(mockPaymentData);
       setQrCode(mockPaymentData.qrCode);
       setPaymentUrl(mockPaymentData.paymentUrl);
       setStep('qr');
-      console.log('🧪 Test: Chuyển sang step QR');
     } catch (error) {
-      console.error('🧪 Test: Lỗi tạo payment:', error);
       setStep('failed');
     } finally {
       setLoading(false);
@@ -43,12 +38,10 @@ const PayOSPaymentModal = ({ isOpen, onClose, amount, wallet, onPaymentSuccess, 
   };
 
   const handlePaymentSuccess = async () => {
-    console.log('🧪 Test: Bắt đầu xử lý PayOS payment success');
     setLoading(true);
     try {
       // Xác nhận thanh toán thành công qua webhook
       if (paymentData) {
-        console.log('🧪 Test: Gọi webhook APIs với payment data:', paymentData);
         
         // Gọi API webhook handler
         await fetch('/api/payos/webhookhandler', {
@@ -86,16 +79,13 @@ const PayOSPaymentModal = ({ isOpen, onClose, amount, wallet, onPaymentSuccess, 
           })
         });
         
-        console.log('🧪 Test: Webhook APIs được gọi thành công');
       }
       
       setStep('success');
-      console.log('🧪 Test: PayOS payment thành công');
       if (onPaymentSuccess) {
         onPaymentSuccess();
       }
     } catch (error) {
-      console.error('🧪 Test: Lỗi xử lý PayOS payment:', error);
       setStep('failed');
     } finally {
       setLoading(false);
