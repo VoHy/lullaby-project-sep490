@@ -34,7 +34,6 @@ export default function RelativeFormModal({ open, onClose, onSave, formData, onC
       image: formData.image || '/images/hero-bg.jpg'
     };
 
-    console.log('RelativeFormModal submitData:', submitData);
     onSave(submitData);
   };
 

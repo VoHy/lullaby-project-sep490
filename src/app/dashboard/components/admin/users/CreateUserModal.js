@@ -32,8 +32,6 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
         zoneDetailService.getZoneDetails()
       ])
         .then(([zonesData, zoneDetailsData]) => {
-          console.log('Zones data:', zonesData);
-          console.log('Zone details data:', zoneDetailsData);
           setZones(zonesData);
           setZoneDetails(zoneDetailsData);
         })

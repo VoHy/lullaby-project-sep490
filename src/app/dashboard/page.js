@@ -102,10 +102,6 @@ export default function DashboardPage() {
   const renderDashboard = () => {
     const roleID = user.roleID;
     
-    // Debug: Log user info
-    console.log('Dashboard User:', user);
-    console.log('User Role ID:', roleID);
-    
     switch (roleID) {
       case 1: // Admin
         return <AdminDashboard user={user} />;

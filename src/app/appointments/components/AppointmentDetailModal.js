@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaUserMd, FaPlus, FaFileInvoice } from 'react-icons/fa';
@@ -123,7 +123,7 @@ const AppointmentDetailModal = ({
 
     return (
         <div
-            className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+            className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 p-4"
         >
             <div
                 className="bg-white rounded-3xl shadow-2xl max-w-7xl w-full relative max-h-[95vh] overflow-y-auto"
@@ -341,7 +341,7 @@ const AppointmentDetailModal = ({
                                                 </div>
                                                 <div className="flex justify-between">
                                                     <span className="text-gray-600">Trạng thái:</span>
-                                                    <span className={`font-medium ${(bookingInvoice.status || bookingInvoice.Status) === 'Hoàn thành'
+                                                    <span className={`font-medium ${(bookingInvoice.status || bookingInvoice.Status) === 'paid'
                                                         ? 'text-green-600'
                                                         : 'text-orange-600'
                                                         }`}>

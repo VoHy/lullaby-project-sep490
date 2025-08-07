@@ -9,7 +9,6 @@ import walletService from '@/services/api/walletService';
 import transactionHistoryService from '@/services/api/transactionHistoryService';
 import invoiceService from '@/services/api/invoiceService';
 import { AuthContext } from "@/context/AuthContext";
-import { useWalletContext } from "@/context/WalletContext";
 
 // Thay thế import mock data bằng services
 import serviceTaskService from '@/services/api/serviceTaskService';
@@ -38,7 +37,6 @@ function PaymentContent() {
   const [error, setError] = useState("");
 
   const { user } = useContext(AuthContext);
-  const { refreshWalletData } = useWalletContext();
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastInvoiceId, setLastInvoiceId] = useState(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
@@ -240,10 +238,6 @@ function PaymentContent() {
       setIsProcessingPayment(true);
       setError('');
 
-      console.log('🔄 ===== STARTING PAYMENT PROCESS =====');
-      console.log('📋 Booking:', booking);
-      console.log('💰 Amount:', bookingData.total);
-
       // 1. Kiểm tra ví
       const userWallet = wallets.find(w => 
         (w.accountID || w.AccountID) === (user.accountID || user.AccountID)
@@ -255,7 +249,6 @@ function PaymentContent() {
       }
 
       const walletAmount = userWallet.amount || userWallet.Amount || 0;
-      console.log('💳 Wallet:', { walletID: userWallet.walletID, amount: walletAmount });
 
       // 2. Kiểm tra số dư
       if (walletAmount < bookingData.total) {
@@ -270,15 +263,11 @@ function PaymentContent() {
         content: `Thanh toán booking #${bookingID}`
       };
 
-      console.log('📄 Creating invoice:', invoiceData);
       const invoiceResponse = await invoiceService.createInvoice(invoiceData);
-      console.log('📄 Invoice response:', invoiceResponse);
 
       // 4. Check xem invoice đã paid chưa
       if (invoiceResponse && typeof invoiceResponse === 'object' && 
           invoiceResponse.message === 'Invoice paid successfully.') {
-        
-        console.log('✅ Invoice already paid - skipping payment API');
         
         // Lấy invoice để có invoiceId
         try {
@@ -297,7 +286,6 @@ function PaymentContent() {
       }
 
       // 5. Gọi API InvoicePayment (tự động xử lý payment)
-      console.log('💳 Calling InvoicePayment API...');
       
       const paymentResponse = await fetch(`/api/transactionhistory/invoicepayment/${invoiceId}`, {
         method: 'POST',
@@ -305,22 +293,18 @@ function PaymentContent() {
         // Không cần body - API tự động xử lý
       });
 
-      console.log('💳 Payment API status:', paymentResponse.status);
-
       if (paymentResponse.ok) {
         const paymentData = await paymentResponse.json();
-        console.log('✅ Payment successful:', paymentData);
         
         // 6. Success handling
         await handlePaymentSuccess(invoiceId);
         
       } else {
         const errorData = await paymentResponse.json();
-        console.error('❌ Payment failed:', errorData);
+        console.error(' Payment failed:', errorData);
         
         if (errorData.message === "This invoice has already paid.") {
           // Invoice đã được thanh toán rồi - coi như thành công
-          console.log('✅ Invoice already paid - treating as success');
           await handlePaymentSuccess(invoiceId);
         } else {
           throw new Error(errorData.message || 'Thanh toán thất bại');
@@ -328,7 +312,7 @@ function PaymentContent() {
       }
 
     } catch (error) {
-      console.error('❌ Payment error:', error);
+      console.error(' Payment error:', error);
       
       let errorMessage = 'Có lỗi xảy ra khi thanh toán';
       if (error.message) {
@@ -343,13 +327,11 @@ function PaymentContent() {
 
   // Helper function xử lý thành công
   const handlePaymentSuccess = async (invoiceId) => {
-    console.log('🎉 Payment successful!');
 
     // Refresh wallet data
     try {
-      console.log('🔄 Refreshing wallet data via WalletContext...');
-      await refreshWalletData();
-      console.log('✅ Wallet refreshed via WalletContext');
+      const refreshedWallets = await walletService.getAllWallets();
+      setWallets(refreshedWallets);
     } catch (refreshError) {
       console.warn('⚠️ Could not refresh wallet:', refreshError);
     }
@@ -459,27 +441,13 @@ function PaymentContent() {
 
         <PaymentSuccessModal
           isOpen={showSuccessModal}
-          onClose={async () => {
-            try {
-              console.log('🔄 Refreshing wallet from onClose...');
-              await refreshWalletData();
-              console.log('✅ Wallet refreshed from onClose');
-            } catch (error) {
-              console.warn('⚠️ Could not refresh wallet from onClose:', error);
-            }
+          onClose={() => {
             setShowSuccessModal(false);
             router.push('/bookings');
           }}
           invoiceId={lastInvoiceId}
           amount={bookingData?.total}
-          onGoToBookings={async () => {
-            try {
-              console.log('🔄 Refreshing wallet from onGoToBookings...');
-              await refreshWalletData();
-              console.log('✅ Wallet refreshed from onGoToBookings');
-            } catch (error) {
-              console.warn('⚠️ Could not refresh wallet from onGoToBookings:', error);
-            }
+          onGoToBookings={() => {
             setShowSuccessModal(false);
             router.push('/bookings');
           }}

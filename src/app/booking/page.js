@@ -13,7 +13,6 @@ import {
   BookingForm
 } from './components';
 import { AuthContext } from "@/context/AuthContext";
-import { useWalletContext } from "@/context/WalletContext";
 
 // Utility function to clear booking cache
 const clearBookingCache = () => {
@@ -101,23 +100,16 @@ function BookingContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const { user } = useContext(AuthContext);
-  const { refreshWalletData } = useWalletContext();
 
   // URL parameters
   const packageId = searchParams.get("packageId") || searchParams.get("package");
   const serviceId = searchParams.get("serviceId") || searchParams.get("service");
-  const quantity = parseInt(searchParams.get("quantity")) || 1; // Thêm quantity
-  const quantities = searchParams.get("quantities"); // Multiple quantities
   const packageDataParam = searchParams.get("packageData");
   const serviceDataParam = searchParams.get("serviceData");
 
   // Parse service/package data from URL
   const packageData = packageDataParam ? JSON.parse(decodeURIComponent(packageDataParam)) : null;
   const serviceData = serviceDataParam ? JSON.parse(decodeURIComponent(serviceDataParam)) : null;
-
-  // Parse multiple services and quantities
-  const serviceIds = serviceId ? serviceId.split(',') : [];
-  const serviceQuantities = quantities ? quantities.split(',').map(q => parseInt(q) || 1) : [quantity];
 
   // State management
   const [services, setServices] = useState([]);
@@ -264,7 +256,6 @@ function BookingContent() {
       
       // Chỉ load nếu có package ID và chưa có service tasks
       if (targetPackageId && serviceTasks.length === 0) {
-        console.log('Loading service tasks for package:', targetPackageId);
         await loadServiceTasksByPackage(targetPackageId);
       }
     };
@@ -311,7 +302,7 @@ function BookingContent() {
     
     // Nếu có serviceData từ URL (dịch vụ lẻ đơn)
     if (serviceData) {
-      return [{ ...serviceData, quantity: quantity }];
+      return [serviceData];
     }
     
     // Nếu có packageData từ URL (gói dịch vụ)
@@ -321,20 +312,17 @@ function BookingContent() {
     
     // Nếu có serviceId (dịch vụ lẻ - có thể nhiều dịch vụ)
     if (serviceId && services.length > 0) {
-      const selectedServices = serviceIds.map((id, index) => {
-        const serviceIdNum = parseInt(id.trim());
-        const service = services.find(s => 
-          s.serviceID === serviceIdNum || s.serviceTypeID === serviceIdNum
+      const serviceIds = serviceId.split(',').map(id => parseInt(id.trim()));
+      const selectedServices = services.filter(service => 
+        serviceIds.includes(service.serviceID) || serviceIds.includes(service.serviceTypeID)
+      );
+      
+      // Nếu không tìm thấy trong services, thử tìm trong packages
+      if (selectedServices.length === 0 && packages.length > 0) {
+        return packages.filter(pkg => 
+          serviceIds.includes(pkg.customizePackageID)
         );
-        
-        if (service) {
-          return {
-            ...service,
-            quantity: serviceQuantities[index] || 1
-          };
-        }
-        return null;
-      }).filter(Boolean);
+      }
       
       return selectedServices;
     }
@@ -345,7 +333,7 @@ function BookingContent() {
     }
     
     return [];
-  }, [serviceId, packageId, services, serviceTasks, serviceData, packageData, packages, serviceIds, serviceQuantities, quantity]);
+  }, [serviceId, packageId, services, serviceTasks, serviceData, packageData, packages]);
 
   // Thêm thông tin gói chính vào selectedServicesList khi có package
   const displayServicesList = useMemo(() => {
@@ -395,7 +383,7 @@ function BookingContent() {
   const total = useMemo(() => {
     // Nếu có serviceData (dịch vụ lẻ đơn)
     if (serviceData) {
-      return (serviceData.price || 0) * quantity;
+      return serviceData.price || 0;
     }
     
     // Nếu có packageData (gói dịch vụ)
@@ -405,11 +393,7 @@ function BookingContent() {
     
     // Nếu có serviceId (dịch vụ lẻ - có thể nhiều dịch vụ)
     if (serviceId && selectedServicesList.length > 0) {
-      return selectedServicesList.reduce((sum, service) => {
-        const servicePrice = service.price || 0;
-        const serviceQuantity = service.quantity || quantity;
-        return sum + (servicePrice * serviceQuantity);
-      }, 0);
+      return selectedServicesList.reduce((sum, service) => sum + (service.price || 0), 0);
     }
     
     // Fallback cho logic cũ
@@ -418,7 +402,7 @@ function BookingContent() {
     }
     
     return 0;
-  }, [packageId, detail, serviceId, selectedServicesList, serviceData, packageData, quantity]);
+  }, [packageId, detail, serviceId, selectedServicesList, serviceData, packageData]);
 
   const isDatetimeValid = useMemo(() => {
     if (!datetime) return false;
@@ -478,7 +462,6 @@ function BookingContent() {
           }
         };
 
-        console.log('Package Booking Data:', JSON.stringify(packageBookingData, null, 2));
         createdBooking = await bookingService.createPackageBooking(packageBookingData);
       } else {
         // Service booking - sử dụng CreateServiceBooking API
@@ -495,7 +478,6 @@ function BookingContent() {
           customizePackageCreateDtos: services
         };
 
-        console.log('Service Booking Data:', JSON.stringify(serviceBookingData, null, 2));
         createdBooking = await bookingService.createServiceBooking(serviceBookingData);
       }
       
@@ -585,13 +567,12 @@ function BookingContent() {
           <div className="flex flex-col md:flex-row gap-4 md:gap-8">
             {/* LEFT COLUMN: Info, dịch vụ, tổng tiền */}
                          <div className="md:w-1/2 flex flex-col gap-4">
-               {packageId && <PackageInfo packageDetail={detail} />}
+               {!packageId && <PackageInfo packageDetail={detail} />}
                               <ServicesList
                  selectedServicesList={displayServicesList}
                  packageId={packageId}
                  isDatetimeValid={isDatetimeValid}
                  total={total}
-                 quantity={quantity}
                />
             </div>
 

@@ -67,11 +67,8 @@ const AdminDashboard = ({ user, initialTab }) => {
 
   useEffect(() => {
     const tabParam = searchParams.get('tab');
-    console.log('AdminDashboard - Tab Param:', tabParam);
-    console.log('AdminDashboard - Valid Tab IDs:', validTabIds);
     if (tabParam && validTabIds.includes(tabParam)) {
       setActiveTab(tabParam);
-      console.log('AdminDashboard - Set Active Tab:', tabParam);
     }
     loadData();
   }, [searchParams]);

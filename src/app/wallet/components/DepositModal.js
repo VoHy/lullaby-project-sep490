@@ -42,22 +42,19 @@ const DepositModal = ({ isOpen, onClose, amount, setAmount, onDeposit, walletId,
     }
 
     if (paymentMethod === 'payos') {
-      console.log('🧪 Test: Chọn PayOS payment, amount:', tempAmount);
       if (onPayOSPayment) {
         onPayOSPayment(tempAmount);
       }
       return;
     }
 
-    console.log('🧪 Test: Bắt đầu nạp tiền trực tiếp, amount:', tempAmount);
     setLoading(true);
     try {
       setAmount(tempAmount); // Ensure parent state is updated for direct deposit
       await onDeposit();
-      console.log('🧪 Test: Nạp tiền thành công');
       setStep('success');
     } catch (error) {
-      console.error('🧪 Test: Lỗi nạp tiền:', error);
+      console.error('Lỗi nạp tiền:', error);
     } finally {
       setLoading(false);
     }

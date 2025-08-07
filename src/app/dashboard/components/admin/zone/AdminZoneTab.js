@@ -149,7 +149,6 @@ const AdminZoneTab = () => {
         alert('Cập nhật khu vực thành công!');
         } catch (error) {
           // Bỏ qua lỗi backend và cứ refresh data luôn vì biết chắc update thành công
-          console.log('Backend trả về lỗi nhưng thực chất update thành công, bỏ qua lỗi và refresh data...');
         }
       } else {
         // Create new zone - gửi đầy đủ fields theo API
@@ -163,7 +162,6 @@ const AdminZoneTab = () => {
         alert('Tạo khu vực thành công!');
         } catch (error) {
           // Bỏ qua lỗi backend và cứ refresh data luôn vì biết chắc tạo thành công
-          console.log('Backend trả về lỗi nhưng thực chất tạo thành công, bỏ qua lỗi và refresh data...');
         }
       }
       await fetchData(); // Reload data
@@ -230,7 +228,6 @@ const AdminZoneTab = () => {
         alert('Cập nhật chi tiết khu vực thành công!');
         } catch (error) {
           // Bỏ qua lỗi backend và cứ refresh data luôn vì biết chắc update thành công
-          console.log('Backend trả về lỗi nhưng thực chất update thành công, bỏ qua lỗi và refresh data...');
         }
       } else {
         // Create new zone detail - gửi đầy đủ fields theo API
@@ -244,7 +241,6 @@ const AdminZoneTab = () => {
         alert('Tạo chi tiết khu vực thành công!');
         } catch (error) {
           // Bỏ qua lỗi backend và cứ refresh data luôn vì biết chắc tạo thành công
-          console.log('Backend trả về lỗi nhưng thực chất tạo thành công, bỏ qua lỗi và refresh data...');
         }
       }
       await fetchData(); // Reload data

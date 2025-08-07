@@ -5,7 +5,6 @@ import serviceTaskService from '@/services/api/serviceTaskService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 
 const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
-  console.log('PackageDetailModal render:', { isOpen, packageService }); // Debug log
   
   if (!isOpen) return null;
   
@@ -38,7 +37,6 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
       try {
         setLoading(true);
         const tasks = await serviceTaskService.getServiceTasksByPackage(packageService.serviceID);
-        console.log('Package tasks:', tasks); // Debug log
         setPackageTasks(tasks);
       } catch (error) {
         console.error('Error loading package tasks:', error);
