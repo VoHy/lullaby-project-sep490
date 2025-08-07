@@ -468,25 +468,37 @@ function BookingContent() {
       
       if (isPackage) {
         // Package booking - sử dụng CreatePackageBooking API
+        // Note: Package thường có quantity = 1 vì chỉ có 1 gói
         const packageBookingData = {
           careProfileID: parseInt(selectedCareProfile.careProfileID),
           amount: parseInt(total),
           workdate: datetime,
           customizePackageCreateDto: {
             serviceID: parseInt(packageId),
-            quantity: 1
+            quantity: 1 // Package luôn là 1
           }
         };
 
         console.log('Package Booking Data:', JSON.stringify(packageBookingData, null, 2));
         createdBooking = await bookingService.createPackageBooking(packageBookingData);
       } else {
-        // Service booking - sử dụng CreateServiceBooking API
+        // Service booking - sử dụng CreateServiceBooking API với quantity thực tế
         const serviceIds = serviceId ? serviceId.split(',').map(id => parseInt(id.trim())) : [];
-        const services = serviceIds.map(id => ({
-          serviceID: id,
-          quantity: 1
-        }));
+        
+        // Lấy quantity thực tế cho mỗi service từ selectedServicesList
+        const services = serviceIds.map((id, index) => {
+          // Tìm service trong selectedServicesList để lấy quantity
+          const serviceInList = selectedServicesList.find(s => 
+            (s.serviceID === id || s.serviceTypeID === id)
+          );
+          
+          const serviceQuantity = serviceInList?.quantity || serviceQuantities[index] || quantity || 1;
+          
+          return {
+            serviceID: id,
+            quantity: serviceQuantity
+          };
+        });
         
         const serviceBookingData = {
           careProfileID: parseInt(selectedCareProfile.careProfileID),
@@ -496,6 +508,7 @@ function BookingContent() {
         };
 
         console.log('Service Booking Data:', JSON.stringify(serviceBookingData, null, 2));
+        console.log('Service Quantities:', services.map(s => `ServiceID ${s.serviceID}: quantity ${s.quantity}`));
         createdBooking = await bookingService.createServiceBooking(serviceBookingData);
       }
       
