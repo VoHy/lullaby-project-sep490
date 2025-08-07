@@ -55,36 +55,57 @@ function PaymentContent() {
         } catch (walletError) {
           console.error('❌ Lỗi khi lấy ví:', walletError);
         }
+        
         const [
-          packagesData,
           serviceTypesData,
           serviceTasksData,
           nursingSpecialistsData
         ] = await Promise.all([
-          // customizePackageService.getCustomizePackages(),
           serviceTypeService.getServiceTypes(),
           serviceTaskService.getServiceTasks(),
           nursingSpecialistService.getNursingSpecialists()
         ]);
 
-        setPackages(packagesData);
+        setPackages([]); // Không cần packages trong payment page
         setServiceTypes(serviceTypesData);
         setServiceTasks(serviceTasksData);
         setNursingSpecialists(nursingSpecialistsData);
         setCareProfiles([]); // Không cần care profiles từ API nữa
         setWallets(walletsData);
+        
+        console.log('📊 Payment data loaded:', {
+          serviceTypes: serviceTypesData.length,
+          serviceTasks: serviceTasksData.length,
+          nursingSpecialists: nursingSpecialistsData.length,
+          wallets: walletsData.length
+        });
 
         // Nếu có bookingId, fetch booking data với careProfile
         if (bookingId) {
+          console.log('🔍 Fetching booking data for ID:', bookingId);
           try {
-            const bookingData = await bookingService.getBookingByIdWithCareProfile(bookingId);
+            const bookingData = await bookingService.getBookingByIdWithCareProfile(parseInt(bookingId));
+            console.log('✅ Booking data loaded:', bookingData);
             setBooking(bookingData);
           } catch (error) {
-            setError('Không thể tải thông tin đặt lịch. Vui lòng thử lại sau.');
+            console.error('❌ Error fetching booking:', {
+              bookingId,
+              error,
+              errorMessage: error.message
+            });
+            setError(`Không thể tải thông tin đặt lịch (ID: ${bookingId}). ${error.message || 'Vui lòng thử lại sau.'}`);
           }
+        } else {
+          console.warn('⚠️ No bookingId provided in URL parameters');
+          setError('Không tìm thấy thông tin booking ID trong URL.');
         }
       } catch (error) {
-        setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+        console.error('❌ Error loading payment data:', {
+          error,
+          errorMessage: error.message,
+          bookingId
+        });
+        setError(`Không thể tải dữ liệu trang thanh toán: ${error.message || 'Vui lòng thử lại sau.'}`);
       } finally {
         setLoading(false);
       }

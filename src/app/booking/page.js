@@ -460,6 +460,39 @@ function BookingContent() {
   // Staff selection functions - REMOVED: Staff selection moved to appointment page
 
   // Payment handling
+  // ==============================================
+  // BOOKING FLOW EXPLANATION:
+  // ==============================================
+  // 
+  // DATA STRUCTURE:
+  // - ServiceTypes: { serviceID, serviceName, isPackage: true/false, ... }
+  // - ServiceTasks: { 
+  //     serviceTaskID, 
+  //     child_ServiceID (serviceID với isPackage=false),
+  //     package_ServiceID (serviceID với isPackage=true),
+  //     ... 
+  //   }
+  //
+  // 1. PACKAGE BOOKING (isPackage: true):
+  //    - User đặt 1 gói dịch vụ (ServiceType với isPackage=true)
+  //    - Frontend lấy ServiceTasks có package_ServiceID = packageId
+  //    - Frontend gửi: packageId, quantity=1, serviceTasks[] 
+  //    - Backend tạo:
+  //      + 1 Booking record
+  //      + 1 CustomizePackage (quantity=1, isPackage=true)  
+  //      + N CustomizeTask (N = số lượng ServiceTask, mỗi cái dựa trên child_ServiceID)
+  //    - Kết quả: User thấy 1 gói + N dịch vụ con, mỗi dịch vụ có nút "Add Nurse"
+  //
+  // 2. SERVICE BOOKING (isPackage: false):  
+  //    - User đặt dịch vụ lẻ (ServiceType với isPackage=false)
+  //    - Frontend gửi: serviceId, quantity=X, isPackage=false
+  //    - Backend tạo:
+  //      + 1 Booking record
+  //      + 1 CustomizePackage (quantity=X, isPackage=false)
+  //      + X CustomizeTask (dựa trên quantity, tất cả cùng serviceID)  
+  //    - Kết quả: User thấy X CustomizeTask giống nhau, mỗi cái có nút "Add Nurse"
+  //
+  // ==============================================
   const handlePayment = async () => {
     setError("");
     setCareProfileError("");
@@ -487,30 +520,124 @@ function BookingContent() {
       return;
     }
 
+    // Xác định loại booking dựa trên URL parameters
+    const isPackageBooking = packageId && !serviceId && !servicesId;
+    let requestData = null; // Để lưu request data cho error handling
+
+    console.log('🔍 Debug booking type:', {
+      packageId,
+      serviceId,
+      servicesId,
+      isPackageBooking,
+      urlParams: {
+        hasPackageId: !!packageId,
+        hasServiceId: !!serviceId,
+        hasServicesId: !!servicesId
+      }
+    });
+
     try {
       setIsProcessingPayment(true);
       
-      // Xác định loại booking (package hoặc service)
-      const isPackage = packageId && !serviceId && !servicesId;
-      
       let createdBooking;
       
-      if (isPackage) {
-        // Package booking - sử dụng CreatePackageBooking API
-        // Note: Package thường có quantity = 1 vì chỉ có 1 gói
+      if (isPackageBooking) {
+        // ========== PACKAGE BOOKING ==========
+        // Khi đặt gói (isPackage: true):
+        // - Tạo 1 Booking 
+        // - Tạo 1 CustomizePackage với quantity = 1
+        // - Tự động tạo nhiều CustomizeTask dựa trên ServiceTasks trong gói
+        
+        // Chuẩn bị dữ liệu ServiceTasks nếu có
+        // ServiceTask chứa thông tin về dịch vụ con trong gói:
+        // - child_ServiceID: ID của ServiceType có isPackage = false (dịch vụ lẻ)
+        // - package_ServiceID: ID của ServiceType có isPackage = true (gói dịch vụ)
+        const packageServiceTasks = serviceTasks.length > 0 ? serviceTasks.map(task => ({
+          serviceTaskID: task.serviceTaskID || task.ServiceTaskID,
+          childServiceID: task.child_ServiceID || task.childServiceID, // ID của dịch vụ lẻ
+          packageServiceID: task.package_ServiceID || task.packageServiceID, // ID của gói dịch vụ
+          duration: task.duration || task.Duration || 0,
+          price: task.price || task.Price || 0,
+          quantity: task.quantity || 1,
+          taskName: task.serviceName || task.ServiceName || task.taskName || 'Dịch vụ con',
+          description: task.description || task.Description || '',
+          taskOrder: task.taskOrder || 1,
+          status: task.status || 'active'
+        })) : [];
+        
+        console.log('ServiceTasks được chuẩn bị:', {
+          packageId: parseInt(packageId),
+          totalServiceTasks: packageServiceTasks.length,
+          serviceTaskDetails: packageServiceTasks
+        });
+        
         const packageBookingData = {
           careProfileID: parseInt(selectedCareProfile.careProfileID),
           amount: parseInt(total),
           workdate: datetime,
           customizePackageCreateDto: {
             serviceID: parseInt(packageId),
-            quantity: 1 // Package luôn là 1
+            quantity: 1 // Package luôn có quantity = 1
           }
         };
 
+        console.log('Package Booking Data:', {
+          ...packageBookingData,
+          packageInfo: {
+            packageId: parseInt(packageId),
+            isPackage: true,
+            totalServiceTasks: packageServiceTasks.length
+          },
+          expectedResult: {
+            booking: '1 Booking record',
+            customizePackage: '1 CustomizePackage (quantity=1, isPackage=true)',
+            customizeTasks: `${packageServiceTasks.length} CustomizeTask (1 cho mỗi ServiceTask)`,
+            nurseSelection: 'Mỗi CustomizeTask có nurseID=null để user chọn nurse sau'
+          },
+          serviceTaskBreakdown: packageServiceTasks.map(task => ({
+            taskName: task.taskName,
+            childServiceID: task.childServiceID,
+            willCreateCustomizeTask: true
+          }))
+        });
+
+        // Gọi API tạo package booking 
+        // Backend logic cần thực hiện:
+        // 1. Tạo 1 Booking record với thông tin cơ bản
+        // 2. Tạo 1 CustomizePackage với:
+        //    - serviceID = packageId (ServiceType có isPackage=true)
+        //    - quantity = 1 (gói chỉ có 1)  
+        //    - isPackage = true
+        // 3. Với mỗi ServiceTask trong packageServiceTasks:
+        //    - Tạo 1 CustomizeTask với:
+        //    - serviceID = task.childServiceID (ServiceType có isPackage=false)
+        //    - nurseID = null (để user chọn nurse sau)
+        //    - status = 'pending'
+        // Kết quả: N CustomizeTask (N = số ServiceTask trong gói)
+        console.log('📞 Calling createPackageBooking API...');
         createdBooking = await bookingService.createPackageBooking(packageBookingData);
+        console.log('✅ createPackageBooking response:', createdBooking);
+        
       } else {
-        // Service booking - sử dụng CreateServiceBooking API với quantity thực tế
+        // ========== SERVICE BOOKING ==========
+        // Khi đặt dịch vụ lẻ (isPackage: false):
+        // - Tạo 1 Booking
+        // - Tạo CustomizePackage với quantity theo user chọn, isPackage = false  
+        // - Tạo CustomizeTask theo số lượng đó
+        // Backend logic cần thực hiện:
+        // 1. Tạo 1 Booking record với thông tin cơ bản
+        // 2. Với mỗi service trong services[]:
+        //    - Tạo 1 CustomizePackage với:
+        //    - serviceID = service.serviceID (ServiceType có isPackage=false)
+        //    - quantity = service.quantity
+        //    - isPackage = false
+        // 3. Với mỗi CustomizePackage:
+        //    - Tạo quantity CustomizeTask với:
+        //    - serviceID = service.serviceID
+        //    - nurseID = null (để user chọn nurse sau)
+        //    - status = 'pending'
+        // Kết quả: Tổng số CustomizeTask = sum(service.quantity)
+        
         let services = [];
         
         if (servicesData && Array.isArray(servicesData)) {
@@ -546,19 +673,83 @@ function BookingContent() {
           customizePackageCreateDtos: services
         };
 
+        requestData = serviceBookingData; // Lưu cho error handling
+
+        console.log('Service Booking Data:', {
+          ...serviceBookingData,
+          serviceInfo: {
+            totalServices: services.length,
+            allAreIndividualServices: services.every(s => s.isPackage === false)
+          },
+          expectedResult: {
+            booking: '1 Booking record',
+            customizePackages: `${services.length} CustomizePackage (isPackage=false)`,
+            customizeTasks: `${services.reduce((total, s) => total + s.quantity, 0)} CustomizeTask total`,
+            nurseSelection: 'Mỗi CustomizeTask có nurseID=null để user chọn nurse sau'
+          },
+          serviceBreakdown: services.map(service => ({
+            serviceID: service.serviceID,
+            quantity: service.quantity,
+            isPackage: service.isPackage,
+            willCreateCustomizeTasks: service.quantity
+          }))
+        });
+
+        // Gọi API tạo service booking
+        // Backend sẽ tạo CustomizeTask theo số lượng cho mỗi dịch vụ
+        console.log('📞 Calling createServiceBooking API...');
         createdBooking = await bookingService.createServiceBooking(serviceBookingData);
+        console.log('✅ createServiceBooking response:', createdBooking);
       }
       
       if (createdBooking) {
-        // Chuyển sang trang payment với booking ID
+        // Thành công - chuyển sang trang payment
         const bookingId = createdBooking.bookingID || createdBooking.id;
-        router.push(`/payment?bookingId=${bookingId}`);
+        
+        console.log('✅ Booking created successfully:', {
+          bookingId,
+          bookingResponse: createdBooking,
+          isPackageBooking,
+          expectedCustomizeTasks: isPackageBooking 
+            ? `${serviceTasks.length} CustomizeTask (dựa trên ServiceTasks)` 
+            : `${services.reduce((total, s) => total + s.quantity, 0)} CustomizeTask (dựa trên quantity)`,
+          redirectUrl: `/payment?bookingId=${bookingId}`
+        });
+        
+        // Đảm bảo bookingId có giá trị và là số hợp lệ trước khi redirect
+        if (bookingId && !isNaN(parseInt(bookingId))) {
+          const redirectUrl = `/payment?bookingId=${bookingId}`;
+          console.log('🔄 Redirecting to payment page:', redirectUrl);
+          router.push(redirectUrl);
+        } else {
+          console.error('❌ BookingID không hợp lệ:', {
+            bookingId,
+            createdBooking,
+            bookingIDType: typeof bookingId
+          });
+          setError(`Không thể lấy ID booking hợp lệ (${bookingId}). Vui lòng thử lại sau.`);
+        }
       } else {
+        console.error('❌ CreatedBooking is null or undefined:', createdBooking);
         setError("Không thể tạo booking. Vui lòng thử lại sau.");
       }
     } catch (error) {
-      console.error("Error creating booking:", error);
-      setError("Có lỗi xảy ra khi tạo booking. Vui lòng thử lại sau.");
+      console.error("❌ Error creating booking:", {
+        error,
+        errorMessage: error.message,
+        errorStack: error.stack,
+        isPackageBooking,
+        requestData
+      });
+      
+      // Kiểm tra xem có phải lỗi network không
+      if (error.response) {
+        setError(`Lỗi từ server: ${error.response.data?.message || error.response.status}`);
+      } else if (error.request) {
+        setError("Không thể kết nối đến server. Vui lòng kiểm tra kết nối mạng.");
+      } else {
+        setError(`Có lỗi xảy ra khi tạo booking: ${error.message}`);
+      }
     } finally {
       setIsProcessingPayment(false);
     }
