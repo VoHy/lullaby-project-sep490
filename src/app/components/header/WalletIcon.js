@@ -4,11 +4,13 @@ import { useState, useContext } from 'react';
 import { FaWallet, FaPlus } from 'react-icons/fa';
 import { AuthContext } from '../../../context/AuthContext';
 import { useWalletContext } from '../../../context/WalletContext';
+import walletService from '../../../services/api/walletService';
 
 export default function WalletIcon() {
   const { user } = useContext(AuthContext);
-  const { wallet, loading } = useWalletContext();
+  const { wallet, loading, refreshWalletData } = useWalletContext();
   const [showTooltip, setShowTooltip] = useState(false);
+  const [creating, setCreating] = useState(false);
 
   // Chỉ hiển thị cho customer (roleID = 4)
   if (!user || (user.roleID !== 4 && user.RoleID !== 4)) {
@@ -22,6 +24,25 @@ export default function WalletIcon() {
 
   const formatAmount = (amount) => {
     return new Intl.NumberFormat('vi-VN').format(amount);
+  };
+
+  // Hàm tạo ví
+  const handleCreateWallet = async () => {
+    if (!user) {
+      alert('Bạn cần đăng nhập!');
+      return;
+    }
+    setCreating(true);
+    try {
+      const accountId = user.accountID || user.AccountID;
+      await walletService.createWallet(accountId);
+      await refreshWalletData();
+      alert('Tạo ví thành công!');
+    } catch (error) {
+      alert(error.message || 'Tạo ví thất bại!');
+    } finally {
+      setCreating(false);
+    }
   };
 
   return (
@@ -81,10 +102,11 @@ export default function WalletIcon() {
               <div className="space-y-2">
                 <p className="text-sm text-gray-500">Chưa có ví</p>
                 <button
-                  onClick={() => window.location.href = '/wallet'}
-                  className="w-full px-3 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition-colors"
+                  onClick={handleCreateWallet}
+                  className="w-full px-3 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition-colors disabled:opacity-60"
+                  disabled={creating}
                 >
-                  Tạo ví
+                  {creating ? 'Đang tạo ví...' : 'Tạo ví'}
                 </button>
               </div>
             )}

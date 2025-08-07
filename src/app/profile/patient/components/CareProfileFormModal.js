@@ -137,6 +137,13 @@ export default function CareProfileFormModal({ open, onClose, onSave, formData, 
                     className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium mb-2 text-gray-700">Trạng thái</label>
+                  <select name="status" value={formData.status || formData.Status || 'Active'} onChange={onChange} className="w-full rounded-lg border border-gray-200 px-3 py-2 focus:outline-primary text-sm">
+                    <option value="Active">Hoạt động</option>
+                    <option value="Inactive">Không hoạt động</option>
+                  </select>
+                </div>
               </div>
               {/* Cột phải: Ảnh đại diện */}
               <div className="flex flex-col items-center justify-start gap-4 pt-2">
