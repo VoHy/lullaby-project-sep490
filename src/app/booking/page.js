@@ -490,8 +490,6 @@ function BookingContent() {
           customizePackageCreateDtos: services
         };
 
-        console.log('Service Booking Data:', JSON.stringify(serviceBookingData, null, 2));
-        console.log('Service Quantities:', services.map(s => `ServiceID ${s.serviceID}: quantity ${s.quantity}`));
         createdBooking = await bookingService.createServiceBooking(serviceBookingData);
       }
       

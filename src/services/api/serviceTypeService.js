@@ -116,7 +116,6 @@ const serviceTypeService = {
           
           // Nếu dịch vụ đã được đánh dấu removed, không coi là lỗi
           if (errorData.error && errorData.error.includes('already marked as removed')) {
-            console.log('Service already marked as removed, treating as success');
             return { message: 'Service type already deleted', alreadyDeleted: true };
           }
           
@@ -135,11 +134,9 @@ const serviceTypeService = {
         const result = JSON.parse(responseText);
         return result;
       } catch (parseError) {
-        console.warn('Response is not valid JSON, treating as success');
         return { message: 'Service type deleted successfully' };
       }
     } catch (error) {
-      console.error('Soft delete error:', error);
       throw error;
     }
   }

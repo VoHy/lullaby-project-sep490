@@ -44,10 +44,8 @@ const transactionHistoryService = {
   // GET /api/TransactionHistory/GetAllByAccount/{accountId}
   getAllTransactionHistoriesByAccount: async (accountId) => {
     try {
-      console.log('🔍 TransactionHistoryService: Fetching for account:', accountId);
       
       if (!accountId) {
-        console.log('⚠️ No accountId provided, returning empty array');
         return [];
       }
 
@@ -56,19 +54,14 @@ const transactionHistoryService = {
         headers: { 'Content-Type': 'application/json' }
       });
 
-      console.log('🔍 TransactionHistory API Response status:', res.status);
-
       // Nếu không tìm thấy (404) hoặc không có data, trả về array rỗng
       if (res.status === 404) {
-        console.log('ℹ️ No transaction history found for account:', accountId);
         return [];
       }
 
       const data = await res.json();
-      console.log('🔍 TransactionHistory API Response data:', data);
 
       if (!res.ok) {
-        console.error('❌ API Error:', data.error);
         // Thay vì throw error, return empty array để không block wallet loading
         return [];
       }
@@ -85,7 +78,6 @@ const transactionHistoryService = {
       return [];
       
     } catch (error) {
-      console.error('❌ Error fetching transaction histories:', error);
       // Return empty array thay vì throw error để không block wallet loading
       return [];
     }

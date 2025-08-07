@@ -115,7 +115,6 @@ const walletService = {
   // Get wallet by account ID
   getWalletByAccountId: async (accountId) => {
     try {
-      console.log('🔍 WalletService: Gọi API lấy ví cho accountID:', accountId);
       const res = await fetch(`/api/wallet/getall`, {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
@@ -123,7 +122,6 @@ const walletService = {
       
       if (!res.ok) {
         if (res.status === 404) {
-          console.log('🔍 WalletService: Không tìm thấy ví cho accountID:', accountId);
           return null;
         }
         const errorData = await res.json();
@@ -131,10 +129,8 @@ const walletService = {
       }
       
       const wallet = await res.json();
-      console.log('🔍 WalletService: Ví tìm thấy:', wallet);
       return wallet;
     } catch (error) {
-      console.error('�� WalletService: Lỗi lấy ví:', error);
       throw error;
     }
   }

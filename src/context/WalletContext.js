@@ -34,8 +34,6 @@ export const WalletProvider = ({ children }) => {
       setError(null);
       
       const accountId = getAccountId(user);
-      console.log('🔍 WalletContext: User account ID:', accountId);
-      console.log('🔍 WalletContext: User object:', user);
       
       if (!accountId) {
         setError('Không tìm thấy thông tin tài khoản');
@@ -44,9 +42,7 @@ export const WalletProvider = ({ children }) => {
       }
       
       // Lấy ví của user
-      console.log('🔍 WalletContext: Đang tìm ví cho account ID:', accountId);
       const response = await walletService.getWalletByAccountId(accountId);
-      console.log('🔍 WalletContext: API Response:', response);
       
       // Xử lý response - có thể data nằm trong response.data hoặc response trực tiếp
       let userWallet = null;
@@ -54,7 +50,7 @@ export const WalletProvider = ({ children }) => {
         // Kiểm tra nếu response có data property
         if (response.data) {
           userWallet = response.data;
-        } else if (response.walletID || response.WalletID || response.amount !== undefined) {
+        } else if (response.walletID || response.amount !== undefined) {
           // Response trực tiếp là wallet object
           userWallet = response;
         } else if (Array.isArray(response) && response.length > 0) {
@@ -63,38 +59,31 @@ export const WalletProvider = ({ children }) => {
         }
       }
       
-      console.log('🔍 WalletContext: Processed wallet:', userWallet);
-      
       if (!userWallet) {
         throw new Error('Không tìm thấy ví cho tài khoản này');
       }
       
       // Đảm bảo wallet có đủ thông tin cần thiết
       const processedWallet = {
-        walletID: userWallet.walletID || userWallet.WalletID,
-        accountID: userWallet.accountID || userWallet.AccountID || accountId,
-        amount: userWallet.amount || userWallet.Amount || 0,
-        status: userWallet.status || userWallet.Status || 'active',
-        note: userWallet.note || userWallet.Note || '',
+        walletID: userWallet.walletID,
+        accountID: userWallet.accountID,
+        amount: userWallet.amount,
+        status: userWallet.status,
+        note: userWallet.note,
         ...userWallet // Giữ lại tất cả properties khác
       };
       
       setWallet(processedWallet);
-      console.log('🔍 WalletContext: Set wallet state:', processedWallet);
       
       // Lấy lịch sử giao dịch - KHÔNG để lỗi này block wallet loading
       try {
-        console.log('🔍 WalletContext: Lấy transaction history cho account:', accountId);
         const historyData = await transactionHistoryService.getAllTransactionHistoriesByAccount(accountId);
-        console.log('🔍 WalletContext: Transaction history:', historyData);
         setTransactions(Array.isArray(historyData) ? historyData : []);
       } catch (historyError) {
-        console.error('⚠️ WalletContext: Transaction history error (non-blocking):', historyError);
         setTransactions([]); // Set empty array instead of failing
       }
       
     } catch (error) {
-      console.error('❌ WalletContext: Error fetching wallet data:', error);
       setError(error.message);
     } finally {
       setLoading(false);
@@ -103,7 +92,6 @@ export const WalletProvider = ({ children }) => {
 
   // Refresh wallet data
   const refreshWalletData = async () => {
-    console.log('🔍 WalletContext: Refreshing wallet data...');
     await fetchWalletData();
   };
 
@@ -122,7 +110,7 @@ export const WalletProvider = ({ children }) => {
       
       // Gọi API nạp tiền
       const depositData = {
-        walletID: wallet.walletID || wallet.WalletID,
+        walletID: wallet.walletID,
         amount: parseFloat(amount)
       };
       
@@ -133,7 +121,6 @@ export const WalletProvider = ({ children }) => {
       
       return true;
     } catch (error) {
-      console.error('Error depositing:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -151,7 +138,7 @@ export const WalletProvider = ({ children }) => {
       
       // Gọi API thanh toán hóa đơn
       const paymentData = {
-        walletID: wallet.walletID || wallet.WalletID,
+        walletID: wallet.walletID,
         invoiceID: invoiceId
       };
       
@@ -162,7 +149,6 @@ export const WalletProvider = ({ children }) => {
       
       return result;
     } catch (error) {
-      console.error('Error processing invoice payment:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -180,7 +166,7 @@ export const WalletProvider = ({ children }) => {
       
       // Gọi API hoàn tiền
       const refundData = {
-        walletID: wallet.walletID || wallet.WalletID,
+        walletID: wallet.walletID,
         invoiceID: invoiceId
       };
       
@@ -191,7 +177,6 @@ export const WalletProvider = ({ children }) => {
       
       return result;
     } catch (error) {
-      console.error('Error processing refund:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -204,8 +189,8 @@ export const WalletProvider = ({ children }) => {
     
     try {
       setLoading(true);
-      const walletId = walletData.walletID || walletData.WalletID;
-      const currentStatus = walletData.status || walletData.Status;
+      const walletId = walletData.walletID;
+      const currentStatus = walletData.status;
       const isActive = currentStatus === 'active';
       
       let result;
@@ -220,7 +205,6 @@ export const WalletProvider = ({ children }) => {
       
       return result;
     } catch (error) {
-      console.error('Error toggling wallet status:', error);
       throw error;
     } finally {
       setLoading(false);
@@ -237,7 +221,6 @@ export const WalletProvider = ({ children }) => {
       
       return result;
     } catch (error) {
-      console.error('Error updating wallet note:', error);
       throw error;
     }
   };
@@ -245,10 +228,8 @@ export const WalletProvider = ({ children }) => {
   // Fetch wallet data when user changes
   useEffect(() => {
     if (user) {
-      console.log('🔍 WalletContext: User detected, fetching wallet data');
       fetchWalletData();
     } else {
-      console.log('🔍 WalletContext: No user detected');
       setWallet(null);
       setTransactions([]);
       setLoading(false);

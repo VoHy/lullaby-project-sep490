@@ -33,24 +33,19 @@ const careProfileService = {
 
   // Thêm method getCareProfiles để đảm bảo
   getCareProfiles: async () => {
-    console.log('careProfileService.getCareProfiles() called');
     try {
       const res = await fetch('/api/careprofiles/getall', {
         method: 'GET',
         headers: { 'Content-Type': 'application/json' }
       });
-      console.log('careProfileService.getCareProfiles() response status:', res.status);
       
       const data = await res.json();
-      console.log('careProfileService.getCareProfiles() response data:', data);
       
       if (!res.ok) {
-        console.error('careProfileService.getCareProfiles() error:', data.error);
         throw new Error(data.error || 'Không thể lấy danh sách care profiles');
       }
       return data;
     } catch (error) {
-      console.error('careProfileService.getCareProfiles() fetch error:', error);
       throw error;
     }
   },

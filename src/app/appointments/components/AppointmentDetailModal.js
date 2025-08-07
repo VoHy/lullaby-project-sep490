@@ -23,15 +23,7 @@ const AppointmentDetailModal = ({
   const [showNurseModal, setShowNurseModal] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
 
-  // TEST: Alert để biết modal được render
-  console.log('🚨 MODAL RENDERED!', {
-    appointment: appointment?.bookingID,
-    customizePackages: customizePackages?.length,
-    serviceTypes: serviceTypes?.length
-  });
-
   if (!appointment) {
-    console.log('❌ No appointment data');
     return null;
   }
 
@@ -46,14 +38,8 @@ const AppointmentDetailModal = ({
 
   // Tính toán thông tin dịch vụ và service tasks
   const getServiceDetails = () => {
-    console.log('🚨 getServiceDetails CALLED!');
     
     const bookingId = appointment.bookingID || appointment.BookingID;
-
-    console.log('🔍 DEBUG - BookingID:', bookingId);
-    console.log('🔍 DEBUG - All customize tasks:', JSON.stringify(customizeTasks, null, 2));
-    console.log('🔍 DEBUG - All customize packages:', JSON.stringify(customizePackages, null, 2));
-    console.log('🔍 DEBUG - All service types:', JSON.stringify(serviceTypes, null, 2));
 
     // APPROACH: Sử dụng customizeTasks thay vì customizePackages để hiển thị từng nút "Add Nurse" riêng biệt
     const bookingCustomizeTasks = customizeTasks?.filter(task => {
@@ -61,19 +47,8 @@ const AppointmentDetailModal = ({
         task.BookingID === bookingId ||
         task.booking_ID === bookingId;
       
-      console.log('🔍 DEBUG - CustomizeTask match check:', {
-        customizeTaskID: task.customizeTaskID,
-        bookingID: task.bookingID || task.BookingID || task.booking_ID,
-        targetBookingId: bookingId,
-        match
-      });
-      
       return match;
     }) || [];
-
-    console.log('🔍 SIMPLE DEBUG - BookingID:', bookingId);
-    console.log('🔍 SIMPLE DEBUG - Found customize tasks:', bookingCustomizeTasks.length);
-    console.log('🔍 SIMPLE DEBUG - CustomizeTasks data:', JSON.stringify(bookingCustomizeTasks, null, 2));
 
     if (bookingCustomizeTasks.length > 0) {
       // Tạo service instances dựa trên customize tasks
@@ -83,35 +58,12 @@ const AppointmentDetailModal = ({
         const serviceId = task.serviceID || task.service_ID || task.Service_ID;
         const customizeTaskId = task.customizeTaskID || task.customize_TaskID;
         
-        console.log(`🔍 DEBUG - Processing customize task ${taskIndex + 1}:`, {
-          customizeTaskId,
-          serviceId,
-          nursingID: task.nursingID,
-          status: task.status
-        });
-        
         const service = serviceTypes.find(s => {
           const match = s.serviceID === serviceId ||
             s.serviceTypeID === serviceId ||
             s.ServiceID === serviceId;
           
-          console.log('🔍 DEBUG - Service match check:', {
-            serviceTypeId: s.serviceID || s.serviceTypeID || s.ServiceID,
-            serviceName: s.serviceName || s.ServiceName,
-            targetServiceId: serviceId,
-            match
-          });
-          
           return match;
-        });
-        
-        console.log('📦 Processing customize task:', {
-          customizeTaskId,
-          serviceId,
-          foundService: !!service,
-          serviceName: service?.serviceName || service?.ServiceName,
-          hasNurse: !!task.nursingID,
-          status: task.status
         });
         
         if (service) {
@@ -123,20 +75,10 @@ const AppointmentDetailModal = ({
             serviceInstanceKey: `task-${customizeTaskId}`
           };
           allServiceInstances.push(instance);
-          
-          console.log(`✅ Created service instance for task ${customizeTaskId}:`, {
-            serviceName: service.serviceName || service.ServiceName,
-            serviceInstanceKey: instance.serviceInstanceKey,
-            hasNurse: !!task.nursingID,
-            status: task.status
-          });
         } else {
           console.log('❌ No service found for serviceId:', serviceId);
         }
       });
-
-      console.log('🔍 SIMPLE DEBUG - Total service instances from tasks:', allServiceInstances.length);
-      console.log('🔍 SIMPLE DEBUG - Service instances:', allServiceInstances);
 
       return {
         type: 'tasks',
@@ -155,13 +97,6 @@ const AppointmentDetailModal = ({
         pkg.BookingID === bookingId ||
         pkg.booking_ID === bookingId;
       
-      console.log('🔍 DEBUG - Package match check:', {
-        packageId: pkg.customizePackageID,
-        bookingID: pkg.bookingID || pkg.BookingID || pkg.booking_ID,
-        targetBookingId: bookingId,
-        match
-      });
-      
       return match;
     }) || [];
 
@@ -172,36 +107,15 @@ const AppointmentDetailModal = ({
       bookingPackages.forEach((pkg, pkgIndex) => {
         const serviceId = pkg.serviceID || pkg.service_ID || pkg.Service_ID;
         
-        console.log(`🔍 DEBUG - Processing package ${pkgIndex + 1}:`, {
-          packageId: pkg.customizePackageID,
-          serviceId,
-          quantity: pkg.quantity
-        });
-        
         const service = serviceTypes.find(s => {
           const match = s.serviceID === serviceId ||
             s.serviceTypeID === serviceId ||
             s.ServiceID === serviceId;
           
-          console.log('🔍 DEBUG - Service match check:', {
-            serviceTypeId: s.serviceID || s.serviceTypeID || s.ServiceID,
-            serviceName: s.serviceName || s.ServiceName,
-            targetServiceId: serviceId,
-            match
-          });
-          
           return match;
         });
         
         const quantity = pkg.quantity || 1;
-        
-        console.log('📦 Processing package:', {
-          packageId: pkg.customizePackageID,
-          serviceId,
-          quantity,
-          foundService: !!service,
-          serviceName: service?.serviceName || service?.ServiceName
-        });
         
         if (service) {
           // Tạo nhiều instances theo quantity
@@ -214,19 +128,11 @@ const AppointmentDetailModal = ({
               serviceInstanceKey: `${pkg.customizePackageID}-${i + 1}`
             };
             allServiceInstances.push(instance);
-            
-            console.log(`✅ Created service instance ${i + 1}/${quantity}:`, {
-              serviceName: service.serviceName || service.ServiceName,
-              serviceInstanceKey: instance.serviceInstanceKey
-            });
           }
         } else {
           console.log('❌ No service found for serviceId:', serviceId);
         }
       });
-
-      console.log('🔍 SIMPLE DEBUG - Total service instances:', allServiceInstances.length);
-      console.log('🔍 SIMPLE DEBUG - Service instances:', allServiceInstances);
 
       return {
         type: 'services',

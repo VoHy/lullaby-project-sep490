@@ -122,7 +122,7 @@ export default function WalletPage(props) {
   const handleCreateWallet = async () => {
     try {
       if (!user) throw new Error('Bạn cần đăng nhập!');
-      const accountId = user.accountID || user.AccountID;
+      const accountId = user.accountID;
       await walletService.createWallet(accountId);
       await refreshWalletData();
     } catch (error) {
@@ -214,7 +214,7 @@ export default function WalletPage(props) {
           >
             <div className="text-lg text-gray-500 mb-2">Số dư ví của bạn</div>
             <div className="text-4xl font-extrabold text-pink-600 mb-4">
-              {formatCurrency(wallet?.Amount || wallet?.amount || 0)}đ
+              {formatCurrency(wallet?.amount || 0)}đ
             </div>
             <button
               onClick={onDepositClick}

@@ -235,8 +235,6 @@ const bookingService = {
           }
         };
         
-        console.log('Package Booking Data:', JSON.stringify(packageBookingData, null, 2));
-        
         const result = await bookingService.createPackageBooking(packageBookingData);
         return result;
       } else {
@@ -253,8 +251,6 @@ const bookingService = {
           workdate: datetime,
           customizePackageCreateDtos: services
         };
-        
-        console.log('Service Booking Data:', JSON.stringify(serviceBookingData, null, 2));
         
         const result = await bookingService.createServiceBooking(serviceBookingData);
         return result;

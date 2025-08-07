@@ -144,7 +144,6 @@ export default function AppointmentsPage() {
 
       // Case 1: If service has customizeTaskId, update that task directly
       if (service.customizeTaskId) {
-        console.log('Updating customize task:', service.customizeTaskId);
         
         const { customizeTaskService } = await import('@/services/api');
         await customizeTaskService.updateTaskNursing(service.customizeTaskId, nurseId);
