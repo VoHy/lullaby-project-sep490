@@ -80,85 +80,44 @@ export default function useCareProfileManager(router) {
   const [deleteRelativeId, setDeleteRelativeId] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
+  // Load data từ API
+  const loadData = async () => {
+    if (!user) {
+      router.push('/profile/patient');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      
+      const [careProfilesData, relativesData, zonesData, zoneDetailsData] = await Promise.all([
+        careProfileService.getCareProfiles().catch(() => []),
+        relativesService.getRelatives().catch(() => []),
+        zoneService.getZones().catch(() => []),
+        zoneDetailService.getAll().catch(() => [])
+      ]);
+
+      // Set data trực tiếp
+      setCareProfiles(Array.isArray(careProfilesData) ? careProfilesData : []);
+      setRelativesList(Array.isArray(relativesData) ? relativesData : []);
+      setZones(Array.isArray(zonesData) ? zonesData : []);
+      setZonedetailsList(Array.isArray(zoneDetailsData) ? zoneDetailsData : []);
+
+    } catch (error) {
+      console.error('Error loading data:', error);
+      setCareProfiles([]);
+      setRelativesList([]);
+      setZones([]);
+      setZonedetailsList([]);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   // Load data
   useEffect(() => {
-    const loadData = async () => {
-      if (!user) {
-        router.push('/profile/patient');
-        return;
-      }
-
-      try {
-        // Gọi từng API riêng biệt để tránh fail toàn bộ nếu một API lỗi
-        let careProfilesData = [];
-        let relativesData = [];
-        let zonesData = [];
-        let zoneDetailsData = [];
-
-        // Load care profiles
-        try {
-          careProfilesData = await careProfileService.getCareProfiles();
-        } catch (error) {
-          console.error('Error loading care profiles:', error);
-        }
-
-        // Load relatives
-        try {
-          relativesData = await relativesService.getRelatives();
-        } catch (error) {
-          console.error('Error loading relatives:', error);
-        }
-
-        // Load zones
-        try {
-          zonesData = await zoneService.getZones();
-        } catch (error) {
-          console.error('Error loading zones:', error);
-        }
-
-        // Load zone details
-        try {
-          zoneDetailsData = await zoneDetailService.getAll();
-        } catch (error) {
-          console.error('Error loading zone details:', error);
-        }
-
-        // Process care profiles
-        const safeCareProfiles = Array.isArray(careProfilesData) ? careProfilesData : [];
-        const myCareProfiles = safeCareProfiles.filter(
-          c => (c.accountID || c.AccountID) === (user.accountID || user.AccountID)
-        );
-        // Loại bỏ trùng careProfileID
-        const uniqueCareProfiles = [];
-        const seen = new Set();
-        for (const c of myCareProfiles) {
-          const id = c.careProfileID || c.CareProfileID;
-          if (!seen.has(id)) {
-            uniqueCareProfiles.push(c);
-            seen.add(id);
-          }
-        }
-        setCareProfiles(uniqueCareProfiles);
-
-        // Set other data
-        setRelativesList(Array.isArray(relativesData) ? relativesData : []);
-        setZones(Array.isArray(zonesData) ? zonesData : []);
-        setZonedetailsList(Array.isArray(zoneDetailsData) ? zoneDetailsData : []);
-
-
-      } catch (error) {
-        console.error('Error loading data:', error);
-        setCareProfiles([]);
-        setRelativesList([]);
-        setZones([]);
-        setZonedetailsList([]);
-      } finally {
-        setLoading(false);
-      }
-    };
-
     loadData();
-  }, [router, user]);
+  }, [user]);
 
   // CareProfile handlers
   const handleOpenCareProfileForm = (care = null) => {
@@ -191,18 +150,16 @@ export default function useCareProfileManager(router) {
   };
   const handleSaveCareProfile = async (dataOrEvent) => {
     let data = dataOrEvent;
-    // Nếu là event form thì lấy formData từ state và truyền avatar
     if (dataOrEvent && typeof dataOrEvent.preventDefault === 'function') {
       dataOrEvent.preventDefault();
       data = { ...careProfileForm, image: careProfileAvatar };
     } else {
-      // Nếu là submitData từ modal thì merge avatar
       data = { ...data, image: careProfileAvatar };
     }
 
-    // Format data trước khi gửi
+    // Format data cho API
     const submitData = {
-      accountID: user.accountID, // Thêm accountID của user đang login
+      accountID: user.accountID,
       zoneDetailID: data.zoneDetailID,
       profileName: data.profileName || '',
       dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth).toISOString() : null,
@@ -215,41 +172,25 @@ export default function useCareProfileManager(router) {
 
     setCareProfileLoading(true);
     setCareProfileSuccess('');
+    
     try {
       if (editCareProfile) {
-        // Kiểm tra xem care profile có tồn tại không
-        try {
-          const existingProfile = await careProfileService.getCareProfileById(editCareProfile.careProfileID || editCareProfile.CareProfileID);
-        } catch (error) {
-          // Nếu không tìm thấy, tạo mới
-          await careProfileService.createCareProfile(submitData);
-          setCareProfileSuccess('Tạo hồ sơ thành công!');
-          return;
-        }
-
-        await careProfileService.updateCareProfile(editCareProfile.careProfileID || editCareProfile.CareProfileID, submitData);
+        // Update
+        await careProfileService.updateCareProfile(
+          editCareProfile.careProfileID || editCareProfile.CareProfileID, 
+          submitData
+        );
         setCareProfileSuccess('Cập nhật hồ sơ thành công!');
       } else {
         // Create
         await careProfileService.createCareProfile(submitData);
         setCareProfileSuccess('Tạo hồ sơ thành công!');
       }
-      const updatedList = await careProfileService.getCareProfiles();
-      const safeCareProfiles = Array.isArray(updatedList) ? updatedList : [];
-      const myCareProfiles = safeCareProfiles.filter(
-        c => (c.accountID || c.AccountID) === (user.accountID || user.AccountID)
-      );
-      const uniqueCareProfiles = [];
-      const seen = new Set();
-      for (const c of myCareProfiles) {
-        const id = c.careProfileID || c.CareProfileID;
-        if (!seen.has(id)) {
-          uniqueCareProfiles.push(c);
-          seen.add(id);
-        }
-      }
-      setCareProfiles(uniqueCareProfiles);
+      
+      // Reload data sau khi thành công
+      await loadData();
       setShowCareProfileForm(false);
+      
     } catch (err) {
       console.error('Error saving care profile:', err);
       setCareProfileSuccess(err.message || 'Có lỗi khi xử lý hồ sơ.');
@@ -290,63 +231,42 @@ export default function useCareProfileManager(router) {
   };
   const handleSaveRelative = async (dataOrEvent) => {
     let data = dataOrEvent;
-    // Nếu là event form thì lấy formData từ state và truyền avatar
     if (dataOrEvent && typeof dataOrEvent.preventDefault === 'function') {
       dataOrEvent.preventDefault();
       data = { ...relativeForm, image: avatarPreview };
     } else {
-      // Nếu là submitData từ modal thì merge avatar
       data = { ...data, image: avatarPreview };
     }
 
+    const submitData = {
+      ...data,
+      careProfileID: currentCareID,
+      relativeName: data.relativeName,
+      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth).toISOString() : null,
+      gender: data.gender || 'male',
+      note: data.note || '',
+      status: data.status || 'active'
+    };
+
     setRelativeLoading(true);
     try {
-      const submitData = {
-        ...data,
-        careProfileID: currentCareID,
-        relativeName: data.relativeName,
-        dateOfBirth: data.dateOfBirth,
-        gender: data.gender || 'male',
-        note: data.note || '',
-        status: data.status || 'active'
-      };
-
       if (editRelative) {
-        // Format data theo API documentation cho update
-        const updateData = {
-          relativeID: editRelative.relativeID || editRelative.RelativeID || editRelative.relativeid,
-          careProfileID: parseInt(submitData.careProfileID),
-          relativeName: submitData.relativeName,
-          dateOfBirth: submitData.dateOfBirth ? new Date(submitData.dateOfBirth).toISOString() : null,
-          gender: submitData.gender || 'male',
-          note: submitData.note || '',
-          status: submitData.status || 'active',
-          image: submitData.image || '',
-          createdAt: editRelative.createdAt || new Date().toISOString()
-        };
-
-        const relativeId = editRelative.relativeID || editRelative.RelativeID || editRelative.relativeid;
-        await relativesService.updateRelative(relativeId, updateData);
+        // Update
+        await relativesService.updateRelative(
+          editRelative.relativeID || editRelative.RelativeID || editRelative.relativeid, 
+          submitData
+        );
         setCareProfileSuccess('Cập nhật người thân thành công!');
       } else {
-        // Create new relative
+        // Create
         await relativesService.createRelative(submitData);
         setCareProfileSuccess('Thêm người thân thành công!');
       }
 
-      // Refresh relatives list - filter theo user hiện tại
-      const updatedRelatives = await relativesService.getRelatives();
-      const safeRelatives = Array.isArray(updatedRelatives) ? updatedRelatives : [];
-      // Filter relatives theo care profiles của user hiện tại
-      const myRelatives = safeRelatives.filter(relative => {
-        const careProfile = careProfiles.find(cp =>
-          (cp.careProfileID || cp.CareProfileID) === (relative.careProfileID || relative.CareProfileID)
-        );
-        return careProfile && (careProfile.accountID || careProfile.AccountID) === (user.accountID || user.AccountID);
-      });
-      setRelativesList(myRelatives);
-
+      // Reload data
+      await loadData();
       setShowRelativeForm(false);
+      
     } catch (err) {
       console.error('Error saving relative:', err);
       setCareProfileSuccess(err.message || 'Có lỗi khi xử lý người thân.');
@@ -360,29 +280,15 @@ const handleDeleteCareProfile = id => {
   setDeleteCareProfileId(id);
   setShowDeleteCareProfile(true);
 };
+
 const confirmDeleteCareProfile = async () => {
   setDeleteLoading(true);
   try {
     await careProfileService.deleteCareProfile(deleteCareProfileId);
     setCareProfileSuccess('Xóa hồ sơ thành công!');
-
-    // Refresh care profiles list
-    const updatedList = await careProfileService.getCareProfiles();
-    const safeCareProfiles = Array.isArray(updatedList) ? updatedList : [];
-    const myCareProfiles = safeCareProfiles.filter(
-      c => (c.accountID || c.AccountID) === (user.accountID || user.AccountID)
-    );
-    const uniqueCareProfiles = [];
-    const seen = new Set();
-    for (const c of myCareProfiles) {
-      const id = c.careProfileID || c.CareProfileID;
-      if (!seen.has(id)) {
-        uniqueCareProfiles.push(c);
-        seen.add(id);
-      }
-    }
-    setCareProfiles(uniqueCareProfiles);
-
+    
+    // Reload data
+    await loadData();
     setShowDeleteCareProfile(false);
     setDeleteCareProfileId(null);
   } catch (err) {
@@ -391,20 +297,20 @@ const confirmDeleteCareProfile = async () => {
     setDeleteLoading(false);
   }
 };
+
 const handleDeleteRelative = id => {
   setDeleteRelativeId(id);
   setShowDeleteRelative(true);
 };
+
 const confirmDeleteRelative = async () => {
   setDeleteLoading(true);
   try {
     await relativesService.deleteRelative(deleteRelativeId);
     setCareProfileSuccess('Xóa người thân thành công!');
-
-    // Refresh relatives list
-    const updatedRelatives = await relativesService.getRelatives();
-    setRelativesList(updatedRelatives);
-
+    
+    // Reload data
+    await loadData();
     setShowDeleteRelative(false);
     setDeleteRelativeId(null);
   } catch (err) {
@@ -432,6 +338,7 @@ return {
   showCareProfileDetail, detailCareProfile, handleOpenCareProfileDetail, handleCloseCareProfileDetail,
   showRelativeDetail, detailRelative, handleOpenRelativeDetail, handleCloseRelativeDetail,
   careProfileSuccess,
+  loadData, // Export loadData function để refresh khi cần
 };
 // Hàm chuyển đổi ngày sang định dạng input type="date" (YYYY-MM-DD)
 // Hỗ trợ cả định dạng DD-MM-YYYY và định dạng ISO như 2025-07-29T07:10:37.656

@@ -73,7 +73,7 @@ const StatusDisplay = ({ type, message }) => (
 );
 
 export default function ProfilePage() {
-  const { user } = useContext(AuthContext);
+  const { user, updateUser } = useContext(AuthContext);
   const [profile, setProfile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
@@ -139,9 +139,16 @@ export default function ProfilePage() {
     try {
       const accountId = displayProfile.accountID || displayProfile.AccountID;
       const fullData = { ...displayProfile, ...editData };
+      
       await accountsService.updateAccount(accountId, fullData);
       const refreshed = await accountsService.getAccount(accountId);
+      
+      // Update local state
       setProfile(refreshed);
+      
+      // ⚡ QUAN TRỌNG: Update AuthContext để UI refresh ngay lập tức
+      updateUser(refreshed);
+      
       setIsEditing(false);
       setSuccess('Cập nhật thành công!');
     } catch (err) {
