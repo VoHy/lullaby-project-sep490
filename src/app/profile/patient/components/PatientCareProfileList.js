@@ -1,13 +1,11 @@
 import PatientCareProfileCard from './PatientCareProfileCard';
 import { FaUsers, FaPlus } from 'react-icons/fa';
+import { filterItems } from '../utils/displayUtils';
 
 export default function PatientCareProfileList({ careProfiles, relativesList, zones, relativesFilter, setRelativesFilter, handleOpenForm, careProfileFilter, setCareProfileFilter, handleOpenCareProfileForm, onViewDetailCareProfile, onViewDetailRelative, handleOpenEditCareProfile, handleOpenEditRelative }) {
-  // Lọc careProfiles theo filter
-  const filteredCareProfiles = careProfileFilter === 'all'
-    ? careProfiles
-    : careProfiles.filter(c =>
-        (c.status).toLowerCase() === careProfileFilter.toLowerCase()
-      );
+  // Filter care profiles using utility function
+  const filteredCareProfiles = filterItems(careProfiles, careProfileFilter);
+
   return (
     <>
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 mb-8 p-4">
@@ -27,18 +25,25 @@ export default function PatientCareProfileList({ careProfiles, relativesList, zo
             <option value="active">Hoạt động</option>
             <option value="inactive">Ngừng hoạt động</option>
           </select>
-          <button onClick={() => handleOpenCareProfileForm(null)} className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all flex items-center gap-2">
+          <button 
+            onClick={() => handleOpenCareProfileForm(null)} 
+            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:shadow-lg transition-all flex items-center gap-2"
+          >
             <FaPlus className="text-sm" />
             Thêm hồ sơ
           </button>
         </div>
       </div>
+      
       {filteredCareProfiles.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
           <div className="text-6xl mb-4">📋</div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Chưa có hồ sơ chăm sóc</h3>
           <p className="text-gray-600 mb-4">Bạn chưa có hồ sơ chăm sóc nào. Hãy tạo hồ sơ đầu tiên!</p>
-          <button onClick={() => handleOpenCareProfileForm(null)} className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all flex items-center gap-2 mx-auto">
+          <button 
+            onClick={() => handleOpenCareProfileForm(null)} 
+            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-lg hover:shadow-lg transition-all flex items-center gap-2 mx-auto"
+          >
             <FaPlus className="text-sm" />
             Tạo hồ sơ mới
           </button>
