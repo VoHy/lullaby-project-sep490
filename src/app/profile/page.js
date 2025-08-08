@@ -1,6 +1,6 @@
 'use client';
 
-import { useContext, useState } from 'react';
+import { useContext, useEffect, useState } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { FaUser, FaUsers, FaWallet } from 'react-icons/fa';
 
@@ -64,6 +64,23 @@ export default function ProfilePage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+
+  // Đồng bộ dữ liệu hồ sơ mới nhất từ BE ngay khi vào trang
+  useEffect(() => {
+    const syncLatestProfile = async () => {
+      try {
+        if (user?.accountID) {
+          const fresh = await accountsService.getAccount(user.accountID);
+          updateUser(fresh);
+        }
+      } catch (e) {
+        // bỏ qua lỗi để không chặn UI
+      }
+    };
+    syncLatestProfile();
+    // chỉ chạy khi có user id
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.accountID]);
 
   if (!user) {
     return <StatusDisplay type="loading" message="Đang tải thông tin tài khoản..." />;

@@ -49,9 +49,7 @@ export default function useCareProfileManager(router) {
       setSuccessMessage(result.message);
       modalManager.closeModal('careProfileForm');
       formManager.resetForm('careProfile');
-
-      // Refresh ngay để UI cập nhật tức thì
-      await dataManager.loadData();
+      // Không refetch toàn bộ; state đã được cập nhật optimistically trong dataManager
     } catch (err) {
       console.error('Error saving care profile:', err);
       setSuccessMessage(err.message || 'Có lỗi khi xử lý hồ sơ.');
@@ -77,7 +75,7 @@ export default function useCareProfileManager(router) {
       setSuccessMessage(result.message);
       modalManager.closeModal('relativeForm');
       formManager.resetForm('relative');
-      await dataManager.loadData();
+      // Không refetch; đã cập nhật optimistically
     } catch (err) {
       console.error('Error saving relative:', err);
       setSuccessMessage(err.message || 'Có lỗi khi xử lý người thân.');
@@ -96,7 +94,7 @@ export default function useCareProfileManager(router) {
       const result = await dataManager.deleteCareProfile(modalManager.deleteIds.careProfile);
       setSuccessMessage(result.message);
       modalManager.closeModal('deleteCareProfile');
-      setTimeout(() => dataManager.loadData(), 500);
+      // Không cần refetch; đã loại khỏi state
     } catch (err) {
       setSuccessMessage(err.message || 'Có lỗi khi xóa hồ sơ.');
     } finally {
@@ -114,7 +112,7 @@ export default function useCareProfileManager(router) {
       const result = await dataManager.deleteRelative(modalManager.deleteIds.relative);
       setSuccessMessage(result.message);
       modalManager.closeModal('deleteRelative');
-      await dataManager.loadData();
+      // Không cần refetch; đã loại khỏi state
     } catch (err) {
       setSuccessMessage(err.message || 'Có lỗi khi xóa người thân.');
     } finally {

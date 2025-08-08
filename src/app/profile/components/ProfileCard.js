@@ -4,7 +4,6 @@ import { formatDateToDDMMYYYY } from '../utils/dateUtils';
 
 const ProfileCard = React.memo(({ profile, isEditing, editData, onEditClick, onInputChange, onSave, onCancel, loading, error, roleName }) => {
   if (!profile) return null;
-  console.log('PROFILE PROPS:', profile);
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-8">
       <div className="text-center mb-6">

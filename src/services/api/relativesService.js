@@ -18,7 +18,7 @@ const relativesService = {  // Count method
   createRelative: async (data) => {
     const res = await fetch('/api/relatives/create', {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json-patch+json' },
       body: JSON.stringify(data)
     });
     const responseData = await res.json();
@@ -52,7 +52,7 @@ const relativesService = {  // Count method
   updateRelative: async (id, data) => {
     const res = await fetch(`/api/relatives/update/${id}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json-patch+json' },
       body: JSON.stringify(data)
     });
     

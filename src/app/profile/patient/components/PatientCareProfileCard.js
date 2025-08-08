@@ -10,7 +10,7 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
   
   // Filter relatives using utility function
   const careRelatives = relativesList.filter(r => 
-    getCareProfileId({ careProfileID: r.careProfileID || r.CareProfileID }) === careId
+    getCareProfileId({ careProfileID: r.careProfileID }) === careId
   );
   const filteredRelatives = filterItems(careRelatives, relFilter);
 

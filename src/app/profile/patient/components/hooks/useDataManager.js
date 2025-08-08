@@ -12,7 +12,7 @@ export const useDataManager = (user, router) => {
   const [relativesList, setRelativesList] = useState([]);
   const [zones, setZones] = useState([]);
   const [zonedetailsList, setZonedetailsList] = useState([]);
-  
+
   // Filter states
   const [careProfileFilter, setCareProfileFilter] = useState('all');
   const [relativesFilter, setRelativesFilter] = useState({});
@@ -26,7 +26,7 @@ export const useDataManager = (user, router) => {
 
     try {
       setLoading(true);
-      
+
       const [careProfilesData, relativesData, zonesData, zoneDetailsData] = await Promise.all([
         careProfileService.getCareProfiles().catch(() => []),
         relativesService.getRelatives().catch(() => []),
@@ -68,26 +68,26 @@ export const useDataManager = (user, router) => {
     if (editItem) {
       // Update
       result = await careProfileService.updateCareProfile(
-        editItem.careProfileID || editItem.CareProfileID, 
+        editItem.careProfileID || editItem.CareProfileID,
         submitData
       );
 
       // Update state optimistically
-      setCareProfiles(prevProfiles => 
+      setCareProfiles(prevProfiles =>
         prevProfiles.map(profile => {
           const profileId = profile.careProfileID || profile.CareProfileID;
           const editId = editItem.careProfileID || editItem.CareProfileID;
-          return profileId === editId 
+          return profileId === editId
             ? { ...profile, ...submitData, careProfileID: profileId }
             : profile;
         })
       );
-      
+
       return { success: true, message: 'Cập nhật hồ sơ thành công!' };
     } else {
       // Create
       result = await careProfileService.createCareProfile(submitData);
-      
+
       // Add to state optimistically
       if (result && (result.careProfileID || result.CareProfileID)) {
         setCareProfiles(prevProfiles => [
@@ -95,7 +95,7 @@ export const useDataManager = (user, router) => {
           { ...submitData, ...result }
         ]);
       }
-      
+
       return { success: true, message: 'Tạo hồ sơ thành công!' };
     }
   };
@@ -103,8 +103,8 @@ export const useDataManager = (user, router) => {
   const deleteCareProfile = async (id) => {
     await careProfileService.deleteCareProfile(id);
     // Remove from state optimistically
-    setCareProfiles(prev => 
-      prev.filter(profile => 
+    setCareProfiles(prev =>
+      prev.filter(profile =>
         (profile.careProfileID || profile.CareProfileID) !== id
       )
     );
@@ -117,26 +117,48 @@ export const useDataManager = (user, router) => {
       ...data,
       careProfileID: currentCareID,
       relativeName: data.relativeName,
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth).toISOString() : null,
+      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
       gender: data.gender || 'male',
       note: data.note || '',
       status: data.status || 'active'
     };
 
     if (editItem) {
-      await relativesService.updateRelative(
-        editItem.relativeID || editItem.RelativeID || editItem.relativeid, 
-        submitData
+      const editId = editItem.relativeID || editItem.RelativeID || editItem.relativeid;
+      const result = await relativesService.updateRelative(editId, submitData);
+
+      // Update state optimistically
+      setRelativesList(prevRelatives =>
+        prevRelatives.map(relative => {
+          const relativeId = relative.relativeID || relative.RelativeID || relative.relativeid;
+          return relativeId === editId
+            ? { ...relative, ...submitData, ...(result || {}), relativeID: relativeId }
+            : relative;
+        })
       );
+
       return { success: true, message: 'Cập nhật người thân thành công!' };
     } else {
-      await relativesService.createRelative(submitData);
+      const result = await relativesService.createRelative(submitData);
+
+      // Add to state optimistically
+      setRelativesList(prevRelatives => [
+        ...prevRelatives,
+        { ...submitData, ...(result || {}) }
+      ]);
+
       return { success: true, message: 'Thêm người thân thành công!' };
     }
   };
 
   const deleteRelative = async (id) => {
     await relativesService.deleteRelative(id);
+    // Remove from state optimistically
+    setRelativesList(prevRelatives =>
+      prevRelatives.filter(relative =>
+        (relative.relativeID || relative.RelativeID || relative.relativeid) !== id
+      )
+    );
     return { success: true, message: 'Xóa người thân thành công!' };
   };
 
@@ -149,14 +171,14 @@ export const useDataManager = (user, router) => {
     // Data states
     loading,
     careProfiles,
-    relativesList, 
+    relativesList,
     zones,
     zonedetailsList,
     careProfileFilter,
     setCareProfileFilter,
     relativesFilter,
     setRelativesFilter,
-    
+
     // Functions
     loadData,
     saveCareProfile,

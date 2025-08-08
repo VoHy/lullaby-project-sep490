@@ -18,7 +18,7 @@ const careProfileService = {  // Count method
   createCareProfile: async (data) => {
     const res = await fetch('/api/careprofiles/create', {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json-patch+json' },
       body: JSON.stringify(data)
     });
     const responseData = await res.json();
@@ -33,9 +33,9 @@ const careProfileService = {  // Count method
         method: 'GET',
         headers: getAuthHeaders()
       });
-      
+
       const data = await res.json();
-      
+
       if (!res.ok) {
         throw new Error(data.error || 'Không thể lấy danh sách care profiles');
       }
@@ -48,12 +48,12 @@ const careProfileService = {  // Count method
   updateCareProfile: async (id, data) => {
     const res = await fetch(`/api/careprofiles/update/${id}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json-patch+json' },
       body: JSON.stringify(data)
     });
-    const responseData = await res.json();
-    if (!res.ok) throw new Error(responseData.error || 'Không thể cập nhật care profile');
-    return responseData;
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Không thể cập nhật care profile');
+    return result;
   },
 
   getCareProfileById: async (id) => {
@@ -77,5 +77,5 @@ const careProfileService = {  // Count method
   }
 };
 
-export default careProfileService; 
+export default careProfileService;
 

@@ -53,7 +53,7 @@ const accountService = {
   updateAccount: async (id, data) => {
     const res = await fetch(`/api/accounts/update/${id}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json-patch+json' },
       body: JSON.stringify(data)
     });
     const result = await res.json();
