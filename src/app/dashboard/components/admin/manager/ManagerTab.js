@@ -115,7 +115,8 @@ const ManagerTab = () => {
 
   const filteredManagers = managers.filter(manager => {
     const matchesSearch = manager.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      manager.email?.toLowerCase().includes(searchTerm.toLowerCase())
+      manager.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      manager.phoneNumber?.includes(searchTerm)
     let matchesStatus = true;
     if (statusFilter === 'all') {
       matchesStatus = true;

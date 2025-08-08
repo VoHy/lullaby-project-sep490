@@ -51,7 +51,7 @@ const serviceTaskService = {  // Thêm method getServiceTasks để đảm bảo
   createServiceTask: async (data) => {
     const res = await fetch('/api/servicetasks/create', {
       method: 'POST',
-      headers: getAuthHeaders(),
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
     const result = await res.json();

@@ -1,14 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
+import {
   faMapMarkerAlt, faPlus, faEdit, faTrash, faUsers, faUserMd,
-  faSearch, faCity, faClock, faUserTie
+  faSearch, faCity, faClock
 } from '@fortawesome/free-solid-svg-icons';
 import zoneService from '@/services/api/zoneService';
 import zoneDetailService from '@/services/api/zoneDetailService';
 import accountService from '@/services/api/accountService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
-import ManagerSelect from './ManagerSelect';
 import ZoneModal from './ZoneModal';
 import ZoneDetailModal from './ZoneDetailModal';
 import StaffViewModal from './StaffViewModal';
@@ -30,14 +29,14 @@ const StatCard = ({ title, value, icon, color, subtitle }) => (
 
 const AdminZoneTab = () => {
   const [zones, setZones] = useState([]);
-  const [zonedetails, setZonedetails] = useState([]);
+  const [zoneDetails, setZoneDetails] = useState([]);
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [selectedZone, setSelectedZone] = useState(null);
   const [showZoneModal, setShowZoneModal] = useState(false);
   const [zoneForm, setZoneForm] = useState({ zoneID: '', zoneName: '', city: '', accountID: '' });
   const [showDetailModal, setShowDetailModal] = useState(false);
-  const [zonedetailForm, setZonedetailForm] = useState({ zoneDetailID: '', zoneID: '', name: '', note: '' });
+  const [zoneDetailForm, setZoneDetailForm] = useState({ zoneDetailID: '', zoneID: '', name: '', note: '' });
   const [searchTerm, setSearchTerm] = useState('');
   const [currentTime, setCurrentTime] = useState(new Date());
   const [loading, setLoading] = useState(true);
@@ -51,14 +50,14 @@ const AdminZoneTab = () => {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [zonesData, zonedetailsData, specialistsData, accountsData] = await Promise.all([
+      const [zonesData, zoneDetailsData, specialistsData, accountsData] = await Promise.all([
         zoneService.getZones(),
         zoneDetailService.getZoneDetails(),
         nursingSpecialistService.getNursingSpecialists(),
         accountService.getAllAccounts()
       ]);
       setZones(zonesData);
-      setZonedetails(zonedetailsData);
+      setZoneDetails(zoneDetailsData);
       setNursingSpecialists(specialistsData);
       setAccounts(accountsData);
     } catch (error) {
@@ -69,12 +68,62 @@ const AdminZoneTab = () => {
     }
   };
 
-  const filteredZones = zones.filter(zone => 
-    zone.zoneName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    zone.city?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // ======== MEMOIZED DATA ========
 
-  const stats = [
+  const filteredZones = useMemo(() => {
+    const term = searchTerm.toLowerCase();
+    return zones.filter(z =>
+      z.zoneName?.toLowerCase().includes(term) ||
+      z.city?.toLowerCase().includes(term)
+    );
+  }, [zones, searchTerm]);
+
+  const zoneDetailsMap = useMemo(() => {
+    const map = {};
+    zoneDetails.forEach(d => {
+      if (!map[d.zoneID]) map[d.zoneID] = [];
+      map[d.zoneID].push(d);
+    });
+    return map;
+  }, [zoneDetails]);
+
+  const staffCountMap = useMemo(() => {
+    const nurses = {}, specialists = {};
+    nursingSpecialists.forEach(n => {
+      if (n.major === 'nurse' || n.major === 'Y tá') {
+        nurses[n.zoneID] = (nurses[n.zoneID] || 0) + 1;
+      } else if (n.major === 'Chuyên gia' || n.major === 'specialist') {
+        specialists[n.zoneID] = (specialists[n.zoneID] || 0) + 1;
+      }
+    });
+    return { nurses, specialists };
+  }, [nursingSpecialists]);
+
+  const getManagerByZone = (zoneId) => {
+    const zone = zones.find(z => z.zoneID === zoneId);
+    if (!zone?.managerID) return null;
+    return accounts.find(acc => acc.accountID === zone.managerID);
+  };
+
+  const getManagerCurrentZone = (managerId) =>
+    zones.find(zone => zone.managerID === managerId);
+
+  const getManagerZoneInfo = (managerId) => {
+    const currentZone = getManagerCurrentZone(managerId);
+    if (!currentZone) return null;
+    return {
+      zoneName: currentZone.zoneName,
+      city: currentZone.city,
+      zoneID: currentZone.zoneID
+    };
+  };
+
+  const isManagerAssignedToOtherZone = (managerId, currentZoneId = null) => {
+    const currentZone = getManagerCurrentZone(managerId);
+    return currentZone && currentZone.zoneID !== currentZoneId;
+  };
+
+  const stats = useMemo(() => [
     {
       title: 'Tổng khu vực',
       value: zones.length,
@@ -91,216 +140,131 @@ const AdminZoneTab = () => {
     },
     {
       title: 'Y tá',
-      value: nursingSpecialists.filter(n => n.zoneID && (n.major === 'nurse' || n.major === 'Y tá')).length,
+      value: Object.values(staffCountMap.nurses).reduce((a, b) => a + b, 0),
       icon: faUsers,
       color: 'from-purple-500 to-pink-500',
       subtitle: 'Tổng y tá'
     },
     {
       title: 'Chuyên gia',
-      value: nursingSpecialists.filter(n => n.zoneID && (n.major === 'Chuyên gia' || n.major === 'specialist')).length,
+      value: Object.values(staffCountMap.specialists).reduce((a, b) => a + b, 0),
       icon: faUserMd,
       color: 'from-orange-500 to-red-500',
       subtitle: 'Tổng chuyên gia'
     }
-  ];
+  ], [zones, staffCountMap]);
 
-  // Thêm/sửa Zone
+  // ======== CRUD ZONE ========
   const handleOpenZoneModal = (zone = null) => {
-    setZoneForm(zone ? { 
-      zoneID: zone.zoneID, 
-      zoneName: zone.zoneName, 
+    setZoneForm(zone ? {
+      zoneID: zone.zoneID,
+      zoneName: zone.zoneName,
       city: zone.city,
-      accountID: zone.managerID || '' // Sử dụng managerID từ zone
+      accountID: zone.managerID || ''
     } : { zoneID: '', zoneName: '', city: '', accountID: '' });
     setShowZoneModal(true);
   };
 
   const handleSaveZone = async () => {
+    if (!zoneForm.zoneName.trim()) return alert('Vui lòng nhập tên khu vực!');
+    if (!zoneForm.city.trim()) return alert('Vui lòng nhập tên thành phố!');
+    if (!zoneForm.accountID) return alert('Vui lòng chọn quản lý!');
+
+    const managerID = zoneForm.accountID;
     try {
-      // Validation
-      if (!zoneForm.zoneName.trim()) {
-        alert('Vui lòng nhập tên khu vực!');
-        return;
-      }
-      
-      if (!zoneForm.city.trim()) {
-        alert('Vui lòng nhập tên thành phố!');
-        return;
-      }
-
-      if (!zoneForm.accountID) {
-        alert('Vui lòng chọn quản lý!');
-        return;
-      }
-
-      // Sử dụng managerID từ form
-      const managerID = zoneForm.accountID;
-
       if (zoneForm.zoneID) {
-        // Update existing zone - gửi đầy đủ fields theo API
-        try {
         await zoneService.updateZone(zoneForm.zoneID, {
-            zoneID: zoneForm.zoneID,
+          zoneID: zoneForm.zoneID,
           zoneName: zoneForm.zoneName.trim(),
           city: zoneForm.city.trim(),
-            managerID: managerID
+          managerID
         });
         alert('Cập nhật khu vực thành công!');
-        } catch (error) {
-          // Bỏ qua lỗi backend và cứ refresh data luôn vì biết chắc update thành công
-        }
       } else {
-        // Create new zone - gửi đầy đủ fields theo API
-        try {
         await zoneService.createZone({
-            zoneID: 0, // API yêu cầu zoneID, có thể là 0 cho create
+          zoneID: 0,
           zoneName: zoneForm.zoneName.trim(),
           city: zoneForm.city.trim(),
-            managerID: managerID
+          managerID
         });
         alert('Tạo khu vực thành công!');
-        } catch (error) {
-          // Bỏ qua lỗi backend và cứ refresh data luôn vì biết chắc tạo thành công
-        }
       }
-      await fetchData(); // Reload data
+      await fetchData();
       setShowZoneModal(false);
     } catch (error) {
-      console.error('Error saving zone:', error);
-      alert('Thao tác thất bại! Vui lòng thử lại.');
+      console.error(error);
+      alert('Thao tác thất bại!');
     }
   };
 
   const handleDeleteZone = async (zoneId) => {
-    if (confirm('Bạn có chắc chắn muốn xóa khu vực này?')) {
-      try {
-        await zoneService.deleteZone(zoneId);
-        alert('Xóa khu vực thành công!');
-        await fetchData(); // Reload data
-        setSelectedZone(null);
-      } catch (error) {
-        alert('Xóa khu vực thất bại!');
-        console.error('Error deleting zone:', error);
-      }
+    if (!confirm('Bạn có chắc chắn muốn xóa khu vực này?')) return;
+    try {
+      await zoneService.deleteZone(zoneId);
+      alert('Xóa khu vực thành công!');
+      await fetchData();
+      setSelectedZone(null);
+    } catch (error) {
+      alert('Xóa khu vực thất bại!');
     }
   };
 
-  // Thêm/sửa ZoneDetail
-  const handleOpenZonedetailModal = (detail = null, zoneId = null) => {
-    setZonedetailForm(detail ? { 
-      zoneDetailID: detail.zoneDetailID, 
-      zoneID: detail.zoneID, 
-      name: detail.name, // Map từ backend field
-      note: detail.note // Map từ backend field
-    } : { 
-      zoneDetailID: '', 
-      zoneID: zoneId || '', 
-      name: '', 
-      note: '' 
+  // ======== CRUD ZONE DETAIL ========
+  const handleOpenZoneDetailModal = (detail = null, zoneId = null) => {
+    setZoneDetailForm(detail ? {
+      zoneDetailID: detail.zoneDetailID,
+      zoneID: detail.zoneID,
+      name: detail.name,
+      note: detail.note
+    } : {
+      zoneDetailID: '',
+      zoneID: zoneId || '',
+      name: '',
+      note: ''
     });
     setShowDetailModal(true);
   };
 
-  const handleSaveZonedetail = async () => {
+  const handleSaveZoneDetail = async () => {
+    if (!zoneDetailForm.name.trim()) return alert('Vui lòng nhập tên chi tiết khu vực!');
+    if (!zoneDetailForm.zoneID) return alert('Vui lòng chọn khu vực!');
     try {
-      // Validation
-      if (!zonedetailForm.name.trim()) {
-        alert('Vui lòng nhập tên chi tiết khu vực!');
-        return;
-      }
-      
-      if (!zonedetailForm.zoneID) {
-        alert('Vui lòng chọn khu vực!');
-        return;
-      }
-
-      if (zonedetailForm.zoneDetailID) {
-        // Update existing zone detail - gửi đầy đủ fields theo API
-        try {
-        const updateData = {
-            zoneDetailID: zonedetailForm.zoneDetailID,
-            zoneID: parseInt(zonedetailForm.zoneID),
-          name: zonedetailForm.name.trim(),
-          note: zonedetailForm.note.trim()
-        };
-        await zoneDetailService.updateZoneDetail(zonedetailForm.zoneDetailID, updateData);
-        alert('Cập nhật chi tiết khu vực thành công!');
-        } catch (error) {
-          // Bỏ qua lỗi backend và cứ refresh data luôn vì biết chắc update thành công
-        }
-      } else {
-        // Create new zone detail - gửi đầy đủ fields theo API
-        try {
-        await zoneDetailService.createZoneDetail({
-            zoneDetailID: 0, // API yêu cầu zoneDetailID, có thể là 0 cho create
-          zoneID: parseInt(zonedetailForm.zoneID),
-          name: zonedetailForm.name.trim(),
-          note: zonedetailForm.note.trim()
+      if (zoneDetailForm.zoneDetailID) {
+        await zoneDetailService.updateZoneDetail(zoneDetailForm.zoneDetailID, {
+          zoneDetailID: zoneDetailForm.zoneDetailID,
+          zoneID: parseInt(zoneDetailForm.zoneID),
+          name: zoneDetailForm.name.trim(),
+          note: zoneDetailForm.note.trim()
         });
-        alert('Tạo chi tiết khu vực thành công!');
-        } catch (error) {
-          // Bỏ qua lỗi backend và cứ refresh data luôn vì biết chắc tạo thành công
-        }
+        alert('Cập nhật chi tiết thành công!');
+      } else {
+        await zoneDetailService.createZoneDetail({
+          zoneDetailID: 0,
+          zoneID: parseInt(zoneDetailForm.zoneID),
+          name: zoneDetailForm.name.trim(),
+          note: zoneDetailForm.note.trim()
+        });
+        alert('Tạo chi tiết thành công!');
       }
-      await fetchData(); // Reload data
+      await fetchData();
       setShowDetailModal(false);
     } catch (error) {
-      console.error('Error saving zone detail:', error);
-      alert('Thao tác thất bại! Vui lòng thử lại.');
+      alert('Thao tác thất bại!');
     }
   };
 
-  const handleDeleteZonedetail = async (detailId) => {
-    if (confirm('Bạn có chắc chắn muốn xóa chi tiết khu vực này?')) {
-      try {
-        await zoneDetailService.deleteZoneDetail(detailId);
-        alert('Xóa chi tiết khu vực thành công!');
-        await fetchData(); // Reload data
-      } catch (error) {
-        alert('Xóa chi tiết khu vực thất bại!');
-        console.error('Error deleting zone detail:', error);
-      }
+  const handleDeleteZoneDetail = async (detailId) => {
+    if (!confirm('Bạn có chắc chắn muốn xóa chi tiết khu vực này?')) return;
+    try {
+      await zoneDetailService.deleteZoneDetail(detailId);
+      alert('Xóa chi tiết thành công!');
+      await fetchData();
+    } catch (error) {
+      alert('Xóa chi tiết thất bại!');
     }
   };
 
-  // Xem nhân sự theo khu vực
-  const getNursesByZone = (zoneId) =>
-    nursingSpecialists.filter(n => n.zoneID === zoneId && (n.major === 'nurse' || n.major === 'Y tá'));
-
-  const getSpecialistsByZone = (zoneId) =>
-    nursingSpecialists.filter(n => n.zoneID === zoneId && (n.major === 'Chuyên gia' || n.major === 'specialist'));
-
-  // Lấy Manager theo ManagerID của Zone
-  const getManagerByZone = (zoneId) => {
-    const zone = zones.find(z => z.zoneID === zoneId);
-    if (!zone || !zone.managerID) return null;
-    return accounts.find(acc => acc.accountID === zone.managerID);
-  };
-
-  // Helper function để kiểm tra manager đã quản lý khu vực nào
-  const getManagerCurrentZone = (managerId) => {
-    return zones.find(zone => zone.managerID === managerId);
-  };
-
-  // Helper function để lấy tên khu vực mà manager đang quản lý
-  const getManagerZoneInfo = (managerId) => {
-    const currentZone = getManagerCurrentZone(managerId);
-    if (!currentZone) return null;
-    return {
-      zoneName: currentZone.zoneName,
-      city: currentZone.city,
-      zoneID: currentZone.zoneID
-    };
-  };
-
-  // Helper function để kiểm tra manager có đang quản lý khu vực khác không
-  const isManagerAssignedToOtherZone = (managerId, currentZoneId = null) => {
-    const currentZone = getManagerCurrentZone(managerId);
-    if (!currentZone) return false;
-    return currentZone.zoneID !== currentZoneId;
-  };
-
+  // ======== UI ========
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -314,153 +278,100 @@ const AdminZoneTab = () => {
 
   return (
     <div className="space-y-6">
-      {/* Stats Cards */}
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <StatCard key={index} {...stat} />
-        ))}
+        {stats.map((stat, i) => <StatCard key={i} {...stat} />)}
       </div>
 
-      {/* Header with Create Button */}
-      <div className="bg-white p-6 rounded-2xl shadow-lg">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">Quản lý Khu vực</h2>
-            <p className="text-gray-600 mt-1">Quản lý các khu vực và chi tiết khu vực</p>
-          </div>
-          <button 
-            className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
-            onClick={() => handleOpenZoneModal()}
-          >
-            <FontAwesomeIcon icon={faPlus} />
-            <span>Thêm khu vực</span>
-          </button>
+      {/* Header */}
+      <div className="bg-white p-6 rounded-2xl shadow-lg flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">Quản lý Khu vực</h2>
+          <p className="text-gray-600 mt-1">Quản lý các khu vực và chi tiết khu vực</p>
         </div>
+        <button
+          className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-6 py-3 rounded-xl hover:shadow-lg transition-all duration-300 flex items-center space-x-2"
+          onClick={() => handleOpenZoneModal()}
+        >
+          <FontAwesomeIcon icon={faPlus} />
+          <span>Thêm khu vực</span>
+        </button>
       </div>
 
       {/* Search */}
-      <div className="bg-white p-6 rounded-2xl shadow-lg">
-        <div className="flex flex-col lg:flex-row gap-4">
-          <div className="flex-1 relative">
-            <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Tìm kiếm theo tên khu vực hoặc thành phố..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-            />
-          </div>
-          <div className="text-sm text-gray-500 flex items-center">
-            <FontAwesomeIcon icon={faClock} className="mr-2" />
-            {currentTime.toLocaleTimeString('vi-VN')}
-          </div>
+      <div className="bg-white p-6 rounded-2xl shadow-lg flex flex-col lg:flex-row gap-4">
+        <div className="flex-1 relative">
+          <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Tìm kiếm theo tên khu vực hoặc thành phố..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          />
+        </div>
+        <div className="text-sm text-gray-500 flex items-center">
+          <FontAwesomeIcon icon={faClock} className="mr-2" />
+          {currentTime.toLocaleTimeString('vi-VN')}
         </div>
       </div>
 
-      {/* Zones Table */}
+      {/* Table */}
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
               <tr>
-                <th className="px-6 py-4 text-left font-semibold">Tên khu vực</th>
-                <th className="px-6 py-4 text-left font-semibold">Thành phố</th>
-                <th className="px-6 py-4 text-left font-semibold">Chi tiết</th>
-                <th className="px-6 py-4 text-left font-semibold">Nhân sự</th>
-                <th className="px-6 py-4 text-left font-semibold">Thao tác</th>
+                <th className="px-6 py-4 text-left">Tên khu vực</th>
+                <th className="px-6 py-4 text-left">Thành phố</th>
+                <th className="px-6 py-4 text-left">Chi tiết</th>
+                <th className="px-6 py-4 text-left">Nhân sự</th>
+                <th className="px-6 py-4 text-left">Thao tác</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredZones.map(zone => (
-                <tr key={zone.zoneID} className="hover:bg-gray-50 transition-colors duration-200">
+                <tr key={zone.zoneID} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 font-semibold">{zone.zoneName} <div className="text-sm text-gray-500">ID: {zone.zoneID}</div></td>
+                  <td className="px-6 py-4">{zone.city}</td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-10 h-10 bg-gradient-to-r from-indigo-500 to-purple-500 rounded-lg flex items-center justify-center">
-                        <FontAwesomeIcon icon={faMapMarkerAlt} className="text-white" />
-                      </div>
-                      <div>
-                        <p className="font-semibold text-gray-800">{zone.zoneName}</p>
-                        <p className="text-sm text-gray-600">ID: {zone.zoneID}</p>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="flex items-center space-x-2">
-                      <FontAwesomeIcon icon={faCity} className="text-gray-400" />
-                      <span className="font-medium">{zone.city}</span>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4">
-                    <div className="space-y-2">
-                      {zonedetails.filter(d => d.zoneID === zone.zoneID).map(d => (
-                        <div key={d.zoneDetailID} className="flex items-center justify-between bg-gray-50 p-2 rounded-lg">
-                          <div>
-                            <span className="font-medium text-sm">{d.name}</span>
-                            {d.note && <span className="text-xs text-gray-500 ml-2">({d.note})</span>}
-                          </div>
-                          <div className="flex space-x-1">
-                            <button 
-                              className="text-blue-600 hover:text-blue-800 text-xs p-1 hover:bg-blue-50 rounded"
-                              onClick={() => handleOpenZonedetailModal(d, zone.zoneID)}
-                              title="Sửa"
-                            >
-                              <FontAwesomeIcon icon={faEdit} />
-                            </button>
-                            <button 
-                              className="text-red-500 hover:text-red-700 text-xs p-1 hover:bg-red-50 rounded"
-                              onClick={() => handleDeleteZonedetail(d.zoneDetailID)}
-                              title="Xóa"
-                            >
-                              <FontAwesomeIcon icon={faTrash} />
-                            </button>
-                          </div>
+                    {(zoneDetailsMap[zone.zoneID] || []).map(d => (
+                      <div key={d.zoneDetailID} className="flex justify-between bg-gray-50 p-2 rounded-lg mb-1">
+                        <span>{d.name} {d.note && <span className="text-xs text-gray-500">({d.note})</span>}</span>
+                        <div>
+                          <button className="text-blue-600 mr-1" onClick={() => handleOpenZoneDetailModal(d, zone.zoneID)}>
+                            <FontAwesomeIcon icon={faEdit} />
+                          </button>
+                          <button className="text-red-600" onClick={() => handleDeleteZoneDetail(d.zoneDetailID)}>
+                            <FontAwesomeIcon icon={faTrash} />
+                          </button>
                         </div>
-                      ))}
-                      <button 
-                        className="text-sm text-purple-600 hover:text-purple-800 hover:underline flex items-center space-x-1"
-                        onClick={() => handleOpenZonedetailModal(null, zone.zoneID)}
-                      >
-                        <FontAwesomeIcon icon={faPlus} className="text-xs" />
-                        <span>Thêm chi tiết</span>
-                      </button>
-                    </div>
+                      </div>
+                    ))}
+                    <button
+                      className="text-sm text-purple-600 hover:underline mt-1"
+                      onClick={() => handleOpenZoneDetailModal(null, zone.zoneID)}
+                    >
+                      <FontAwesomeIcon icon={faPlus} className="text-xs" /> Thêm chi tiết
+                    </button>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center space-x-2 text-sm">
-                        <FontAwesomeIcon icon={faUsers} className="text-blue-500" />
-                        <span>Y tá: {getNursesByZone(zone.zoneID).length}</span>
-                      </div>
-                      <div className="flex items-center space-x-2 text-sm">
-                        <FontAwesomeIcon icon={faUserMd} className="text-green-500" />
-                        <span>Chuyên gia: {getSpecialistsByZone(zone.zoneID).length}</span>
-                      </div>
-                      <button 
-                        className="text-xs text-blue-600 hover:text-blue-800 hover:underline"
-                        onClick={() => setSelectedZone(zone.zoneID)}
-                      >
-                        Xem nhân sự
-                      </button>
-                    </div>
+                    <div className="text-sm">Y tá: {staffCountMap.nurses[zone.zoneID] || 0}</div>
+                    <div className="text-sm">Chuyên gia: {staffCountMap.specialists[zone.zoneID] || 0}</div>
+                    <button
+                      className="text-xs text-blue-600 hover:underline"
+                      onClick={() => setSelectedZone(zone.zoneID)}
+                    >
+                      Xem nhân sự
+                    </button>
                   </td>
-                  <td className="px-6 py-4">
-                    <div className="flex space-x-2">
-                      <button 
-                        className="p-2 text-yellow-600 hover:text-yellow-800 hover:bg-yellow-50 rounded-lg transition-all duration-200"
-                        onClick={() => handleOpenZoneModal(zone)}
-                        title="Sửa"
-                      >
-                        <FontAwesomeIcon icon={faEdit} />
-                      </button>
-                      <button 
-                        className="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-all duration-200"
-                        onClick={() => handleDeleteZone(zone.zoneID)}
-                        title="Xóa"
-                      >
-                        <FontAwesomeIcon icon={faTrash} />
-                      </button>
-                    </div>
+                  <td className="px-6 py-4 flex space-x-2">
+                    <button className="text-yellow-600" onClick={() => handleOpenZoneModal(zone)}>
+                      <FontAwesomeIcon icon={faEdit} />
+                    </button>
+                    <button className="text-red-600" onClick={() => handleDeleteZone(zone.zoneID)}>
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -469,37 +380,39 @@ const AdminZoneTab = () => {
         </div>
       </div>
 
-      {/* Modal thêm/sửa Zone */}
-      <ZoneModal
-        showZoneModal={showZoneModal}
-        setShowZoneModal={setShowZoneModal}
-        zoneForm={zoneForm}
-        setZoneForm={setZoneForm}
-        handleSaveZone={handleSaveZone}
-        accounts={accounts}
-        zones={zones}
-        getManagerZoneInfo={getManagerZoneInfo}
-        isManagerAssignedToOtherZone={isManagerAssignedToOtherZone}
-      />
+      {/* Modals */}
+      {showZoneModal && (
+        <ZoneModal
+          showZoneModal={showZoneModal}
+          setShowZoneModal={setShowZoneModal}
+          zoneForm={zoneForm}
+          setZoneForm={setZoneForm}
+          handleSaveZone={handleSaveZone}
+          accounts={accounts}
+          zones={zones}
+          getManagerZoneInfo={getManagerZoneInfo}
+          isManagerAssignedToOtherZone={isManagerAssignedToOtherZone}
+        />
+      )}
 
-      {/* Modal thêm/sửa ZoneDetail */}
-      <ZoneDetailModal
-        showDetailModal={showDetailModal}
-        setShowDetailModal={setShowDetailModal}
-        zonedetailForm={zonedetailForm}
-        setZonedetailForm={setZonedetailForm}
-        handleSaveZonedetail={handleSaveZonedetail}
-        zones={zones}
-      />
+      {showDetailModal && (
+        <ZoneDetailModal
+          showDetailModal={showDetailModal}
+          setShowDetailModal={setShowDetailModal}
+          zonedetailForm={zoneDetailForm}
+          setZonedetailForm={setZoneDetailForm}
+          handleSaveZonedetail={handleSaveZoneDetail}
+          zones={zones}
+        />
+      )}
 
-      {/* Xem nhân sự theo khu vực */}
       {selectedZone && (
         <StaffViewModal
           showStaffModal={!!selectedZone}
           setShowStaffModal={() => setSelectedZone(null)}
           selectedZone={zones.find(z => z.zoneID === selectedZone)}
-          getNursesByZone={getNursesByZone}
-          getSpecialistsByZone={getSpecialistsByZone}
+          getNursesByZone={(id) => nursingSpecialists.filter(n => n.zoneID === id && (n.major === 'nurse' || n.major === 'Y tá'))}
+          getSpecialistsByZone={(id) => nursingSpecialists.filter(n => n.zoneID === id && (n.major === 'Chuyên gia' || n.major === 'specialist'))}
           getManagerByZone={getManagerByZone}
         />
       )}
@@ -507,4 +420,4 @@ const AdminZoneTab = () => {
   );
 };
 
-export default AdminZoneTab; 
+export default AdminZoneTab;

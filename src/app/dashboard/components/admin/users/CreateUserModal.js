@@ -195,7 +195,7 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
             <div className="flex flex-col items-center gap-1 bg-purple-50 border border-purple-100 rounded-lg p-2 shadow-sm">
               <label className="block text-xs font-medium mb-1 text-gray-600">Ảnh đại diện</label>
               <div className="relative w-20 h-20 mb-1">
-                                 <img src={avatarPreview || avatarUrl || "/images/logo-eldora.png"} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-pink-200 mx-auto" />
+                <img src={avatarPreview || avatarUrl || "/images/logo-eldora.png"} alt="avatar" className="w-20 h-20 rounded-full object-cover border-2 border-pink-200 mx-auto" />
                 <label className="absolute bottom-0 right-0 bg-pink-500 text-white rounded-full p-1 cursor-pointer shadow-md hover:bg-pink-600 transition" title="Đổi ảnh">
                   <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
@@ -226,13 +226,13 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
                     onChange={e => setZoneId(e.target.value)}
                   >
                     <option value="" hidden>Chọn khu vực</option>
-                                         {zones
-                       .filter(z => z && z.zoneID && z.zoneName)
-                       .map(z => (
-                         <option key={String(z.zoneID)} value={z.zoneID}>
-                           {z.zoneName}
-                         </option>
-                       ))}
+                    {zones
+                      .filter(z => z && z.zoneID && z.zoneName)
+                      .map(z => (
+                        <option key={String(z.zoneID)} value={z.zoneID}>
+                          {z.zoneName}
+                        </option>
+                      ))}
                   </select>
                   {zones.length === 0 && (
                     <p className="text-xs text-red-500 mt-1">Không có dữ liệu khu vực</p>
@@ -276,8 +276,7 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">Kinh nghiệm (năm)</label>
                   <input
-                    type="number"
-                    min="0"
+                    type="text"
                     required
                     className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-300"
                     placeholder="Nhập số năm kinh nghiệm"

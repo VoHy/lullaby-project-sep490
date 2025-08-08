@@ -1,60 +1,68 @@
-﻿// Zone Service - Xử lý tất cả các thao tác liên quan đến zones
-import { apiGet, apiPost, apiPut, apiDelete } from './serviceUtils';
+﻿import { getAuthHeaders } from './serviceUtils';
 
 const zoneService = {
-  /**
-   * Lấy số lượng zones
-   * @returns {Promise<any>} Số lượng zones
-   */
+
   getZoneCount: async () => {
-    return await apiGet('/api/zones/count', 'Không thể lấy số lượng zones');
+    const res = await fetch('/api/zones/count', {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng zones');
+    return data;
   },
 
-  /**
-   * Lấy danh sách tất cả zones
-   * @returns {Promise<any>} Danh sách zones
-   */
   getZones: async () => {
-    return await apiGet('/api/zones/getall', 'Không thể lấy danh sách zones');
+    const res = await fetch('/api/zones/getall', {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách zones');
+    return data;
   },
 
-  /**
-   * Lấy zone theo ID
-   * @param {string|number} id - Zone ID
-   * @returns {Promise<any>} Thông tin zone
-   */
   getZoneById: async (id) => {
-    return await apiGet(`/api/zones/${id}`, 'Không thể lấy thông tin zone');
+    const res = await fetch(`/api/zones/get/${id}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin zone');
+    return data;
   },
 
-  /**
-   * Tạo zone mới
-   * @param {object} zoneData - Dữ liệu zone
-   * @returns {Promise<any>} Zone được tạo
-   */
-  createZone: async (zoneData) => {
-    return await apiPost('/api/zones', zoneData, 'Không thể tạo zone');
+  createZone: async (zone) => {
+    const res = await fetch('/api/zones/create', {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json-patch+json' },
+      body: JSON.stringify(zone)
+    }); 
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể tạo zone');
+    return data;
   },
 
-  /**
-   * Cập nhật zone
-   * @param {string|number} id - Zone ID
-   * @param {object} zoneData - Dữ liệu cập nhật
-   * @returns {Promise<any>} Zone được cập nhật
-   */
-  updateZone: async (id, zoneData) => {
-    return await apiPut(`/api/zones/${id}`, zoneData, 'Không thể cập nhật zone');
+  updateZone: async (id, zone) => {
+    const res = await fetch(`/api/zones/update/${id}`, {  
+      method: 'PUT',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json-patch+json' },
+      body: JSON.stringify(zone)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể cập nhật zone');
+    return data;
   },
 
-  /**
-   * Xóa zone
-   * @param {string|number} id - Zone ID
-   * @returns {Promise<any>} Kết quả xóa
-   */
   deleteZone: async (id) => {
-    return await apiDelete(`/api/zones/${id}`, 'Không thể xóa zone');
+    const res = await fetch(`/api/zones/delete/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể xóa zone');
+    return data;
   }
-};
+}
 
-export default zoneService; 
-
+export default zoneService;

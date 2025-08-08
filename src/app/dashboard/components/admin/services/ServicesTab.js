@@ -277,16 +277,16 @@ const ServicesTab = () => {
           <button
             onClick={() => setActiveServiceTab('services')}
             className={`flex-1 px-4 py-2 rounded-md font-medium transition-all duration-200 ${activeServiceTab === 'services'
-                ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
               }`}
           >
             <div className="flex items-center justify-center">
               <FontAwesomeIcon icon={faList} className="mr-2 text-sm" />
               Dịch vụ đơn lẻ
               <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${activeServiceTab === 'services'
-                  ? 'bg-white/20 text-white'
-                  : 'bg-gray-200 text-gray-700'
+                ? 'bg-white/20 text-white'
+                : 'bg-gray-200 text-gray-700'
                 }`}>
                 {services.length}
               </span>
@@ -295,16 +295,16 @@ const ServicesTab = () => {
           <button
             onClick={() => setActiveServiceTab('packages')}
             className={`flex-1 px-4 py-2 rounded-md font-medium transition-all duration-200 ${activeServiceTab === 'packages'
-                ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-sm'
+              : 'text-gray-600 hover:text-gray-900'
               }`}
           >
             <div className="flex items-center justify-center">
               <FontAwesomeIcon icon={faBoxes} className="mr-2 text-sm" />
               Gói dịch vụ
               <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${activeServiceTab === 'packages'
-                  ? 'bg-white/20 text-white'
-                  : 'bg-gray-200 text-gray-700'
+                ? 'bg-white/20 text-white'
+                : 'bg-gray-200 text-gray-700'
                 }`}>
                 {packages.length}
               </span>
@@ -336,7 +336,7 @@ const ServicesTab = () => {
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
             >
               <option value="all">Tất cả chuyên môn</option>
-              <option value="Nurse">Y tá</option>
+              <option value="nurse">Y tá</option>
               <option value="specialist">Chuyên gia</option>
             </select>
           </div>

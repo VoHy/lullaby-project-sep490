@@ -3,19 +3,21 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
   try {
-    const { id } = params;
+    const id = params?.id;
+    const authorization = request.headers.get('authorization');
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-    
+
     const response = await fetch(`${backendUrl}/api/zonedetails/${id}`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
+        ...(authorization ? { Authorization: authorization } : {})
       },
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      
+
       try {
         const errorData = JSON.parse(errorText);
         return NextResponse.json(
@@ -44,21 +46,23 @@ export async function GET(request, { params }) {
 
 export async function PUT(request, { params }) {
   try {
-    const { id } = params;
+    const id = params?.id;
+    const authorization = request.headers.get('authorization');
     const body = await request.json();
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-    
+
     const response = await fetch(`${backendUrl}/api/zonedetails/${id}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json',
+        ...(authorization ? { Authorization: authorization } : {})
       },
       body: JSON.stringify(body)
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      
+
       try {
         const errorData = JSON.parse(errorText);
         return NextResponse.json(
@@ -87,19 +91,21 @@ export async function PUT(request, { params }) {
 
 export async function DELETE(request, { params }) {
   try {
-    const { id } = params;
+    const id = params?.id;
+    const authorization = request.headers.get('authorization');
     const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-    
+
     const response = await fetch(`${backendUrl}/api/zonedetails/${id}`, {
       method: 'DELETE',
       headers: {
         'Content-Type': 'application/json',
+        ...(authorization ? { Authorization: authorization } : {})
       },
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      
+
       try {
         const errorData = JSON.parse(errorText);
         return NextResponse.json(

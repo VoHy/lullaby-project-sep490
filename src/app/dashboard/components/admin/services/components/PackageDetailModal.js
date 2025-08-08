@@ -5,9 +5,9 @@ import serviceTaskService from '@/services/api/serviceTaskService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 
 const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
-  
+
   if (!isOpen) return null;
-  
+
   if (!packageService) {
     return (
       <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
@@ -50,8 +50,8 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
       try {
         const services = await serviceTypeService.getServiceTypes();
         // Chỉ lấy các dịch vụ con (isPackage: false) và chưa được thêm vào gói này
-        const singleServices = services.filter(service => 
-          !service.isPackage && 
+        const singleServices = services.filter(service =>
+          !service.isPackage &&
           service.status === 'active'
         );
         setAvailableServices(singleServices);
@@ -70,7 +70,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
   // Cập nhật availableServices khi packageTasks thay đổi
   useEffect(() => {
     if (isOpen && packageService && availableServices.length > 0) {
-      const filteredServices = availableServices.filter(service => 
+      const filteredServices = availableServices.filter(service =>
         !packageTasks.some(task => task.child_ServiceID === service.serviceID)
       );
       setAvailableServices(filteredServices);
@@ -105,11 +105,11 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
       };
 
       await serviceTaskService.createServiceTask(newTask);
-      
+
       // Reload package tasks
       const tasks = await serviceTaskService.getServiceTasksByPackage(packageService.serviceID);
       setPackageTasks(tasks);
-      
+
       // Reset form
       setSelectedServiceId('');
       setTaskFormData({
@@ -135,7 +135,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
         await serviceTaskService.deleteServiceTask(taskId);
         const tasks = await serviceTaskService.getServiceTasksByPackage(packageService.serviceID);
         setPackageTasks(tasks);
-        
+
         // Thông báo cập nhật
         if (onUpdate) {
           onUpdate();
@@ -238,7 +238,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
                 {packageTasks.map((task, index) => {
                   const childService = availableServices.find(s => s.serviceID === task.child_ServiceID);
                   return (
-                                         <div key={task.serviceTaskID || task.taskID} className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div key={task.serviceTaskID || task.taskID} className="bg-white border border-gray-200 rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center mb-2">
@@ -258,11 +258,11 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
                             )}
                           </div>
                         </div>
-                                                 <button
-                           onClick={() => handleDeleteTask(task.serviceTaskID || task.taskID)}
-                           className="text-red-500 hover:text-red-700 transition-colors ml-4"
-                           title="Xóa dịch vụ con"
-                         >
+                        <button
+                          onClick={() => handleDeleteTask(task.serviceTaskID || task.taskID)}
+                          className="text-red-500 hover:text-red-700 transition-colors ml-4"
+                          title="Xóa dịch vụ con"
+                        >
                           <FontAwesomeIcon icon={faTrash} />
                         </button>
                       </div>
@@ -344,7 +344,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
                   </label>
                   <textarea
                     value={taskFormData.description}
-                    onChange={(e) => setTaskFormData({...taskFormData, description: e.target.value})}
+                    onChange={(e) => setTaskFormData({ ...taskFormData, description: e.target.value })}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     rows="3"
                     placeholder="Mô tả chi tiết dịch vụ con..."
@@ -359,7 +359,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
                     <input
                       type="number"
                       value={taskFormData.price}
-                      onChange={(e) => setTaskFormData({...taskFormData, price: e.target.value})}
+                      onChange={(e) => setTaskFormData({ ...taskFormData, price: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="0"
                       min="0"
@@ -373,7 +373,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
                     <input
                       type="number"
                       value={taskFormData.quantity}
-                      onChange={(e) => setTaskFormData({...taskFormData, quantity: e.target.value})}
+                      onChange={(e) => setTaskFormData({ ...taskFormData, quantity: e.target.value })}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       placeholder="1"
                       min="1"
