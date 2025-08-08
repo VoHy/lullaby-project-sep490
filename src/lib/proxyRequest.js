@@ -3,9 +3,11 @@
 export async function proxyRequest(path, method = 'GET', options = {}) {
   const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
 
-  // Thiết lập timeout (mặc định 3 giây)
+  // Thiết lập timeout (mặc định 15 giây, có thể override bằng env hoặc options.timeoutMs)
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 3000);
+  const defaultTimeoutMs = Number(process.env.NEXT_PUBLIC_FETCH_TIMEOUT_MS || 15000);
+  const effectiveTimeoutMs = Number(options.timeoutMs || defaultTimeoutMs);
+  const timeout = setTimeout(() => controller.abort(), effectiveTimeoutMs);
 
   try {
     const response = await fetch(`${backendUrl}${path}`, {

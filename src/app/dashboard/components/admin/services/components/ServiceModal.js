@@ -1,4 +1,106 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
+import serviceTypeService from '@/services/api/serviceTypeService';
+
+function PackageBuilder({ formData, setFormData }) {
+  const childTasks = formData.childServiceTasks || [];
+  const [allSingles, setAllSingles] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        const all = await serviceTypeService.getServiceTypes();
+        const singles = (all || []).filter(s => !s.isPackage && (s.status === 'active' || !s.status));
+        setAllSingles(singles);
+      } catch (e) {
+        setAllSingles([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  const addRow = () => {
+    setFormData({
+      ...formData,
+      childServiceTasks: [...childTasks, { child_ServiceID: '', taskOrder: childTasks.length + 1, quantity: 1 }]
+    });
+  };
+
+  const updateRow = (idx, field, value) => {
+    const next = childTasks.map((row, i) => i === idx ? { ...row, [field]: value } : row);
+    setFormData({ ...formData, childServiceTasks: next });
+  };
+
+  const removeRow = (idx) => {
+    const next = childTasks.filter((_, i) => i !== idx).map((row, i) => ({ ...row, taskOrder: i + 1 }));
+    setFormData({ ...formData, childServiceTasks: next });
+  };
+
+  const alreadySelectedIds = new Set(childTasks.map(t => parseInt(t.child_ServiceID)).filter(Boolean));
+  const options = allSingles.filter(s => !alreadySelectedIds.has(s.serviceID));
+
+  return (
+    <div className="space-y-3">
+      {childTasks.length === 0 && (
+        <p className="text-sm text-gray-500">Chưa thêm dịch vụ con nào. Nhấn "Thêm" để bắt đầu.</p>
+      )}
+      {childTasks.map((row, idx) => (
+        <div key={idx} className="grid grid-cols-12 gap-3 items-center">
+          <div className="col-span-6">
+            <select
+              value={row.child_ServiceID}
+              onChange={(e) => updateRow(idx, 'child_ServiceID', e.target.value)}
+              className="w-full px-3 py-2 border rounded"
+            >
+              <option value="">Chọn dịch vụ...</option>
+              {([row.child_ServiceID] // allow keep selected even if filtered out
+                .map(id => allSingles.find(s => s.serviceID === parseInt(id)))
+                .filter(Boolean)
+                .concat(options)
+              ).map(s => (
+                <option key={s.serviceID} value={s.serviceID}>
+                  {s.serviceName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="col-span-3">
+            <input
+              type="number"
+              placeholder="Số lượng"
+              value={row.quantity}
+              min={1}
+              onChange={(e) => updateRow(idx, 'quantity', e.target.value)}
+              className="w-full px-3 py-2 border rounded"
+            />
+          </div>
+          <div className="col-span-2">
+            <input
+              type="number"
+              placeholder="#"
+              value={row.taskOrder}
+              min={1}
+              onChange={(e) => updateRow(idx, 'taskOrder', e.target.value)}
+              className="w-full px-3 py-2 border rounded"
+            />
+          </div>
+          <div className="col-span-1 text-right">
+            <button type="button" onClick={() => removeRow(idx)} className="px-3 py-2 text-red-600">Xóa</button>
+          </div>
+        </div>
+      ))}
+      <div>
+        <button type="button" onClick={addRow} className="px-4 py-2 bg-blue-500 text-white rounded" disabled={loading}>
+          {loading ? 'Đang tải...' : 'Thêm'}
+        </button>
+      </div>
+      <p className="text-xs text-gray-500">Danh sách chọn lấy từ các dịch vụ đơn lẻ đang hoạt động.</p>
+    </div>
+  );
+}
 
 const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title, submitText }) => {
   if (!isOpen) return null;
@@ -110,6 +212,29 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                       />
                     </div>
                   </div>
+                  
+                  {/* Discount & ForMom */}
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Giảm giá (%)</label>
+                    <input
+                      type="number"
+                      value={formData.discount || 0}
+                      onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      placeholder="0"
+                      min="0"
+                    />
+                  </div>
+                  <div className="flex items-center mt-8">
+                    <input
+                      id="forMom"
+                      type="checkbox"
+                      checked={!!formData.forMom}
+                      onChange={(e) => setFormData({ ...formData, forMom: e.target.checked })}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="forMom" className="ml-2 block text-sm text-gray-700">Dịch vụ dành cho mẹ</label>
+                  </div>
                 </div>
               </div>
 
@@ -136,7 +261,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                 </div>
               </div>
 
-              {/* Service Type & Status Section */}
+              {/* Service Type, Package Builder & Status Section */}
               <div className="bg-gray-50 rounded-lg p-6">
                 <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                   <svg className="w-5 h-5 mr-2 text-orange-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -188,6 +313,14 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                     </select>
                   </div>
                 </div>
+
+                {/* Package builder: chọn dịch vụ con từ list service */}
+                {formData.isPackage && (
+                  <div className="mt-6 border-t pt-6">
+                    <h5 className="text-md font-semibold mb-3">Danh sách dịch vụ con</h5>
+                    <PackageBuilder formData={formData} setFormData={setFormData} />
+                  </div>
+                )}
               </div>
             </div>
 

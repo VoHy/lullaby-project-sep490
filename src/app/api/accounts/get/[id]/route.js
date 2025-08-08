@@ -2,8 +2,14 @@ import { proxyRequest } from '@/lib/proxyRequest';
 import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
-  const { id } = await params;
+  const id = params?.id;
   const endpoint = `/api/accounts/get/${id}`;
-  const result = await proxyRequest(endpoint, 'GET');
+
+  const authorization = request.headers.get('authorization');
+
+  const result = await proxyRequest(endpoint, 'GET', {
+    headers: authorization ? { Authorization: authorization } : {}
+  });
+
   return NextResponse.json(result.data, { status: result.status });
-} 
+}

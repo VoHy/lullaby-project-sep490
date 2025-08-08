@@ -25,16 +25,22 @@ const serviceTypeService = {  // Thêm method getServiceTypes để đảm bảo
     return data;
   },
 
-  // Create service type
+  // Create single service type via Next route /api/servicetypes/create (proxies to backend createsingle)
   createServiceType: async (data) => {
-    const res = await fetch('/api/servicetypes/create', {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Tạo service type thất bại');
-    return result;
+    try {
+      const res = await fetch('/api/servicetypes/create', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data)
+      });
+      const text = await res.text();
+      let result;
+      try { result = text ? JSON.parse(text) : {}; } catch { result = { error: text?.slice(0, 200) || 'Invalid server response' }; }
+      if (!res.ok) throw new Error(result.error || `HTTP ${res.status}: ${res.statusText}`);
+      return result;
+    } catch (e) {
+      throw e;
+    }
   },
 
   // Update service type
@@ -73,14 +79,20 @@ const serviceTypeService = {  // Thêm method getServiceTypes để đảm bảo
 
   // Create package
   createServiceTypePackage: async (data) => {
-    const res = await fetch('/api/servicetypes/createpackage', {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Tạo package service type thất bại');
-    return result;
+    try {
+      const res = await fetch('/api/servicetypes/createpackage', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data)
+      });
+      const text = await res.text();
+      let result;
+      try { result = text ? JSON.parse(text) : {}; } catch { result = { error: text?.slice(0, 200) || 'Invalid server response' }; }
+      if (!res.ok) throw new Error(result.error || `HTTP ${res.status}: ${res.statusText}`);
+      return result;
+    } catch (e) {
+      throw e;
+    }
   },
 
   // Activate service type

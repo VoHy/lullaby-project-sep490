@@ -4,19 +4,21 @@ import { formatDateToDDMMYYYY } from '../utils/dateUtils';
 
 const ProfileCard = React.memo(({ profile, isEditing, editData, onEditClick, onInputChange, onSave, onCancel, loading, error, roleName }) => {
   if (!profile) return null;
+  console.log('PROFILE PROPS:', profile);
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6 sticky top-8">
       <div className="text-center mb-6">
         <div className="relative inline-block">
-          <img 
-            src={(profile.avatarUrl || profile.avatar_url) && (profile.avatarUrl || profile.avatar_url) !== 'string' ? (profile.avatarUrl || profile.avatar_url) : "/images/logo-eldora.png"} 
-            alt={profile.fullName || profile.full_name} 
-            className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg" 
+          <img
+            src={(profile.avatarUrl) && (profile.avatarUrl) !== 'string' ? (profile.avatarUrl) : "/images/logo-eldora.png"}
+            alt={profile.fullName}
+            className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
           />
         </div>
-        <h2 className="text-2xl font-bold text-gray-800 mt-4">{profile.fullName || profile.full_name}</h2>
+        <h2 className="text-2xl font-bold text-gray-800 mt-4">{profile.fullName}</h2>
         <p className="text-gray-600">{roleName}</p>
       </div>
+      
       {isEditing ? (
         <div className="space-y-4">
           <div>
@@ -24,24 +26,25 @@ const ProfileCard = React.memo(({ profile, isEditing, editData, onEditClick, onI
               <FaUser className="mr-2 text-blue-500" />
               Họ và tên
             </label>
-            <input 
-              name="fullName" 
-              value={editData.fullName} 
-              onChange={onInputChange} 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+            <input
+              name="fullName"
+              value={editData.fullName}
+              onChange={onInputChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             />
           </div>
+
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center">
               <FaEnvelope className="mr-2 text-blue-500" />
               Email
             </label>
-            <input 
-              name="email" 
+            <input
+              name="email"
               type="email"
-              value={editData.email} 
-              onChange={onInputChange} 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+              value={editData.email}
+              onChange={onInputChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             />
           </div>
           <div>
@@ -49,11 +52,11 @@ const ProfileCard = React.memo(({ profile, isEditing, editData, onEditClick, onI
               <FaPhone className="mr-2 text-blue-500" />
               Số điện thoại
             </label>
-            <input 
-              name="phoneNumber" 
-              value={editData.phoneNumber} 
-              onChange={onInputChange} 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+            <input
+              name="phoneNumber"
+              value={editData.phoneNumber}
+              onChange={onInputChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             />
           </div>
           <div>
@@ -61,11 +64,11 @@ const ProfileCard = React.memo(({ profile, isEditing, editData, onEditClick, onI
               <FaEnvelope className="mr-2 text-blue-500" />
               Avatar URL
             </label>
-            <input 
-              name="avatarUrl" 
-              value={editData.avatarUrl} 
-              onChange={onInputChange} 
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" 
+            <input
+              name="avatarUrl"
+              value={editData.avatarUrl}
+              onChange={onInputChange}
+              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
             />
           </div>
           {error && (
@@ -74,16 +77,16 @@ const ProfileCard = React.memo(({ profile, isEditing, editData, onEditClick, onI
             </div>
           )}
           <div className="flex gap-3">
-            <button 
-              onClick={onSave} 
-              disabled={loading} 
+            <button
+              onClick={onSave}
+              disabled={loading}
               className="flex-1 bg-gradient-to-r from-blue-500 to-purple-500 text-white px-4 py-3 rounded-lg hover:shadow-lg transition-all disabled:opacity-50 flex items-center justify-center gap-2"
             >
               <FaSave className="text-sm" />
               {loading ? 'Đang lưu...' : 'Lưu'}
             </button>
-            <button 
-              onClick={onCancel} 
+            <button
+              onClick={onCancel}
               className="flex-1 bg-gray-300 text-gray-700 px-4 py-3 rounded-lg hover:bg-gray-400 transition-colors flex items-center justify-center gap-2"
             >
               <FaTimes className="text-sm" />
@@ -104,7 +107,7 @@ const ProfileCard = React.memo(({ profile, isEditing, editData, onEditClick, onI
             <FaPhone className="text-blue-500" />
             <div>
               <p className="text-sm text-gray-600">Số điện thoại</p>
-              <p className="font-medium">{profile.phoneNumber || profile.phone_number}</p>
+              <p className="font-medium">{profile.phoneNumber}</p>
             </div>
           </div>
           <div className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
@@ -113,7 +116,7 @@ const ProfileCard = React.memo(({ profile, isEditing, editData, onEditClick, onI
               <p className="text-sm text-gray-600">Ngày tạo</p>
               <p className="font-medium">
                 {(() => {
-                  const d = profile.createAt || profile.createdAt || profile.created_at || profile.CreateAt || profile.CreatedAt;
+                  const d = profile.createAt;
                   return d ? formatDateToDDMMYYYY(d) : '-';
                 })()}
               </p>
@@ -123,17 +126,16 @@ const ProfileCard = React.memo(({ profile, isEditing, editData, onEditClick, onI
             <FaShieldAlt className="text-blue-500" />
             <div>
               <p className="text-sm text-gray-600">Trạng thái</p>
-                             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                 ((profile.status || profile.Status || '').toLowerCase()) === "active" 
-                   ? "bg-green-100 text-green-700" 
-                   : "bg-red-100 text-red-700"
-               }`}>
-                 {((profile.status || profile.Status || '').toLowerCase()) === "active" ? "Đang hoạt động" : "Ngừng hoạt động"}
-               </span>
+              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${String(profile.status).toLowerCase() === "active"
+                  ? "bg-green-100 text-green-700"
+                  : "bg-red-100 text-red-700"
+                }`}>
+                {String(profile.status).toLowerCase() === "active" ? "Đang hoạt động" : "Ngừng hoạt động"}
+              </span>
             </div>
           </div>
-          <button 
-            onClick={onEditClick} 
+          <button
+            onClick={onEditClick}
             className="w-full bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-3 rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2"
           >
             <FaEdit className="text-sm" />

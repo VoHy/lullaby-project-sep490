@@ -50,8 +50,8 @@ export default function useCareProfileManager(router) {
       modalManager.closeModal('careProfileForm');
       formManager.resetForm('careProfile');
 
-      // Background sync
-      setTimeout(() => dataManager.loadData(), 500);
+      // Refresh ngay để UI cập nhật tức thì
+      await dataManager.loadData();
     } catch (err) {
       console.error('Error saving care profile:', err);
       setSuccessMessage(err.message || 'Có lỗi khi xử lý hồ sơ.');

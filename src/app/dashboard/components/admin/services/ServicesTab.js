@@ -29,7 +29,10 @@ const ServicesTab = () => {
     price: 0,
     duration: 0,
     description: '',
-    isPackage: false
+    isPackage: false,
+    discount: 0,
+    forMom: false,
+    childServiceTasks: [] // for package create
   });
   const [showPackageDetailModal, setShowPackageDetailModal] = useState(false);
   const [showServiceDetailModal, setShowServiceDetailModal] = useState(false);
@@ -102,18 +105,34 @@ const ServicesTab = () => {
   // CRUD Operations for Services
   const handleCreate = async () => {
     try {
-      const newService = {
-        ...formData,
-        price: parseInt(formData.price),
-        duration: parseInt(formData.duration),
-        // Dịch vụ lẻ mặc định active, gói dịch vụ mặc định inactive
-        status: formData.isPackage ? 'inactive' : 'active'
-      };
-
       if (formData.isPackage) {
-        await serviceTypeService.createServiceTypePackage(newService);
+        // Build payload for /api/servicetypes/createpackage
+        const payload = {
+          serviceName: formData.serviceName,
+          major: formData.major,
+          duration: parseInt(formData.duration) || 0,
+          description: formData.description,
+          forMom: !!formData.forMom,
+          discount: parseInt(formData.discount) || 0,
+          childServiceTasks: (formData.childServiceTasks || []).map((c, idx) => ({
+            child_ServiceID: parseInt(c.child_ServiceID),
+            taskOrder: parseInt(c.taskOrder ?? idx + 1),
+            quantity: parseInt(c.quantity) || 1
+          }))
+        };
+        await serviceTypeService.createServiceTypePackage(payload);
       } else {
-        await serviceTypeService.createServiceType(newService);
+        // Build payload for /api/servicetypes/createsingle
+        const payload = {
+          serviceName: formData.serviceName,
+          major: formData.major,
+          price: parseInt(formData.price) || 0,
+          duration: parseInt(formData.duration) || 0,
+          description: formData.description,
+          forMom: !!formData.forMom,
+          discount: parseInt(formData.discount) || 0
+        };
+        await serviceTypeService.createServiceType(payload);
       }
       await loadServices();
 
@@ -123,7 +142,10 @@ const ServicesTab = () => {
         price: 0,
         duration: 0,
         description: '',
-        isPackage: false
+        isPackage: false,
+        discount: 0,
+        forMom: false,
+        childServiceTasks: []
       });
       setShowCreateModal(false);
     } catch (error) {
