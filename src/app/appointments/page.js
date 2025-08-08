@@ -158,14 +158,20 @@ export default function AppointmentsPage() {
       // Case 1: If service has customizeTaskId, update that task directly
       if (service.customizeTaskId) {
         console.log('📋 Updating customize task directly:', service.customizeTaskId);
-        await customizeTaskService.updateTaskNursing(service.customizeTaskId, nurseId);
+        await customizeTaskService.updateTaskNursing(service.customizeTaskId, nurseId, {
+          bookingId,
+          allowSameBooking: true
+        });
       }
       // Case 2: Package service with taskId (từ service task)
       else if (service.taskId) {
         console.log('📦 Updating package task:', service.taskId);
         // Directly use the taskId from service task
         const customizeTaskId = service.taskId;
-        await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId);
+        await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId, {
+          bookingId,
+          allowSameBooking: true
+        });
       } 
       // Case 3: Individual service - need to find corresponding CustomizeTask
       else {
@@ -199,7 +205,10 @@ export default function AppointmentsPage() {
         const taskToUpdate = customizeTasksData[0];
         const customizeTaskId = taskToUpdate.customizeTaskID || taskToUpdate.customize_TaskID;
         
-        await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId);
+        await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId, {
+          bookingId,
+          allowSameBooking: true
+        });
       }
 
       // Success notification

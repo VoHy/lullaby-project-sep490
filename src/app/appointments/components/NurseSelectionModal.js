@@ -11,7 +11,8 @@ const NurseSelectionModal = ({
   availableNurses,
   onAssign,
   bookingDate,
-  bookingId
+  bookingId,
+  customizeTasks
 }) => {
   const [selectedNurseId, setSelectedNurseId] = useState(null);
   const [isAssigning, setIsAssigning] = useState(false);
@@ -60,6 +61,20 @@ const NurseSelectionModal = ({
     };
     loadConflicts();
   }, [availableNurses, bookingDate, bookingId]);
+
+  // Nếu cùng booking và cùng taskOrder đã có nurse này, coi như conflict (không cho chọn)
+  const isBlockedByTaskOrder = (nursingId) => {
+    if (!Array.isArray(customizeTasks)) return false;
+    // lấy các task trong booking hiện tại có cùng taskOrder với dịch vụ đang chọn
+    const currentTaskOrder = service?.taskOrder;
+    if (currentTaskOrder == null) return false;
+    return customizeTasks.some(t => {
+      const tOrder = t.taskOrder || t.task_Order || t.Task_Order;
+      const tBooking = t.bookingID || t.BookingID;
+      const tNurse = t.nursingID || t.NursingID;
+      return tBooking === bookingId && tOrder === currentTaskOrder && tNurse === nursingId;
+    });
+  };
 
   const handleAssign = async () => {
     if (!selectedNurseId) return;

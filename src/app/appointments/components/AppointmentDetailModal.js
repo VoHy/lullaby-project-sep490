@@ -54,9 +54,10 @@ const AppointmentDetailModal = ({
       // Tạo service instances dựa trên customize tasks
       const allServiceInstances = [];
       
-      bookingCustomizeTasks.forEach((task, taskIndex) => {
+        bookingCustomizeTasks.forEach((task, taskIndex) => {
         const serviceId = task.serviceID || task.service_ID || task.Service_ID;
         const customizeTaskId = task.customizeTaskID || task.customize_TaskID;
+          const taskOrder = task.taskOrder || task.task_Order || task.Task_Order;
         
         const service = serviceTypes.find(s => {
           const match = s.serviceID === serviceId ||
@@ -66,12 +67,13 @@ const AppointmentDetailModal = ({
           return match;
         });
         
-        if (service) {
+          if (service) {
           const instance = {
             ...service,
             customizeTaskId: customizeTaskId,
             nursingID: task.nursingID,
             status: task.status,
+              taskOrder: taskOrder,
             serviceInstanceKey: `task-${customizeTaskId}`
           };
           allServiceInstances.push(instance);
@@ -205,7 +207,7 @@ const AppointmentDetailModal = ({
 
   return (
     <div
-      className="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 p-4"
+      className="fixed inset-0  backdrop-blur-sm flex items-center justify-center z-50 p-4"
     >
       <div
         className="bg-white rounded-3xl shadow-2xl max-w-7xl w-full relative max-h-[95vh] overflow-y-auto"
@@ -561,6 +563,7 @@ const AppointmentDetailModal = ({
             onAssign={handleNurseAssignment}
             bookingDate={appointment.workdate || appointment.Workdate || appointment.BookingDate}
             bookingId={appointment.bookingID || appointment.BookingID}
+            customizeTasks={customizeTasks?.filter(t => (t.bookingID || t.BookingID) === (appointment.bookingID || appointment.BookingID)) || []}
           />
         )}
       </div>
