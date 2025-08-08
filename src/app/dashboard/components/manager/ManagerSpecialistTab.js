@@ -44,17 +44,17 @@ const ManagerSpecialistTab = () => {
             specialist.zoneID === managedZone.zoneID && specialist.major === 'specialist'
           );
 
-          // Merge account data vào specialist data
-          const specialistsWithAccountData = zoneSpecialists.map(specialist => {
-            const account = accountsData.find(acc => acc.accountID === specialist.accountID);
+          // Gắn thông tin liên hệ từ account
+          const specialistsWithContact = zoneSpecialists.map(s => {
+            const acc = accountsData.find(a => (a.accountID) === (s.accountID));
             return {
-              ...specialist,
-              phoneNumber: account?.phoneNumber || 'N/A',
-              email: account?.email || 'N/A'
+              ...s,
+              phoneNumber: acc?.phoneNumber || s.phoneNumber,
+              email: acc?.email || s.email
             };
           });
 
-          setSpecialists(specialistsWithAccountData);
+          setSpecialists(specialistsWithContact);
         } else {
           setSpecialists([]);
         }
@@ -113,25 +113,11 @@ const ManagerSpecialistTab = () => {
   // Xử lý cập nhật chuyên gia
   const handleUpdateSpecialist = async (specialistId, specialistData) => {
     try {
-      // Cập nhật account với đầy đủ fields theo API documentation
-      await accountService.updateAccount(specialistData.accountID, {
-        accountID: specialistData.accountID,
-        roleID: 2, // Specialist role
-        fullName: specialistData.fullName,
-        phoneNumber: specialistData.phoneNumber,
-        email: specialistData.email,
-        password: specialistData.password || "string", // Giữ nguyên password
-        avatarUrl: specialistData.avatarUrl || "string",
-        createAt: specialistData.createAt || new Date().toISOString(),
-        deletedAt: specialistData.deletedAt || null,
-        status: specialistData.status
-      });
-
-      // Cập nhật nursing specialist profile (theo API documentation)
+      // Chỉ gọi 1 API update theo swagger cho hồ sơ specialist
       await nursingSpecialistService.updateNursingSpecialist(specialistId, {
         zoneID: specialistData.zoneID,
         gender: specialistData.gender,
-        dateOfBirth: specialistData.dateOfBirth,
+        dateOfBirth: specialistData.dateOfBirth ? new Date(specialistData.dateOfBirth).toISOString() : null,
         fullName: specialistData.fullName,
         address: specialistData.address,
         experience: specialistData.experience,
@@ -152,17 +138,16 @@ const ManagerSpecialistTab = () => {
           specialist.zoneID === managedZone.zoneID && specialist.major === 'specialist'
         );
 
-        // Merge account data vào specialist data
-        const specialistsWithAccountData = zoneSpecialists.map(specialist => {
-          const account = accountsData.find(acc => acc.accountID === specialist.accountID);
+        const specialistsWithContact = zoneSpecialists.map(s => {
+          const acc = accountsData.find(a => (a.accountID) === (s.accountID));
           return {
-            ...specialist,
-            phoneNumber: account?.phoneNumber || 'N/A',
-            email: account?.email || 'N/A'
+            ...s,
+            phoneNumber: acc?.phoneNumber || s.phoneNumber,
+            email: acc?.email || s.email
           };
         });
 
-        setSpecialists(specialistsWithAccountData);
+        setSpecialists(specialistsWithContact);
       }
       setShowEditModal(false);
       setSelectedSpecialist(null);
@@ -175,11 +160,8 @@ const ManagerSpecialistTab = () => {
   // Xử lý xóa chuyên gia
   const handleDeleteSpecialist = async (specialistId, accountId) => {
     try {
-      // Xóa nursing specialist
+      // Chỉ xóa hồ sơ specialist
       await nursingSpecialistService.deleteNursingSpecialist(specialistId);
-
-      // Xóa account
-      await accountService.deleteAccount(accountId);
 
       // Cập nhật local state
       setSpecialists(prev => prev.filter(specialist => specialist.nursingID !== specialistId));

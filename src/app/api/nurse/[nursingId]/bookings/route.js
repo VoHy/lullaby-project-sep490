@@ -9,7 +9,7 @@ import { proxyRequest } from '@/lib/proxyRequest';
 
 export async function GET(request, { params }) {
   try {
-    const { nursingId } = params;
+    const { nursingId } = await params;
 
     const [wsRes, bookingsRes, cpsRes] = await Promise.all([
       proxyRequest(`/api/WorkSchedule/GetAllByNursing/${nursingId}`, 'GET'),

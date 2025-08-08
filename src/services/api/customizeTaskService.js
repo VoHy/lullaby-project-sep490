@@ -113,9 +113,17 @@ const customizeTaskService = {
   },
 
   // PUT /api/CustomizeTask/UpdateNursing/{customizeTaskId}/{nursingId}
-  updateTaskNursing: async (customizeTaskId, nursingId) => {
+  // options: { bookingId?: number|string, allowSameBooking?: boolean }
+  updateTaskNursing: async (customizeTaskId, nursingId, options = {}) => {
     try {
-      const res = await fetch(`/api/customizetask/updatenursing/${customizeTaskId}/${nursingId}`, {
+      const params = new URLSearchParams();
+      if (options.bookingId != null) params.set('bookingId', String(options.bookingId));
+      if (options.allowSameBooking) params.set('allowSameBooking', 'true');
+
+      const query = params.toString();
+      const url = `/api/customizetask/updatenursing/${customizeTaskId}/${nursingId}${query ? `?${query}` : ''}`;
+
+      const res = await fetch(url, {
         method: 'PUT',
         headers: getAuthHeaders()
       });

@@ -57,6 +57,16 @@ const nursingSpecialistService = {  // Thêm method getNursingSpecialists để 
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng nursing specialists');
     return data;
+  },
+
+  deleteNursingSpecialist: async (id) => {
+    const res = await fetch(`/api/nursingspecialists/delete/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Xóa hồ sơ thất bại');
+    return data;
   }
 };
 
