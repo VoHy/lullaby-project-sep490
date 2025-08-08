@@ -112,8 +112,10 @@ const ProfileCard = React.memo(({ profile, isEditing, editData, onEditClick, onI
             <div>
               <p className="text-sm text-gray-600">Ngày tạo</p>
               <p className="font-medium">
-                {profile.createAt || profile.created_at ? 
-                  formatDateToDDMMYYYY(profile.createAt || profile.created_at) : '-'}
+                {(() => {
+                  const d = profile.createAt || profile.createdAt || profile.created_at || profile.CreateAt || profile.CreatedAt;
+                  return d ? formatDateToDDMMYYYY(d) : '-';
+                })()}
               </p>
             </div>
           </div>
@@ -122,11 +124,11 @@ const ProfileCard = React.memo(({ profile, isEditing, editData, onEditClick, onI
             <div>
               <p className="text-sm text-gray-600">Trạng thái</p>
                              <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                 (profile.status || '').toLowerCase() === "active" 
+                 ((profile.status || profile.Status || '').toLowerCase()) === "active" 
                    ? "bg-green-100 text-green-700" 
                    : "bg-red-100 text-red-700"
                }`}>
-                 {(profile.status || '').toLowerCase() === "active" ? "Đang hoạt động" : "Ngừng hoạt động"}
+                 {((profile.status || profile.Status || '').toLowerCase()) === "active" ? "Đang hoạt động" : "Ngừng hoạt động"}
                </span>
             </div>
           </div>

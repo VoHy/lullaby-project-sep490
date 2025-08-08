@@ -2,31 +2,9 @@
 import { NextResponse } from 'next/server';
 
 export async function POST(request) {
-  try {
-    const body = await request.json();
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-
-    const response = await fetch(`${backendUrl}/api/TransactionHistory/AddMoneyToWallet`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      return NextResponse.json(
-        { error: errorData.error || 'Thêm tiền vào wallet thất bại' },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Proxy error:', error);
-    return NextResponse.json(
-      { error: `Không thể kết nối đến server: ${error.message}` },
-      { status: 500 }
-    );
-  }
-} 
+  const body = await request.json();
+  const result = await proxyRequest('/api/TransactionHistory/AddMoneyToWallet', 'POST', {
+    body: JSON.stringify(body)
+  });
+  return NextResponse.json(result.data, { status: result.status });
+}

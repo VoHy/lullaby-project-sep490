@@ -2,39 +2,7 @@
 import { NextResponse } from 'next/server';
 
 export async function GET(request) {
-  try {
-    const { searchParams } = new URL(request.url);
-    const status = searchParams.get('status');
-    const careProfileId = searchParams.get('careProfileId');
-    
-    if (!status || !careProfileId) {
-      return NextResponse.json(
-        { error: 'status và careProfileId là bắt buộc' },
-        { status: 400 }
-      );
-    }
-
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-    const response = await fetch(`${backendUrl}/api/Booking/GetAllByStatusAndCareProfile?status=${status}&careProfileId=${careProfileId}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      try {
-        const errorData = JSON.parse(errorText);
-        return NextResponse.json({ error: errorData.message || 'Không thể lấy danh sách bookings theo status và care profile' }, { status: response.status });
-      } catch (parseError) {
-        console.error('Failed to parse error response as JSON:', parseError);
-        return NextResponse.json({ error: `Server error: ${response.status} - ${errorText.substring(0, 100)}` }, { status: response.status });
-      }
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Proxy error:', error);
-    return NextResponse.json({ error: `Không thể kết nối đến server: ${error.message}` }, { status: 500 });
-  }
+  const endpoint = `/api/Booking/GetAllByStatusAndCareProfile?status=${status}&careProfileId=${careProfileId}`;
+  const result = await proxyRequest(endpoint, 'GET');
+  return NextResponse.json(result.data, { status: result.status });
 } 

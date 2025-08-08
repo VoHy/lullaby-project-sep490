@@ -1,61 +1,16 @@
+import { proxyRequest } from '@/lib/proxyRequest';
 import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
-  try {
-    const { walletId } = params;
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-    
-    
-    const response = await fetch(`${backendUrl}/api/Wallet/${walletId}`, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔍 Wallet API: Backend error:', errorText);
-      throw new Error(`Backend error: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('🔍 Wallet API: Error:', error);
-    return NextResponse.json(
-      { error: `Không thể kết nối đến server: ${error.message}` },
-      { status: 500 }
-    );
-  }
+  const { walletId } = params;
+  const endpoint = `/api/Wallet/${walletId}`;
+  const result = await proxyRequest(endpoint, 'GET');
+  return NextResponse.json(result.data, { status: result.status });
 }
 
 export async function DELETE(request, { params }) {
-  try {
-    const { walletId } = params;
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-        
-    const response = await fetch(`${backendUrl}/api/Wallet/${walletId}`, {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('🔍 Wallet API: Backend error:', errorText);
-      throw new Error(`Backend error: ${response.status} - ${errorText}`);
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('🔍 Wallet API: Error:', error);
-    return NextResponse.json(
-      { error: `Không thể kết nối đến server: ${error.message}` },
-      { status: 500 }
-    );
-  }
+  const { walletId } = params;
+  const endpoint = `/api/Wallet/${walletId}`;
+  const result = await proxyRequest(endpoint, 'DELETE');
+  return NextResponse.json(result.data, { status: result.status });
 } 

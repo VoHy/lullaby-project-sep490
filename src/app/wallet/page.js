@@ -1,286 +1,302 @@
 'use client';
 
-import { useState, useContext } from 'react';
-import { motion } from 'framer-motion';
-import { FaWallet, FaUser, FaUsers } from 'react-icons/fa';
-import { useWalletContext } from '../../context/WalletContext';
-import { useRouter, usePathname } from "next/navigation";
-import { AuthContext } from '../../context/AuthContext';
-import walletService from '@/services/api/walletService';
-import {
-  WalletOverview,
-  TransactionHistory,
-  DepositModal,
-  PayOSPaymentModal,
-  WalletLoading,
-  WalletEmpty
-} from './components';
+import { useContext, useEffect, useMemo, useState } from 'react';
+import { AuthContext } from '@/context/AuthContext';
+import { useRouter } from 'next/navigation';
+import { useWalletContext } from '@/context/WalletContext';
+import transactionHistoryService from '@/services/api/transactionHistoryService';
+import dynamic from 'next/dynamic';
+import payOSService from '@/services/api/payOSService';
+import invoiceService from '@/services/api/invoiceService';
 
-// TabNavigation đồng bộ với profile
-const TabNavigation = () => {
+export default function WalletPage() {
   const router = useRouter();
-  const pathname = usePathname();
-  const tabs = [
-    {
-      id: 'profile',
-      name: 'Thông tin cá nhân',
-      icon: <FaUser className="text-sm" />,
-      href: '/profile',
-      active: pathname === '/profile',
-    },
-    {
-      id: 'care-profiles',
-      name: 'Hồ sơ người thân',
-      icon: <FaUsers className="text-sm" />,
-      href: '/profile/patient',
-      active: pathname === '/profile/patient',
-    },
-    {
-      id: 'wallet',
-      name: 'Ví điện tử',
-      icon: <FaWallet className="text-sm" />,
-      href: '/wallet',
-      active: pathname === '/wallet',
+  const { user, isLoading } = useContext(AuthContext);
+  const { wallet, wallets, loading, error, refreshWalletData } = useWalletContext();
+  const [histories, setHistories] = useState([]);
+  const [loadingHistories, setLoadingHistories] = useState(false);
+  const [historyError, setHistoryError] = useState(null);
+  const [selectedTx, setSelectedTx] = useState(null);
+  const [showTxModal, setShowTxModal] = useState(false);
+  const [showInvoiceModal, setShowInvoiceModal] = useState(false);
+  const [invoiceLoading, setInvoiceLoading] = useState(false);
+  const [invoiceDetail, setInvoiceDetail] = useState(null);
+
+  const TransactionDetailModal = useMemo(() => dynamic(() => import('./components/TransactionDetailModal'), {
+    loading: () => <div className="fixed inset-0 flex items-center justify-center"><div className="bg-white p-6 rounded-xl shadow">Đang tải...</div></div>
+  }), []);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (!user) {
+      router.push('/auth/login');
+      return;
     }
-  ];
+    refreshWalletData();
+    // Tải lịch sử giao dịch theo tài khoản
+    const fetchHistories = async () => {
+      try {
+        setLoadingHistories(true);
+        setHistoryError(null);
+        const accountId = user.accountID || user.AccountID;
+        const data = await transactionHistoryService.getAllTransactionHistoriesByAccount(accountId);
+        setHistories(Array.isArray(data) ? data : []);
+      } catch (e) {
+        setHistoryError(e?.message || 'Không thể tải lịch sử giao dịch');
+      } finally {
+        setLoadingHistories(false);
+      }
+    };
+    fetchHistories();
+  }, [user, isLoading, router, refreshWalletData]);
+
+  // Tính số dư hiện tại dựa theo giao dịch gần nhất (nếu backend chưa cập nhật Amount)
+  const computedCurrentBalance = useMemo(() => {
+    try {
+      const walletId = wallet?.walletID || wallet?.WalletID;
+      if (!walletId || !Array.isArray(histories) || histories.length === 0) {
+        return wallet ? (wallet.amount || wallet.Amount || 0) : 0;
+      }
+      const related = histories.filter(h => (h.walletID || h.WalletID) === walletId);
+      if (related.length === 0) {
+        return wallet ? (wallet.amount || wallet.Amount || 0) : 0;
+      }
+      const latest = related.reduce((prev, cur) => {
+        const tPrev = new Date(prev.transactionDate || prev.TransactionDate).getTime();
+        const tCur = new Date(cur.transactionDate || cur.TransactionDate).getTime();
+        return tCur > tPrev ? cur : prev;
+      });
+      return latest.after || latest.After || (wallet.amount || wallet.Amount || 0);
+    } catch {
+      return wallet ? (wallet.amount || wallet.Amount || 0) : 0;
+    }
+  }, [histories, wallet]);
+
+  if (isLoading) return null;
+  if (!user) return null;
+
   return (
-    <div className="flex flex-wrap gap-2 border-b border-gray-200 mb-8">
-      {tabs.map(tab => (
-        <button
-          key={tab.id}
-          onClick={() => router.push(tab.href)}
-          className={`flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${tab.active
-            ? 'bg-white text-purple-600 border-b-2 border-purple-600 shadow-sm'
-            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-            }`}
-        >
-          {tab.icon}
-          {tab.name}
-        </button>
-      ))}
-    </div>
-  );
-};
+    <div className="max-w-4xl mx-auto p-6">
+      <h1 className="text-2xl font-bold mb-4">Ví điện tử</h1>
+      {loading && <div>Đang tải...</div>}
+      {error && <div className="text-red-600 mb-3">{error}</div>}
 
-export default function WalletPage(props) {
-  const { wallet, transactions, loading, error, handleDeposit, refreshWalletData } = useWalletContext();
-  const { user } = useContext(AuthContext);
-  const [showDepositModal, setShowDepositModal] = useState(false);
-  const [showPayOSModal, setShowPayOSModal] = useState(false);
-  const [depositAmount, setDepositAmount] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
-  const [searchText, setSearchText] = useState('');
-  const [depositError, setDepositError] = useState('');
-  const [refreshing, setRefreshing] = useState(false);
-
-  const onDepositClick = () => {
-    setDepositError('');
-    setShowDepositModal(true);
-  };
-
-  const formatCurrency = (amount) => {
-    if (!amount && amount !== 0) return '0';
-    return new Intl.NumberFormat('vi-VN').format(amount);
-  };
-
-  const onDepositConfirm = async () => {
-    try {
-      setDepositError('');
-      await handleDeposit(depositAmount);
-      setDepositAmount('');
-      setShowDepositModal(false);
-      // Refresh data after successful deposit
-      await refreshWalletData();
-    } catch (error) {
-      setDepositError(error.message);
-    }
-  };
-
-  const onPayOSPayment = (amount) => {
-    setDepositAmount(amount);
-    setShowDepositModal(false);
-    setShowPayOSModal(true);
-  };
-
-  const onPayOSSuccess = async () => {
-    setShowPayOSModal(false);
-    await refreshWalletData();
-  };
-
-  const handleRefresh = async () => {
-    setRefreshing(true);
-    try {
-      console.log('🔄 Manual refresh triggered');
-      await refreshWalletData();
-      console.log('✅ Manual refresh completed');
-    } catch (error) {
-      console.error('❌ Refresh error:', error);
-    } finally {
-      setRefreshing(false);
-    }
-  };
-
-  const handleDebugWallet = () => {
-    console.log('🐛 DEBUG - Current wallet state:', wallet);
-    console.log('🐛 DEBUG - Current transactions state:', transactions);
-    console.log('🐛 DEBUG - Current user:', user);
-  };
-
-  // Function test tạo ví thủ công
-  const handleCreateWallet = async () => {
-    try {
-      if (!user) throw new Error('Bạn cần đăng nhập!');
-      const accountId = user.accountID;
-      await walletService.createWallet(accountId);
-      await refreshWalletData();
-    } catch (error) {
-      alert(error.message || 'Tạo ví thất bại!');
-    }
-  };
-
-  if (loading) {
-    return <WalletLoading />;
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
-        <div className="bg-white rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-          <div className="text-red-500 text-4xl mb-4">⚠️</div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-4">Lỗi tải dữ liệu ví</h2>
-          <p className="text-gray-600 mb-6">{error}</p>
+      {wallet ? (
+        <div className="rounded-xl border p-4 bg-white shadow">
+          <div className="flex items-start justify-between">
+            <div>
+              <div className="text-gray-600">Số dư hiện tại</div>
+              <div className="text-3xl font-bold text-green-600 mb-2">
+                {computedCurrentBalance.toLocaleString('vi-VN')}₫
+              </div>
+              <div className="text-sm text-gray-500">
+                Trạng thái: {(wallet.status || wallet.Status) === 'active' ? 'Hoạt động' : 'Không hoạt động'}
+              </div>
+            </div>
           <button
-            onClick={handleRefresh}
-            className="px-6 py-3 bg-purple-500 text-white rounded-lg font-medium hover:bg-purple-600 transition-colors"
+              onClick={async () => {
+                const amount = prompt('Nhập số tiền muốn nạp (VNĐ):', '100000');
+                const value = Number(amount);
+                if (!amount || Number.isNaN(value) || value <= 0) return;
+                try {
+                  // Gọi API tạo giao dịch nạp nội bộ (tùy backend có thể trả link PayOS)
+                  const payload = {
+                    walletID: wallet.walletID || wallet.WalletID,
+                    amount: value,
+                  };
+                  const result = await transactionHistoryService.addMoneyToWallet(payload);
+
+                  // Nếu backend trả về link thanh toán PayOS, mở tab mới
+                  const payUrl = result?.payUrl || result?.checkoutUrl || result?.url;
+                  if (payUrl) {
+                    window.open(payUrl, '_blank');
+                  }
+
+                  // Sau khi tạo yêu cầu, refresh dữ liệu để cập nhật lịch sử chờ webhook xác nhận
+                  await refreshWalletData();
+                  const accountId = user.accountID || user.AccountID;
+                  const data = await transactionHistoryService.getAllTransactionHistoriesByAccount(accountId);
+                  setHistories(Array.isArray(data) ? data : []);
+                  alert('Đã tạo yêu cầu nạp tiền. Nếu có link thanh toán PayOS, vui lòng hoàn tất thanh toán.');
+                } catch (e) {
+                  alert(e?.message || 'Không thể nạp tiền');
+                }
+              }}
+              className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700"
+            >
+              Nạp tiền
+            </button>
+          </div>
+        </div>
+      ) : (
+        <div className="rounded-xl border p-4 bg-white shadow">
+          <div className="mb-2">Bạn chưa có ví.</div>
+          <button
+            onClick={async () => {
+              const accountId = user.accountID || user.AccountID;
+              await fetch(`/api/wallet/create/${accountId}`, { method: 'POST' });
+              await refreshWalletData();
+            }}
+            className="px-4 py-2 bg-green-600 text-white rounded-lg"
           >
-            Thử lại
+            Tạo ví
           </button>
         </div>
-      </div>
-    );
-  }
+      )}
 
-  if (!wallet) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="text-center mb-8">
-            <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-2">
-              Ví điện tử
-            </h1>
-            <p className="text-gray-600">Quản lý số dư và lịch sử giao dịch</p>
+      <div className="mt-6">
+        <h2 className="text-lg font-semibold mb-2">Tất cả ví của bạn</h2>
+        <div className="grid gap-3">
+          {(wallets || []).filter(w => (w.accountID || w.AccountID) === (user.accountID || user.AccountID)).map(w => (
+            <div key={w.walletID || w.WalletID} className="border rounded-lg p-3 bg-white">
+              <div className="font-medium">Ví #{w.walletID || w.WalletID}</div>
+              <div>Số dư: {(w.amount || w.Amount || 0).toLocaleString('vi-VN')}₫</div>
+              <div>Trạng thái: {(w.status || w.Status) === 'active' ? 'Hoạt động' : 'Không hoạt động'}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="mt-8">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-lg font-semibold">Lịch sử giao dịch</h2>
+          <button
+            onClick={async () => {
+              const accountId = user.accountID || user.AccountID;
+              setLoadingHistories(true);
+              const data = await transactionHistoryService.getAllTransactionHistoriesByAccount(accountId);
+              setHistories(Array.isArray(data) ? data : []);
+              await refreshWalletData();
+              setLoadingHistories(false);
+            }}
+            className="px-3 py-1.5 text-sm bg-gray-100 hover:bg-gray-200 rounded-md"
+          >
+            Làm mới
+          </button>
+        </div>
+        {loadingHistories && <div>Đang tải lịch sử...</div>}
+        {historyError && <div className="text-red-600 mb-3">{historyError}</div>}
+
+        {!loadingHistories && (!histories || histories.length === 0) && (
+          <div className="text-gray-500">Chưa có giao dịch.</div>
+        )}
+
+        {histories && histories.length > 0 && (
+          <div className="overflow-x-auto bg-white border rounded-xl">
+            <table className="min-w-full text-sm">
+              <thead className="bg-gray-50 text-gray-600">
+                <tr>
+                  <th className="px-4 py-2 text-left">Thời gian</th>
+                  <th className="px-4 py-2 text-left">Ghi chú</th>
+                  <th className="px-4 py-2 text-right">Số tiền</th>
+                  <th className="px-4 py-2 text-right">Trước</th>
+                  <th className="px-4 py-2 text-right">Sau</th>
+                  <th className="px-4 py-2 text-left">Trạng thái</th>
+                  <th className="px-4 py-2 text-left">Invoice</th>
+                </tr>
+              </thead>
+              <tbody>
+                {histories
+                  .slice()
+                  .sort((a, b) => new Date(b.transactionDate || b.TransactionDate) - new Date(a.transactionDate || a.TransactionDate))
+                  .map(h => {
+                    const time = h.transactionDate || h.TransactionDate;
+                    const note = h.note || h.Note || '';
+                    const amount = h.amount || h.Amount || 0;
+                    const before = h.before || h.Before || 0;
+                    const after = h.after || h.After || 0;
+                    const status = h.status || h.Status || '';
+                    const isOut = after < before; // chi tiêu
+                    const invId = h.invoiceID || h.InvoiceID;
+                    return (
+                      <tr
+                        key={h.transactionHistoryID || h.TransactionHistoryID}
+                        className="border-t hover:bg-gray-50"
+                      >
+                        <td className="px-4 py-2 whitespace-nowrap">{new Date(time).toLocaleString('vi-VN')}</td>
+                        <td className="px-4 py-2">
+                          <button className="text-left w-full" onClick={() => { setSelectedTx(h); setShowTxModal(true); }}>{note || 'Xem chi tiết'}</button>
+                        </td>
+                        <td className={`px-4 py-2 text-right font-medium ${isOut ? 'text-red-600' : 'text-green-600'}`}>
+                          {(isOut ? -amount : amount).toLocaleString('vi-VN')}₫
+                        </td>
+                        <td className="px-4 py-2 text-right text-gray-500">{before.toLocaleString('vi-VN')}₫</td>
+                        <td className="px-4 py-2 text-right text-gray-500">{after.toLocaleString('vi-VN')}₫</td>
+                        <td className="px-4 py-2">
+                          <span className={`px-2 py-1 rounded-full text-xs ${status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}`}>
+                            {status}
+                          </span>
+                        </td>
+                        <td className="px-4 py-2">
+                          {invId ? (
+                            <button
+                              className="text-blue-600 hover:underline"
+                              onClick={async () => {
+                                try {
+                                  setInvoiceLoading(true);
+                                  setShowInvoiceModal(true);
+                                  const inv = await invoiceService.getInvoiceById(invId);
+                                  setInvoiceDetail(inv);
+                                } catch (e) {
+                                  setInvoiceDetail({ error: e?.message || 'Không thể tải invoice' });
+                                } finally {
+                                  setInvoiceLoading(false);
+                                }
+                              }}
+                            >
+                              #{invId}
+                            </button>
+                          ) : (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
+              </tbody>
+            </table>
           </div>
-          <TabNavigation />
-          <WalletEmpty onCreateWallet={handleCreateWallet} />
-        </div>
+        )}
       </div>
-    );
-  }
-
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-2">
-            Ví điện tử
-          </h1>
-          <p className="text-gray-600">Quản lý số dư và lịch sử giao dịch</p>
-        </div>
-        <TabNavigation />
-
-        {/* Nội dung chính của Ví điện tử */}
-        <div className="bg-white rounded-xl shadow-lg">
-          {/* Header với nút refresh */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200">
-            <motion.div
-              initial={{ opacity: 0, y: -20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center flex-1"
-            >
-              <h1 className="text-4xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center gap-3 mb-2">
-                <FaWallet className="text-purple-500" />
-                Ví điện tử
-              </h1>
-              <p className="text-gray-600 text-lg">Quản lý tài khoản và giao dịch của bạn một cách an toàn, tiện lợi.</p>
-            </motion.div>
-
-            <div className="flex gap-2">
-              <button
-                onClick={handleDebugWallet}
-                className="p-2 text-sm bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                title="Debug wallet data"
-              >
-                🐛 Debug
-              </button>
-              <button
-                onClick={handleRefresh}
-                disabled={refreshing}
-                className="p-3 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
-                title="Làm mới dữ liệu"
-              >
-                {refreshing ? 'Đang tải...' : '🔄'}
-              </button>
+      <TransactionDetailModal open={showTxModal} onClose={() => setShowTxModal(false)} transaction={selectedTx} />
+      {showInvoiceModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center">
+          <div className="absolute inset-0 bg-black/40" onClick={() => setShowInvoiceModal(false)} />
+          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h3 className="text-xl font-semibold">Chi tiết hóa đơn</h3>
+              <button onClick={() => setShowInvoiceModal(false)} className="text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            {invoiceLoading ? (
+              <div>Đang tải...</div>
+            ) : invoiceDetail?.error ? (
+              <div className="text-red-600">{invoiceDetail.error}</div>
+            ) : (
+              <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
+                <div className="text-gray-500">Invoice ID</div>
+                <div className="font-medium">{invoiceDetail?.invoiceID}</div>
+                <div className="text-gray-500">Booking ID</div>
+                <div className="font-medium">{invoiceDetail?.bookingID}</div>
+                <div className="text-gray-500">Tổng tiền</div>
+                <div className="font-medium">{(invoiceDetail?.totalAmount || 0).toLocaleString('vi-VN')}₫</div>
+                <div className="text-gray-500">Phương thức</div>
+                <div className="font-medium">{invoiceDetail?.transaction}</div>
+                <div className="text-gray-500">Nội dung</div>
+                <div className="font-medium">{invoiceDetail?.content}</div>
+                <div className="text-gray-500">Thời gian</div>
+                <div className="font-medium">{invoiceDetail?.paymentDate ? new Date(invoiceDetail.paymentDate).toLocaleString('vi-VN') : '-'}</div>
+                <div className="text-gray-500">Trạng thái</div>
+                <div className="font-medium">{invoiceDetail?.status}</div>
+              </div>
+            )}
+            <div className="mt-6 flex justify-end">
+              <button onClick={() => setShowInvoiceModal(false)} className="px-4 py-2 bg-gray-100 hover:bg-gray-200 rounded-lg">Đóng</button>
             </div>
           </div>
-
-          {/* Card số dư và nạp tiền */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-2xl shadow-xl p-8 flex flex-col items-center mb-8"
-          >
-            <div className="text-lg text-gray-500 mb-2">Số dư ví của bạn</div>
-            <div className="text-4xl font-extrabold text-pink-600 mb-4">
-              {formatCurrency(wallet?.amount || 0)}đ
-            </div>
-            <button
-              onClick={onDepositClick}
-              className="px-8 py-3 rounded-full bg-gradient-to-r from-pink-500 to-purple-500 text-white font-bold text-lg shadow-lg hover:scale-105 hover:shadow-xl transition"
-            >
-              Nạp tiền vào ví
-            </button>
-          </motion.div>
-
-          {/* Lịch sử giao dịch */}
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-2xl shadow-xl p-8"
-          >
-            <h2 className="text-2xl font-bold text-purple-600 mb-4">Lịch sử giao dịch</h2>
-            <TransactionHistory
-              transactions={transactions}
-              searchText={searchText}
-              setSearchText={setSearchText}
-              filterStatus={filterStatus}
-              setFilterStatus={setFilterStatus}
-            />
-          </motion.div>
         </div>
-      </div>
-
-      {/* Modal nạp tiền */}
-      <DepositModal
-        isOpen={showDepositModal}
-        onClose={() => setShowDepositModal(false)}
-        amount={depositAmount}
-        setAmount={setDepositAmount}
-        onDeposit={onDepositConfirm}
-        walletId={wallet?.WalletID || wallet?.walletID}
-        myWallet={wallet}
-        error={depositError}
-        onPayOSPayment={onPayOSPayment}
-      />
-
-      {/* Modal PayOS Payment */}
-      <PayOSPaymentModal
-        isOpen={showPayOSModal}
-        onClose={() => setShowPayOSModal(false)}
-        amount={depositAmount}
-        wallet={wallet}
-        onPaymentSuccess={onPayOSSuccess}
-        error={depositError}
-      />
-    </div >
+      )}
+    </div>
   );
 }
+
+

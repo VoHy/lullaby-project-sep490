@@ -11,6 +11,7 @@ const NurseProfileTab = ({ nurseAccount }) => {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [nurseProfile, setNurseProfile] = useState(null);
+  const [accountInfo, setAccountInfo] = useState(null);
 
   // Form data cho account
   const [accountFormData, setAccountFormData] = useState({
@@ -67,6 +68,14 @@ const NurseProfileTab = ({ nurseAccount }) => {
             status: currentSpecialist.status || 'active'
           });
         }
+
+        // Lấy thông tin account để hiển thị createAt chính xác
+        try {
+          const acc = await accountService.getAccountById(user.accountID);
+          setAccountInfo(acc);
+        } catch (e) {
+          console.warn('Không thể lấy account info:', e?.message);
+        }
       } catch (error) {
         console.error('Error fetching nurse profile:', error);
         setError('Không thể tải thông tin hồ sơ. Vui lòng thử lại.');
@@ -100,12 +109,20 @@ const NurseProfileTab = ({ nurseAccount }) => {
       setError('');
       setSuccess('');
 
-      // Cập nhật account
-      await accountService.updateAccount(accountFormData.accountID, accountFormData);
-
-      // Cập nhật nursing specialist profile
+      // CHỈ cập nhật hồ sơ nurse specialist theo API PUT /api/nursingspecialists/update/{id}
+      // Không cập nhật email/phoneNumber (thuộc Account)
       if (nurseProfile?.nursingID) {
-        await nursingSpecialistService.updateNursingSpecialist(nurseProfile.nursingID, profileFormData);
+        const payload = {
+          zoneID: Number(profileFormData.zoneID) || nurseProfile.zoneID || 0,
+          gender: profileFormData.gender || nurseProfile.gender || 'Nam',
+          dateOfBirth: profileFormData.dateOfBirth ? new Date(profileFormData.dateOfBirth).toISOString() : (nurseProfile.dateOfBirth || new Date().toISOString()),
+          fullName: profileFormData.fullName || nurseProfile.fullName || '',
+          address: profileFormData.address || nurseProfile.address || '',
+          experience: profileFormData.experience || nurseProfile.experience || '',
+          slogan: profileFormData.slogan || nurseProfile.slogan || '',
+          major: profileFormData.major || nurseProfile.major || 'nurse'
+        };
+        await nursingSpecialistService.updateNursingSpecialist(nurseProfile.nursingID, payload);
       }
 
       setSuccess('Cập nhật thông tin thành công!');
@@ -267,17 +284,7 @@ const NurseProfileTab = ({ nurseAccount }) => {
                     <FaEnvelope className="mr-2 text-gray-500" />
                     Email
                   </label>
-                  {isEditing ? (
-                    <input
-                      type="email"
-                      name="email"
-                      value={accountFormData.email}
-                      onChange={handleAccountInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  ) : (
-                    <p className="text-gray-800">{nurseAccount?.email}</p>
-                  )}
+                  <p className="text-gray-800">{nurseAccount?.email}</p>
                 </div>
 
                 {/* Phone */}
@@ -286,17 +293,7 @@ const NurseProfileTab = ({ nurseAccount }) => {
                     <FaPhone className="mr-2 text-gray-500" />
                     Số điện thoại
                   </label>
-                  {isEditing ? (
-                    <input
-                      type="tel"
-                      name="phoneNumber"
-                      value={accountFormData.phoneNumber}
-                      onChange={handleAccountInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                  ) : (
-                    <p className="text-gray-800">{nurseAccount?.phoneNumber}</p>
-                  )}
+                  <p className="text-gray-800">{nurseAccount?.phoneNumber}</p>
                 </div>
 
                 {/* Created Date */}
@@ -306,7 +303,9 @@ const NurseProfileTab = ({ nurseAccount }) => {
                     Ngày tạo tài khoản
                   </label>
                   <p className="text-gray-800">
-                    {nurseAccount?.createAt ? new Date(nurseAccount.createAt).toLocaleDateString('vi-VN') : '-'}
+                    {accountInfo?.createAt || accountInfo?.CreateAt || accountInfo?.createdAt || accountInfo?.CreatedAt
+                      ? new Date(accountInfo.createAt || accountInfo.CreateAt || accountInfo.createdAt || accountInfo.CreatedAt).toLocaleDateString('vi-VN')
+                      : '-'}
                   </p>
                 </div>
 

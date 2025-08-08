@@ -3,14 +3,16 @@
 import { useState, useContext } from 'react';
 import { FaWallet, FaPlus } from 'react-icons/fa';
 import { AuthContext } from '../../../context/AuthContext';
-import { useWalletContext } from '../../../context/WalletContext';
 import walletService from '../../../services/api/walletService';
+import { useWalletContext } from '@/context/WalletContext';
+import { useRouter } from 'next/navigation';
 
 export default function WalletIcon() {
   const { user } = useContext(AuthContext);
   const { wallet, loading, refreshWalletData } = useWalletContext();
   const [showTooltip, setShowTooltip] = useState(false);
   const [creating, setCreating] = useState(false);
+  const router = useRouter();
 
   // Chỉ hiển thị cho customer (roleID = 4)
   if (!user || (user.roleID !== 4 && user.RoleID !== 4)) {
@@ -48,7 +50,7 @@ export default function WalletIcon() {
   return (
     <div className="relative">
       <button
-        onClick={() => window.location.href = '/wallet'}
+        onClick={() => router.push('/wallet')}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => {
           // Delay để tránh tooltip biến mất quá nhanh
@@ -92,7 +94,7 @@ export default function WalletIcon() {
                   Số dư hiện tại
                 </p>
                 <button
-                  onClick={() => window.location.href = '/wallet'}
+                  onClick={() => router.push('/wallet')}
                   className="w-full px-3 py-2 bg-green-500 text-white rounded-lg text-sm font-medium hover:bg-green-600 transition-colors"
                 >
                   Xem chi tiết

@@ -1,51 +1,30 @@
+import { proxyRequest } from '@/lib/proxyRequest';
 import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
   try {
     const { id } = await params;
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
-    // Fetch booking và careProfiles song song
+    // Fetch booking và careProfiles song song sử dụng proxyRequest
     const [bookingResponse, careProfilesResponse] = await Promise.all([
-      fetch(`${backendUrl}/api/Booking/${id}`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      }),
-      fetch(`${backendUrl}/api/CareProfiles/GetAll`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      })
+      proxyRequest(`/api/Booking/${id}`, 'GET'),
+      proxyRequest(`/api/CareProfiles/GetAll`, 'GET')
     ]);
 
+    // Kiểm tra lỗi từ proxyRequest
     if (!bookingResponse.ok) {
-      const errorText = await bookingResponse.text();
-      try {
-        const errorData = JSON.parse(errorText);
-        return NextResponse.json({ error: errorData.message || 'Không thể lấy thông tin booking' }, { status: bookingResponse.status });
-      } catch (parseError) {
-        console.error('Failed to parse error response as JSON:', parseError);
-        return NextResponse.json({ error: `Server error: ${bookingResponse.status} - ${errorText.substring(0, 100)}` }, { status: bookingResponse.status });
-      }
+      return NextResponse.json(bookingResponse.data, { status: bookingResponse.status });
     }
 
     if (!careProfilesResponse.ok) {
-      const errorText = await careProfilesResponse.text();
-      try {
-        const errorData = JSON.parse(errorText);
-        return NextResponse.json({ error: errorData.message || 'Không thể lấy danh sách care profiles' }, { status: careProfilesResponse.status });
-      } catch (parseError) {
-        console.error('Failed to parse error response as JSON:', parseError);
-        return NextResponse.json({ error: `Server error: ${careProfilesResponse.status} - ${errorText.substring(0, 100)}` }, { status: careProfilesResponse.status });
-      }
+      return NextResponse.json(careProfilesResponse.data, { status: careProfilesResponse.status });
     }
 
-    const [bookingData, careProfilesData] = await Promise.all([
-      bookingResponse.json(),
-      careProfilesResponse.json()
-    ]);
+    const bookingData = bookingResponse.data;
+    const careProfilesData = careProfilesResponse.data;
 
     // Tìm careProfile tương ứng
-    const careProfile = careProfilesData.find(cp => cp.careProfileID === bookingData.careProfileID);
+    const careProfile = (careProfilesData || []).find(cp => (cp.careProfileID || cp.CareProfileID) === (bookingData.careProfileID || bookingData.CareProfileID));
 
     // Join booking với careProfile data
     const enrichedBooking = {

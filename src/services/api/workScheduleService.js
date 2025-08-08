@@ -10,6 +10,11 @@ const workScheduleService = {
     return await apiGet('/api/workschedules', 'Không thể lấy danh sách lịch làm việc');
   },
 
+  // Get all by nursing
+  getAllByNursing: async (nursingId) => {
+    return await apiGet(`/api/workschedules/getallbynursing/${nursingId}`, 'Không thể lấy lịch làm việc theo y tá');
+  },
+
   /**
    * Lấy work schedule theo ID
    * @param {string|number} id - Work schedule ID
@@ -36,6 +41,11 @@ const workScheduleService = {
    */
   updateWorkSchedule: async (id, workScheduleData) => {
     return await apiPut(`/api/workschedules/${id}`, workScheduleData, 'Không thể cập nhật lịch làm việc');
+  },
+
+  // Update IsAttended
+  updateIsAttended: async (workScheduleId) => {
+    return await apiPut(`/api/workschedules/updateisattended/${workScheduleId}`, {}, 'Không thể cập nhật điểm danh');
   },
 
   /**

@@ -4,7 +4,6 @@ import Header from "./components/header/Header";
 import Footer from "./components/footer/Footer";
 import { AuthProvider } from "../context/AuthContext";
 import { WalletProvider } from "../context/WalletContext";
-import WalletDebug from "./components/WalletDebug";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -27,7 +26,6 @@ export default function RootLayout({ children }) {
               {children}
             </main>
             <Footer />
-            <WalletDebug />
           </WalletProvider>
         </AuthProvider>
       </body>

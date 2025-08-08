@@ -5,6 +5,7 @@ import holidayService from '@/services/api/holidayService';
 import careProfileService from '@/services/api/careProfileService';
 import customizePackageService from '@/services/api/customizePackageService';
 import { FaRegClock, FaFlag, FaCalendarCheck } from 'react-icons/fa';
+import workScheduleService from '@/services/api/workScheduleService';
 
 // const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
 //   const [currentMonth, setCurrentMonth] = useState(new Date());
@@ -318,6 +319,7 @@ import { FaRegClock, FaFlag, FaCalendarCheck } from 'react-icons/fa';
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
+  const [localSchedules, setLocalSchedules] = useState(Array.isArray(workSchedules) ? workSchedules : []);
   const [holidays, setHolidays] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
   const [customizePackages, setCustomizePackages] = useState([]);
@@ -373,13 +375,17 @@ import { FaRegClock, FaFlag, FaCalendarCheck } from 'react-icons/fa';
     return days;
   };
 
+  useEffect(() => {
+    setLocalSchedules(Array.isArray(workSchedules) ? workSchedules : []);
+  }, [workSchedules]);
+
   const days = getDaysInMonthGrid(currentMonth);
-  // const workDates = workSchedules.map(ws => ws.workDate?.split('T')[0]).filter(Boolean);
+  const workDates = Array.isArray(localSchedules) ? localSchedules.map(ws => (ws.workDate || ws.WorkDate || '').split('T')[0]).filter(Boolean) : [];
   // Sửa: lấy ngày booking từ WorkDate (theo mock mới)
   // const bookingDates = nurseBookings.map(b => b.workDate?.split('T')[0]).filter(Boolean);
 
   // Highlight ngày có ca trực, lịch hẹn, hoặc ngày nghỉ
-  // const isWork = (dStr) => workDates.includes(dStr);
+  const isWork = (dStr) => workDates.includes(dStr);
   // const isBooking = (dStr) => bookingDates.includes(dStr);
   const isHoliday = (dStr) => !!getHolidayByDate(dStr);
 
@@ -387,16 +393,20 @@ import { FaRegClock, FaFlag, FaCalendarCheck } from 'react-icons/fa';
   const eventsOfDay = [];
   if (selectedDate) {
     // Ca trực
-    // workSchedules.filter(ws => ws.workDate?.startsWith(selectedDate)).forEach(ws => {
-    //   eventsOfDay.push({
-    //     type: 'work',
-    //     time: `${new Date(ws.workDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(ws.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`,
-    //     label: `Ca trực #${ws.workScheduleID}`,
-    //     status: ws.status,
-    //     isAttended: ws.isAttended,
-    //     workObj: ws,
-    //   });
-    // });
+    Array.isArray(localSchedules) && localSchedules.filter(ws => (ws.workDate || ws.WorkDate || '').startsWith(selectedDate)).forEach(ws => {
+      const workDate = ws.workDate || ws.WorkDate;
+      const endTime = ws.endTime || ws.EndTime;
+      eventsOfDay.push({
+        type: 'work',
+        time: `${workDate ? new Date(workDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''} - ${endTime ? new Date(endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}`,
+        label: `Ca trực #${ws.workScheduleID || ws.WorkScheduleID}`,
+        status: ws.status || ws.Status,
+        isAttended: ws.isAttended || ws.IsAttended,
+        workObj: ws,
+        workDate,
+        endTime,
+      });
+    });
     // Lịch hẹn (Booking) chỉ lấy từ nurseBookings
     // nurseBookings.filter(b => b.workDate?.startsWith(selectedDate)).forEach(b => {
     //   eventsOfDay.push({
@@ -500,7 +510,7 @@ import { FaRegClock, FaFlag, FaCalendarCheck } from 'react-icons/fa';
             const dayStr = format(day, 'yyyy-MM-dd');
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const isToday = isSameDay(day, new Date());
-            // const hasWork = isWork(dayStr);
+            const hasWork = isWork(dayStr);
             // const hasBooking = isBooking(dayStr);
             const holiday = getHolidayByDate(dayStr);
 
@@ -521,12 +531,12 @@ import { FaRegClock, FaFlag, FaCalendarCheck } from 'react-icons/fa';
                 
                 {/* Event Indicators */}
                 <div className="space-y-1">
-                  {/* {hasWork && ( */}
-                    {/* <div className="flex items-center text-xs text-blue-600">
+                  {hasWork && (
+                    <div className="flex items-center text-xs text-blue-600">
                       <FaRegClock className="mr-1" />
                       <span>Ca trực</span>
-                    </div> */}
-                  {/* )} */}
+                    </div>
+                  )}
                   {/* {hasBooking && ( */}
                     {/* <div className="flex items-center text-xs text-green-600">
                       <FaCalendarCheck className="mr-1" />
@@ -566,13 +576,13 @@ import { FaRegClock, FaFlag, FaCalendarCheck } from 'react-icons/fa';
                   <div className="flex items-center justify-between">
                     <div>
                       <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                        event.type === 'holiday' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                        event.type === 'work' ? 'bg-blue-100 text-blue-800' : event.type === 'holiday' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
                       }`}>
-                        {event.type === 'holiday' ? 'Ngày nghỉ' : 'Lịch hẹn'}
+                        {event.type === 'work' ? 'Ca trực' : event.type === 'holiday' ? 'Ngày nghỉ' : 'Lịch hẹn'}
                       </span>
                       <span className="ml-2 text-sm font-medium">{event.label}</span>
                     </div>
-                    <span className="text-sm text-gray-600">{event.startDate} - {event.endDate}</span>
+                    <span className="text-sm text-gray-600">{event.workDate ? new Date(event.workDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '-'} - {event.endTime ? new Date(event.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
                   </div>
                   <div className="mt-1 text-sm text-gray-500">
                     Trạng thái: {event.status}
@@ -599,23 +609,49 @@ import { FaRegClock, FaFlag, FaCalendarCheck } from 'react-icons/fa';
               <div>
                 <span className="font-medium">Loại:</span>
                 <span className={`ml-2 inline-block px-2 py-1 rounded text-xs font-medium ${
-                  selectedEvent.type === 'holiday' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                  selectedEvent.type === 'work' ? 'bg-blue-100 text-blue-800' : selectedEvent.type === 'holiday' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
                 }`}>
-                  {selectedEvent.type === 'holiday' ? 'Ngày nghỉ' : 'Lịch hẹn'}
+                  {selectedEvent.type === 'work' ? 'Ca trực' : selectedEvent.type === 'holiday' ? 'Ngày nghỉ' : 'Lịch hẹn'}
                 </span>
               </div>
               <div>
                 <span className="font-medium">Thời gian:</span>
-                <span className="ml-2">{selectedEvent.startDate} - {selectedEvent.endDate}</span>
+                <span className="ml-2">{selectedEvent.workDate ? new Date(selectedEvent.workDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '-'} - {selectedEvent.endTime ? new Date(selectedEvent.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '-'}</span>
               </div>
               <div>
                 <span className="font-medium">Trạng thái:</span>
                 <span className="ml-2">{selectedEvent.status}</span>
               </div>
-              {selectedEvent.type === 'holiday' && selectedEvent.holidayObj && (
-                <div>
-                  <span className="font-medium">Đã tham gia:</span>
-                  <span className="ml-2">{selectedEvent.isAttended ? 'Có' : 'Chưa'}</span>
+              {selectedEvent.type === 'work' && selectedEvent.workObj && (
+                <div className="flex items-center justify-between mt-2">
+                  <div>
+                    <span className="font-medium">Đã tham gia:</span>
+                    <span className="ml-2">{selectedEvent.isAttended ? 'Có' : 'Chưa'}</span>
+                  </div>
+                  {!selectedEvent.isAttended && (
+                    <button
+                      className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded-md"
+                      onClick={async () => {
+                        const id = selectedEvent.workObj.workScheduleID || selectedEvent.workObj.WorkScheduleID;
+                        try {
+                          await workScheduleService.updateIsAttended(id);
+                          // cập nhật UI nhanh
+                          setSelectedEvent(prev => ({ ...prev, isAttended: true, status: 'completed' }));
+                          setLocalSchedules(prev => prev.map(ws => {
+                            const wsId = ws.workScheduleID || ws.WorkScheduleID;
+                            if (wsId === id) {
+                              return { ...ws, isAttended: true, IsAttended: true, status: 'completed', Status: 'completed' };
+                            }
+                            return ws;
+                          }));
+                        } catch (e) {
+                          alert(e?.message || 'Không thể điểm danh');
+                        }
+                      }}
+                    >
+                      Điểm danh
+                    </button>
+                  )}
                 </div>
               )}
             </div>

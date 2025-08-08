@@ -1,10 +1,10 @@
+import { proxyRequest } from '@/lib/proxyRequest';
 import { NextResponse } from 'next/server';
 
 export async function PUT(request, { params }) {
   try {
     const { id } = params;
     const body = await request.json();
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
     
     // Convert field names to match backend expectation
     const backendData = {
@@ -18,38 +18,15 @@ export async function PUT(request, { params }) {
       status: body.status?.toLowerCase() || 'active' // Convert to lowercase
     };
     
-    const response = await fetch(`${backendUrl}/api/careprofiles/update/${id}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(backendData)
+    const endpoint = `/api/careprofiles/update/${id}`;
+    const result = await proxyRequest(endpoint, 'PUT', { body: JSON.stringify(backendData) });
+    
+    return NextResponse.json(result.data, { 
+      status: result.status 
     });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      
-      try {
-        const errorData = JSON.parse(errorText);
-        return NextResponse.json(
-          { error: errorData.message || `Cập nhật care profile thất bại` },
-          { status: response.status }
-        );
-      } catch (parseError) {
-        console.error('Failed to parse error response as JSON:', parseError);
-        return NextResponse.json(
-          { error: `Server error: ${response.status} - ${errorText.substring(0, 100)}` },
-          { status: response.status }
-        );
-      }
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
   } catch (error) {
-    console.error('Proxy error:', error);
     return NextResponse.json(
-      { error: `Không thể kết nối đến server: ${error.message}` },
+      { error: 'Internal server error' }, 
       { status: 500 }
     );
   }

@@ -1,3 +1,4 @@
+import { proxyRequest } from '@/lib/proxyRequest';
 import { NextResponse } from 'next/server';
 
 export async function PUT(request, { params }) {
@@ -12,8 +13,8 @@ export async function PUT(request, { params }) {
       body: JSON.stringify(body),
     });
     const data = await res.json();
-    return Response.json(data, { status: res.status });
+    return NextResponse.json(data, { status: res.status });
   } catch (error) {
-    return Response.json({ error: 'Không thể thay đổi trạng thái nursing specialist' }, { status: 500 });
+    return NextResponse.json({ error: 'Không thể thay đổi trạng thái nursing specialist' }, { status: 500 });
   }
 } 

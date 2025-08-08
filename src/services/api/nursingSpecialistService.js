@@ -20,6 +20,9 @@ const nursingSpecialistService = {  // Thêm method getNursingSpecialists để 
       headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Cập nhật hồ sơ thất bại');
+    return result;
   },
 
   // Thêm method getAllNursingSpecialists để lấy tất cả nursing specialists

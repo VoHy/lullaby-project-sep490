@@ -559,6 +559,8 @@ const AppointmentDetailModal = ({
             service={selectedService}
             availableNurses={availableNurses}
             onAssign={handleNurseAssignment}
+            bookingDate={appointment.workdate || appointment.Workdate || appointment.BookingDate}
+            bookingId={appointment.bookingID || appointment.BookingID}
           />
         )}
       </div>

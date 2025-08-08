@@ -1,22 +1,69 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { FaTimes, FaUserMd, FaPhone, FaMapMarkerAlt, FaStar, FaCheck } from 'react-icons/fa';
+import workScheduleService from '@/services/api/workScheduleService';
 
 const NurseSelectionModal = ({
   isOpen,
   onClose,
   service,
   availableNurses,
-  onAssign
+  onAssign,
+  bookingDate,
+  bookingId
 }) => {
   const [selectedNurseId, setSelectedNurseId] = useState(null);
   const [isAssigning, setIsAssigning] = useState(false);
+  const [conflictMap, setConflictMap] = useState({});
 
   if (!isOpen) return null;
 
+  // Load lịch của các nurse và đánh dấu trùng lịch
+  useEffect(() => {
+    const loadConflicts = async () => {
+      try {
+        if (!Array.isArray(availableNurses) || availableNurses.length === 0 || !bookingDate) {
+          setConflictMap({});
+          return;
+        }
+
+        const bookingTime = new Date(bookingDate);
+
+        const results = await Promise.all(
+          availableNurses.map(async (n) => {
+            const id = n.nursingID || n.nursing_ID || n.Nursing_ID;
+            try {
+              const schedules = await workScheduleService.getAllByNursing(id);
+              const hasConflict = Array.isArray(schedules) && schedules.some((ws) => {
+                const start = new Date(ws.workDate || ws.WorkDate);
+                const end = new Date(ws.endTime || ws.EndTime || start);
+                // conflict nếu bookingTime nằm trong khoảng [start, end]
+                const overlaps = bookingTime >= start && bookingTime <= end;
+                const sameBooking = (ws.bookingID || ws.BookingID) === bookingId;
+                return overlaps && !sameBooking; // bỏ qua conflict nếu là cùng booking hiện tại
+              });
+              return [id, !!hasConflict];
+            } catch {
+              return [id, false];
+            }
+          })
+        );
+
+        const map = {};
+        results.forEach(([id, cf]) => { map[id] = cf; });
+        setConflictMap(map);
+      } catch (e) {
+        console.warn('Không thể kiểm tra conflict:', e?.message);
+        setConflictMap({});
+      }
+    };
+    loadConflicts();
+  }, [availableNurses, bookingDate, bookingId]);
+
   const handleAssign = async () => {
     if (!selectedNurseId) return;
+    if (conflictMap[selectedNurseId]) return; // không cho gán nếu trùng lịch
     
     setIsAssigning(true);
     try {
@@ -54,16 +101,19 @@ const NurseSelectionModal = ({
               {availableNurses.map((nurse) => {
                 const nurseId = nurse.nursingID || nurse.nursing_ID || nurse.Nursing_ID;
                 const isSelected = selectedNurseId === nurseId;
+                const hasConflict = !!conflictMap[nurseId];
                 
                 return (
                   <div
                     key={nurseId}
-                    className={`border rounded-xl p-4 cursor-pointer transition-all ${
-                      isSelected
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                    className={`border rounded-xl p-4 transition-all ${
+                      hasConflict
+                        ? 'border-red-300 bg-red-50 opacity-70 cursor-not-allowed'
+                        : isSelected
+                          ? 'border-blue-500 bg-blue-50 cursor-pointer'
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50 cursor-pointer'
                     }`}
-                    onClick={() => setSelectedNurseId(nurseId)}
+                    onClick={() => { if (!hasConflict) setSelectedNurseId(nurseId); }}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-4 flex-1">
@@ -72,7 +122,7 @@ const NurseSelectionModal = ({
                         </div>
                         
                         <div className="flex-1">
-                          <h3 className="font-semibold text-lg text-gray-900">
+                          <h3 className={`text-lg ${hasConflict ? 'font-extrabold text-red-700' : 'font-semibold text-gray-900'}`}>
                             {nurse.fullName || nurse.full_Name || nurse.Full_Name || 'Không có tên'}
                           </h3>
                           
@@ -100,6 +150,9 @@ const NurseSelectionModal = ({
                                 <FaStar className="text-yellow-400" />
                                 <span>{nurse.rating}/5</span>
                               </div>
+                            )}
+                            {hasConflict && (
+                              <span className="ml-2 px-2 py-0.5 rounded-full bg-red-100 text-red-700 font-semibold">Trùng lịch</span>
                             )}
                           </div>
                         </div>
@@ -141,9 +194,9 @@ const NurseSelectionModal = ({
             </button>
             <button
               onClick={handleAssign}
-              disabled={!selectedNurseId || isAssigning}
+              disabled={!selectedNurseId || isAssigning || !!conflictMap[selectedNurseId]}
               className={`px-6 py-2 rounded-lg text-white font-medium transition-colors ${
-                !selectedNurseId || isAssigning
+                !selectedNurseId || isAssigning || !!conflictMap[selectedNurseId]
                   ? 'bg-gray-400 cursor-not-allowed'
                   : 'bg-blue-500 hover:bg-blue-600'
               }`}

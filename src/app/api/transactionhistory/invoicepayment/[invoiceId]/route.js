@@ -1,3 +1,4 @@
+import { proxyRequest } from '@/lib/proxyRequest';
 import { NextResponse } from 'next/server';
 
 export async function POST(request, { params }) {
@@ -28,12 +29,12 @@ export async function POST(request, { params }) {
     const data = await response.json();
     
     if (!response.ok) {
-      return Response.json({ error: data.message || 'Payment failed' }, { status: response.status });
+      return NextResponse.json({ error: data.message || 'Payment failed' }, { status: response.status });
     }
 
-    return Response.json(data);
+    return NextResponse.json(data);
   } catch (error) {
     console.error('InvoicePayment error:', error);
-    return Response.json({ error: error.message }, { status: 500 });
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

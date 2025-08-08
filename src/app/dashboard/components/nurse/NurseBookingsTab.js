@@ -1,219 +1,161 @@
-import React, { useState, useEffect } from 'react';
-import careProfileService from '@/services/api/careProfileService';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
 import customizePackageService from '@/services/api/customizePackageService';
+import serviceTypeService from '@/services/api/serviceTypeService';
 import customizeTaskService from '@/services/api/customizeTaskService';
 import serviceTaskService from '@/services/api/serviceTaskService';
+import bookingService from '@/services/api/bookingService';
+import nursingSpecialistService from '@/services/api/nursingSpecialistService';
+import { AuthContext } from '@/context/AuthContext';
 
-// const NurseBookingsTab = ({ nurseBookings }) => {
-//   const [selectedBooking, setSelectedBooking] = useState(null);
-//   const [careProfiles, setCareProfiles] = useState([]);
-//   const [customizePackages, setCustomizePackages] = useState([]);
-//   const [customizeTasks, setCustomizeTasks] = useState([]);
-//   const [serviceTasks, setServiceTasks] = useState([]);
-//   const [loading, setLoading] = useState(true);
-//   const [error, setError] = useState(null);
-
-  // useEffect(() => {
-  //   const fetchData = async () => {
-  //     try {
-  //       setLoading(true);
-  //       const [careProfilesData, customizePackagesData, customizeTasksData, serviceTasksData] = await Promise.all([
-  //         careProfileService.getAllCareProfiles(),
-  //         customizePackageService.getAllCustomizePackages(),
-  //         customizeTaskService.getAllCustomizeTasks(),
-  //         serviceTaskService.getAllServiceTasks()
-  //       ]);
-  //       setCareProfiles(careProfilesData);
-  //       setCustomizePackages(customizePackagesData);
-  //       setCustomizeTasks(customizeTasksData);
-  //       setServiceTasks(serviceTasksData);
-  //     } catch (err) {
-  //       console.error('Error fetching data:', err);
-  //       setError('Không thể tải dữ liệu. Vui lòng thử lại.');
-  //     } finally {
-  //       setLoading(false);
-  //     }
-  //   };
-
-  //   fetchData();
-  // }, []);
-
-  // Lấy thông tin chi tiết booking
-//   const getBookingDetail = (booking) => {
-//     const patient = careProfiles.find(p => p.CareProfileID === booking.CareProfileID);
-//     const customizePackage = customizePackages.find(pkg => pkg.CustomizePackageID === booking.CustomizePackageID);
-//     // Lấy các dịch vụ con thực tế từ CustomizeTask
-//     const customizeTasksOfBooking = customizeTasks.filter(
-//       t => t.BookingID === booking.BookingID
-//     );
-//     const serviceTasksOfBooking = customizeTasksOfBooking.map(task => {
-//       const serviceTask = serviceTasks.find(st => st.ServiceTaskID === task.ServiceTaskID);
-//       return {
-//         ...serviceTask,
-//         price: task.Price,
-//         quantity: task.Quantity,
-//         total: task.Total,
-//         status: task.Status
-//       };
-//     });
-//     return { patient, customizePackage, serviceTasksOfBooking };
-//   };
-
-//   if (loading) {
-//     return (
-//       <div className="flex justify-center items-center h-64">
-//         <div className="text-center">
-//           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
-//           <p className="text-gray-600">Đang tải dữ liệu...</p>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   if (error) {
-//     return (
-//       <div className="flex justify-center items-center h-64">
-//         <div className="text-center">
-//           <div className="text-red-500 mb-4">⚠️</div>
-//           <p className="text-red-600">{error}</p>
-//           <button 
-//             onClick={() => window.location.reload()} 
-//             className="mt-4 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
-//           >
-//             Thử lại
-//           </button>
-//         </div>
-//       </div>
-//     );
-//   }
-
-//   return (
-//     <div>
-//       <h3 className="font-semibold text-lg mb-4">Danh sách lịch hẹn</h3>
-//       <div className="w-full max-wl mx-auto bg-white rounded shadow">
-//         <table className="w-full table-auto">
-//           <thead>
-//             <tr>
-//               <th className="px-4 py-2 text-center">Mã Booking</th>
-//               <th className="px-4 py-2 text-center">Bệnh nhân</th>
-//               <th className="px-4 py-2 text-center">Gói dịch vụ</th>
-//               <th className="px-4 py-2 text-center">Ngày đặt</th>
-//               <th className="px-4 py-2 text-center">Trạng thái</th>
-//               <th className="px-4 py-2 text-center">Chi tiết</th>
-//             </tr>
-//           </thead>
-//           <tbody>
-//             {nurseBookings.length === 0 && (
-//               <tr>
-//                 <td colSpan={6} className="text-center text-gray-500 py-4">Không có booking nào.</td>
-//               </tr>
-//             )}
-//             {nurseBookings.map(b => {
-//               const patient = careProfiles.find(p => p.CareProfileID === b.CareProfileID);
-//               const customizePackage = customizePackages.find(pkg => pkg.CustomizePackageID === b.CustomizePackageID);
-//               return (
-//                 <tr key={b.BookingID} className="border-t hover:bg-purple-50 transition">
-//                   <td className="px-4 py-2 text-center font-semibold">#{b.BookingID}</td>
-//                   <td className="px-4 py-2 text-center">{patient?.ProfileName || '-'}</td>
-//                   <td className="px-4 py-2 text-center">
-//                     {customizePackage?.Name
-//                       ? customizePackage.Name
-//                       : (
-//                         (() => {
-//                           const { serviceTasksOfBooking } = getBookingDetail(b);
-//                           return serviceTasksOfBooking && serviceTasksOfBooking.length > 1
-//                             ? (
-//                               <ul className="space-y-1 inline-block text-left">
-//                                 {serviceTasksOfBooking.map((task, idx) => (
-//                                   <li key={idx} className="flex items-center text-xs text-gray-800">
-//                                     <span className="inline-block w-2 h-2 rounded-full bg-purple-400 mr-2"></span>
-//                                     {task.Description}
-//                                   </li>
-//                                 ))}
-//                               </ul>
-//                             )
-//                             : (serviceTasksOfBooking[0]?.Description || '-');
-//                         })()
-//                       )
-//                     }
-//                   </td>
-//                   <td className="px-4 py-2 text-center">{b.CreatedAt ? new Date(b.CreatedAt).toLocaleDateString('vi-VN') : '-'}</td>
-//                   <td className="px-4 py-2 text-center">
-//                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${b.Status === 'completed' ? 'bg-green-100 text-green-700' : b.Status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>
-//                       {b.Status === 'completed' ? 'Hoàn thành' : b.Status === 'pending' ? 'Chờ xác nhận' : 'Đã hủy'}
-//                     </span>
-//                   </td>
-//                   <td className="px-4 py-2 text-center">
-//                     <button
-//                       className="px-4 py-1 rounded bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs font-semibold shadow hover:scale-105 transition"
-//                       onClick={() => setSelectedBooking(b)}
-//                     >
-//                       Xem chi tiết
-//                     </button>
-//                   </td>
-//                 </tr>
-//               );
-//             })}
-//           </tbody>
-//         </table>
-//       </div>
-
-//       {/* Modal chi tiết booking */}
-//       {selectedBooking && (() => {
-//         const { patient, customizePackage, serviceTasksOfBooking } = getBookingDetail(selectedBooking);
-//         return (
-//           <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-//             <div className="bg-white rounded-lg p-6 w-full max-w-lg shadow-lg relative animate-fade-in">
-//               <button
-//                 className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl"
-//                 onClick={() => setSelectedBooking(null)}
-//                 title="Đóng"
-//               >✕</button>
-//               <h4 className="text-xl font-bold mb-4 text-purple-700">Chi tiết Booking #{selectedBooking.BookingID}</h4>
-//               <div className="mb-3">
-//                 <span className="font-semibold">Bệnh nhân:</span> {patient?.ProfileName} ({patient?.DateOfBirth})<br />
-//                 <span className="font-semibold">Địa chỉ:</span> {patient?.Address}
-//               </div>
-//               <div className="mb-3">
-//                 <span className="font-semibold">Gói dịch vụ:</span> {customizePackage?.Name || '-'}<br />
-//                 <span className="text-xs text-gray-500">{customizePackage?.Description}</span>
-//               </div>
-//               <div className="mb-3">
-//                 <span className="font-semibold">Dịch vụ chi tiết:</span>
-//                 <ul className="list-disc ml-6 mt-1">
-//                   {serviceTasksOfBooking.length === 0 && <li className="text-gray-400 text-xs">Không có dịch vụ chi tiết.</li>}
-//                   {serviceTasksOfBooking.map((task, idx) => (
-//                     <li key={idx} className="text-sm">
-//                       {task?.Description} <span className="text-xs text-gray-500">({task?.price?.toLocaleString()}đ)</span>
-//                     </li>
-//                   ))}
-//                 </ul>
-//               </div>
-//               <div className="mb-2">
-//                 <span className="font-semibold">Tổng tiền:</span> <span className="text-pink-600 font-bold">{selectedBooking.Amount?.toLocaleString()}đ</span>
-//               </div>
-//               <div className="mb-2">
-//                 <span className="font-semibold">Ngày đặt:</span> {selectedBooking.CreatedAt ? new Date(selectedBooking.CreatedAt).toLocaleString('vi-VN') : '-'}
-//               </div>
-//               <div className="mb-2">
-//                 <span className="font-semibold">Ngày làm việc:</span> {selectedBooking.WorkDate ? new Date(selectedBooking.WorkDate).toLocaleString('vi-VN') : '-'}
-//               </div>
-//               <div>
-//                 <span className="font-semibold">Trạng thái:</span> <span className={`px-2 py-1 rounded-full text-xs font-semibold ${selectedBooking.Status === 'completed' ? 'bg-green-100 text-green-700' : selectedBooking.Status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>
-//                   {selectedBooking.Status === 'completed' ? 'Hoàn thành' : selectedBooking.Status === 'pending' ? 'Chờ xác nhận' : 'Đã hủy'}
-//                 </span>
-//               </div>
-//             </div>
-//           </div>
-//         );
-//       })()}
-//     </div>
-//   );
-// };
 const NurseBookingsTab = () => {
+  const { user } = useContext(AuthContext);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [bookings, setBookings] = useState([]);
+  const [customizePackages, setCustomizePackages] = useState([]);
+  const [customizeTasks, setCustomizeTasks] = useState([]);
+  const [serviceTasks, setServiceTasks] = useState([]);
+  const [serviceTypes, setServiceTypes] = useState([]);
+  const [selectedBooking, setSelectedBooking] = useState(null);
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        if (!user?.accountID) {
+          setBookings([]);
+          return;
+        }
+        const specialists = await nursingSpecialistService.getAllNursingSpecialists();
+        const me = specialists.find(s => (s.accountID || s.AccountID) === user.accountID);
+        const nursingID = me?.nursingID || me?.NursingID;
+
+        // Optimized: lấy bookings trực tiếp theo nurse qua aggregator route
+        const [mine, pkgs, tasks, sts, svTypes] = await Promise.all([
+          bookingService.getBookingsByNursing(nursingID),
+          customizePackageService.getCustomizePackages ? customizePackageService.getCustomizePackages() : customizePackageService.getAllCustomizePackages?.() || Promise.resolve([]),
+          customizeTaskService.getAllCustomizeTasks ? customizeTaskService.getAllCustomizeTasks() : customizeTaskService.getAllCustomizeTasks(),
+          serviceTaskService.getServiceTasks ? serviceTaskService.getServiceTasks() : serviceTaskService.getAllServiceTasks?.() || Promise.resolve([]),
+          serviceTypeService.getServiceTypes ? serviceTypeService.getServiceTypes() : serviceTypeService.getAllServiceTypes?.() || Promise.resolve([]),
+        ]);
+        setBookings(Array.isArray(mine) ? mine : []);
+
+        setCustomizePackages(Array.isArray(pkgs) ? pkgs : []);
+        setCustomizeTasks(Array.isArray(tasks) ? tasks : []);
+        setServiceTasks(Array.isArray(sts) ? sts : []);
+        setServiceTypes(Array.isArray(svTypes) ? svTypes : []);
+      } catch (e) {
+        setError(e?.message || 'Không thể tải dữ liệu');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [user]);
+
+  const getBookingDetail = (booking) => {
+    const patient = booking.careProfile || booking.CareProfile;
+    // Tập dịch vụ chi tiết từ customize task nếu có
+    const ctOfBooking = customizeTasks.filter(t => (t.bookingID || t.BookingID) === (booking.bookingID || booking.BookingID));
+    const detailTasks = ctOfBooking.map(t => {
+      const st = serviceTasks.find(x => (x.serviceTaskID || x.ServiceTaskID) === (t.serviceTaskID || t.ServiceTaskID));
+      const sv = serviceTypes.find(sv => (sv.serviceID || sv.ServiceID) === (t.serviceID || t.ServiceID));
+      const serviceName = st?.description || st?.Description || sv?.serviceName || sv?.name || sv?.Name || '-';
+      const quantity = t.quantity ?? t.Quantity ?? 1;
+      const unitPrice = (t.price ?? t.Price ?? sv?.price ?? 0);
+      const total = (t.total ?? t.Total ?? (unitPrice * quantity));
+      return {
+        serviceName,
+        price: unitPrice,
+        quantity,
+        total,
+        status: t.status || t.Status,
+      };
+    });
+    return { patient, detailTasks };
+  };
+
+  if (loading) return <div>Đang tải...</div>;
+  if (error) return <div className="text-red-600">{error}</div>;
+
   return (
     <div>
-      <h1>Nurse Bookings Tab</h1>
+      <h3 className="font-semibold text-lg mb-4">Booking của tôi</h3>
+      <div className="w-full bg-white rounded shadow">
+        <table className="w-full table-auto text-sm">
+          <thead className="bg-gray-50 text-gray-600">
+            <tr>
+              <th className="px-4 py-2 text-left">Booking</th>
+              <th className="px-4 py-2 text-left">Bệnh nhân</th>
+              <th className="px-4 py-2 text-left">Ngày làm việc</th>
+              <th className="px-4 py-2 text-left">Trạng thái</th>
+              <th className="px-4 py-2 text-left">Chi tiết</th>
+            </tr>
+          </thead>
+          <tbody>
+            {bookings.length === 0 && (
+              <tr>
+                <td colSpan={5} className="px-4 py-6 text-center text-gray-500">Không có booking nào.</td>
+              </tr>
+            )}
+            {bookings.map(b => {
+              const cpId = b.careProfileID || b.CareProfileID;
+              const patient = (b.careProfile || b.CareProfile) || careProfiles.find(p => (p.careProfileID || p.CareProfileID) === cpId);
+              const workdate = b.workdate || b.workDate || b.WorkDate;
+              const status = b.status || b.Status;
+              return (
+                <tr key={b.bookingID || b.BookingID} className="border-t">
+                  <td className="px-4 py-2">#{b.bookingID || b.BookingID}</td>
+                  <td className="px-4 py-2">{patient?.profileName || patient?.ProfileName || '-'}</td>
+                  <td className="px-4 py-2">{workdate ? new Date(workdate).toLocaleString('vi-VN') : '-'}</td>
+                  <td className="px-4 py-2">
+                    <span className={`px-2 py-1 rounded-full text-xs ${status === 'completed' ? 'bg-green-100 text-green-700' : status === 'waiting' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>{status}</span>
+                  </td>
+                  <td className="px-4 py-2">
+                    <button className="px-3 py-1.5 bg-purple-600 text-white rounded" onClick={() => setSelectedBooking(b)}>Xem</button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      {selectedBooking && (() => {
+        const { patient, detailTasks } = getBookingDetail(selectedBooking);
+        const workdate = selectedBooking.workdate || selectedBooking.workDate || selectedBooking.WorkDate;
+        const status = selectedBooking.status || selectedBooking.Status;
+        return (
+          <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+            <div className="bg-white rounded-xl p-6 w-full max-w-lg">
+              <div className="flex items-center justify-between mb-3">
+                <h4 className="text-lg font-semibold">Chi tiết Booking #{selectedBooking.bookingID || selectedBooking.BookingID}</h4>
+                <button className="text-gray-500" onClick={() => setSelectedBooking(null)}>✕</button>
+              </div>
+              <div className="space-y-2 text-sm">
+                <div><span className="text-gray-500">Bệnh nhân:</span> {patient?.profileName || patient?.ProfileName}</div>
+                <div><span className="text-gray-500">Địa chỉ:</span> {patient?.address || patient?.Address}</div>
+                <div><span className="text-gray-500">SĐT:</span> {patient?.phoneNumber || patient?.PhoneNumber}</div>
+                <div><span className="text-gray-500">Ngày làm việc:</span> {workdate ? new Date(workdate).toLocaleString('vi-VN') : '-'}</div>
+                <div><span className="text-gray-500">Trạng thái:</span> {status}</div>
+                <div className="pt-2">
+                  <div className="font-semibold mb-1">Dịch vụ chi tiết</div>
+                  <ul className="list-disc ml-5">
+                    {detailTasks.length === 0 && <li className="text-gray-500">Không có dịch vụ chi tiết.</li>}
+                    {detailTasks.map((t, idx) => (
+                      <li key={idx}>{t.serviceName} <span className="text-xs text-gray-500">({(t.price || 0).toLocaleString('vi-VN')}đ x {t.quantity || 1} = {(t.total || 0).toLocaleString('vi-VN')}đ)</span></li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+              <div className="mt-4 text-right">
+                <button className="px-4 py-2 bg-gray-100 rounded" onClick={() => setSelectedBooking(null)}>Đóng</button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

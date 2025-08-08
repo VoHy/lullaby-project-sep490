@@ -1,29 +1,18 @@
+import { proxyRequest } from '@/lib/proxyRequest';
 import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
   try {
     const { accountId } = await params;
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-
-    const response = await fetch(`${backendUrl}/api/TransactionHistory/GetAllByAccount/${accountId}`, {
-      method: 'GET',
-      headers: { 'Content-Type': 'application/json' }
+    const endpoint = `/api/TransactionHistory/GetAllByAccount/${accountId}`;
+    const result = await proxyRequest(endpoint, 'GET');
+    
+    return NextResponse.json(result.data, { 
+      status: result.status 
     });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      return NextResponse.json(
-        { error: errorData.error || 'Không thể lấy danh sách transaction histories theo account' },
-        { status: response.status }
-      );
-    }
-
-    const data = await response.json();
-    return NextResponse.json(data);
   } catch (error) {
-    console.error('Proxy error:', error);
     return NextResponse.json(
-      { error: `Không thể kết nối đến server: ${error.message}` },
+      { error: 'Internal server error' }, 
       { status: 500 }
     );
   }

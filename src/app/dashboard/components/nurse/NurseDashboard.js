@@ -13,7 +13,7 @@ import { AuthContext } from '@/context/AuthContext';
 // import bookingService from '@/services/api/bookingService';
 import careProfileService from '@/services/api/careProfileService';
 // import notificationService from '@/services/api/notificationService';
-// import workScheduleService from '@/services/api/workScheduleService';
+import workScheduleService from '@/services/api/workScheduleService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 // import medicalNoteService from '@/services/api/medicalNoteService';
 // import customizeTaskService from '@/services/api/customizeTaskService';
@@ -56,19 +56,11 @@ const NurseDashboard = ({ user, initialTab }) => {
 
         // Load tất cả data song song
         const [
-          // allBookings, // Comment vì bookingService chưa hoàn thiện
-          // allCustomizeTasks,
-          // allWorkSchedules,
           allCareProfiles,
-          // allNotifications,
-          // allMedicalNotes
+          myWorkSchedules
         ] = await Promise.all([
-          // bookingService.getBookings(), // Comment vì API chưa hoàn thiện
-          // customizeTaskService.getAllCustomizeTasks(),
-          // workScheduleService.getAllWorkSchedules(),
           careProfileService.getCareProfiles(),
-          // notificationService.getAllNotifications(),
-          // medicalNoteService.getAllMedicalNotes()
+          workScheduleService.getAllByNursing(nursingID)
         ]);
 
         // Lọc data theo nursingID
@@ -82,7 +74,7 @@ const NurseDashboard = ({ user, initialTab }) => {
         // const filteredMedicalNotes = allMedicalNotes.filter(note => note.nursingID === nursingID);
 
         // setNurseBookings(filteredBookings); // Comment vì bookingService chưa hoàn thiện
-        // setNurseWorkSchedules(filteredWorkSchedules);
+        setNurseWorkSchedules(Array.isArray(myWorkSchedules) ? myWorkSchedules : []);
         // setPatients(filteredPatients); // Comment vì bookingService chưa hoàn thiện
         // setNotifications(filteredNotifications);
         // setMedicalNotes(filteredMedicalNotes);

@@ -14,9 +14,20 @@ const bookingService = {  // GET /api/Booking/GetAll
     return data;
   },
 
-  // GET /api/Booking/GetAll with CareProfile information
+  // Aggregated: Get all bookings with embedded care profile
   getAllBookingsWithCareProfile: async () => {
-    const res = await fetch('/api/booking/getallwithcareprofile', {
+    const res = await fetch('/api/booking/getall/withcareprofile', {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách bookings kèm care profile');
+    return data;
+  },
+
+  // GET /api/Booking/GetAll with CareProfile information
+  getAllByCareProfile: async (careProfileId) => {
+    const res = await fetch(`/api/booking/getallbycareprofile?careProfileId=${careProfileId}`, {
       method: 'GET',
       headers: getAuthHeaders()
     });
@@ -44,6 +55,17 @@ const bookingService = {  // GET /api/Booking/GetAll
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin booking với care profile');
+    return data;
+  },
+
+  // Aggregated: Get bookings of a nurse (optimized fewer calls)
+  getBookingsByNursing: async (nursingId) => {
+    const res = await fetch(`/api/nurse/${nursingId}/bookings`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách booking của y tá');
     return data;
   },
 
