@@ -21,7 +21,7 @@ const statusOptions = [
 
 const ManagerBookingTab = () => {
   const { user } = useContext(AuthContext);
-  const currentManagerId = user?.AccountID;
+  const currentManagerId = user?.accountID || user?.accountID;
 
   // State cho API data
   const [allBookings, setAllBookings] = useState([]);
@@ -46,7 +46,11 @@ const ManagerBookingTab = () => {
   // Load data từ API
   useEffect(() => {
     const fetchData = async () => {
-      if (!currentManagerId) return;
+      if (!currentManagerId) {
+        setBookings([]);
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoading(true);
@@ -99,30 +103,30 @@ const ManagerBookingTab = () => {
   function getBookingDetail(booking) {
     // Sử dụng thông tin careProfile từ booking data thay vì tìm kiếm riêng
     const careProfile = booking.careProfile;
-    const account = accounts.find(a => a.AccountID === careProfile?.accountID);
+    const account = accounts.find(a => a.accountID === careProfile?.accountID);
     let service = null;
     let packageInfo = null;
 
     // Lấy các dịch vụ con/lẻ thực tế từ CustomizeTask
     const customizeTasksOfBooking = (customizeTasks || []).filter(t =>
-      (t.bookingID || t.BookingID) === (booking.BookingID || booking.bookingID)
+      (t.bookingID) === (booking.bookingID)
     );
 
     const serviceTasksOfBooking = customizeTasksOfBooking.map(task => {
-      const serviceId = task.serviceID || task.service_ID || task.Service_ID;
-      const serviceType = serviceTypes.find(s => (s.ServiceID || s.serviceID) === serviceId) || {};
+      const serviceId = task.serviceID;
+      const serviceType = serviceTypes.find(s => (s.serviceID) === serviceId) || {};
 
-      const nurseId = task.nursingID || task.NursingID;
-      const assignedNurse = nurseId ? nursingSpecialists.find(n => (n.NursingID || n.nursingID) === nurseId) : null;
-      const assignedAccount = assignedNurse ? accounts.find(acc => (acc.AccountID || acc.accountID) === (assignedNurse.AccountID || assignedNurse.accountID)) : null;
+      const nurseId = task.nursingID;
+      const assignedNurse = nurseId ? nursingSpecialists.find(n => (n.nursingID) === nurseId) : null;
+      const assignedAccount = assignedNurse ? accounts.find(acc => (acc.accountID) === (assignedNurse.accountID)) : null;
 
       return {
-        customizeTaskId: task.customizeTaskID || task.customize_TaskID,
-        description: serviceType.Description || serviceType.description || serviceType.ServiceName || serviceType.serviceName || 'Dịch vụ',
-        status: task.status || task.Status,
+        customizeTaskId: task.customizeTaskID,
+        description: serviceType.description || serviceType.serviceName || 'Dịch vụ',
+        status: task.status,
         assignedNurseId: nurseId || null,
-        assignedNurseName: assignedAccount?.full_name || assignedNurse?.Full_Name || assignedNurse?.fullName || null,
-        assignedNurseRole: assignedNurse?.Major || assignedNurse?.major || null,
+        assignedNurseName: assignedAccount?.fullName || assignedNurse?.fullName || null,
+        assignedNurseRole: assignedNurse?.major || null,
         hasAssignedNurse: !!nurseId
       };
     });
@@ -133,7 +137,7 @@ const ManagerBookingTab = () => {
   // Lọc booking theo khu vực quản lý của manager
   function getFilteredBookings(bookings, currentManagerId) {
     // Lấy khu vực mà manager hiện tại quản lý
-    const managedZone = zones.find(zone => zone.AccountID === currentManagerId);
+    const managedZone = zones.find(zone => (zone.accountID || zone.AccountID || zone.managerID) === currentManagerId);
     if (!managedZone) return [];
 
     // Lọc booking có care profile thuộc khu vực quản lý
@@ -141,11 +145,11 @@ const ManagerBookingTab = () => {
       const careProfile = booking.careProfile;
       if (!careProfile) return false;
 
-      const zoneDetail = zoneDetails.find(z => z.ZoneDetailID === careProfile.zoneDetailID);
+      const zoneDetail = zoneDetails.find(z => z.zoneDetailID === careProfile.zoneDetailID);
       if (!zoneDetail) return false;
 
       // Chỉ hiển thị booking thuộc khu vực quản lý của manager
-      return zoneDetail.ZoneID === managedZone.ZoneID;
+      return zoneDetail.zoneID === managedZone.zoneID;
     });
 
     return filteredBookings;
@@ -162,15 +166,15 @@ const ManagerBookingTab = () => {
   // Lọc nurse/specialist theo khu vực của khách hàng booking
   function getFilteredNursesSpecialists(careProfile) {
     if (!careProfile) return { nurses: [], specialists: [] };
-    const zoneDetail = zoneDetails.find(z => (z.ZoneDetailID || z.zoneDetailID) === (careProfile.ZoneDetailID || careProfile.zoneDetailID));
+    const zoneDetail = zoneDetails.find(z => (z.zoneDetailID) === (careProfile.zoneDetailID));
     if (!zoneDetail) return { nurses: [], specialists: [] };
-    const zoneId = zoneDetail.ZoneID || zoneDetail.zoneID;
+    const zoneId = zoneDetail.zoneID;
 
     const nurses = nursingSpecialists.filter(n =>
-      (n.ZoneID === zoneId || n.zoneID === zoneId) && (n.Major === 'Y tá' || n.major === 'nurse')
+      (n.zoneID === zoneId) && (n.major === 'nurse')
     );
     const specialists = nursingSpecialists.filter(s =>
-      (s.ZoneID === zoneId || s.zoneID === zoneId) && (s.Major === 'Chuyên gia' || s.major === 'specialist')
+      (s.zoneID === zoneId) && (s.major === 'specialist')
     );
     return { nurses, specialists };
   }
@@ -208,18 +212,18 @@ const ManagerBookingTab = () => {
   const handleUpdateStatus = async (bookingId, newStatus) => {
     try {
       await bookingService.updateStatus(bookingId, newStatus);
-      
+
       // Cập nhật local state
-      setBookings(prev => prev.map(booking => 
-        booking.BookingID === bookingId 
+      setBookings(prev => prev.map(booking =>
+        booking.bookingID === bookingId
           ? { ...booking, Status: newStatus }
           : booking
       ));
-      
-      if (detailData && detailData.BookingID === bookingId) {
+
+      if (detailData && detailData.bookingID === bookingId) {
         setDetailData(prev => ({ ...prev, Status: newStatus }));
       }
-      
+
       alert(`Đã cập nhật trạng thái booking thành: ${statusOptions.find(opt => opt.value === newStatus)?.label}`);
     } catch (error) {
       console.error('Error updating booking status:', error);
@@ -236,12 +240,12 @@ const ManagerBookingTab = () => {
         const hasNewAssignment = (taskAssignments[task.customizeTaskId]?.nurse || taskAssignments[task.customizeTaskId]?.specialist);
         return !hasExistingNurse && !hasNewAssignment;
       });
-      
+
       if (unassignedTasks.length > 0) {
         alert(`Vui lòng chọn nhân sự cho các dịch vụ sau:\n${unassignedTasks.map(task => `- ${task.Description}`).join('\n')}`);
         return;
       }
-      
+
       try {
         // Thực hiện assign đối với các task đã chọn
         const assignments = Object.entries(taskAssignments);
@@ -250,28 +254,28 @@ const ManagerBookingTab = () => {
             const nursingId = sel.nurse || sel.specialist;
             if (!nursingId) return;
             await customizeTaskService.updateTaskNursing(taskId, nursingId, {
-              bookingId: detailData.BookingID || detailData.bookingID,
+              bookingId: detailData.bookingID,
               allowSameBooking: true
             });
           }));
         }
 
         // Cập nhật status booking thành confirmed
-        await handleUpdateStatus(detailData.BookingID, 'confirmed');
-        
+        await handleUpdateStatus(detailData.bookingID, 'confirmed');
+
         // Gửi thông báo cho customer
         const notificationData = {
-          AccountID: account.AccountID,
+          accountID: account.accountID,
           Title: 'Booking đã được xác nhận',
-          Content: `Booking #${detailData.BookingID} của ${careProfile.ProfileName} đã được manager xác nhận và sẵn sàng thực hiện.`,
+          Content: `Booking #${detailData.bookingID} của ${careProfile.ProfileName} đã được manager xác nhận và sẵn sàng thực hiện.`,
           Type: 'booking_confirmed',
           IsRead: false,
           CreatedAt: new Date().toISOString(),
           UpdatedAt: new Date().toISOString()
         };
-        
+
         await notificationService.createNotification(notificationData);
-        
+
         setShowDetail(false);
         alert('Đã gán nhân sự (nếu có) và xác nhận booking!');
       } catch (error) {
@@ -316,59 +320,59 @@ const ManagerBookingTab = () => {
         </div>
       ) : (
         <table className="w-full bg-white rounded-lg overflow-hidden shadow-lg">
-        <thead className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-          <tr>
-            <th className="px-6 py-3 text-left">Mã Booking</th>
-            <th className="px-6 py-3 text-left">Khách hàng</th>
-            <th className="px-6 py-3 text-left">Dịch vụ</th>
-            <th className="px-6 py-3 text-left">Trạng thái</th>
-            <th className="px-6 py-3 text-left">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {bookings.map(booking => {
-            const { careProfile, account, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(booking);
-            return (
-              <tr key={booking.BookingID} className="hover:bg-gray-50">
-                <td className="px-6 py-4">#{booking.BookingID}</td>
-                <td className="px-6 py-4">
-                  <div className="font-semibold">{careProfile?.ProfileName || '-'}</div>
-                  <div className="text-xs text-gray-500">SĐT: {careProfile?.PhoneNumber || '-'}</div>
-                  <div className="text-xs text-gray-500">Địa chỉ: {careProfile?.Address || '-'}</div>
-                  <div className="text-xs text-gray-500">Email: {account?.email || '-'}</div>
-                </td>
-                <td className="px-6 py-4">
-                  {serviceTasksOfBooking && serviceTasksOfBooking.length > 1
-                    ? (
-                      <ul className="space-y-1">
-                        {serviceTasksOfBooking.map((task, idx) => (
-                          <li key={idx} className="flex items-center text-sm text-gray-800">
-                            <span className="inline-block w-2 h-2 rounded-full bg-purple-400 mr-2"></span>
-                            {task.description}
-                          </li>
-                        ))}
-                      </ul>
-                    )
-                    : (serviceTasksOfBooking[0]?.description || service?.ServiceName || '-')}
-                </td>
-                <td className="px-6 py-4">
-                  <span className={` inline-block min-w-[80px] px-2 py-0.5 rounded-full text-xs font-semibold text-center shadow-sm 
+          <thead className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+            <tr>
+              <th className="px-6 py-3 text-left">Mã Booking</th>
+              <th className="px-6 py-3 text-left">Khách hàng</th>
+              <th className="px-6 py-3 text-left">Dịch vụ</th>
+              <th className="px-6 py-3 text-left">Trạng thái</th>
+              <th className="px-6 py-3 text-left">Thao tác</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200">
+            {bookings.map(booking => {
+              const { careProfile, account, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(booking);
+              return (
+                <tr key={booking.bookingID} className="hover:bg-gray-50">
+                  <td className="px-6 py-4">#{booking.bookingID}</td>
+                  <td className="px-6 py-4">
+                    <div className="font-semibold">{careProfile?.ProfileName || '-'}</div>
+                    <div className="text-xs text-gray-500">SĐT: {careProfile?.PhoneNumber || '-'}</div>
+                    <div className="text-xs text-gray-500">Địa chỉ: {careProfile?.Address || '-'}</div>
+                    <div className="text-xs text-gray-500">Email: {account?.email || '-'}</div>
+                  </td>
+                  <td className="px-6 py-4">
+                    {serviceTasksOfBooking && serviceTasksOfBooking.length > 1
+                      ? (
+                        <ul className="space-y-1">
+                          {serviceTasksOfBooking.map((task, idx) => (
+                            <li key={idx} className="flex items-center text-sm text-gray-800">
+                              <span className="inline-block w-2 h-2 rounded-full bg-purple-400 mr-2"></span>
+                              {task.description}
+                            </li>
+                          ))}
+                        </ul>
+                      )
+                      : (serviceTasksOfBooking[0]?.description || service?.ServiceName || '-')}
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className={` inline-block min-w-[80px] px-2 py-0.5 rounded-full text-xs font-semibold text-center shadow-sm 
                   ${booking.Status === 'completed' ? 'bg-green-100 text-green-800' :
-                      booking.Status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        booking.Status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
-                          'bg-red-100 text-red-800'
-                    }`}>
-                    {statusOptions.find(opt => opt.value === booking.Status)?.label || booking.Status}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <button onClick={() => handleViewDetail(booking)} className="min-w-[80px] px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded hover:shadow-sm">Xem chi tiết</button>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
+                        booking.Status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          booking.Status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                            'bg-red-100 text-red-800'
+                      }`}>
+                      {statusOptions.find(opt => opt.value === booking.Status)?.label || booking.Status}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <button onClick={() => handleViewDetail(booking)} className="min-w-[80px] px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded hover:shadow-sm">Xem chi tiết</button>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       )}
       {/* Popup chi tiết booking */}
       {showDetail && detailData && (() => {
@@ -380,7 +384,7 @@ const ManagerBookingTab = () => {
           <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl p-8 relative max-h-[90vh] overflow-y-auto">
               <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl" onClick={handleCloseDetail}>&times;</button>
-              <h3 className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 mb-4">Chi tiết Booking #{detailData.BookingID}</h3>
+              <h3 className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 mb-4">Chi tiết Booking #{detailData.bookingID}</h3>
               <div className="bg-gray-50 rounded-lg p-6 mb-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Thông tin khách hàng */}
@@ -462,7 +466,7 @@ const ManagerBookingTab = () => {
                         </select>
                       </div>
                       <button
-                        onClick={() => handleUpdateStatus(detailData.BookingID, selectedStatus)}
+                        onClick={() => handleUpdateStatus(detailData.bookingID, selectedStatus)}
                         className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
                       >
                         Cập nhật trạng thái
