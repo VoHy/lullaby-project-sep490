@@ -14,16 +14,7 @@ const bookingService = {  // GET /api/Booking/GetAll
     return data;
   },
 
-  // Aggregated: Get all bookings with embedded care profile
-  getAllBookingsWithCareProfile: async () => {
-    const res = await fetch('/api/booking/getall/withcareprofile', {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách bookings kèm care profile');
-    return data;
-  },
+  // NOTE: getAllBookingsWithCareProfile đã bỏ vì BE không có endpoint tương ứng.
 
   // GET /api/Booking/GetAll with CareProfile information
   getAllByCareProfile: async (careProfileId) => {

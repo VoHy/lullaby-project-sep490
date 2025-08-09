@@ -68,6 +68,7 @@ export default function AppointmentsPage() {
 
       // Fetch bookings (GetAll) và tự join theo accountID đang login
       const bookings = await bookingService.getAllBookings();
+
       const careProfiles = await careProfileService.getCareProfiles();
 
       const services = await serviceTypeService.getServiceTypes();
@@ -93,11 +94,32 @@ export default function AppointmentsPage() {
 
       const myCareProfileIds = new Set(myCareProfiles.map(cp => cp.careProfileID ?? cp.CareProfileID));
 
-      // Lọc bookings theo careProfileID thuộc user
-      const userAppointments = (Array.isArray(bookings) ? bookings : []).filter(b => {
-        const bCareId = b.careProfileID ?? b.CareProfileID;
-        return myCareProfileIds.has(bCareId);
-      });
+      // Tạo map careProfile để join nhanh + chuẩn hóa field cho UI
+      const careProfileMap = new Map((Array.isArray(careProfiles) ? careProfiles : []).map(cp => {
+        const id = cp.careProfileID ?? cp.CareProfileID;
+        const normalized = {
+          ...cp,
+          profileName: cp.profileName ?? cp.ProfileName ?? cp.fullName ?? cp.Full_Name ?? cp.name ?? 'Không xác định',
+          phoneNumber: cp.phoneNumber ?? cp.PhoneNumber ?? cp.phone_Number ?? cp.Phone ?? cp.phone,
+          address: cp.address ?? cp.Address,
+          zoneDetailID: cp.zoneDetailID ?? cp.zoneDetail_ID ?? cp.ZoneDetailID ?? cp.Zone_DetailID ?? cp.Zone_Detail_ID
+        };
+        return [id, normalized];
+      }));
+
+      // Lọc bookings theo careProfileID thuộc user và gắn careProfile
+      const userAppointments = (Array.isArray(bookings) ? bookings : [])
+        .filter(b => {
+          const bCareId = b.careProfileID ?? b.CareProfileID;
+          return myCareProfileIds.has(bCareId);
+        })
+        .map(b => {
+          const bCareId = b.careProfileID ?? b.CareProfileID;
+          return {
+            ...b,
+            careProfile: b.careProfile ?? careProfileMap.get(bCareId) ?? null,
+          };
+        });
 
       // Set all data
       setAppointments(userAppointments);
