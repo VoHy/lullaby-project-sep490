@@ -2,6 +2,11 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-  const result = await proxyRequest('/api/Wallet/GetAll', 'GET');
-  return NextResponse.json(result.data, { status: result.status });
+  try {
+    const result = await proxyRequest('/api/Wallet/GetAll', 'GET');
+    return NextResponse.json(result.data, { status: result.status });
+  } catch (error) {
+    return NextResponse.json({ error: 'Failed to fetch wallet data' }, { status: 500 });
+  }
+  
 }
