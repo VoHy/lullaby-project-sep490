@@ -339,7 +339,7 @@ const AppointmentDetailModal = ({
     const status = String(raw).toLowerCase().trim();
     // Disallow paying if already paid or refunded/cancelled/void
     const disallowed = new Set([
-      'paid', 'hoàn thành', 'completed', 'refunded', 'refund', 'cancelled', 'canceled', 'void', 'failed'
+      'paid', 'completed', 'refunded', 'refund', 'cancelled', 'canceled', 'void', 'failed'
     ]);
     if (disallowed.has(status)) return false;
     // Require positive amount
@@ -368,7 +368,7 @@ const AppointmentDetailModal = ({
               Chi tiết lịch hẹn #{bookingId}
             </h1>
             <p className="text-purple-100 text-lg">
-              {formatDate(appointment.workdate || appointment.Workdate || appointment.BookingDate)}
+              {formatDate(appointment.workdate || appointment.Workdate)}
             </p>
           </div>
         </div>

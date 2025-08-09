@@ -1,9 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext, useMemo } from 'react';
+import { AuthContext } from '@/context/AuthContext';
 import careProfileService from '@/services/api/careProfileService';
 import bookingService from '@/services/api/bookingService';
 import customizeTaskService from '@/services/api/customizeTaskService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import customizePackageService from '@/services/api/customizePackageService';
+import medicalNoteService from '@/services/api/medicalNoteService';
+import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 
 // const NurseMedicalNoteTab = ({ medicalNotes, patients }) => {
 //   const [notes, setNotes] = useState(medicalNotes);
@@ -257,9 +260,273 @@ import customizePackageService from '@/services/api/customizePackageService';
 //   );
 // };
 const NurseMedicalNoteTab = () => {
+  const { user } = useContext(AuthContext);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [notes, setNotes] = useState([]);
+  const [careProfiles, setCareProfiles] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [customizeTasks, setCustomizeTasks] = useState([]);
+  const [serviceTasks, setServiceTasks] = useState([]);
+  const [customizePackages, setCustomizePackages] = useState([]);
+  const [selectedNote, setSelectedNote] = useState(null);
+  const [showAdd, setShowAdd] = useState(false);
+  const [form, setForm] = useState({ CareProfileID: '', Note: '', Advice: '', Image: '' });
+
+  useEffect(() => {
+    const load = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        // resolve nursing id (may use later for filtering)
+        let nursingID = null;
+        if (user?.accountID) {
+          try {
+            const specialists = await nursingSpecialistService.getAllNursingSpecialists();
+            const me = specialists.find(s => (s.accountID || s.AccountID) === (user.accountID || user.AccountID));
+            nursingID = me?.nursingID || me?.NursingID || null;
+          } catch {}
+        }
+
+        const [cps, allBookings, cts, sts, pkgs, allNotes] = await Promise.all([
+          careProfileService.getCareProfiles(),
+          bookingService.getAllBookings(),
+          customizeTaskService.getAllCustomizeTasks(),
+          serviceTaskService.getServiceTasks(),
+          customizePackageService.getAllCustomizePackages?.() || Promise.resolve([]),
+          medicalNoteService.getAllMedicalNotes(),
+        ]);
+
+        // If we know the nurse, keep only notes for patients who have bookings with this nurse
+        let filteredNotes = allNotes || [];
+        if (nursingID) {
+          const myBookingIds = new Set((cts || []).filter(t => (t.nursingID || t.NursingID) === nursingID).map(t => t.bookingID || t.BookingID));
+          const myCareProfileIds = new Set((allBookings || [])
+            .filter(b => myBookingIds.has(b.bookingID || b.BookingID))
+            .map(b => b.careProfileID || b.CareProfileID));
+          filteredNotes = (allNotes || []).filter(n => myCareProfileIds.has(n.careProfileID || n.CareProfileID));
+        }
+
+        setCareProfiles(Array.isArray(cps) ? cps : []);
+        setBookings(Array.isArray(allBookings) ? allBookings : []);
+        setCustomizeTasks(Array.isArray(cts) ? cts : []);
+        setServiceTasks(Array.isArray(sts) ? sts : []);
+        setCustomizePackages(Array.isArray(pkgs) ? pkgs : []);
+        setNotes(Array.isArray(filteredNotes) ? filteredNotes : []);
+      } catch (e) {
+        setError(e?.message || 'Không thể tải dữ liệu. Vui lòng thử lại.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [user]);
+
+  const findBookingForNote = (note) => {
+    const cpId = note.careProfileID || note.CareProfileID;
+    const related = (bookings || []).filter(b => (b.careProfileID || b.CareProfileID) === cpId);
+    if (related.length === 0) return null;
+    // nearest by created time if available
+    const created = new Date(note.createdAt || note.CreatedAt || note.updatedAt || note.UpdatedAt || Date.now());
+    return related.sort((a, b) => Math.abs(created - new Date(a.workDate || a.workdate || a.WorkDate || a.AppointmentDate || 0)) - Math.abs(created - new Date(b.workDate || b.workdate || b.WorkDate || b.AppointmentDate || 0)))[0];
+  };
+
+  const findServiceTaskForNote = (note, booking) => {
+    if (!booking) return null;
+    const bId = booking.bookingID || booking.BookingID;
+    const cpId = note.careProfileID || note.CareProfileID;
+    const task = (customizeTasks || []).find(t => (t.bookingID || t.BookingID) === bId && (t.careProfileID || t.CareProfileID) === cpId);
+    if (!task) return null;
+    return (serviceTasks || []).find(st => (st.serviceTaskID || st.ServiceTaskID) === (task.serviceTaskID || task.ServiceTaskID));
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
+          <p className="text-gray-600">Đang tải dữ liệu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <div className="text-center">
+          <div className="text-red-500 mb-4">⚠️</div>
+          <p className="text-red-600">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="mt-4 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
+          >
+            Thử lại
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
-      <h1>Nurse Medical Note Tab</h1>
+      <h3 className="font-semibold text-lg mb-4">Danh sách ghi chú y tế</h3>
+      <button
+        className="mb-4 px-4 py-2 rounded bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold"
+        onClick={() => setShowAdd(true)}
+      >
+        Thêm ghi chú
+      </button>
+      <div className="space-y-4">
+        {notes.length === 0 && (
+          <div className="text-gray-500">Không có ghi chú y tế nào.</div>
+        )}
+        {notes.map(note => {
+          const patient = (careProfiles || []).find(p => (p.careProfileID || p.CareProfileID) === (note.careProfileID || note.CareProfileID));
+          const booking = findBookingForNote(note);
+          const serviceTask = findServiceTaskForNote(note, booking);
+          const packageObj = booking ? (customizePackages || []).find(pkg => (pkg.customizePackageID || pkg.CustomizePackageID) === (booking.customizePackageID || booking.CustomizePackageID)) : null;
+          return (
+            <div
+              key={note.medicalNoteID || note.MedicalNoteID}
+              className="p-4 bg-blue-50 rounded shadow flex flex-col md:flex-row md:items-center md:justify-between gap-4 cursor-pointer"
+              onClick={() => setSelectedNote(note)}
+            >
+              <div className="flex-1">
+                <div className="font-bold text-blue-700 mb-1">{patient?.profileName || patient?.ProfileName || 'Bệnh nhân'} - {(note.createdAt || note.CreatedAt) ? new Date(note.createdAt || note.CreatedAt).toLocaleString('vi-VN') : '-'}</div>
+                <div className="mb-1 text-gray-700"><span className="font-semibold">Nội dung:</span> {note.note || note.Note}</div>
+                <div className="mb-1 text-gray-700"><span className="font-semibold">Lời khuyên:</span> {note.advice || note.Advice || '-'}</div>
+                {booking && (
+                  <div className="mb-1 text-gray-600 text-sm"><span className="font-semibold">Booking:</span> #{booking.bookingID || booking.BookingID} ({(booking.workdate || booking.workDate || booking.WorkDate) ? new Date(booking.workdate || booking.workDate || booking.WorkDate).toLocaleString('vi-VN') : '-'})</div>
+                )}
+                {packageObj && (
+                  <div className="mb-1 text-gray-600 text-sm"><span className="font-semibold">Gói dịch vụ:</span> {packageObj.name || packageObj.Name}</div>
+                )}
+                {serviceTask && (
+                  <div className="mb-1 text-gray-600 text-sm"><span className="font-semibold">Dịch vụ:</span> {serviceTask.description || serviceTask.Description}</div>
+                )}
+              </div>
+              {note.image && (
+                <img src={note.image} alt="note" className="w-20 h-20 object-cover rounded border" />
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {selectedNote && (() => {
+        const patient = (careProfiles || []).find(p => (p.careProfileID || p.CareProfileID) === (selectedNote.careProfileID || selectedNote.CareProfileID));
+        const booking = findBookingForNote(selectedNote);
+        const serviceTask = findServiceTaskForNote(selectedNote, booking);
+        const packageObj = booking ? (customizePackages || []).find(pkg => (pkg.customizePackageID || pkg.CustomizePackageID) === (booking.customizePackageID || booking.CustomizePackageID)) : null;
+        return (
+          <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg relative">
+              <button
+                className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl"
+                onClick={() => setSelectedNote(null)}
+                title="Đóng"
+              >✕</button>
+              <h4 className="text-xl font-bold mb-4 text-blue-700">Chi tiết ghi chú y tế</h4>
+              <div className="mb-2"><span className="font-semibold">Bệnh nhân:</span> {patient?.profileName || patient?.ProfileName}</div>
+              <div className="mb-2"><span className="font-semibold">Thời gian:</span> {(selectedNote.createdAt || selectedNote.CreatedAt) ? new Date(selectedNote.createdAt || selectedNote.CreatedAt).toLocaleString('vi-VN') : '-'}</div>
+              <div className="mb-2"><span className="font-semibold">Nội dung:</span> {selectedNote.note || selectedNote.Note}</div>
+              <div className="mb-2"><span className="font-semibold">Lời khuyên:</span> {selectedNote.advice || selectedNote.Advice}</div>
+              {booking && (
+                <div className="mb-2"><span className="font-semibold">Booking:</span> #{booking.bookingID || booking.BookingID} ({(booking.workdate || booking.workDate || booking.WorkDate) ? new Date(booking.workdate || booking.workDate || booking.WorkDate).toLocaleString('vi-VN') : '-'})</div>
+              )}
+              {packageObj && (
+                <div className="mb-2"><span className="font-semibold">Gói dịch vụ:</span> {packageObj.name || packageObj.Name}</div>
+              )}
+              {serviceTask && (
+                <div className="mb-2"><span className="font-semibold">Dịch vụ:</span> {serviceTask.description || serviceTask.Description}</div>
+              )}
+              {selectedNote.image && (
+                <img src={selectedNote.image} alt="note" className="w-32 h-32 object-cover rounded border mt-2" />
+              )}
+            </div>
+          </div>
+        );
+      })()}
+
+      {showAdd && (
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
+          <form
+            className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg relative"
+            onSubmit={async e => {
+              e.preventDefault();
+              try {
+                const payload = {
+                  CareProfileID: form.CareProfileID,
+                  Note: form.Note,
+                  Advice: form.Advice,
+                  Image: form.Image || ''
+                };
+                const created = await medicalNoteService.createMedicalNote(payload);
+                setNotes(prev => [...prev, created]);
+                setShowAdd(false);
+                setForm({ CareProfileID: '', Note: '', Advice: '', Image: '' });
+              } catch (err) {
+                alert(err?.message || 'Thêm ghi chú thất bại');
+              }
+            }}
+          >
+            <button
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl"
+              onClick={() => setShowAdd(false)}
+              type="button"
+              title="Đóng"
+            >✕</button>
+            <h4 className="text-xl font-bold mb-4 text-purple-700">Thêm ghi chú y tế</h4>
+            <div className="mb-2">
+              <label className="font-semibold">Bệnh nhân:</label>
+              <select
+                className="w-full border rounded px-2 py-1"
+                value={form.CareProfileID}
+                onChange={e => setForm(f => ({ ...f, CareProfileID: e.target.value }))}
+                required
+              >
+                <option value="">Chọn bệnh nhân</option>
+                {(careProfiles || []).map(p => (
+                  <option key={p.careProfileID || p.CareProfileID} value={p.careProfileID || p.CareProfileID}>{p.profileName || p.ProfileName}</option>
+                ))}
+              </select>
+            </div>
+            <div className="mb-2">
+              <label className="font-semibold">Nội dung:</label>
+              <textarea
+                className="w-full border rounded px-2 py-1"
+                value={form.Note}
+                onChange={e => setForm(f => ({ ...f, Note: e.target.value }))}
+                required
+              />
+            </div>
+            <div className="mb-2">
+              <label className="font-semibold">Lời khuyên:</label>
+              <textarea
+                className="w-full border rounded px-2 py-1"
+                value={form.Advice}
+                onChange={e => setForm(f => ({ ...f, Advice: e.target.value }))}
+              />
+            </div>
+            <div className="mb-2">
+              <label className="font-semibold">Ảnh (URL):</label>
+              <input
+                className="w-full border rounded px-2 py-1"
+                value={form.Image}
+                onChange={e => setForm(f => ({ ...f, Image: e.target.value }))}
+                placeholder="Nhập đường dẫn ảnh hoặc để trống"
+              />
+            </div>
+            <button
+              type="submit"
+              className="mt-4 px-6 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg"
+            >
+              Thêm ghi chú
+            </button>
+          </form>
+        </div>
+      )}
     </div>
   );
 };

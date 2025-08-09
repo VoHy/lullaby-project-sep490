@@ -94,12 +94,32 @@ const NursePatientsTab = () => {
         const me = specialists.find(s => (s.accountID || s.AccountID) === user.accountID);
         const nursingID = me?.nursingID || me?.NursingID;
 
-        // Optimized: gọi aggregator lấy booking theo nurse (đã join care profile)
-        const mine = await bookingService.getBookingsByNursing(nursingID);
-        setBookings(mine);
+        // Try aggregator route first
+        let mine = [];
+        try {
+          mine = await bookingService.getBookingsByNursing(nursingID);
+        } catch (_) {
+          // ignore; fallback below
+        }
 
         const cps = await careProfileService.getCareProfiles();
         setCareProfiles(Array.isArray(cps) ? cps : []);
+
+        // Fallback: derive bookings by nurse from customize tasks if aggregator not available
+        if (!Array.isArray(mine) || mine.length === 0) {
+          const tasks = await customizeTaskService.getAllCustomizeTasks();
+          const bookingIds = new Set((tasks || [])
+            .filter(t => (t.nursingID || t.NursingID) === nursingID)
+            .map(t => t.bookingID || t.BookingID)
+            .filter(Boolean));
+          try {
+            const all = await bookingService.getAllBookings();
+            mine = (all || []).filter(b => bookingIds.has(b.bookingID || b.BookingID));
+          } catch (err) {
+            // keep empty
+          }
+        }
+        setBookings(Array.isArray(mine) ? mine : []);
       } catch (e) {
         setError(e?.message || 'Không thể tải dữ liệu');
       } finally {
@@ -150,15 +170,21 @@ const NursePatientsTab = () => {
                 <td className="px-4 py-2">{patient?.phoneNumber || patient?.PhoneNumber || '-'}</td>
                 <td className="px-4 py-2">{patient?.address || patient?.Address || '-'}</td>
                 <td className="px-4 py-2">
-                  <span className={`px-2 py-1 rounded-full text-xs ${
-                    (booking.status || booking.Status) === 'completed'
-                      ? 'bg-green-100 text-green-700'
-                      : (booking.status || booking.Status) === 'waiting'
-                      ? 'bg-yellow-100 text-yellow-700'
-                      : 'bg-gray-100 text-gray-700'
-                  }`}>
-                    {booking.status || booking.Status}
-                  </span>
+                  {(() => {
+                    const raw = (booking.status || booking.Status || '').toString().toLowerCase();
+                    const mapping = {
+                      paid: { label: 'Đã thanh toán', cls: 'bg-green-100 text-green-700' },
+                      pending: { label: 'Chờ xử lý', cls: 'bg-yellow-100 text-yellow-700' },
+                      confirmed: { label: 'Đã xác nhận', cls: 'bg-blue-100 text-blue-700' },
+                      completed: { label: 'Hoàn thành', cls: 'bg-emerald-100 text-emerald-700' },
+                      cancelled: { label: 'Đã hủy', cls: 'bg-gray-200 text-gray-700' },
+                      canceled: { label: 'Đã hủy', cls: 'bg-gray-200 text-gray-700' },
+                      waiting: { label: 'Đang chờ', cls: 'bg-slate-100 text-slate-700' },
+                      isscheduled: { label: 'Đã lên lịch', cls: 'bg-indigo-100 text-indigo-700' },
+                    };
+                    const v = mapping[raw] || { label: booking.status || booking.Status || '-', cls: 'bg-gray-100 text-gray-700' };
+                    return <span className={`px-2 py-1 rounded-full text-xs ${v.cls}`}>{v.label}</span>;
+                  })()}
                 </td>
                 <td className="px-4 py-2">
                   <button
