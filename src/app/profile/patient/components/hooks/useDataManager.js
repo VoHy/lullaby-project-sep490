@@ -27,15 +27,29 @@ export const useDataManager = (user, router) => {
     try {
       setLoading(true);
 
-      const [careProfilesData, relativesData, zonesData, zoneDetailsData] = await Promise.all([
+      const [allCareProfiles, allRelatives, zonesData, zoneDetailsData] = await Promise.all([
         careProfileService.getCareProfiles().catch(() => []),
         relativesService.getRelatives().catch(() => []),
         zoneService.getZones().catch(() => []),
-        zoneDetailService.getAll().catch(() => [])
+        zoneDetailService.getZoneDetails().catch(() => [])
       ]);
 
-      setCareProfiles(Array.isArray(careProfilesData) ? careProfilesData : []);
-      setRelativesList(Array.isArray(relativesData) ? relativesData : []);
+      // Lọc careProfiles theo accountID đang đăng nhập
+      const currentAccountId = user.accountID || user.AccountID;
+      const filteredCareProfiles = (Array.isArray(allCareProfiles) ? allCareProfiles : []).filter(cp => {
+        const accId = cp.accountID ?? cp.AccountID;
+        return accId === currentAccountId;
+      });
+
+      // Lọc relatives theo danh sách careProfile ở trên
+      const careIds = new Set(filteredCareProfiles.map(cp => cp.careProfileID ?? cp.CareProfileID));
+      const filteredRelatives = (Array.isArray(allRelatives) ? allRelatives : []).filter(r => {
+        const rCareId = r.careProfileID ?? r.CareProfileID ?? r.careprofileID;
+        return careIds.has(rCareId);
+      });
+
+      setCareProfiles(filteredCareProfiles);
+      setRelativesList(filteredRelatives);
       setZones(Array.isArray(zonesData) ? zonesData : []);
       setZonedetailsList(Array.isArray(zoneDetailsData) ? zoneDetailsData : []);
 

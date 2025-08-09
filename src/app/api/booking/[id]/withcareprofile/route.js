@@ -3,12 +3,12 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request, { params }) {
   try {
-    const { id } = await params;
+    const { id } = params;
     
     // Fetch booking và careProfiles song song sử dụng proxyRequest
     const [bookingResponse, careProfilesResponse] = await Promise.all([
       proxyRequest(`/api/Booking/${id}`, 'GET'),
-      proxyRequest(`/api/CareProfiles/GetAll`, 'GET')
+      proxyRequest(`/api/careprofiles/getall`, 'GET')
     ]);
 
     // Kiểm tra lỗi từ proxyRequest
