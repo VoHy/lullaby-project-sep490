@@ -259,7 +259,8 @@ function BookingContent() {
   // Computed values
   const userCareProfiles = useMemo(() => {
     if (!user || !careProfiles.length) return [];
-    return careProfiles.filter(cp => cp.AccountID === user.AccountID);
+    const currentAccountId = user.accountID || user.AccountID;
+    return careProfiles.filter(cp => (cp.accountID || cp.AccountID) === currentAccountId);
   }, [user, careProfiles]);
 
   const detail = useMemo(() => {
