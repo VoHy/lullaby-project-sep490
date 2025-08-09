@@ -15,6 +15,8 @@ import customizePackageService from '@/services/api/customizePackageService';
 import customizeTaskService from '@/services/api/customizeTaskService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
+import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
+import invoiceService from '@/services/api/invoiceService';
 
 const BookingsTab = ({ bookings }) => {
   // State cho API data
@@ -132,7 +134,9 @@ const BookingsTab = ({ bookings }) => {
         status: (task?.status ?? task?.Status ?? '').toLowerCase(),
         nursingID: task?.nursingID ?? task?.NursingID,
         nurseName: nurse?.fullName ?? nurse?.FullName,
-        nurseRole: nurse?.major ?? nurse?.Major
+        nurseRole: nurse?.major ?? nurse?.Major,
+        serviceID: taskServiceID,
+        serviceName: taskService?.serviceName ?? taskService?.ServiceName
       };
     });
     return { careProfile, account, service, packageInfo, serviceTasksOfBooking, packagesOfBooking, invoiceID };
@@ -162,6 +166,49 @@ const BookingsTab = ({ bookings }) => {
   const BookingDetailModal = ({ booking, onClose }) => {
     if (!booking) return null;
     const { careProfile, account, service, packageInfo, serviceTasksOfBooking, packagesOfBooking, invoiceID } = getBookingDetail(booking);
+
+    // Local caches to avoid re-rendering entire tab and repeated fetches
+    const [localNursesByServiceId, setLocalNursesByServiceId] = useState({});
+    const [localInvoice, setLocalInvoice] = useState(null);
+
+    // Prefetch allowed nurses per service for this booking (only missing ones)
+    useEffect(() => {
+      const bookingId = booking?.BookingID ?? booking?.bookingID;
+      const uniqueServiceIds = Array.from(new Set((serviceTasksOfBooking || []).map(t => t.serviceID).filter(Boolean)));
+      const missing = uniqueServiceIds.filter((sid) => !localNursesByServiceId[sid]);
+
+      let isMounted = true;
+      const load = async () => {
+        try {
+          if (missing.length > 0) {
+            const entries = await Promise.all(missing.map(async (sid) => {
+              try {
+                const data = await nursingSpecialistServiceTypeService.getByService(sid);
+                return [sid, data];
+              } catch (e) {
+                console.error('Failed to load nurses for service', sid, e);
+                return [sid, []];
+              }
+            }));
+            if (isMounted) setLocalNursesByServiceId(prev => ({ ...prev, ...Object.fromEntries(entries) }));
+          }
+
+          if (!localInvoice && bookingId) {
+            try {
+              const inv = await invoiceService.getInvoiceByBooking(bookingId);
+              if (isMounted) setLocalInvoice(inv);
+            } catch (e) {
+              // ignore
+            }
+          }
+        } finally {
+          // noop
+        }
+      };
+      load();
+
+      return () => { isMounted = false; };
+    }, [booking?.BookingID, booking?.bookingID, serviceTasksOfBooking, localNursesByServiceId, localInvoice]);
     
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
@@ -232,27 +279,26 @@ const BookingsTab = ({ bookings }) => {
               <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-xl">
                 <h4 className="font-semibold text-orange-800 mb-3 flex items-center">
                   <FontAwesomeIcon icon={faMoneyBill} className="mr-2" />
-                  Thông tin thanh toán
+                  Hóa đơn
                 </h4>
                 <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="font-medium">Tổng tiền:</span>
-                    <span className="font-bold text-green-600">{(booking.totalPrice ?? booking.TotalPrice ?? booking.amount ?? booking.Amount)?.toLocaleString()} VNĐ</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Phương thức:</span>
-                    <span>{booking.paymentMethod ?? booking.PaymentMethod ?? 'Chưa thanh toán'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Trạng thái thanh toán:</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${(booking.paymentStatus ?? booking.PaymentStatus) === 'paid' ? 'bg-green-100 text-green-700' :
-                        (booking.status ?? booking.Status) === 'paid' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-red-100 text-red-700'
-                    }`}>
-                      {(booking.status ?? booking.Status) === 'paid' ? 'Đã thanh toán' :
-                        (booking.status ?? booking.Status) === 'pending' ? 'Chờ thanh toán' : 'Chưa thanh toán'}
-                    </span>
-                  </div>
+                  {(() => {
+                    const inv = localInvoice;
+                    const total = inv?.totalAmount ?? inv?.total_amount ?? booking.totalPrice ?? booking.TotalPrice ?? booking.amount ?? booking.Amount;
+                    const status = inv?.status ?? inv?.Status ?? (booking.paymentStatus ?? booking.PaymentStatus ?? booking.Status ?? booking.status);
+                    const invoiceId = inv?.invoiceID ?? inv?.invoice_ID ?? (invoiceID || '-');
+                    return (
+                      <>
+                        <div className="flex justify-between"><span className="font-medium">Mã hóa đơn:</span><span>#{invoiceId}</span></div>
+                        <div className="flex justify-between"><span className="font-medium">Tổng tiền:</span><span className="font-bold text-green-600">{(total)?.toLocaleString()} VNĐ</span></div>
+                        <div className="flex justify-between"><span className="font-medium">Trạng thái:</span>
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${String(status).toLowerCase()==='paid' || String(status).toLowerCase()==='hoàn thành' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
+                            {status || 'Chưa thanh toán'}
+                          </span>
+                        </div>
+                      </>
+                    );
+                  })()}
                 </div>
               </div>
               
@@ -307,17 +353,23 @@ const BookingsTab = ({ bookings }) => {
                                   <span className="text-green-700">{task.nurseName} {task.nurseRole ? `(${task.nurseRole})` : ''}</span>
                                 ) : (
                                   <div className="flex items-center gap-2">
-                                    <select
+                                     <select
                                       className="border border-gray-300 rounded px-2 py-1 text-sm"
                                       value={selectedNurseByTask[task.customizeTaskID] ?? ''}
                                       onChange={(e) => setSelectedNurseByTask((prev) => ({ ...prev, [task.customizeTaskID]: Number(e.target.value) }))}
                                     >
                                       <option value="">Chọn y tá</option>
-                                      {nursingSpecialists.map((n) => (
-                                        <option key={n.nursingID ?? n.NursingID} value={n.nursingID ?? n.NursingID}>
-                                          {(n.fullName ?? n.FullName) + (n.major ? ` — ${n.major}` : '')}
-                                        </option>
-                                      ))}
+                                       {(() => {
+                                         const serviceId = task.serviceID;
+                                         const allowed = localNursesByServiceId[serviceId] || [];
+                                         const zoneId = careProfile?.zoneDetailID ?? careProfile?.zoneDetail_ID;
+                                         const filtered = Array.isArray(allowed) ? allowed.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
+                                         return filtered.map((n) => (
+                                           <option key={n.nursingID ?? n.NursingID} value={n.nursingID ?? n.NursingID}>
+                                             {(n.nursingFullName ?? n.fullName ?? n.FullName) + (n.major ? ` — ${n.major}` : '')}
+                                           </option>
+                                         ));
+                                       })()}
                                     </select>
                                     <button
                                       onClick={() => handleAssignNurse(booking, task)}

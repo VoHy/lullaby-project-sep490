@@ -1,65 +1,82 @@
 'use client';
 
-const RevenueTab = ({ revenue, bookings }) => {
+import React from 'react';
+import invoiceService from '@/services/api/invoiceService';
+
+const RevenueTab = () => {
+  const [invoices, setInvoices] = React.useState([]);
+  const [loading, setLoading] = React.useState(true);
+  const [error, setError] = React.useState(null);
+
+  const totals = React.useMemo(() => {
+    const paid = (invoices || []).filter((i) => String(i.status ?? i.Status).toLowerCase() === 'paid');
+    const sum = paid.reduce((acc, i) => acc + (i.totalAmount ?? i.total_amount ?? 0), 0);
+    const today = new Date().toDateString();
+    const daily = paid
+      .filter((i) => new Date(i.paymentDate ?? i.PaymentDate).toDateString() === today)
+      .reduce((acc, i) => acc + (i.totalAmount ?? i.total_amount ?? 0), 0);
+    const month = new Date().getMonth();
+    const year = new Date().getFullYear();
+    const monthly = paid
+      .filter((i) => {
+        const d = new Date(i.paymentDate ?? i.PaymentDate);
+        return d.getMonth() === month && d.getFullYear() === year;
+      })
+      .reduce((acc, i) => acc + (i.totalAmount ?? i.total_amount ?? 0), 0);
+    return { total: sum, daily, monthly };
+  }, [invoices]);
+
+  React.useEffect(() => {
+    (async () => {
+      try {
+        setLoading(true);
+        const data = await invoiceService.getAllInvoices();
+        setInvoices(Array.isArray(data) ? data : []);
+      } catch (e) {
+        setError(e?.message || 'Không thể tải hóa đơn');
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
+
+  if (loading) return <div className="p-6">Đang tải doanh thu...</div>;
+  if (error) return <div className="p-6 text-red-600">{error}</div>;
+
   return (
     <div>
       <h2 className="text-2xl font-bold mb-6 text-gray-800">Báo cáo Doanh thu</h2>
-      
+
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <div className="bg-gradient-to-r from-green-500 to-green-600 p-6 rounded-xl text-white">
           <h3 className="text-lg font-semibold mb-2">Doanh thu hôm nay</h3>
-          <p className="text-3xl font-bold">{revenue.daily.toLocaleString()} VND</p>
+          <p className="text-3xl font-bold">{totals.daily.toLocaleString()} VND</p>
         </div>
         <div className="bg-gradient-to-r from-blue-500 to-blue-600 p-6 rounded-xl text-white">
           <h3 className="text-lg font-semibold mb-2">Doanh thu tháng này</h3>
-          <p className="text-3xl font-bold">{revenue.monthly.toLocaleString()} VND</p>
+          <p className="text-3xl font-bold">{totals.monthly.toLocaleString()} VND</p>
         </div>
         <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 rounded-xl text-white">
-          <h3 className="text-lg font-semibold mb-2">Tổng doanh thu</h3>
-          <p className="text-3xl font-bold">{revenue.total.toLocaleString()} VND</p>
+          <h3 className="text-lg font-semibold mb-2">Tổng doanh thu (đã thanh toán)</h3>
+          <p className="text-3xl font-bold">{totals.total.toLocaleString()} VND</p>
         </div>
       </div>
 
-      {/* Revenue Chart */}
       <div className="bg-white p-6 rounded-xl shadow-lg mb-6">
-        <h3 className="text-lg font-semibold mb-4">Biểu đồ doanh thu theo thời gian</h3>
-        <div className="h-64 bg-gray-100 rounded-lg flex items-center justify-center">
-          <p className="text-gray-500">Biểu đồ doanh thu sẽ được hiển thị tại đây</p>
-        </div>
-      </div>
-
-      {/* Revenue Analysis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-white p-6 rounded-xl shadow-lg">
-          <h3 className="text-lg font-semibold mb-4">So sánh tháng này</h3>
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">So với tháng trước</span>
-              <span className="text-green-600 font-semibold">+15.3%</span>
+        <h3 className="text-lg font-semibold mb-4">Hóa đơn gần đây</h3>
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {(invoices || []).slice(0, 20).map((inv) => (
+            <div key={inv.invoiceID ?? inv.invoice_ID} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+              <div>
+                <div className="font-semibold">Hóa đơn #{inv.invoiceID ?? inv.invoice_ID}</div>
+                <div className="text-xs text-gray-600">Ngày: {new Date(inv.paymentDate ?? inv.PaymentDate).toLocaleString('vi-VN')}</div>
+              </div>
+              <div className="text-right">
+                <div className="font-bold text-green-600">{(inv.totalAmount ?? inv.total_amount ?? 0).toLocaleString()} VND</div>
+                <div className={`text-xs ${String(inv.status ?? inv.Status).toLowerCase()==='paid' ? 'text-green-600' : 'text-red-600'}`}>{inv.status ?? inv.Status}</div>
+              </div>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">So với cùng kỳ năm trước</span>
-              <span className="text-blue-600 font-semibold">+28.7%</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-xl shadow-lg">
-          <h3 className="text-lg font-semibold mb-4">Dịch vụ có doanh thu cao nhất</h3>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <span className="text-gray-800">Chăm sóc người cao tuổi</span>
-              <span className="font-semibold text-green-600">45%</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <span className="text-gray-800">Y tá tại nhà</span>
-              <span className="font-semibold text-blue-600">30%</span>
-            </div>
-            <div className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
-              <span className="text-gray-800">Theo dõi sức khỏe</span>
-              <span className="font-semibold text-purple-600">25%</span>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </div>

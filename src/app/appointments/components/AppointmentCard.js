@@ -3,10 +3,10 @@
 import { motion } from 'framer-motion';
 import { FaUser, FaCheck, FaEye, FaUserCircle, FaBox, FaStethoscope, FaTimes } from 'react-icons/fa';
 
-const AppointmentCard = ({ 
-  appointment, 
-  index = 0, 
-  serviceTypes = [], 
+const AppointmentCard = ({
+  appointment,
+  index = 0,
+  serviceTypes = [],
   onSelect,
   onCancel,
   getStatusColor,
@@ -15,7 +15,7 @@ const AppointmentCard = ({
 }) => {
   // Safety checks
   if (!appointment) return null;
-  
+
   const bookingId = appointment.bookingID || appointment.BookingID;
   const careProfile = appointment.careProfile || {};
   const amount = appointment.amount || appointment.totalAmount || appointment.total_Amount || 0;
@@ -24,13 +24,13 @@ const AppointmentCard = ({
   const getServiceInfo = () => {
     const customizeDto = appointment.customizePackageCreateDto;
     const customizeDtos = appointment.customizePackageCreateDtos || [];
-    
+
     if (customizeDto) {
       // Package booking
       const serviceId = customizeDto.serviceID || customizeDto.service_ID;
-      const service = Array.isArray(serviceTypes) ? serviceTypes.find(s => 
-        s.serviceID === serviceId || 
-        s.serviceTypeID === serviceId || 
+      const service = Array.isArray(serviceTypes) ? serviceTypes.find(s =>
+        s.serviceID === serviceId ||
+        s.serviceTypeID === serviceId ||
         s.ServiceID === serviceId
       ) : null;
       return {
@@ -42,22 +42,23 @@ const AppointmentCard = ({
       // Individual services
       const services = customizeDtos.map(dto => {
         const serviceId = dto.serviceID || dto.service_ID;
-        return Array.isArray(serviceTypes) ? serviceTypes.find(s => 
-          s.serviceID === serviceId || 
-          s.serviceTypeID === serviceId || 
+        return Array.isArray(serviceTypes) ? serviceTypes.find(s =>
+          s.serviceID === serviceId ||
+          s.serviceTypeID === serviceId ||
           s.ServiceID === serviceId
         ) : null;
       }).filter(Boolean);
-      
+
       return {
         type: 'services',
         services: services,
         total: amount
       };
     }
-    
+
     return { type: 'unknown', services: [], total: amount };
   };
+
 
   const serviceInfo = getServiceInfo();
 
@@ -65,20 +66,20 @@ const AppointmentCard = ({
   const isCancelAllowed = () => {
     const workdate = appointment.workdate || appointment.Workdate || appointment.BookingDate;
     if (!workdate) return false;
-    
+
     const workDateTime = new Date(workdate);
     const now = new Date();
     const timeDiff = workDateTime.getTime() - now.getTime();
     const hoursDiff = timeDiff / (1000 * 60 * 60); // Convert to hours
-    
-    // Allow cancellation if more than 3 hours until workdate and status is 'paid'
+
+    // Allow cancellation if more than 2 hours until workdate and status is 'paid'
     const status = appointment.status || appointment.Status;
-    return hoursDiff > 3 && (status === 'paid' || status === 'completed');
+    return hoursDiff > 2 && status === 'paid' ? 'Đã thanh toán' : status === 'completed' ? 'Hoàn thành' : '';
   };
 
   const handleCancel = (e) => {
     e.stopPropagation();
-    
+
     if (!isCancelAllowed()) {
       alert('Không thể hủy booking này. Booking chỉ có thể hủy trước 3 tiếng so với giờ hẹn và phải ở trạng thái đã thanh toán.');
       return;
@@ -87,7 +88,7 @@ const AppointmentCard = ({
     const confirmCancel = window.confirm(
       `Bạn có chắc chắn muốn hủy lịch hẹn #${bookingId}?\n\nViệc hủy sẽ hoàn tiền vào tài khoản của bạn.`
     );
-    
+
     if (confirmCancel && onCancel) {
       onCancel(appointment);
     }
@@ -101,8 +102,8 @@ const AppointmentCard = ({
       className="group"
     >
       <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer"
-           onClick={() => onSelect?.(appointment)}>
-        
+        onClick={() => onSelect?.(appointment)}>
+
         {/* Header */}
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
@@ -110,7 +111,7 @@ const AppointmentCard = ({
               Lịch hẹn #{bookingId}
             </h3>
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor?.(appointment.status || appointment.Status) || 'bg-gray-100 text-gray-700'}`}>
-              {getStatusText?.(appointment.status || appointment.Status) || 'Không xác định'}
+              {getStatusText?.(appointment.status) || 'Không xác định'}
             </span>
           </div>
 

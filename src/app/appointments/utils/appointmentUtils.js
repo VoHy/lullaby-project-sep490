@@ -34,7 +34,9 @@ export const getStatusText = (status) => {
     case 'cancelled':
       return 'Đã hủy';
     case 'paid':
-      return 'Hoàn thành';
+      return 'Đã thanh toán';
+    case 'completed':
+      return 'Đã hoàn thành';
     default:
       return 'Không xác định';
   }
@@ -61,23 +63,23 @@ export const formatPrice = (price) => {
 
 export const filterAppointments = (appointments, searchText, statusFilter, dateFilter) => {
   if (!Array.isArray(appointments)) return [];
-  
+
   return appointments.filter(appointment => {
     if (!appointment) return false;
-    
+
     const bookingId = appointment.bookingID || appointment.BookingID || '';
-    const matchesSearch = searchText === '' || 
+    const matchesSearch = searchText === '' ||
       bookingId.toString().includes(searchText) ||
       appointment.Note?.toLowerCase().includes(searchText.toLowerCase()) ||
       appointment.note?.toLowerCase().includes(searchText.toLowerCase());
-    
+
     const matchesStatus = statusFilter === 'all' || appointment.Status === statusFilter || appointment.status === statusFilter;
-    
+
     let matchesDate = true;
     if (dateFilter !== 'all' && (appointment.BookingDate || appointment.workdate)) {
       const appointmentDate = new Date(appointment.BookingDate || appointment.workdate);
       const today = new Date();
-      
+
       switch (dateFilter) {
         case 'today':
           matchesDate = appointmentDate.toDateString() === today.toDateString();
@@ -92,7 +94,7 @@ export const filterAppointments = (appointments, searchText, statusFilter, dateF
           break;
       }
     }
-    
+
     return matchesSearch && matchesStatus && matchesDate;
   });
 }; 

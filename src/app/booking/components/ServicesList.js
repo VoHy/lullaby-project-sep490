@@ -20,8 +20,18 @@ export default function ServicesList({
             </div>
           </li>
         ) : (
-                     selectedServicesList.map((s) => (
-             <li key={s.serviceID} className={`bg-white rounded-xl shadow p-3 md:p-4 border flex flex-col gap-1 ${s.isPackage ? 'border-purple-300 bg-purple-50' : s.isServiceTask ? 'border-blue-200 bg-blue-50' : ''}`}>
+          selectedServicesList.map((s, idx) => {
+            const uniqueKey = (
+              s.serviceInstanceKey ||
+              s.customizeTaskId ||
+              s.customizePackageId ||
+              s.serviceTaskID || s.ServiceTaskID ||
+              s.taskID || s.TaskID ||
+              s.serviceID || s.ServiceID || s.serviceTypeID ||
+              `service-${idx}`
+            );
+            return (
+              <li key={uniqueKey} className={`bg-white rounded-xl shadow p-3 md:p-4 border flex flex-col gap-1 ${s.isPackage ? 'border-purple-300 bg-purple-50' : s.isServiceTask ? 'border-blue-200 bg-blue-50' : ''}`}>
                <div className="flex items-center justify-between">
                  <div className="flex items-center gap-2">
                    <span className={`font-bold text-base md:text-lg ${s.isPackage ? 'text-purple-700' : s.isServiceTask ? 'text-blue-700' : 'text-blue-700'}`}>
@@ -62,8 +72,9 @@ export default function ServicesList({
                <div className="text-gray-500 text-xs md:text-sm flex items-center gap-1">
                  <HiOutlineCalendar /> Thời gian: {s.duration || s.Duration || s.taskDuration || s.TaskDuration || 'N/A'} phút
                </div>
-          </li>
-        ))
+              </li>
+            );
+          })
         )}
       </ul>
       <div className="flex justify-end mt-4 md:mt-6 items-center gap-2">

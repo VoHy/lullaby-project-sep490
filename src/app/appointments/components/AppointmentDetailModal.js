@@ -66,16 +66,16 @@ const AppointmentDetailModal = ({
     // Check packages to see if any are real packages (isPackage: true)
     bookingPackages.forEach((pkg) => {
       const serviceId = pkg.serviceID || pkg.service_ID || pkg.Service_ID;
-      const service = serviceTypes.find(s => 
-        s.serviceID === serviceId || 
-        s.serviceTypeID === serviceId || 
+      const service = serviceTypes.find(s =>
+        s.serviceID === serviceId ||
+        s.serviceTypeID === serviceId ||
         s.ServiceID === serviceId
       );
 
       if (service) {
         // Check if this is a real package
         const isPackage = service.isPackage === true || service.IsPackage === true;
-        
+
         if (isPackage) {
           hasRealPackages = true;
           packageServices.push({
@@ -103,7 +103,7 @@ const AppointmentDetailModal = ({
     // Case 1: Real package booking (isPackage: true)
     if (hasRealPackages && packageServices.length > 0) {
       const mainPackageService = packageServices[0]; // Assume one main package
-      
+
       // Get service tasks (child services) for this package
       // Use package_ServiceID from ServiceTasks to match with the main package service ID
       const packageServiceTasks = serviceTasks?.filter(task => {
@@ -116,9 +116,9 @@ const AppointmentDetailModal = ({
       const childServices = [];
       packageServiceTasks.forEach((serviceTask) => {
         const childServiceId = serviceTask.child_ServiceID || serviceTask.childServiceID || serviceTask.Child_ServiceID;
-        const childService = serviceTypes.find(s => 
-          s.serviceID === childServiceId || 
-          s.serviceTypeID === childServiceId || 
+        const childService = serviceTypes.find(s =>
+          s.serviceID === childServiceId ||
+          s.serviceTypeID === childServiceId ||
           s.ServiceID === childServiceId
         );
 
@@ -219,17 +219,17 @@ const AppointmentDetailModal = ({
     try {
       // Use the new API to get nurses who can perform this specific service
       const serviceNurses = await nursingSpecialistServiceTypeService.getByService(serviceId);
-      
+
       // Also filter by zone if care profile has zone info
       const careProfileZoneId = careProfile?.zoneDetailID || careProfile?.zoneDetail_ID;
-      
+
       if (careProfileZoneId) {
         return serviceNurses.filter(nurse => {
           const nurseZoneId = nurse.zoneID || nurse.zone_ID || nurse.Zone_ID;
           return nurseZoneId === careProfileZoneId;
         });
       }
-      
+
       return serviceNurses;
     } catch (error) {
       console.error('Error fetching service-specific nurses:', error);
@@ -278,7 +278,7 @@ const AppointmentDetailModal = ({
   const handleAddNurse = async (service) => {
     try {
       setSelectedService(service);
-      
+
       // Get service-specific nurses if we have a service ID
       const serviceId = service.serviceID || service.serviceTypeID || service.ServiceID;
       if (serviceId) {
@@ -288,7 +288,7 @@ const AppointmentDetailModal = ({
           availableNurses: specificNurses
         });
       }
-      
+
       setShowNurseModal(true);
     } catch (error) {
       console.error('Error loading nurses for service:', error);
@@ -332,11 +332,19 @@ const AppointmentDetailModal = ({
     }
   };
 
-  // Check if invoice is unpaid
+  // Check if invoice is eligible for payment
   const isInvoiceUnpaid = () => {
     if (!bookingInvoice) return false;
-    const status = bookingInvoice.status || bookingInvoice.Status;
-    return status !== 'Hoàn thành' && status !== 'paid' && status !== 'completed';
+    const raw = bookingInvoice.status || bookingInvoice.Status || '';
+    const status = String(raw).toLowerCase().trim();
+    // Disallow paying if already paid or refunded/cancelled/void
+    const disallowed = new Set([
+      'paid', 'hoàn thành', 'completed', 'refunded', 'refund', 'cancelled', 'canceled', 'void', 'failed'
+    ]);
+    if (disallowed.has(status)) return false;
+    // Require positive amount
+    const amount = bookingInvoice.totalAmount || bookingInvoice.total_amount || 0;
+    return amount > 0;
   };
 
   return (
@@ -382,10 +390,9 @@ const AppointmentDetailModal = ({
                   Trạng thái
                 </h3>
                 <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(appointment.status || appointment.Status)}`}>
-                  {getStatusText(appointment.status || appointment.Status)}
+                  {getStatusText(appointment.status)}
                 </span>
               </div>
-
               {/* Care Profile */}
               <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
                 <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
@@ -651,7 +658,7 @@ const AppointmentDetailModal = ({
                             style={{ pointerEvents: 'auto', zIndex: 10 }}
                           >
                             <FaUserMd className="text-xs" />
-                            Chọn điều dưỡng 
+                            Chọn điều dưỡng
                           </button>
                         </div>
                       ))}
@@ -696,7 +703,7 @@ const AppointmentDetailModal = ({
                             style={{ pointerEvents: 'auto', zIndex: 10 }}
                           >
                             <FaUserMd className="text-xs" />
-                            Chọn điều dưỡng 
+                            Chọn điều dưỡng
                           </button>
                         </div>
                       ))}
@@ -751,7 +758,7 @@ const AppointmentDetailModal = ({
                           </span>
                         </div>
                       </div>
-                      
+
                       {/* Payment Button for Unpaid Invoices */}
                       {isInvoiceUnpaid() && (
                         <div className="mt-4 pt-4 border-t">
