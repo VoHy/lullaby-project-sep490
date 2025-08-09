@@ -44,7 +44,10 @@ const blogCategoryService = {  // Get all blog categories
   updateBlogCategory: async (blogCategoryId, blogCategoryData) => {
     const res = await fetch(`/api/blogcategory/${blogCategoryId}`, {
       method: 'PUT',
-      headers: getAuthHeaders(),
+      headers: {
+        ...getAuthHeaders(),
+        'Content-Type': 'application/json-patch+json',
+      },
       body: JSON.stringify({
         categoryName: blogCategoryData.categoryName,
         description: blogCategoryData.description
@@ -61,6 +64,10 @@ const blogCategoryService = {  // Get all blog categories
       method: 'DELETE',
       headers: getAuthHeaders()
     });
+    // Some backends return 204 No Content on successful delete
+    if (res.status === 204) {
+      return { success: true };
+    }
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || 'Xóa blog category thất bại');
     return data;
