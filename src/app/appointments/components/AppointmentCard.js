@@ -1,13 +1,14 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { FaUser, FaCheck, FaEye, FaUserCircle, FaBox, FaStethoscope } from 'react-icons/fa';
+import { FaUser, FaCheck, FaEye, FaUserCircle, FaBox, FaStethoscope, FaTimes } from 'react-icons/fa';
 
 const AppointmentCard = ({ 
   appointment, 
   index = 0, 
   serviceTypes = [], 
   onSelect,
+  onCancel,
   getStatusColor,
   getStatusText,
   formatDate
@@ -60,6 +61,38 @@ const AppointmentCard = ({
 
   const serviceInfo = getServiceInfo();
 
+  // Check if cancellation is allowed (3 hours before workdate)
+  const isCancelAllowed = () => {
+    const workdate = appointment.workdate || appointment.Workdate || appointment.BookingDate;
+    if (!workdate) return false;
+    
+    const workDateTime = new Date(workdate);
+    const now = new Date();
+    const timeDiff = workDateTime.getTime() - now.getTime();
+    const hoursDiff = timeDiff / (1000 * 60 * 60); // Convert to hours
+    
+    // Allow cancellation if more than 3 hours until workdate and status is 'paid'
+    const status = appointment.status || appointment.Status;
+    return hoursDiff > 3 && (status === 'paid' || status === 'completed');
+  };
+
+  const handleCancel = (e) => {
+    e.stopPropagation();
+    
+    if (!isCancelAllowed()) {
+      alert('Không thể hủy booking này. Booking chỉ có thể hủy trước 3 tiếng so với giờ hẹn và phải ở trạng thái đã thanh toán.');
+      return;
+    }
+
+    const confirmCancel = window.confirm(
+      `Bạn có chắc chắn muốn hủy lịch hẹn #${bookingId}?\n\nViệc hủy sẽ hoàn tiền vào tài khoản của bạn.`
+    );
+    
+    if (confirmCancel && onCancel) {
+      onCancel(appointment);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
@@ -102,9 +135,16 @@ const AppointmentCard = ({
           </div>
 
           {/* Date and Time */}
-          <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-            <span className="font-medium">Ngày hẹn:</span>
-            <span>{formatDate?.(appointment.workdate || appointment.Workdate || appointment.BookingDate) || 'Chưa xác định'}</span>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="font-medium">Ngày hẹn:</span>
+              <span>{formatDate?.(appointment.workdate || appointment.Workdate || appointment.BookingDate) || 'Chưa xác định'}</span>
+            </div>
+            {isCancelAllowed() && (
+              <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                Có thể hủy
+              </div>
+            )}
           </div>
 
           {/* Total Amount */}
@@ -145,22 +185,34 @@ const AppointmentCard = ({
             </div>
           )}
 
-          {/* Action Button */}
+          {/* Action Buttons */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-purple-600 font-medium text-sm">
               <FaEye className="text-xs" />
               <span>Xem chi tiết</span>
             </div>
-            <button
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 text-white font-medium text-sm hover:bg-purple-600 transition-colors group-hover:gap-3"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onSelect) onSelect(appointment);
-              }}
-            >
-              Chi tiết
-              <FaEye className="text-xs" />
-            </button>
+            <div className="flex items-center gap-2">
+              {isCancelAllowed() && (
+                <button
+                  className="flex items-center gap-1 px-3 py-2 rounded-xl bg-red-500 text-white font-medium text-sm hover:bg-red-600 transition-colors"
+                  onClick={handleCancel}
+                  title="Hủy booking"
+                >
+                  <FaTimes className="text-xs" />
+                  Hủy
+                </button>
+              )}
+              <button
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 text-white font-medium text-sm hover:bg-purple-600 transition-colors group-hover:gap-3"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onSelect) onSelect(appointment);
+                }}
+              >
+                Chi tiết
+                <FaEye className="text-xs" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

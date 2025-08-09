@@ -10,6 +10,7 @@ import serviceTypeService from '@/services/api/serviceTypeService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import invoiceService from '@/services/api/invoiceService';
+import transactionHistoryService from '@/services/api/transactionHistoryService';
 import zoneDetailService from '@/services/api/zoneDetailService';
 import customizePackageService from '@/services/api/customizePackageService';
 import customizeTaskService from '@/services/api/customizeTaskService';
@@ -168,6 +169,64 @@ export default function AppointmentsPage() {
 
   const handleNewAppointment = () => {
     router.push('/services');
+  };
+
+  // Handle invoice payment
+  const handleInvoicePayment = async (invoiceId) => {
+    try {
+      // Call payment API
+      await transactionHistoryService.invoicePayment(invoiceId);
+      
+      // Show success message
+      alert('Thanh toán thành công! Hóa đơn đã được thanh toán.');
+      
+      // Refresh data to show updated payment status
+      await fetchData(true);
+      
+      // Refresh wallet context to show updated balance
+      await refreshWalletData();
+      
+    } catch (error) {
+      console.error('❌ Error processing payment:', error);
+      alert(`Có lỗi xảy ra khi thanh toán: ${error.message}`);
+    }
+  };
+
+  // Handle booking cancellation
+  const handleBookingCancel = async (appointment) => {
+    try {
+      const bookingId = appointment.bookingID || appointment.BookingID;
+      
+      // First, get the invoice for this booking
+      const invoice = invoices.find(inv => 
+        (inv.bookingID === bookingId || inv.BookingID === bookingId)
+      );
+      
+      if (!invoice) {
+        throw new Error('Không tìm thấy hóa đơn cho booking này');
+      }
+      
+      const invoiceId = invoice.invoiceID || invoice.invoice_ID;
+      
+      // Call refund API
+      await transactionHistoryService.refundMoneyToWallet(invoiceId);
+      
+      // Update booking status to 'cancelled'
+      // await bookingService.updateStatus(bookingId, 'cancelled');
+      
+      // Show success message
+      alert('Đã hủy booking thành công! Tiền đã được hoàn vào tài khoản của bạn.');
+      
+      // Refresh data to show updated status
+      await fetchData(true);
+      
+      // Refresh wallet context to show updated balance
+      await refreshWalletData();
+      
+    } catch (error) {
+      console.error('❌ Error cancelling booking:', error);
+      alert(`Có lỗi xảy ra khi hủy booking: ${error.message}`);
+    }
   };
 
   // Handle nurse assignment
@@ -329,6 +388,7 @@ export default function AppointmentsPage() {
                   index={idx}
                   serviceTypes={serviceTypes || []}
                   onSelect={setSelectedAppointment}
+                  onCancel={handleBookingCancel}
                   getStatusColor={getStatusColor}
                   getStatusText={getStatusText}
                   formatDate={formatDate}
@@ -372,6 +432,7 @@ export default function AppointmentsPage() {
             getStatusText={getStatusText}
             formatDate={formatDate}
             onAssignNursing={handleNurseAssignment}
+            onPayment={handleInvoicePayment}
           />
         )}
       </div>
