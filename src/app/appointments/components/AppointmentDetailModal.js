@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaUserMd, FaPlus, FaFileInvoice } from 'react-icons/fa';
 import NurseSelectionModal from './NurseSelectionModal';
-    // import DebugData from './DebugData';
+// import DebugData from './DebugData';
 
 const AppointmentDetailModal = ({
   appointment,
@@ -38,7 +38,7 @@ const AppointmentDetailModal = ({
 
   // Tính toán thông tin dịch vụ và service tasks
   const getServiceDetails = () => {
-    
+
     const bookingId = appointment.bookingID || appointment.BookingID;
 
     // APPROACH: Sử dụng customizeTasks thay vì customizePackages để hiển thị từng nút "Add Nurse" riêng biệt
@@ -46,34 +46,34 @@ const AppointmentDetailModal = ({
       const match = task.bookingID === bookingId ||
         task.BookingID === bookingId ||
         task.booking_ID === bookingId;
-      
+
       return match;
     }) || [];
 
     if (bookingCustomizeTasks.length > 0) {
       // Tạo service instances dựa trên customize tasks
       const allServiceInstances = [];
-      
-        bookingCustomizeTasks.forEach((task, taskIndex) => {
+
+      bookingCustomizeTasks.forEach((task, taskIndex) => {
         const serviceId = task.serviceID || task.service_ID || task.Service_ID;
         const customizeTaskId = task.customizeTaskID || task.customize_TaskID;
-          const taskOrder = task.taskOrder || task.task_Order || task.Task_Order;
-        
+        const taskOrder = task.taskOrder || task.task_Order || task.Task_Order;
+
         const service = serviceTypes.find(s => {
           const match = s.serviceID === serviceId ||
             s.serviceTypeID === serviceId ||
             s.ServiceID === serviceId;
-          
+
           return match;
         });
-        
-          if (service) {
+
+        if (service) {
           const instance = {
             ...service,
             customizeTaskId: customizeTaskId,
             nursingID: task.nursingID,
             status: task.status,
-              taskOrder: taskOrder,
+            taskOrder: taskOrder,
             serviceInstanceKey: `task-${customizeTaskId}`
           };
           allServiceInstances.push(instance);
@@ -92,33 +92,33 @@ const AppointmentDetailModal = ({
     }
 
     console.log('❌ No customize tasks found, fallback to packages');
-    
+
     // Fallback to old logic with packages
     const bookingPackages = customizePackages?.filter(pkg => {
       const match = pkg.bookingID === bookingId ||
         pkg.BookingID === bookingId ||
         pkg.booking_ID === bookingId;
-      
+
       return match;
     }) || [];
 
     if (bookingPackages.length > 0) {
       // SIMPLE APPROACH: Tạo 1 service entry cho mỗi unit quantity
       const allServiceInstances = [];
-      
+
       bookingPackages.forEach((pkg, pkgIndex) => {
         const serviceId = pkg.serviceID || pkg.service_ID || pkg.Service_ID;
-        
+
         const service = serviceTypes.find(s => {
           const match = s.serviceID === serviceId ||
             s.serviceTypeID === serviceId ||
             s.ServiceID === serviceId;
-          
+
           return match;
         });
-        
+
         const quantity = pkg.quantity || 1;
-        
+
         if (service) {
           // Tạo nhiều instances theo quantity
           for (let i = 0; i < quantity; i++) {
@@ -167,13 +167,13 @@ const AppointmentDetailModal = ({
   // Helper function to get nurse info by ID
   const getNurseInfo = (nursingId) => {
     if (!nursingId) return null;
-    
-    const nurse = nursingSpecialists.find(n => 
-      n.nursingID === nursingId || 
-      n.nursing_ID === nursingId || 
+
+    const nurse = nursingSpecialists.find(n =>
+      n.nursingID === nursingId ||
+      n.nursing_ID === nursingId ||
       n.Nursing_ID === nursingId
     );
-    
+
     return nurse ? {
       id: nursingId,
       name: nurse.fullName || nurse.full_Name || nurse.Full_Name || 'Không có tên',
@@ -188,7 +188,6 @@ const AppointmentDetailModal = ({
   };
 
   const handleAddNurse = (service) => {
-    console.log('🖱️ Add Nurse button clicked!', service);
     setSelectedService(service);
     setShowNurseModal(true);
   };
@@ -305,7 +304,7 @@ const AppointmentDetailModal = ({
                     {serviceDetails.type === 'package' ? (
                       <><FaBox />Gói dịch vụ</>
                     ) : serviceDetails.type === 'tasks' ? (
-                      <><FaStethoscope />Dịch vụ từ CustomizeTask</>
+                      <><FaStethoscope />Dịch vụ đã đặt</>
                     ) : (
                       <><FaStethoscope />Dịch vụ</>
                     )}
@@ -326,7 +325,7 @@ const AppointmentDetailModal = ({
                       {/* Service Tasks of Package */}
                       {serviceDetails.tasks.length > 0 ? (
                         <div className="space-y-3">
-                          <h4 className="font-medium text-gray-800 border-b pb-2">Dịch vụ trong gói:</h4>
+                          <h4 className="font-medium text-gray-800 border-b pb-2">Dịch vụ đã đặt:</h4>
                           {serviceDetails.tasks.map((task, index) => {
                             const childService = serviceTypes.find(s =>
                               s.serviceID === (task.childServiceID || task.child_ServiceID || task.Child_ServiceID) ||
@@ -349,14 +348,13 @@ const AppointmentDetailModal = ({
                                   onClick={(e) => {
                                     e.preventDefault();
                                     e.stopPropagation();
-                                    console.log('🖱️ Package task button clicked!');
                                     handleAddNurse({ ...childService, taskId: task.taskID || task.task_ID });
                                   }}
                                   className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
                                   style={{ pointerEvents: 'auto', zIndex: 10 }}
                                 >
                                   <FaUserMd className="text-xs" />
-                                  Add Nurse
+                                  Chọn điều dưỡng
                                 </button>
                               </div>
                             );
@@ -369,26 +367,19 @@ const AppointmentDetailModal = ({
                       )}
                     </div>
                   )}
-
                   {serviceDetails.type === 'tasks' && serviceDetails.services.length > 0 && (
                     <div className="space-y-3">
-                      <h4 className="font-medium text-gray-800 border-b pb-2">
-                        Dịch vụ từ CustomizeTask: ({serviceDetails.services.length} tasks)
-                      </h4>
                       {serviceDetails.services.map((service, index) => {
                         const hasNurse = !!service.nursingID;
                         const isCompleted = service.status === 'completed';
                         const nurseInfo = hasNurse ? getNurseInfo(service.nursingID) : null;
-                        
+
                         return (
-                          <div key={service.serviceInstanceKey || `task-${index}`} 
-                               className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <div key={service.serviceInstanceKey || `task-${index}`}
+                            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                             <div className="flex-1">
                               <div className="font-medium text-gray-800">
                                 {service.serviceName || service.ServiceName}
-                                <span className="ml-2 text-sm bg-purple-100 text-purple-600 px-2 py-1 rounded-full">
-                                  Task #{service.customizeTaskId}
-                                </span>
                                 {hasNurse && (
                                   <span className="ml-2 text-sm bg-green-100 text-green-600 px-2 py-1 rounded-full">
                                     Đã có nurse
@@ -405,7 +396,7 @@ const AppointmentDetailModal = ({
                               </div>
                               {hasNurse && nurseInfo && (
                                 <div className="text-sm text-green-600 mt-2 bg-green-50 p-2 rounded border border-green-200">
-                                  <div className="font-medium">👩‍⚕️ Điều dưỡng: {nurseInfo.name}</div>
+                                  <div className="font-medium">Điều dưỡng: {nurseInfo.name}</div>
                                   <div className="text-xs text-green-700">
                                     ID: {nurseInfo.id}
                                     {nurseInfo.phone && ` | SĐT: ${nurseInfo.phone}`}
@@ -419,7 +410,6 @@ const AppointmentDetailModal = ({
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  console.log('🖱️ Customize task button clicked!');
                                   handleAddNurse({
                                     ...service,
                                     customizeTaskId: service.customizeTaskId
@@ -429,7 +419,7 @@ const AppointmentDetailModal = ({
                                 style={{ pointerEvents: 'auto', zIndex: 10 }}
                               >
                                 <FaUserMd className="text-xs" />
-                                Add Nurse
+                                Chọn điều dưỡng
                               </button>
                             )}
                             {isCompleted && (
@@ -471,7 +461,6 @@ const AppointmentDetailModal = ({
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              console.log('🖱️ Individual service button clicked!');
                               handleAddNurse({
                                 ...service,
                                 customizePackageId: service.customizePackageId,
@@ -482,7 +471,7 @@ const AppointmentDetailModal = ({
                             style={{ pointerEvents: 'auto', zIndex: 10 }}
                           >
                             <FaUserMd className="text-xs" />
-                            Add Nurse
+                            Chọn điều dưỡng 
                           </button>
                         </div>
                       ))}

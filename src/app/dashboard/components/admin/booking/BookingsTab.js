@@ -1,7 +1,7 @@
 'use client';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
+import { 
   faEye, faEdit, faTrash, faSearch, faCalendarAlt,
   faMoneyBill, faUser, faClock, faCheckCircle, faTimesCircle, faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
@@ -39,7 +39,7 @@ const BookingsTab = ({ bookings }) => {
       try {
         setLoading(true);
         setError("");
-
+        
         const [
           careProfilesData,
           accountsData,
@@ -162,17 +162,17 @@ const BookingsTab = ({ bookings }) => {
   const BookingDetailModal = ({ booking, onClose }) => {
     if (!booking) return null;
     const { careProfile, account, service, packageInfo, serviceTasksOfBooking, packagesOfBooking, invoiceID } = getBookingDetail(booking);
-
+    
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
         <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-4xl relative max-h-[90vh] overflow-y-auto">
           <button className="absolute top-4 right-4 text-gray-500 hover:text-pink-500 text-2xl font-bold" onClick={onClose}>&times;</button>
-
+          
           <div className="mb-6">
             <h3 className="text-2xl font-bold mb-2">Chi tiết Booking #{booking?.BookingID ?? booking?.bookingID}</h3>
             <div className="w-20 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded"></div>
           </div>
-
+          
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Thông tin khách hàng */}
             <div className="space-y-4">
@@ -196,7 +196,7 @@ const BookingsTab = ({ bookings }) => {
                   </div>
                 </div>
               </div>
-
+              
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl">
                 <h4 className="font-semibold text-green-800 mb-3 flex items-center">
                   <FontAwesomeIcon icon={faCalendarAlt} className="mr-2" />
@@ -216,17 +216,17 @@ const BookingsTab = ({ bookings }) => {
                   <div className="flex justify-between">
                     <span className="font-medium">Trạng thái:</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${(booking.status ?? booking.Status) === 'paid' ? 'bg-green-100 text-green-700' :
-                        (booking.status ?? booking.Status) === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-red-100 text-red-700'
-                      }`}>
+                      (booking.status ?? booking.Status) === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-red-100 text-red-700'
+                    }`}>
                       {(booking.status ?? booking.Status) === 'paid' ? 'Hoàn thành' :
-                        (booking.status ?? booking.Status) === 'pending' ? 'Đang xử lý' : 'Đã hủy'}
+                       (booking.status ?? booking.Status) === 'pending' ? 'Đang xử lý' : 'Đã hủy'}
                     </span>
                   </div>
                 </div>
               </div>
             </div>
-
+            
             {/* Thông tin thanh toán */}
             <div className="space-y-4">
               <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-xl">
@@ -247,15 +247,15 @@ const BookingsTab = ({ bookings }) => {
                     <span className="font-medium">Trạng thái thanh toán:</span>
                     <span className={`px-2 py-1 rounded-full text-xs font-semibold ${(booking.paymentStatus ?? booking.PaymentStatus) === 'paid' ? 'bg-green-100 text-green-700' :
                         (booking.status ?? booking.Status) === 'paid' ? 'bg-yellow-100 text-yellow-700' :
-                          'bg-red-100 text-red-700'
-                      }`}>
+                      'bg-red-100 text-red-700'
+                    }`}>
                       {(booking.status ?? booking.Status) === 'paid' ? 'Đã thanh toán' :
                         (booking.status ?? booking.Status) === 'pending' ? 'Chờ thanh toán' : 'Chưa thanh toán'}
                     </span>
                   </div>
                 </div>
               </div>
-
+              
               {serviceTasksOfBooking.length > 0 && (
                 <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl">
                   <h4 className="font-semibold text-purple-800 mb-3 flex items-center">
@@ -297,9 +297,9 @@ const BookingsTab = ({ bookings }) => {
                             </div>
                             <div className="flex items-center gap-3">
                               <span className={`px-2 py-1 rounded-full text-xs font-semibold ${status === 'completed' ? 'bg-green-100 text-green-700' :
-                                  status === 'isscheduled' ? 'bg-blue-100 text-blue-700' :
-                                    status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
-                                }`}>
+                                status === 'isscheduled' ? 'bg-blue-100 text-blue-700' :
+                                status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
+                              }`}>
                                 {status === 'completed' ? 'Hoàn thành' : status === 'isscheduled' ? 'Đã lên lịch' : status === 'pending' ? 'Chờ thực hiện' : status}
                               </span>
                               <div className="text-sm">
@@ -362,8 +362,8 @@ const BookingsTab = ({ bookings }) => {
         <div className="text-red-500 text-6xl mb-4">⚠️</div>
         <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
         <p className="text-gray-600 mb-4">{error}</p>
-        <button
-          onClick={() => window.location.reload()}
+        <button 
+          onClick={() => window.location.reload()} 
           className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
         >
           Thử lại
@@ -393,9 +393,9 @@ const BookingsTab = ({ bookings }) => {
   const totalBookings = Array.isArray(bookings) ? bookings.length : 0;
   const completedBookings = Array.isArray(bookings)
     ? bookings.filter((b) => {
-      const s = (b.Status ?? b.status ?? '').toLowerCase();
+        const s = (b.Status ?? b.status ?? '').toLowerCase();
       return s === 'paid';
-    }).length
+      }).length
     : 0;
   const pendingBookings = Array.isArray(bookings)
     ? bookings.filter((b) => (b.Status ?? b.status) === 'pending' || (b.Status ?? b.status) === 'confirmed').length
@@ -407,17 +407,17 @@ const BookingsTab = ({ bookings }) => {
   // Lọc bookings
   const filteredBookings = Array.isArray(bookings)
     ? bookings.filter((booking) => {
-      const id = booking?.BookingID ?? booking?.bookingID;
-      const status = (booking?.Status ?? booking?.status)?.toLowerCase();
-      const detail = getBookingDetail(booking);
-      const profileName = detail.careProfile?.ProfileName ?? detail.careProfile?.profileName;
-      const matchesSearch =
-        !searchTerm ||
-        id?.toString().includes(searchTerm) ||
-        profileName?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || status === statusFilter;
-      return matchesSearch && matchesStatus;
-    })
+        const id = booking?.BookingID ?? booking?.bookingID;
+  const status = (booking?.Status ?? booking?.status)?.toLowerCase();
+        const detail = getBookingDetail(booking);
+        const profileName = detail.careProfile?.ProfileName ?? detail.careProfile?.profileName;
+        const matchesSearch =
+          !searchTerm ||
+          id?.toString().includes(searchTerm) ||
+          profileName?.toLowerCase().includes(searchTerm.toLowerCase());
+        const matchesStatus = statusFilter === 'all' || status === statusFilter;
+        return matchesSearch && matchesStatus;
+      })
     : [];
 
   return (
@@ -459,110 +459,110 @@ const BookingsTab = ({ bookings }) => {
             />
           </div>
 
-          {/* Filters */}
-          <div className="bg-white rounded-xl shadow-lg p-6">
-            <div className="flex flex-wrap gap-4 items-center justify-between">
-              <div className="flex flex-wrap gap-4">
-                <div className="flex items-center gap-2">
-                  <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
-                  <input
-                    type="text"
-                    placeholder="Tìm kiếm booking..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                  />
-                </div>
-                <select
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
-                >
-                  <option value="all">Tất cả trạng thái</option>
-                  <option value="pending">Đang xử lý</option>
+      {/* Filters */}
+      <div className="bg-white rounded-xl shadow-lg p-6">
+        <div className="flex flex-wrap gap-4 items-center justify-between">
+          <div className="flex flex-wrap gap-4">
+            <div className="flex items-center gap-2">
+              <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
+              <input
+                type="text"
+                placeholder="Tìm kiếm booking..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
+              />
+            </div>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
+            >
+              <option value="all">Tất cả trạng thái</option>
+              <option value="pending">Đang xử lý</option>
                   <option value="paid">Hoàn thành</option>
-                  <option value="cancelled">Đã hủy</option>
-                </select>
-              </div>
-              <div className="text-sm text-gray-500">
-                {filteredBookings.length} booking được tìm thấy
-              </div>
-            </div>
+              <option value="cancelled">Đã hủy</option>
+            </select>
           </div>
+          <div className="text-sm text-gray-500">
+            {filteredBookings.length} booking được tìm thấy
+          </div>
+        </div>
+      </div>
 
-          {/* Bookings List */}
-          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách hàng</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dịch vụ</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày đặt</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredBookings.map((booking) => {
-                    const { careProfile, account, service, packageInfo } = getBookingDetail(booking);
-                    const id = booking?.BookingID ?? booking?.bookingID;
-                    const workDate = booking?.BookingDate ?? booking?.bookingDate ?? booking?.workdate ?? booking?.Workdate;
-                    const price = booking?.TotalPrice ?? booking?.totalPrice ?? booking?.Amount ?? booking?.amount;
-                    const status = booking?.Status ?? booking?.status;
-                    return (
-                      <tr key={id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          #{id}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{careProfile?.ProfileName ?? careProfile?.profileName ?? 'N/A'}</div>
-                          <div className="text-sm text-gray-500">{account?.phone_number || account?.phoneNumber || careProfile?.PhoneNumber || careProfile?.phoneNumber || 'N/A'}</div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
-                            {packageInfo
-                              ? (packageInfo.Name ?? packageInfo.name)
-                              : ((service?.ServiceName ?? service?.serviceName) || 'N/A')}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {workDate ? new Date(workDate).toLocaleDateString('vi-VN') : '-'}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                          {price?.toLocaleString()} VNĐ
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+      {/* Bookings List */}
+      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách hàng</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Dịch vụ</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày đặt</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {filteredBookings.map((booking) => {
+                const { careProfile, account, service, packageInfo } = getBookingDetail(booking);
+                const id = booking?.BookingID ?? booking?.bookingID;
+                const workDate = booking?.BookingDate ?? booking?.bookingDate ?? booking?.workdate ?? booking?.Workdate;
+                const price = booking?.TotalPrice ?? booking?.totalPrice ?? booking?.Amount ?? booking?.amount;
+                const status = booking?.Status ?? booking?.status;
+                return (
+                  <tr key={id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                      #{id}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">{careProfile?.ProfileName ?? careProfile?.profileName ?? 'N/A'}</div>
+                      <div className="text-sm text-gray-500">{account?.phone_number || account?.phoneNumber || careProfile?.PhoneNumber || careProfile?.phoneNumber || 'N/A'}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900">
+                        {packageInfo
+                          ? (packageInfo.Name ?? packageInfo.name)
+                          : ((service?.ServiceName ?? service?.serviceName) || 'N/A')}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {workDate ? new Date(workDate).toLocaleDateString('vi-VN') : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
+                      {price?.toLocaleString()} VNĐ
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 rounded-full text-xs font-semibold ${status === 'paid' ? 'bg-green-100 text-green-700' :
-                              status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-gray-100 text-gray-700'
-                            }`}>
-                            {status === 'completed' || status === 'paid' ? 'Đã thanh toán' : status === 'pending' ? 'Chờ thanh toán' : (status || 'Không rõ')}
-                          </span>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                          <button
-                            onClick={() => setSelectedBooking(booking)}
-                            className="text-pink-600 hover:text-pink-900 mr-3"
-                          >
-                            <FontAwesomeIcon icon={faEye} />
-                          </button>
-                          <button className="text-blue-600 hover:text-blue-900 mr-3">
-                            <FontAwesomeIcon icon={faEdit} />
-                          </button>
-                          <button className="text-red-600 hover:text-red-900">
-                            <FontAwesomeIcon icon={faTrash} />
-                          </button>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                        status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {status === 'completed' || status === 'paid' ? 'Đã thanh toán' : status === 'pending' ? 'Chờ thanh toán' : (status || 'Không rõ')}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <button
+                        onClick={() => setSelectedBooking(booking)}
+                        className="text-pink-600 hover:text-pink-900 mr-3"
+                      >
+                        <FontAwesomeIcon icon={faEye} />
+                      </button>
+                      <button className="text-blue-600 hover:text-blue-900 mr-3">
+                        <FontAwesomeIcon icon={faEdit} />
+                      </button>
+                      <button className="text-red-600 hover:text-red-900">
+                        <FontAwesomeIcon icon={faTrash} />
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </div>
 
           {/* Detail Modal */}
           {selectedBooking && (
