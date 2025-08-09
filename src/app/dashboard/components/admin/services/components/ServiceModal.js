@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useEffect, useState } from 'react';
 import serviceTypeService from '@/services/api/serviceTypeService';
 

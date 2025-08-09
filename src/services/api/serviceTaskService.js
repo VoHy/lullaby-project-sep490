@@ -49,10 +49,36 @@ const serviceTaskService = {  // Thêm method getServiceTasks để đảm bảo
 
   // Create service task
   createServiceTask: async (data) => {
+    // Accept either the exact backend schema or a single-task shorthand
+    const hasArraySchema = Array.isArray(data?.childServiceTasks) && data?.package_ServiceID;
+    let payload = data;
+
+    if (!hasArraySchema) {
+      const packageId = Number(
+        data?.package_ServiceID ?? data?.packageServiceID ?? data?.packageServiceId
+      );
+      const childId = Number(
+        data?.child_ServiceID ?? data?.childServiceID ?? data?.childServiceId
+      );
+      const taskOrder = Number(data?.taskOrder ?? 1);
+      const quantity = Number(data?.quantity ?? 1);
+
+      payload = {
+        package_ServiceID: packageId,
+        childServiceTasks: [
+          {
+            child_ServiceID: childId,
+            taskOrder,
+            quantity
+          }
+        ]
+      };
+    }
+
     const res = await fetch('/api/servicetasks/create', {
       method: 'POST',
       headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      body: JSON.stringify(payload)
     });
     const result = await res.json();
     if (!res.ok) throw new Error(result.error || 'Tạo service task thất bại');

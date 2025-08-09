@@ -1,3 +1,5 @@
+"use client";
+
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlus, faTrash, faClock, faDollarSign, faList, faBoxes } from '@fortawesome/free-solid-svg-icons';
@@ -5,22 +7,7 @@ import serviceTaskService from '@/services/api/serviceTaskService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 
 const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
-
-  if (!isOpen) return null;
-
-  if (!packageService) {
-    return (
-      <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-            <p className="text-gray-600">Đang tải thông tin gói dịch vụ...</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+  // Hooks must be called unconditionally on every render
   const [packageTasks, setPackageTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
@@ -36,6 +23,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
     const loadPackageTasks = async () => {
       try {
         setLoading(true);
+        if (!packageService) return;
         const tasks = await serviceTaskService.getServiceTasksByPackage(packageService.serviceID);
         setPackageTasks(tasks);
       } catch (error) {
@@ -75,7 +63,24 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
       );
       setAvailableServices(filteredServices);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [packageTasks, isOpen, packageService]);
+
+  // After hooks are declared, it's safe to conditionally render
+  if (!isOpen) return null;
+
+  if (!packageService) {
+    return (
+      <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4 p-6">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
+            <p className="text-gray-600">Đang tải thông tin gói dịch vụ...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleAddTask = async () => {
     if (!selectedServiceId) {
@@ -95,16 +100,19 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
         return;
       }
 
-      const newTask = {
-        child_ServiceID: parseInt(selectedServiceId),
+      // Backend expects array schema
+      const payload = {
         package_ServiceID: packageService.serviceID,
-        description: taskFormData.description,
-        taskOrder: packageTasks.length + 1,
-        price: parseInt(taskFormData.price) || selectedService.price,
-        quantity: parseInt(taskFormData.quantity) || 1
+        childServiceTasks: [
+          {
+            child_ServiceID: parseInt(selectedServiceId),
+            taskOrder: packageTasks.length + 1,
+            quantity: parseInt(taskFormData.quantity) || 1
+          }
+        ]
       };
 
-      await serviceTaskService.createServiceTask(newTask);
+      await serviceTaskService.createServiceTask(payload);
 
       // Reload package tasks
       const tasks = await serviceTaskService.getServiceTasksByPackage(packageService.serviceID);
@@ -119,10 +127,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
       });
       setShowAddTaskModal(false);
 
-      // Thông báo cập nhật
-      if (onUpdate) {
-        onUpdate();
-      }
+      if (onUpdate) onUpdate();
     } catch (error) {
       console.error('Error adding task:', error);
       alert('Có lỗi xảy ra khi thêm dịch vụ con: ' + error.message);
@@ -404,4 +409,4 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
   );
 };
 
-export default PackageDetailModal; 
+export default PackageDetailModal;
