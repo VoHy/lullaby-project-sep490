@@ -3,21 +3,10 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    // Gọi song song 2 endpoint backend
-    const [bookingsRes, careProfilesRes] = await Promise.all([
-      proxyRequest('/api/Booking/GetAll', 'GET'),
-      proxyRequest('/api/CareProfiles/GetAll', 'GET')
-    ]);
+    const result = await proxyRequest('/api/Booking/GetAll', 'GET');
 
-    if (!bookingsRes.ok) {
-      return NextResponse.json(bookingsRes.data, { status: bookingsRes.status });
-    }
-    if (!careProfilesRes.ok) {
-      return NextResponse.json(careProfilesRes.data, { status: careProfilesRes.status });
-    }
-
-    const bookings = Array.isArray(bookingsRes.data) ? bookingsRes.data : [];
-    const careProfiles = Array.isArray(careProfilesRes.data) ? careProfilesRes.data : [];
+    const bookings = Array.isArray(result.data) ? result.data : [];
+    const careProfiles = Array.isArray(result.data) ? result.data : [];
 
     // Tạo map careProfile theo ID để join nhanh
     const cpMap = new Map(

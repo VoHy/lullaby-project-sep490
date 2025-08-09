@@ -3,65 +3,42 @@ import { NextResponse } from 'next/server';
 
 export async function GET() {
   try {
-    const backendUrl = process.env.NEXT_PUBLIC_BACKEND_URL || 'http://localhost:5294';
-    
-    // Fetch bookings và careProfiles song song
-    const [bookingsResponse, careProfilesResponse] = await Promise.all([
-      fetch(`${backendUrl}/api/Booking/GetAll`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      }),
-      fetch(`${backendUrl}/api/CareProfiles/GetAll`, {
-        method: 'GET',
-        headers: { 'Content-Type': 'application/json' },
-      })
-    ]);
-
-    if (!bookingsResponse.ok) {
-      const errorText = await bookingsResponse.text();
-      try {
-        const errorData = JSON.parse(errorText);
-        return NextResponse.json({ error: errorData.message || 'Không thể lấy danh sách bookings' }, { status: bookingsResponse.status });
-      } catch (parseError) {
-        console.error('Failed to parse error response as JSON:', parseError);
-        return NextResponse.json({ error: `Server error: ${bookingsResponse.status} - ${errorText.substring(0, 100)}` }, { status: bookingsResponse.status });
-      }
+    // Thử gọi endpoint gộp từ backend nếu có
+    const result = await proxyRequest('/api/Booking/GetAllWithCareProfile', 'GET');
+    if (result.ok) {
+      return NextResponse.json(result.data, { status: result.status });
     }
 
-    if (!careProfilesResponse.ok) {
-      const errorText = await careProfilesResponse.text();
-      try {
-        const errorData = JSON.parse(errorText);
-        return NextResponse.json({ error: errorData.message || 'Không thể lấy danh sách care profiles' }, { status: careProfilesResponse.status });
-      } catch (parseError) {
-        console.error('Failed to parse error response as JSON:', parseError);
-        return NextResponse.json({ error: `Server error: ${careProfilesResponse.status} - ${errorText.substring(0, 100)}` }, { status: careProfilesResponse.status });
-      }
-    }
-
-    const [bookingsData, careProfilesData] = await Promise.all([
-      bookingsResponse.json(),
-      careProfilesResponse.json()
+    // Fallback: tự gộp dữ liệu booking và care profile
+    const [bookingsRes, careProfilesRes] = await Promise.all([
+      proxyRequest('/api/Booking/GetAll', 'GET'),
+      proxyRequest('/api/careprofiles/getall', 'GET')
     ]);
 
-    // Tạo map để lookup careProfile nhanh hơn
-    const careProfilesMap = new Map();
-    careProfilesData.forEach(careProfile => {
-      careProfilesMap.set(careProfile.careProfileID, careProfile);
-    });
+    if (!bookingsRes.ok) {
+      return NextResponse.json(bookingsRes.data, { status: bookingsRes.status });
+    }
+    if (!careProfilesRes.ok) {
+      return NextResponse.json(careProfilesRes.data, { status: careProfilesRes.status });
+    }
 
-    // Join bookings với careProfile data
-    const enrichedBookings = bookingsData.map(booking => {
-      const careProfile = careProfilesMap.get(booking.careProfileID);
-      return {
-        ...booking,
-        careProfile: careProfile || null
-      };
-    });
+    const bookings = Array.isArray(bookingsRes.data) ? bookingsRes.data : [];
+    const careProfiles = Array.isArray(careProfilesRes.data) ? careProfilesRes.data : [];
 
-    return NextResponse.json(enrichedBookings);
+    const cpMap = new Map(
+      careProfiles.map(cp => [cp.careProfileID || cp.CareProfileID, cp])
+    );
+
+    const enriched = bookings.map(b => ({
+      ...b,
+      careProfile: cpMap.get(b.careProfileID || b.CareProfileID) || null,
+    }));
+
+    return NextResponse.json(enriched, { status: 200 });
   } catch (error) {
-    console.error('Proxy error:', error);
-    return NextResponse.json({ error: `Không thể kết nối đến server: ${error.message}` }, { status: 500 });
+    return NextResponse.json(
+      { error: `Không thể kết nối đến server: ${error.message}` },
+      { status: 500 }
+    );
   }
-} 
+}
