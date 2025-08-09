@@ -1,3 +1,5 @@
+import { FaSearch, FaChartBar } from 'react-icons/fa';
+
 const SpecialistFilters = ({
   searchTerm,
   setSearchTerm,
@@ -12,7 +14,7 @@ const SpecialistFilters = ({
         {/* Search */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-3">
-            🔍 Tìm kiếm
+            <span className="inline-flex items-center gap-2"><FaSearch /> Tìm kiếm</span>
           </label>
           <div className="relative">
             <input
@@ -22,8 +24,8 @@ const SpecialistFilters = ({
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full px-4 py-3 pl-10 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors duration-200 bg-gray-50 focus:bg-white"
             />
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <span className="text-gray-400">🔍</span>
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+              <FaSearch />
             </div>
           </div>
         </div>
@@ -31,7 +33,7 @@ const SpecialistFilters = ({
         {/* Status Filter */}
         <div>
           <label className="block text-sm font-semibold text-gray-700 mb-3">
-            📊 Trạng thái
+            <span className="inline-flex items-center gap-2"><FaChartBar /> Trạng thái</span>
           </label>
           <select
             value={filterStatus}

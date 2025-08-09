@@ -65,7 +65,7 @@ export default function Header() {
                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                       }`}
                   >
-                    Quản lý của Admin
+                    Quản trị viên
                   </Link>
                 </>
               )}
@@ -116,7 +116,7 @@ export default function Header() {
                          : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                        }`}
                    >
-                     Quản lý của nursespecialist
+                     Y tá
                    </Link>
                  </>
                )}
@@ -167,7 +167,7 @@ export default function Header() {
                          : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
                        }`}
                    >
-                     Quản lý của manager
+                     Quản lý
                    </Link>
                  </>
                )}
@@ -348,7 +348,7 @@ export default function Header() {
                   }`}
                 onClick={() => setIsMenuOpen(false)}
               >
-                Quản lý của Admin
+                Quản trị viên
               </Link>
             </>
           )}
@@ -404,7 +404,7 @@ export default function Header() {
                    }`}
                  onClick={() => setIsMenuOpen(false)}
                >
-                 Quản lý của nursespecialist
+                 Chuyên gia
                </Link>
              </>
            )}
@@ -460,7 +460,7 @@ export default function Header() {
                    }`}
                  onClick={() => setIsMenuOpen(false)}
                >
-                 Quản lý của manager
+                 Quản lý
                </Link>
              </>
            )}

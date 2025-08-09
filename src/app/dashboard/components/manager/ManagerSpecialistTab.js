@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useContext } from 'react';
+import { FaExclamationTriangle, FaPlus } from 'react-icons/fa';
 import { AuthContext } from '@/context/AuthContext';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import accountService from '@/services/api/accountService';
@@ -185,7 +186,7 @@ const ManagerSpecialistTab = () => {
   if (error) {
     return (
       <div className="text-center py-12">
-        <div className="text-red-500 text-6xl mb-4">⚠️</div>
+  <FaExclamationTriangle className="text-red-500 text-6xl mb-4 inline-block" />
         <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
         <p className="text-gray-600 mb-4">{error}</p>
         <button onClick={() => window.location.reload()} className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg transition-colors">
@@ -210,7 +211,7 @@ const ManagerSpecialistTab = () => {
           onClick={() => setShowAddModal(true)}
           className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
         >
-          <span>➕</span>
+          <FaPlus />
           <span>Thêm Chuyên gia</span>
         </button>
       </div>

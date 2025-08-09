@@ -72,7 +72,7 @@ const CTASection = () => {
               <FaArrowRight className="group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link
-              href="/booking/new"
+              href="/services"
               className="group inline-flex items-center gap-3 bg-transparent border-2 border-white text-white hover:bg-white hover:text-purple-600 font-bold px-8 py-4 rounded-full transition-all duration-300"
             >
               <FaCalendarAlt className="group-hover:rotate-12 transition-transform" />

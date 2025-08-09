@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
+import { FaUserNurse, FaUserMd, FaCalendarAlt, FaExclamationTriangle, FaCheckCircle, FaUsers, FaMapMarkedAlt } from 'react-icons/fa';
 import ManagerNurseTab from './ManagerNurseTab';
 import ManagerSpecialistTab from './ManagerSpecialistTab';
 import ManagerBookingTab from './ManagerBookingTab';
@@ -10,9 +11,9 @@ import { AuthContext } from '@/context/AuthContext';
 import { useContext } from 'react';
 
 const TABS = [
-  { id: 'nurse', label: 'Quản lý Nurse', icon: '👩‍⚕️' },
-  { id: 'specialist', label: 'Quản lý Specialist', icon: '👨‍⚕️' },
-  { id: 'booking', label: 'Quản lý Booking', icon: '📅' },
+  { id: 'nurse', label: 'Quản lý Nurse', icon: FaUserNurse },
+  { id: 'specialist', label: 'Quản lý Specialist', icon: FaUserMd },
+  { id: 'booking', label: 'Quản lý Booking', icon: FaCalendarAlt },
 ];
 
 const ManagerDashboard = ({ user }) => {
@@ -147,7 +148,7 @@ const ManagerDashboard = ({ user }) => {
   if (error) {
     return (
       <div className="text-center py-12">
-        <div className="text-red-500 text-6xl mb-4">⚠️</div>
+  <FaExclamationTriangle className="text-red-500 text-6xl mb-4 inline-block" />
         <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
         <p className="text-gray-600 mb-4">{error}</p>
         <button onClick={() => window.location.reload()} className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
@@ -166,7 +167,7 @@ const ManagerDashboard = ({ user }) => {
       {showNotification && (
         <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 animate-slide-in">
           <div className="flex items-center gap-2">
-            <span>✅</span>
+            <FaCheckCircle />
             <span>{notificationMessage}</span>
           </div>
         </div>
@@ -180,7 +181,7 @@ const ManagerDashboard = ({ user }) => {
           <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-4">
             <div className="flex items-center">
               <div className="p-2 bg-blue-400 rounded-lg">
-                <span className="text-2xl">👩‍⚕️</span>
+                <FaUserNurse className="text-2xl" />
               </div>
               <div className="ml-4">
                 <p className="text-sm opacity-90">Tổng Nurse</p>
@@ -192,7 +193,7 @@ const ManagerDashboard = ({ user }) => {
           <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-4">
             <div className="flex items-center">
               <div className="p-2 bg-green-400 rounded-lg">
-                <span className="text-2xl">👨‍⚕️</span>
+                <FaUserMd className="text-2xl" />
               </div>
               <div className="ml-4">
                 <p className="text-sm opacity-90">Tổng Specialist</p>
@@ -204,7 +205,7 @@ const ManagerDashboard = ({ user }) => {
           <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg p-4">
             <div className="flex items-center">
               <div className="p-2 bg-purple-400 rounded-lg">
-                <span className="text-2xl">👥</span>
+                <FaUsers className="text-2xl" />
               </div>
               <div className="ml-4">
                 <p className="text-sm opacity-90">Tổng nhân sự</p>
@@ -216,7 +217,7 @@ const ManagerDashboard = ({ user }) => {
           <div className="bg-gradient-to-r from-pink-500 to-pink-600 text-white rounded-lg p-4">
             <div className="flex items-center">
               <div className="p-2 bg-pink-400 rounded-lg">
-                <span className="text-2xl">🗺️</span>
+                <FaMapMarkedAlt className="text-2xl" />
               </div>
               <div className="ml-4">
                 <p className="text-sm opacity-90">Khu vực quản lý</p>
@@ -239,7 +240,7 @@ const ManagerDashboard = ({ user }) => {
                     : 'bg-gray-100 text-gray-700 hover:bg-purple-100 hover:text-purple-700'
                   }`}
               >
-                <span className="text-lg">{tab.icon}</span>
+                <span className="text-lg">{tab.icon && (() => { const Icon = tab.icon; return <Icon />; })()}</span>
                 <span className="hidden sm:inline">{tab.label}</span>
                 {tabLoading && activeTab === tab.id && (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>

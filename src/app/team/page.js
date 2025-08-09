@@ -2,6 +2,20 @@
 
 import { useEffect, useState } from 'react';
 import { motion } from "framer-motion";
+// Icons
+import {
+  FaExclamationTriangle,
+  FaUser,
+  FaPhone,
+  FaChartBar,
+  FaStickyNote,
+  FaTimes,
+  FaTimesCircle,
+  FaCheckCircle,
+  FaMapMarkerAlt,
+  FaEnvelope,
+  FaUserMd
+} from 'react-icons/fa';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import zoneService from '@/services/api/zoneService';
 import accountService from '@/services/api/accountService';
@@ -168,7 +182,7 @@ export default function TeamPage() {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 py-8">
         <div className="max-w-7xl mx-auto px-4">
           <div className="text-center py-12">
-            <div className="text-red-500 text-6xl mb-4">⚠️</div>
+            <FaExclamationTriangle className="text-red-500 text-6xl mb-4 inline-block" />
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
             <p className="text-gray-600 mb-4">{error}</p>
             <button 
@@ -288,9 +302,9 @@ export default function TeamPage() {
               <MemberCard key={nurse.NursingID || nurse.nursingID} member={nurse} onViewDetail={handleViewDetail} />
             ))}
             </div>
-            {filteredNurses.length === 0 && (
+      {filteredNurses.length === 0 && (
               <div className="text-center py-12">
-                <div className="text-gray-400 text-6xl mb-4">👩‍⚕️</div>
+        <FaUser className="text-gray-400 text-6xl mb-4 inline-block" />
                 <p className="text-gray-600">Không tìm thấy y tá nào phù hợp</p>
               </div>
             )}
@@ -304,9 +318,9 @@ export default function TeamPage() {
               <MemberCard key={specialist.NursingID || specialist.nursingID} member={specialist} onViewDetail={handleViewDetail} />
             ))}
             </div>
-            {filteredSpecialists.length === 0 && (
+      {filteredSpecialists.length === 0 && (
               <div className="text-center py-12">
-                <div className="text-gray-400 text-6xl mb-4">👨‍⚕️</div>
+        <FaUserMd className="text-gray-400 text-6xl mb-4 inline-block" />
                 <p className="text-gray-600">Không tìm thấy chuyên gia nào phù hợp</p>
               </div>
             )}
@@ -316,72 +330,85 @@ export default function TeamPage() {
         {/* Detail Modal */}
         {showDetail && detailData && (
           <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
-            <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-2xl relative max-h-[90vh] overflow-y-auto">
-              <button 
-                className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 text-2xl font-bold transition-colors z-10" 
+            <div className="bg-white rounded-3xl shadow-2xl p-8 w-full max-w-5xl relative max-h-[80vh] overflow-y-auto">
+              <button
+                aria-label="Đóng"
+                className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 text-2xl transition-colors z-10"
                 onClick={handleCloseDetail}
               >
-                &times;
+                <FaTimes />
               </button>
-              
-              {/* Header với ảnh và thông tin cơ bản */}
-              <div className="text-center mb-8">
-                <div className="relative inline-block">
-                  <img
-                    src={detailData.avatar_url || detailData.avatarUrl || '/images/hero-bg.jpg'}
-                    alt={detailData.FullName || detailData.Nurse_Name || detailData.fullName}
-                    className="w-28 h-28 rounded-full object-cover mx-auto mb-4 border-4 border-pink-200 shadow-xl"
-                  />
-                  <div className={`absolute -bottom-2 -right-2 w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shadow-lg ${
-                    (detailData.Status || detailData.status) === 'active' 
-                      ? 'bg-green-500 text-white' 
-                      : 'bg-red-500 text-white'
-                  }`}>
-                    {detailData.Status || detailData.status === 'active' ? '✓' : '✗'}
+
+              {/* Header: Avatar + Name */}
+              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-6">
+                <div className="flex items-center gap-4">
+                  <div className="relative">
+                    <img
+                      src={detailData.avatar_url || detailData.avatarUrl || '/images/hero-bg.jpg'}
+                      alt={detailData.FullName || detailData.Nurse_Name || detailData.fullName}
+                      className="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover border-4 border-pink-200 shadow-xl"
+                    />
+                    <div className="absolute -bottom-2 -right-2">
+                      {(detailData.Status || detailData.status)?.toLowerCase() === 'active' ? (
+                        <FaCheckCircle className="text-green-500 text-2xl drop-shadow" />
+                      ) : (
+                        <FaTimesCircle className="text-red-500 text-2xl drop-shadow" />
+                      )}
+                    </div>
+                  </div>
+                  <div>
+                    <h3 className="text-2xl font-bold text-gray-800">
+                      {detailData.FullName || detailData.Nurse_Name || detailData.fullName}
+                    </h3>
+                    <div className="mt-1 inline-flex items-center gap-2 text-sm text-gray-600">
+                      <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                        {(detailData.Major || detailData.major) || 'Chưa cập nhật'}
+                      </span>
+                      <span className="inline-flex items-center gap-1">
+                        <FaMapMarkerAlt className="text-gray-500" />
+                        {getZoneName(detailData.ZoneID || detailData.zoneID || detailData.Address || detailData.address)}
+                      </span>
+                    </div>
                   </div>
                 </div>
-                <h3 className="text-2xl font-bold text-gray-800 mb-2">
-                  {detailData.FullName || detailData.Nurse_Name || detailData.fullName}
-                </h3>
               </div>
 
-              {/* Grid layout cho thông tin chi tiết */}
-              <div className="grid grid-cols-1 gap-6">
-                
-                {/* Thông tin cá nhân */}
-                <div className="bg-gradient-to-br from-blue-50 to-blue-100 rounded-2xl p-6 border border-blue-200">
+              {/* 2-column content */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {/* Personal Info */}
+                <div className="rounded-2xl border gradient-to-r from-blue-50 to-blue-100 p-6">
                   <h4 className="font-semibold text-blue-800 mb-4 text-lg flex items-center gap-2">
-                    <span className="text-xl">👤</span>
+                    <FaUser />
                     Thông tin cá nhân
                   </h4>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b border-blue-200">
+                    <div className="flex justify-between items-center py-2 border-b border-blue-200/70">
                       <span className="text-gray-600">Họ và tên:</span>
                       <span className="font-semibold text-blue-800">{detailData.FullName || detailData.Nurse_Name || detailData.fullName || 'N/A'}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-blue-200">
+                    <div className="flex justify-between items-center py-2 border-b border-blue-200/70">
                       <span className="text-gray-600">Chuyên môn:</span>
-                      <span className="font-semibold text-blue-600">{detailData.Major || detailData.major || 'N/A'}</span>
+                      <span className="font-semibold text-blue-700">{detailData.Major || detailData.major || 'N/A'}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-blue-200">
+                    <div className="flex justify-between items-center py-2 border-b border-blue-200/70">
                       <span className="text-gray-600">Khu vực:</span>
-                      <span className="font-semibold">{getZoneName(detailData.ZoneID || detailData.zoneID || detailData.Address || detailData.address)}</span>
+                      <span className="font-semibold flex items-center gap-2"><FaMapMarkerAlt className="text-gray-500" />{getZoneName(detailData.ZoneID || detailData.zoneID || detailData.Address || detailData.address)}</span>
                     </div>
                     <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600">Địa chỉ:</span>
-                      <span className="font-semibold text-sm text-right max-w-xs">{detailData.Address || detailData.address || 'N/A'}</span>
+                      <span className="font-medium text-sm text-right max-w-xs">{detailData.Address || detailData.address || 'N/A'}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* Thông tin liên hệ */}
-                <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-2xl p-6 border border-green-200">
+                {/* Contact Info */}
+                <div className="rounded-2xl border gradient-to-r from-blue-50 to-blue-100 p-6">
                   <h4 className="font-semibold text-green-800 mb-4 text-lg flex items-center gap-2">
-                    <span className="text-xl">📞</span>
+                    <FaPhone />
                     Thông tin liên hệ
                   </h4>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b border-green-200">
+                    <div className="flex justify-between items-center py-2 border-b border-green-200/70">
                       <span className="text-gray-600">Điện thoại:</span>
                       <span className="font-semibold text-green-700">
                         {accountData?.phoneNumber || accountData?.PhoneNumber || detailData.PhoneNumber || detailData.phoneNumber || detailData.Phone || detailData.phone || 'N/A'}
@@ -389,33 +416,34 @@ export default function TeamPage() {
                     </div>
                     <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600">Email:</span>
-                      <span className="font-semibold text-green-700">
+                      <span className="font-semibold text-green-700 inline-flex items-center gap-2">
+                        <FaEnvelope />
                         {accountData?.email || accountData?.Email || detailData.Email || detailData.email || 'N/A'}
                       </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Thống kê và đánh giá */}
-                <div className="bg-gradient-to-br from-yellow-50 to-yellow-100 rounded-2xl p-6 border border-yellow-200">
+                {/* Stats */}
+                <div className="rounded-2xl border gradient-to-r from-blue-50 to-blue-100 p-6">
                   <h4 className="font-semibold text-yellow-800 mb-4 text-lg flex items-center gap-2">
-                    <span className="text-xl">📊</span>
+                    <FaChartBar />
                     Thống kê & Đánh giá
                   </h4>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b border-yellow-200">
+                    <div className="flex justify-between items-center py-2 border-b border-yellow-200/70">
                       <span className="text-gray-600">Ca hoàn thành:</span>
                       <span className="font-bold text-blue-600 text-xl">{getCompletedCases(detailData.NursingID || detailData.nursingID)}</span>
                     </div>
-                    <div className="flex justify-between items-center py-2 border-b border-yellow-200">
+                    <div className="flex justify-between items-center py-2 border-b border-yellow-200/70">
                       <span className="text-gray-600">Đánh giá trung bình:</span>
-                      <span className="font-bold text-yellow-600 text-xl">4.8/5.0 ⭐</span>
+                      <span className="font-bold text-yellow-600 text-xl">4.8/5.0</span>
                     </div>
                     <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600">Trạng thái:</span>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        (detailData.Status || detailData.status) === 'Active' 
-                          ? 'bg-green-100 text-green-700 border border-green-300' 
+                        (detailData.Status || detailData.status) === 'Active'
+                          ? 'bg-green-100 text-green-700 border border-green-300'
                           : 'bg-red-100 text-red-700 border border-red-300'
                       }`}>
                         {detailData.Status || detailData.status || 'N/A'}
@@ -424,11 +452,11 @@ export default function TeamPage() {
                   </div>
                 </div>
 
-                {/* Ghi chú và thông tin bổ sung */}
+                {/* Notes */}
                 {(detailData.Note || detailData.note || detailData.Description || detailData.description) && (
-                  <div className="bg-gradient-to-br from-gray-50 to-gray-100 rounded-2xl p-6 border border-gray-200">
+                  <div className="rounded-2xl border border-gray-200 bg-gray-50 p-6">
                     <h4 className="font-semibold text-gray-800 mb-4 text-lg flex items-center gap-2">
-                      <span className="text-xl">📝</span>
+                      <FaStickyNote />
                       Ghi chú
                     </h4>
                     <p className="text-gray-700 leading-relaxed">
