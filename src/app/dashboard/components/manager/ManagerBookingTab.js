@@ -58,16 +58,18 @@ const ManagerBookingTab = () => {
 
         // Gọi API cần thiết cho trang booking
         const [
-          bookingsData,
+          rawBookings,
           accountsData,
+          careProfilesData,
           serviceTypesData,
           serviceTasksData,
           zoneDetailsData,
           nursingSpecialistsData,
           zonesData
         ] = await Promise.all([
-          bookingService.getAllBookingsWithCareProfile(),
+          bookingService.getAllBookings(),
           accountService.getAllAccounts(),
+          careProfileService.getCareProfiles(),
           serviceTypeService.getServiceTypes(),
           serviceTaskService.getServiceTasks(),
           zoneDetailService.getZoneDetails(),
@@ -75,12 +77,22 @@ const ManagerBookingTab = () => {
           zoneService.getZones()
         ]);
 
+        // Join careProfile vào từng booking để dùng thống nhất trong component
+        const cpMap = new Map((careProfilesData || []).map(cp => [
+          cp.careProfileID || cp.CareProfileID,
+          cp
+        ]));
+        const bookingsData = (rawBookings || []).map(b => ({
+          ...b,
+          careProfile: b.careProfile || cpMap.get(b.careProfileID || b.CareProfileID) || null,
+        }));
+
         // Lấy customize tasks để biết chi tiết dịch vụ và nhân sự đã gán
         const customizeTasksData = await customizeTaskService.getAllCustomizeTasks();
 
         setAllBookings(bookingsData);
         setAccounts(accountsData);
-        setServiceTypes(serviceTypesData);
+  setServiceTypes(serviceTypesData);
         setCustomizeTasks(customizeTasksData);
         setServiceTasks(serviceTasksData);
         setZoneDetails(zoneDetailsData);
