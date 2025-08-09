@@ -3,7 +3,6 @@ import { useEffect, useState, useContext } from "react";
 import { FaHistory, FaCalendarAlt, FaMoneyBillWave, FaUser, FaStickyNote, FaClock, FaCheckCircle, FaTimes } from "react-icons/fa";
 import { AuthContext } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
-// Thay thế import mock data bằng services
 import invoiceService from '@/services/api/invoiceService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 import careProfileService from '@/services/api/careProfileService';
@@ -38,7 +37,7 @@ export default function PaymentHistoryPage() {
           nursingSpecialistsData,
           serviceTasksData
         ] = await Promise.all([
-          invoiceService.getInvoices(),
+          invoiceService.getAllInvoices(),
           serviceTypeService.getServiceTypes(),
           careProfileService.getCareProfiles(),
           nursingSpecialistService.getNursingSpecialists(),
