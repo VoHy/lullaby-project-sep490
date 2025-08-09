@@ -162,16 +162,7 @@ function BookingContent() {
     }
   };
 
-  // Load service tasks
-  const loadServiceTasks = async () => {
-    try {
-      const serviceTasksData = await serviceTaskService.getServiceTasks();
-      setServiceTasks(serviceTasksData);
-    } catch (error) {
-      console.error("Error loading service tasks:", error);
-      // Không set error vì service tasks có thể không cần thiết
-    }
-  };
+  // Bỏ nạp ServiceTasks tổng quát để không chặn việc nạp theo gói
 
   // Load service tasks for specific package
   const loadServiceTasksByPackage = async (packageId) => {
@@ -235,7 +226,6 @@ function BookingContent() {
       await Promise.all([
         loadServices(),
         loadPackages(),
-        loadServiceTasks(),
         loadCareProfiles()
       ]);
       setLoading(false);
@@ -261,7 +251,7 @@ function BookingContent() {
       
       // Chỉ load nếu có package ID và chưa có service tasks
       if (targetPackageId && serviceTasks.length === 0) {
-        await loadServiceTasksByPackage(targetPackageId);
+        await loadServiceTasksByPackage(parseInt(targetPackageId, 10));
       }
     };
     
@@ -322,7 +312,7 @@ function BookingContent() {
     
     // Nếu có servicesId (multi-service không có servicesData)
     if (servicesId && services.length > 0) {
-      const serviceIds = servicesId.split(',').map(id => parseInt(id.trim()));
+      const serviceIds = servicesId.split(',').map(id => parseInt(id.trim(), 10));
       const selectedServices = services.filter(service => 
         serviceIds.includes(service.serviceID) || serviceIds.includes(service.serviceTypeID)
       );
@@ -331,7 +321,7 @@ function BookingContent() {
     
     // Nếu có serviceId (dịch vụ lẻ - có thể nhiều dịch vụ)
     if (serviceId && services.length > 0) {
-      const serviceIds = serviceId.split(',').map(id => parseInt(id.trim()));
+      const serviceIds = serviceId.split(',').map(id => parseInt(id.trim(), 10));
       const selectedServices = services.filter(service => 
         serviceIds.includes(service.serviceID) || serviceIds.includes(service.serviceTypeID)
       );
@@ -572,11 +562,11 @@ function BookingContent() {
         });
         
         const packageBookingData = {
-          careProfileID: parseInt(selectedCareProfile.careProfileID),
-          amount: parseInt(total),
+          careProfileID: parseInt(selectedCareProfile.careProfileID, 10),
+          amount: parseInt(total, 10),
           workdate: datetime,
           customizePackageCreateDto: {
-            serviceID: parseInt(packageId),
+            serviceID: parseInt(packageId, 10),
             quantity: 1 // Package luôn có quantity = 1
           }
         };
@@ -638,19 +628,19 @@ function BookingContent() {
         //    - status = 'pending'
         // Kết quả: Tổng số CustomizeTask = sum(service.quantity)
         
-        let services = [];
+        let servicesForRequest = [];
         
         if (servicesData && Array.isArray(servicesData)) {
           // Multi-service với đầy đủ thông tin số lượng
-          services = servicesData.map(service => ({
+          servicesForRequest = servicesData.map(service => ({
             serviceID: service.serviceID,
             quantity: service.quantity || 1
           }));
         } else {
           // Single service hoặc multi-service fallback
-          const serviceIds = (servicesId || serviceId) ? (servicesId || serviceId).split(',').map(id => parseInt(id.trim())) : [];
+          const serviceIds = (servicesId || serviceId) ? (servicesId || serviceId).split(',').map(id => parseInt(id.trim(), 10)) : [];
           
-          services = serviceIds.map((id) => {
+          servicesForRequest = serviceIds.map((id) => {
             // Tìm service trong selectedServicesList để lấy quantity
             const serviceInList = selectedServicesList.find(s => 
               (s.serviceID === id || s.serviceTypeID === id)
@@ -667,10 +657,10 @@ function BookingContent() {
         }
         
         const serviceBookingData = {
-          careProfileID: parseInt(selectedCareProfile.careProfileID),
-          amount: parseInt(total),
+          careProfileID: parseInt(selectedCareProfile.careProfileID, 10),
+          amount: parseInt(total, 10),
           workdate: datetime,
-          customizePackageCreateDtos: services
+          customizePackageCreateDtos: servicesForRequest
         };
 
         requestData = serviceBookingData; // Lưu cho error handling
@@ -678,16 +668,16 @@ function BookingContent() {
         console.log('Service Booking Data:', {
           ...serviceBookingData,
           serviceInfo: {
-            totalServices: services.length,
-            allAreIndividualServices: services.every(s => s.isPackage === false)
+            totalServices: servicesForRequest.length,
+            allAreIndividualServices: servicesForRequest.every(s => s.isPackage === false)
           },
           expectedResult: {
             booking: '1 Booking record',
-            customizePackages: `${services.length} CustomizePackage (isPackage=false)`,
-            customizeTasks: `${services.reduce((total, s) => total + s.quantity, 0)} CustomizeTask total`,
+            customizePackages: `${servicesForRequest.length} CustomizePackage (isPackage=false)`,
+            customizeTasks: `${servicesForRequest.reduce((total, s) => total + s.quantity, 0)} CustomizeTask total`,
             nurseSelection: 'Mỗi CustomizeTask có nurseID=null để user chọn nurse sau'
           },
-          serviceBreakdown: services.map(service => ({
+          serviceBreakdown: servicesForRequest.map(service => ({
             serviceID: service.serviceID,
             quantity: service.quantity,
             isPackage: service.isPackage,
@@ -712,7 +702,7 @@ function BookingContent() {
           isPackageBooking,
           expectedCustomizeTasks: isPackageBooking 
             ? `${serviceTasks.length} CustomizeTask (dựa trên ServiceTasks)` 
-            : `${services.reduce((total, s) => total + s.quantity, 0)} CustomizeTask (dựa trên quantity)`,
+            : `${(createdBooking?.customizePackages || []).reduce((total, pkg) => total + (pkg?.quantity || 0), 0)} CustomizeTask (dựa trên quantity)`,
           redirectUrl: `/payment?bookingId=${bookingId}`
         });
         
