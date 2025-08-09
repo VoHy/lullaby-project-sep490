@@ -28,6 +28,7 @@ import {
   formatDate,
   filterAppointments
 } from './utils/appointmentUtils';
+import careProfileService from "@/services/api/careProfileService";
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState([]);
@@ -65,8 +66,9 @@ export default function AppointmentsPage() {
       }
       setError(null);
 
-      // Fetch data với thông tin đầy đủ
-      const bookings = await bookingService.getAllBookingsWithCareProfile();
+      // Fetch bookings (GetAll) và tự join theo accountID đang login
+      const bookings = await bookingService.getAllBookings();
+      const careProfiles = await careProfileService.getCareProfiles();
 
       const services = await serviceTypeService.getServiceTypes();
 
@@ -82,18 +84,20 @@ export default function AppointmentsPage() {
 
       const customizeTasks = await customizeTaskService.getAllCustomizeTasks();
 
-      // Get user's care profiles từ booking data
-      const userCareProfiles = bookings
-        .map(booking => booking.careProfile)
-        .filter(cp => cp && (cp.accountID === user.accountID || cp.AccountID === user.accountID));
+      // Lọc care profiles theo account hiện tại
+      const currentAccountId = user.accountID || user.AccountID;
+      const myCareProfiles = (Array.isArray(careProfiles) ? careProfiles : []).filter(cp => {
+        const accId = cp.accountID ?? cp.AccountID;
+        return accId === currentAccountId;
+      });
 
-      const userCareProfileIds = new Set(userCareProfiles.map(cp => cp.careProfileID || cp.CareProfileID));
+      const myCareProfileIds = new Set(myCareProfiles.map(cp => cp.careProfileID ?? cp.CareProfileID));
 
-      // Filter appointments for user's care profiles
-      const userAppointments = bookings.filter(booking =>
-        userCareProfileIds.has(booking.careProfileID || booking.CareProfileID)
-      );
-
+      // Lọc bookings theo careProfileID thuộc user
+      const userAppointments = (Array.isArray(bookings) ? bookings : []).filter(b => {
+        const bCareId = b.careProfileID ?? b.CareProfileID;
+        return myCareProfileIds.has(bCareId);
+      });
 
       // Set all data
       setAppointments(userAppointments);
@@ -148,7 +152,7 @@ export default function AppointmentsPage() {
   const handleNurseAssignment = async (service, nurseId) => {
     try {
       console.log('🚀 Assigning nurse:', { service, nurseId });
-      
+
       // Get booking ID
       const bookingId = selectedAppointment?.bookingID || selectedAppointment?.BookingID;
       if (!bookingId) {
@@ -172,39 +176,39 @@ export default function AppointmentsPage() {
           bookingId,
           allowSameBooking: true
         });
-      } 
+      }
       // Case 3: Individual service - need to find corresponding CustomizeTask
       else {
         console.log('🔍 Finding customize task for individual service');
-        
+
         // Get all customize packages for this booking
         const customizePackagesData = await customizePackageService.getAllByBooking(bookingId);
-        
+
         // Find the customize package that matches the service
         const serviceId = service.serviceID || service.serviceTypeID || service.ServiceID;
-        const matchingPackage = customizePackagesData.find(pkg => 
-          (pkg.serviceID === serviceId) || 
-          (pkg.service_ID === serviceId) || 
+        const matchingPackage = customizePackagesData.find(pkg =>
+          (pkg.serviceID === serviceId) ||
+          (pkg.service_ID === serviceId) ||
           (pkg.Service_ID === serviceId)
         );
-        
+
         if (!matchingPackage) {
           throw new Error('Không tìm thấy customize package tương ứng');
         }
-        
+
         // Get all customize tasks for this package
         const customizePackageId = matchingPackage.customizePackageID || matchingPackage.customize_PackageID;
         const customizeTasksData = await customizeTaskService.getTasksByPackage(customizePackageId);
-        
+
         if (customizeTasksData.length === 0) {
           throw new Error('Không tìm thấy customize task nào');
         }
-        
+
         // For individual service, update the first available task
         // You might want to add more logic here to select the right task
         const taskToUpdate = customizeTasksData[0];
         const customizeTaskId = taskToUpdate.customizeTaskID || taskToUpdate.customize_TaskID;
-        
+
         await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId, {
           bookingId,
           allowSameBooking: true
