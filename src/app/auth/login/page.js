@@ -3,7 +3,7 @@
 import { useState, useContext } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import apiService from '@/services/api/apiService';
+import { authService } from '@/services/api';
 import Image from "next/image";
 import { motion } from "framer-motion";
 import { AuthContext } from "../../../context/AuthContext";
@@ -33,30 +33,44 @@ export default function LoginPage() {
     setIsLoading(true);
 
     try {
-      const response = await apiService.auth.login({
+      const response = await authService.login({
         emailOrPhoneNumber: formData.emailOrPhoneNumber,
         password: formData.password,
       });
-      if (response.user) {
-        login(response.user);
+      
+      
+      if (response.account && response.token) {
+        login(response.account, response.token);
         // Chuyển hướng dựa trên vai trò của người dùng
-        const role = response.user.role;
-        if (role === 'Admin') {
+        const roleID = response.account.roleID;
+        
+        if (roleID === 1) { // Admin
           router.push('/dashboard');
-        } else if (role === 'Nurse') {
+        } else if (roleID === 2) { // NurseSpecialist
           router.push('/dashboard');
-        } else if (role === 'Specialist') {
+        } else if (roleID === 3) { // Manager
           router.push('/dashboard');
-        } else if (role === 'Manager') {
-          router.push('/dashboard');
+        } else if (roleID === 4) { // Customer
+          router.push('/');
         } else {
           router.push('/');
         }
+      } else {
+        setError('Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.');
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message || 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.'
-      );
+      console.error('Login error:', err);
+      let errorMessage = 'Đăng nhập thất bại. Vui lòng kiểm tra lại thông tin đăng nhập.';
+      
+      if (err.message) {
+        if (err.message.includes('<!DOCTYPE')) {
+          errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra backend có đang chạy không.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }
@@ -71,28 +85,41 @@ export default function LoginPage() {
       // Giả lập việc lấy token từ Google OAuth
       const fakeGoogleToken = 'fake-google-token-' + Date.now();
 
-      const response = await apiService.auth.loginWithGoogle(fakeGoogleToken);
+      const response = await authService.loginWithGoogle(fakeGoogleToken);
 
-      if (response.user) {
-        login(response.user);
+
+      if (response.account && response.token) {
+        login(response.account, response.token);
         // Chuyển hướng dựa trên vai trò của người dùng
-        const role = response.user.role;
-        if (role === 'Admin') {
+        const roleID = response.account.roleID;
+        
+        if (roleID === 1) { // Admin
           router.push('/dashboard');
-        } else if (role === 'Nurse') {
+        } else if (roleID === 2) { // NurseSpecialist
           router.push('/dashboard');
-        } else if (role === 'Specialist') {
+        } else if (roleID === 3) { // Manager
           router.push('/dashboard');
-        } else if (role === 'Manager') {
-          router.push('/dashboard');
+        } else if (roleID === 4) { // Customer
+          router.push('/');
         } else {
           router.push('/');
         }
+      } else {
+        setError('Đăng nhập với Google thất bại. Vui lòng thử lại sau.');
       }
     } catch (err) {
-      setError(
-        err.response?.data?.message || 'Đăng nhập với Google thất bại. Vui lòng thử lại sau.'
-      );
+      console.error('Google login error:', err);
+      let errorMessage = 'Đăng nhập với Google thất bại. Vui lòng thử lại sau.';
+      
+      if (err.message) {
+        if (err.message.includes('<!DOCTYPE')) {
+          errorMessage = 'Không thể kết nối đến server. Vui lòng kiểm tra backend có đang chạy không.';
+        } else {
+          errorMessage = err.message;
+        }
+      }
+      
+      setError(errorMessage);
     } finally {
       setIsLoading(false);
     }

@@ -1,51 +1,96 @@
-import feedbacks from '../../mock/Feedback';
+﻿import { getAuthHeaders } from './serviceUtils';
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
-
-const feedbackService = {
-  getFeedbacks: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve(feedbacks);
-    }
-    const res = await fetch('/api/feedbacks');
-    return res.json();
-  },
-  getFeedbackById: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(feedbacks.find(f => f.FeedbackID === id));
-    }
-    const res = await fetch(`/api/feedbacks/${id}`);
-    return res.json();
-  },
-  createFeedback: async (data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...data, FeedbackID: feedbacks.length + 1 });
-    }
-    const res = await fetch('/api/feedbacks', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+// Thêm method đặc biệt
+const feedbackService = {  // Get all feedbacks
+  getAllFeedbacks: async () => {
+    const res = await fetch('/api/feedback/getall', {
+      method: 'GET',
+      headers: getAuthHeaders()
     });
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách feedbacks');
+    return data;
   },
-  updateFeedback: async (id, data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...feedbacks.find(f => f.FeedbackID === id), ...data });
-    }
-    const res = await fetch(`/api/feedbacks/${id}`, {
+
+  // Get feedback by ID
+  getFeedbackById: async (feedbackId) => {
+    const res = await fetch(`/api/feedback/${feedbackId}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin feedback');
+    return data;
+  },
+
+  // Update feedback
+  updateFeedback: async (feedbackId, feedbackData) => {
+    const res = await fetch(`/api/feedback/${feedbackId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      headers: getAuthHeaders(),
+      body: JSON.stringify(feedbackData)
     });
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Cập nhật feedback thất bại');
+    return data;
   },
-  deleteFeedback: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(true);
-    }
-    const res = await fetch(`/api/feedbacks/${id}`, { method: 'DELETE' });
-    return res.ok;
+
+  // Delete feedback
+  deleteFeedback: async (feedbackId) => {
+    const res = await fetch(`/api/feedback/${feedbackId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Xóa feedback thất bại');
+    return data;
+  },
+
+  // Get all feedbacks by service
+  getAllFeedbacksByService: async (serviceId) => {
+    const res = await fetch(`/api/feedback/getallbyservice/${serviceId}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách feedbacks theo service');
+    return data;
+  },
+
+  // Get all feedbacks by nursing
+  getAllFeedbacksByNursing: async (nursingId) => {
+    const res = await fetch(`/api/feedback/getallbynursing/${nursingId}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách feedbacks theo nursing');
+    return data;
+  },
+
+  // Get feedback by customize task
+  getFeedbackByCustomizeTask: async (customizeTaskId) => {
+    const res = await fetch(`/api/feedback/getbycustomizetask/${customizeTaskId}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy feedback theo customize task');
+    return data;
+  },
+
+  // Create feedback
+  createFeedback: async (feedbackData) => {
+    const res = await fetch('/api/feedback', {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(feedbackData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Tạo feedback thất bại');
+    return data;
   }
 };
 
 export default feedbackService; 
+

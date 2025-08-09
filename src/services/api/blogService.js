@@ -1,50 +1,98 @@
-import blogs from '../../mock/Blog';
+﻿// Blog Service - Xử lý tất cả các thao tác liên quan đến blog
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
+import { getAuthHeaders } from './serviceUtils';
 
 const blogService = {
-  getBlogs: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve(blogs);
-    }
-    const res = await fetch('/api/blogs');
-    return res.json();
+
+  // Get all blogs
+  getAllBlogs: async () => {
+    const res = await fetch('/api/blog/getall', {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách blog');
+    return data;
   },
-  getBlogById: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(blogs.find(b => b.BlogID === id));
-    }
-    const res = await fetch(`/api/blogs/${id}`);
-    return res.json();
+
+  // Get blog by ID
+  getBlogById: async (blogId) => {
+    const res = await fetch(`/api/blog/${blogId}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin blog');
+    return data;
   },
-  createBlog: async (data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...data, BlogID: blogs.length + 1 });
-    }
-    const res = await fetch('/api/blogs', {
+
+  // Create new blog
+  createBlog: async (blogData) => {
+    const res = await fetch('/api/blog', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        title: blogData.title,
+        blogCategoryID: blogData.blogCategoryID,
+        content: blogData.content,
+        image: blogData.image,
+        createdByID: blogData.createdByID
+      })
     });
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Tạo blog thất bại');
+    return data;
   },
-  updateBlog: async (id, data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...blogs.find(b => b.BlogID === id), ...data });
-    }
-    const res = await fetch(`/api/blogs/${id}`, {
+
+  // Update blog
+  updateBlog: async (blogId, blogData) => {
+    const res = await fetch(`/api/blog/update/${blogId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        title: blogData.title,
+        blogCategoryID: blogData.blogCategoryID,
+        content: blogData.content,
+        image: blogData.image,
+        createdByID: blogData.createdByID
+      })
     });
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Cập nhật blog thất bại');
+    return data;
   },
-  deleteBlog: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(true);
-    }
-    const res = await fetch(`/api/blogs/${id}`, { method: 'DELETE' });
-    return res.ok;
+
+  // Delete blog
+  deleteBlog: async (blogId) => {
+    const res = await fetch(`/api/blog/${blogId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Xóa blog thất bại');
+    return data;
+  },
+
+  // Activate blog
+  activateBlog: async (blogId) => {
+    const res = await fetch(`/api/blog/active/${blogId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Kích hoạt blog thất bại');
+    return data;
+  },
+
+  // Deactivate blog
+  deactivateBlog: async (blogId) => {
+    const res = await fetch(`/api/blog/inactive/${blogId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Vô hiệu hóa blog thất bại');
+    return data;
   }
 };
 

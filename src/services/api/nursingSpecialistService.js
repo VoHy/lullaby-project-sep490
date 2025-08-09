@@ -1,37 +1,74 @@
-import nursingSpecialists from '../../mock/NursingSpecialist';
+﻿import { getAuthHeaders } from './serviceUtils';
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
+// Tạo base service với factory
 
-const nursingSpecialistService = {
+// Thêm method đặc biệt
+const nursingSpecialistService = {  // Thêm method getNursingSpecialists để đảm bảo
   getNursingSpecialists: async () => {
-    if (USE_MOCK) return Promise.resolve(nursingSpecialists);
-    const res = await fetch('/api/nursing-specialists');
-    return res.json();
-  },
-  getNursingSpecialistById: async (id) => {
-    if (USE_MOCK) return Promise.resolve(nursingSpecialists.find(n => n.NursingID === id));
-    const res = await fetch(`/api/nursing-specialists/${id}`);
-    return res.json();
-  },
-  createNursingSpecialist: async (data) => {
-    if (USE_MOCK) return Promise.resolve({ ...data, NursingID: nursingSpecialists.length + 1 });
-    const res = await fetch('/api/nursing-specialists', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    const res = await fetch('/api/nursingspecialists', {
+      method: 'GET',
+      headers: getAuthHeaders()
     });
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách nursing specialists');
+    return data;
   },
+
   updateNursingSpecialist: async (id, data) => {
-    if (USE_MOCK) return Promise.resolve({ ...nursingSpecialists.find(n => n.NursingID === id), ...data });
-    const res = await fetch(`/api/nursing-specialists/${id}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    const res = await fetch(`/api/nursingspecialists/update/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Cập nhật hồ sơ thất bại');
+    return result;
   },
+
+  // Thêm method getAllNursingSpecialists để lấy tất cả nursing specialists
+  getAllNursingSpecialists: async () => {
+    const res = await fetch('/api/nursingspecialists/getall', {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách nursing specialists');
+    return data;
+  },
+
+  // Method đặc biệt
+  changeNursingSpecialistStatus: async (id, status) => {
+    const res = await fetch(`/api/nursingspecialists/changestatus/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({ status })
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Thay đổi trạng thái nursing specialist thất bại');
+    return result;
+  },
+
+  // Count method
+  getNursingSpecialistCount: async () => {
+    const res = await fetch('/api/nursingspecialists/count', {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng nursing specialists');
+    return data;
+  },
+
   deleteNursingSpecialist: async (id) => {
-    if (USE_MOCK) return Promise.resolve(true);
-    const res = await fetch(`/api/nursing-specialists/${id}`, { method: 'DELETE' });
-    return res.ok;
+    const res = await fetch(`/api/nursingspecialists/delete/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Xóa hồ sơ thất bại');
+    return data;
   }
 };
 
 export default nursingSpecialistService; 
+

@@ -1,51 +1,65 @@
-import holidays from '../../mock/Holiday';
+﻿import { getAuthHeaders } from './serviceUtils';
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
+// Tạo base service với factory
 
-const holidayService = {
-  getHolidays: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve(holidays);
-    }
-    const res = await fetch('/api/holidays');
-    return res.json();
+// Thêm method đặc biệt
+const holidayService = {  // Get all holidays
+  getAllHolidays: async () => {
+    const res = await fetch('/api/holiday/getall', {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách holidays');
+    return data;
   },
-  getHolidayById: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(holidays.find(h => h.HolidayID === id));
-    }
-    const res = await fetch(`/api/holidays/${id}`);
-    return res.json();
+
+  // Get holiday by ID
+  getHolidayById: async (holidayId) => {
+    const res = await fetch(`/api/holiday/${holidayId}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin holiday');
+    return data;
   },
-  createHoliday: async (data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...data, HolidayID: holidays.length + 1 });
-    }
-    const res = await fetch('/api/holidays', {
+
+  // Create new holiday
+  createHoliday: async (holidayData) => {
+    const res = await fetch('/api/holiday', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      headers: getAuthHeaders(),
+      body: JSON.stringify(holidayData)
     });
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Tạo holiday thất bại');
+    return data;
   },
-  updateHoliday: async (id, data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...holidays.find(h => h.HolidayID === id), ...data });
-    }
-    const res = await fetch(`/api/holidays/${id}`, {
+
+  // Update holiday
+  updateHoliday: async (holidayId, holidayData) => {
+    const res = await fetch(`/api/holiday/${holidayId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      headers: getAuthHeaders(),
+      body: JSON.stringify(holidayData)
     });
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Cập nhật holiday thất bại');
+    return data;
   },
-  deleteHoliday: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(true);
-    }
-    const res = await fetch(`/api/holidays/${id}`, { method: 'DELETE' });
-    return res.ok;
+
+  // Delete holiday
+  deleteHoliday: async (holidayId) => {
+    const res = await fetch(`/api/holiday/${holidayId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Xóa holiday thất bại');
+    return data;
   }
 };
 
 export default holidayService; 
+

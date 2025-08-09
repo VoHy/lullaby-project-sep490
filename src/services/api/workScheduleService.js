@@ -1,51 +1,62 @@
-import workSchedules from '../../mock/WorkSchedule';
-
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
+﻿// Work Schedule Service - Xử lý tất cả các thao tác liên quan đến lịch làm việc
+import { apiGet, apiPost, apiPut, apiDelete } from './serviceUtils';
 
 const workScheduleService = {
+  /**
+   * Lấy danh sách tất cả work schedules
+   * @returns {Promise<any>} Danh sách work schedules
+   */
   getWorkSchedules: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve(workSchedules);
-    }
-    const res = await fetch('/api/work-schedules');
-    return res.json();
+    return await apiGet('/api/workschedules', 'Không thể lấy danh sách lịch làm việc');
   },
+
+  // Get all by nursing
+  getAllByNursing: async (nursingId) => {
+    return await apiGet(`/api/workschedules/getallbynursing/${nursingId}`, 'Không thể lấy lịch làm việc theo y tá');
+  },
+
+  /**
+   * Lấy work schedule theo ID
+   * @param {string|number} id - Work schedule ID
+   * @returns {Promise<any>} Thông tin work schedule
+   */
   getWorkScheduleById: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(workSchedules.find(w => w.WorkScheduleID === id));
-    }
-    const res = await fetch(`/api/work-schedules/${id}`);
-    return res.json();
+    return await apiGet(`/api/workschedules/${id}`, 'Không thể lấy thông tin lịch làm việc');
   },
-  createWorkSchedule: async (data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...data, WorkScheduleID: workSchedules.length + 1 });
-    }
-    const res = await fetch('/api/work-schedules', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return res.json();
+
+  /**
+   * Tạo work schedule mới
+   * @param {object} workScheduleData - Dữ liệu work schedule
+   * @returns {Promise<any>} Work schedule được tạo
+   */
+  createWorkSchedule: async (workScheduleData) => {
+    return await apiPost('/api/workschedules', workScheduleData, 'Không thể tạo lịch làm việc');
   },
-  updateWorkSchedule: async (id, data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...workSchedules.find(w => w.WorkScheduleID === id), ...data });
-    }
-    const res = await fetch(`/api/work-schedules/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return res.json();
+
+  /**
+   * Cập nhật work schedule
+   * @param {string|number} id - Work schedule ID
+   * @param {object} workScheduleData - Dữ liệu cập nhật
+   * @returns {Promise<any>} Work schedule được cập nhật
+   */
+  updateWorkSchedule: async (id, workScheduleData) => {
+    return await apiPut(`/api/workschedules/${id}`, workScheduleData, 'Không thể cập nhật lịch làm việc');
   },
+
+  // Update IsAttended
+  updateIsAttended: async (workScheduleId) => {
+    return await apiPut(`/api/workschedules/updateisattended/${workScheduleId}`, {}, 'Không thể cập nhật điểm danh');
+  },
+
+  /**
+   * Xóa work schedule
+   * @param {string|number} id - Work schedule ID
+   * @returns {Promise<any>} Kết quả xóa
+   */
   deleteWorkSchedule: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(true);
-    }
-    const res = await fetch(`/api/work-schedules/${id}`, { method: 'DELETE' });
-    return res.ok;
+    return await apiDelete(`/api/workschedules/${id}`, 'Không thể xóa lịch làm việc');
   }
 };
 
 export default workScheduleService; 
+

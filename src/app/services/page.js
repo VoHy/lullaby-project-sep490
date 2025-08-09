@@ -1,176 +1,372 @@
 'use client';
 import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { motion } from "framer-motion";
-import customerPackageService from '@/services/api/customerPackageService';
+// import customizePackageService from '@/services/api/customizePackageService';
 import serviceTypeService from '@/services/api/serviceTypeService';
-import serviceTypes from '@/mock/ServiceType';
-import serviceTasks from '@/mock/ServiceTask';
+import serviceTaskService from '@/services/api/serviceTaskService';
+// import feedbackService from '@/services/api/feedbackService';
+import { 
+  SearchFilter, 
+  ServiceSection, 
+  DetailModal, 
+  MultiServiceBooking 
+} from './components';
+import { useRouter } from 'next/navigation';
+
+// Skeleton Loading Component
+const ServicesSkeleton = () => (
+  <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+      {/* Header Skeleton */}
+      <div className="text-center mb-12">
+        <div className="h-12 bg-gray-200 rounded-lg mb-4 animate-pulse"></div>
+        <div className="h-6 bg-gray-200 rounded w-3/4 mx-auto animate-pulse"></div>
+      </div>
+
+      {/* Search Filter Skeleton */}
+      <div className="mb-8">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="h-12 bg-gray-200 rounded-lg flex-1 animate-pulse"></div>
+          <div className="h-12 bg-gray-200 rounded-lg w-48 animate-pulse"></div>
+        </div>
+      </div>
+
+      {/* Services Skeleton */}
+      <div className="space-y-8">
+        {[1, 2].map(section => (
+          <div key={section}>
+            <div className="h-8 bg-gray-200 rounded mb-6 animate-pulse"></div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[1, 2, 3].map(card => (
+                <div key={card} className="border rounded-xl p-6 bg-white">
+                  <div className="h-48 bg-gray-200 rounded-lg mb-4 animate-pulse"></div>
+                  <div className="h-6 bg-gray-200 rounded mb-2 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded w-3/4 mb-2 animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse"></div>
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+// Utility function to clear services cache
+const clearServicesCache = () => {
+  localStorage.removeItem('services_data');
+  localStorage.removeItem('services_cache_time');
+};
 
 export default function ServicesPage() {
-  const [packages, setPackages] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
-  const [packageServiceTypes, setPackageServiceTypes] = useState([]);
+  const [serviceTasks, setServiceTasks] = useState([]);
+  // const [feedbacks, setFeedbacks] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedServices, setSelectedServices] = useState([]);
+  const [serviceQuantities, setServiceQuantities] = useState({}); // Thêm state để quản lý số lượng
+  const [searchText, setSearchText] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('all');
+  const [serviceDetail, setServiceDetail] = useState(null);
+  const [packageDetail, setPackageDetail] = useState(null);
+  const [expandedPackage, setExpandedPackage] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const router = useRouter();
 
+  // Lấy dữ liệu từ API với caching
   useEffect(() => {
-    customerPackageService.getCustomerPackages().then(setPackages);
-    serviceTypeService.getServiceTypes().then(setServiceTypes);
+    const loadServices = async () => {
+      try {
+        setLoading(true);
+        setError("");
+        
+        // Check cache first
+        const cachedData = localStorage.getItem('services_data');
+        const cacheTime = localStorage.getItem('services_cache_time');
+        const now = Date.now();
+        
+        // Use cache if it's less than 10 minutes old
+        if (cachedData && cacheTime && (now - parseInt(cacheTime)) < 10 * 60 * 1000) {
+          const parsedData = JSON.parse(cachedData);
+          setServiceTypes(parsedData.services);
+          setServiceTasks(parsedData.tasks);
+          setLoading(false);
+          return;
+        }
+        
+        // Fetch fresh data
+        const [services, tasks] = await Promise.all([
+          serviceTypeService.getServiceTypes(),
+          serviceTaskService.getServiceTasks()
+        ]);
+        
+        setServiceTypes(services);
+        setServiceTasks(tasks);
+        
+        // Cache the data
+        localStorage.setItem('services_data', JSON.stringify({
+          services,
+          tasks
+        }));
+        localStorage.setItem('services_cache_time', now.toString());
+        
+      } catch (error) {
+        console.error('Error loading services:', error);
+        setError('Không thể tải dịch vụ. Vui lòng thử lại sau.');
+        // Clear cache on error
+        clearServicesCache();
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadServices();
   }, []);
 
   // Khi chọn package thì reset chọn service lẻ
   const handleSelectPackage = (pkgId) => {
     if (selectedPackage === pkgId) {
-      setSelectedPackage(null); // Bỏ chọn nếu bấm lại vào gói đang chọn
+      setSelectedPackage(null);
     } else {
       setSelectedPackage(pkgId);
       setSelectedServices([]);
+      setServiceQuantities({}); // Reset số lượng dịch vụ
     }
   };
 
   // Khi chọn service lẻ thì reset chọn package
   const handleToggleService = (serviceId) => {
     if (selectedPackage) setSelectedPackage(null);
-    setSelectedServices((prev) =>
-      prev.includes(serviceId)
-        ? prev.filter((id) => id !== serviceId)
-        : [...prev, serviceId]
-    );
+    setSelectedServices((prev) => {
+      if (prev.includes(serviceId)) {
+        // Nếu bỏ chọn dịch vụ, xóa số lượng của nó
+        setServiceQuantities(prevQuantities => {
+          const newQuantities = { ...prevQuantities };
+          delete newQuantities[serviceId];
+          return newQuantities;
+        });
+        return prev.filter((id) => id !== serviceId);
+      } else {
+        // Nếu chọn dịch vụ mới, set số lượng mặc định là 1
+        setServiceQuantities(prevQuantities => ({
+          ...prevQuantities,
+          [serviceId]: 1
+        }));
+        return [...prev, serviceId];
+      }
+    });
   };
 
-  // Lấy các ServiceID thuộc package đã chọn
-  const serviceIds = packageServiceTypes
-    .filter(pst => pst.PackageID === selectedPackage)
-    .map(pst => pst.ServiceID);
-
-  // Lấy danh sách serviceType thuộc package
-  const currentServiceTypes = serviceTypes.filter(st => serviceIds.includes(st.ServiceID));
-
-  // Lấy danh sách service lẻ (không thuộc package nào đang chọn)
-  const serviceIdsInPackages = packageServiceTypes.map(pst => pst.ServiceID);
-  const availableServices = serviceTypes.filter(st => st.Status === 'active');
-
-  // Xử lý booking
-  const handleBooking = () => {
-    if (selectedPackage) {
-      router.push(`/booking?package=${selectedPackage}`);
-    }
+  // Hàm cập nhật số lượng cho dịch vụ
+  const handleQuantityChange = (serviceId, quantity) => {
+    setServiceQuantities(prevQuantities => ({
+      ...prevQuantities,
+      [serviceId]: quantity
+    }));
   };
-
-  // Modal xem chi tiết dịch vụ lẻ
-  const [serviceDetail, setServiceDetail] = useState(null);
 
   // Tách dịch vụ lẻ và package
-  const singleServices = serviceTypes.filter(s => !s.IsPackage && s.Status === 'active');
-  const servicePackages = serviceTypes.filter(s => s.IsPackage && s.Status === 'active');
+  const singleServices = serviceTypes.filter(s => !s.isPackage && s.status === 'active');
+  const servicePackages = serviceTypes.filter(s => s.isPackage && s.status === 'active');
 
-  // Lấy dịch vụ lẻ thuộc về 1 package
-  function getServicesOfPackage(packageId) {
-    const tasks = serviceTasks.filter(t => t.Package_ServiceID === packageId);
-    return tasks.map(task => serviceTypes.find(s => s.ServiceID === task.Child_ServiceID)).filter(Boolean);
+  // Lấy dịch vụ lẻ thuộc về 1 package từ API
+  async function getServicesOfPackage(packageId) {
+    try {
+      const tasks = await serviceTaskService.getServiceTasksByPackage(packageId);
+      return tasks.map(task => {
+        const childServiceId = task.child_ServiceID || task.childServiceID;
+        return serviceTypes.find(s => s.serviceID === childServiceId);
+      }).filter(Boolean);
+    } catch (error) {
+      console.error('Error getting services of package:', error);
+      return [];
+    }
   }
 
-  // State cho expand/collapse package
-  const [expandedPackage, setExpandedPackage] = useState(null);
   const handleToggleExpand = (pkgId) => {
     setExpandedPackage(expandedPackage === pkgId ? null : pkgId);
   };
 
+  // Search/filter logic with category
+  const filterService = (item) => {
+    const text = searchText.toLowerCase();
+    const categoryMatch = selectedCategory === 'all' || item.major === selectedCategory;
+    const textMatch = item.serviceName?.toLowerCase().includes(text) ||
+                     (item.description || '').toLowerCase().includes(text);
+    return categoryMatch && textMatch;
+  };
+
+  const filteredServicePackages = servicePackages.filter(filterService);
+  const filteredSingleServices = singleServices.filter(filterService);
+
+  // Tính rating từ feedbacks API
+  const getRating = (serviceId) => {
+    // Comment lại vì feedbacks API chưa hoàn thiện
+    // const fb = feedbacks.filter(f => f.ServiceID === serviceId);
+    // if (!fb.length) return { rating: 5.0, count: 0 };
+    // const rating = (fb.reduce((sum, f) => sum + (f.Rating || 5), 0) / fb.length).toFixed(1);
+    // return { rating, count: fb.length };
+    
+    // Tạm thời return rating mặc định vì feedbacks API đã bị comment
+    return { rating: 5.0, count: 0 };
+  };
+
+  // Handle booking
+  const handleBook = (serviceId, type = 'service') => {
+    if (type === 'package') {
+      // Tìm thông tin package
+      const packageInfo = serviceTypes.find(s => s.serviceID === serviceId);
+      if (packageInfo) {
+        const packageData = {
+          serviceName: packageInfo.serviceName,
+          major: packageInfo.major,
+          price: packageInfo.price,
+          duration: packageInfo.duration,
+          description: packageInfo.description,
+          serviceID: packageInfo.serviceID
+        };
+        router.push(`/booking?package=${serviceId}&packageData=${encodeURIComponent(JSON.stringify(packageData))}`);
+      } else {
+        router.push(`/booking?package=${serviceId}`);
+      }
+    } else {
+      // Tìm thông tin service và số lượng
+      const serviceInfo = serviceTypes.find(s => s.serviceID === serviceId);
+      const quantity = serviceQuantities[serviceId] || 1;
+      if (serviceInfo) {
+        const serviceData = {
+          serviceName: serviceInfo.serviceName,
+          major: serviceInfo.major,
+          price: serviceInfo.price,
+          duration: serviceInfo.duration,
+          description: serviceInfo.description,
+          serviceID: serviceInfo.serviceID,
+          quantity: quantity
+        };
+        router.push(`/booking?service=${serviceId}&serviceData=${encodeURIComponent(JSON.stringify(serviceData))}&quantity=${quantity}`);
+      } else {
+        router.push(`/booking?service=${serviceId}&quantity=${quantity}`);
+      }
+    }
+  };
+
+  if (loading) {
+    return <ServicesSkeleton />;
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <h3 className="text-xl font-semibold text-gray-600 mb-2">{error}</h3>
+          <p className="text-gray-500">
+            Vui lòng thử lại sau hoặc liên hệ hỗ trợ nếu vấn đề vẫn tiếp diễn.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-gray-50 py-10">
-      <div className="max-w-5xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">Dịch vụ</h1>
-        <p className="text-gray-600 mb-8">Chọn gói dịch vụ hoặc chọn các dịch vụ lẻ để đặt lịch</p>
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-2">Gói dịch vụ</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {servicePackages.map(pkg => (
-              <motion.div
-                key={pkg.ServiceID}
-                className="bg-white rounded-xl shadow p-6 flex flex-col items-center hover:shadow-lg transition"
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: 'easeOut' }}
-              >
-                <h3 className="text-xl font-semibold text-pink-700 mb-2">{pkg.ServiceName}</h3>
-                <p className="text-gray-600 text-center text-sm mb-2">{pkg.Description}</p>
-                <span className="text-pink-600 font-bold mb-2">{pkg.Price.toLocaleString('vi-VN')}đ</span>
-                <div className="text-sm text-gray-500 mb-2">Thời gian: {pkg.Duration}</div>
-                <button
-                  className="mt-2 px-4 py-2 rounded bg-purple-500 text-white font-semibold hover:bg-purple-600"
-                  onClick={() => handleToggleExpand(pkg.ServiceID)}
-                >
-                  {expandedPackage === pkg.ServiceID ? 'Ẩn chi tiết' : 'Xem chi tiết'}
-                </button>
-                {expandedPackage === pkg.ServiceID && (
-                  <div className="mt-4 w-full">
-                    <h4 className="font-semibold text-purple-600 mb-2">Dịch vụ trong gói:</h4>
-                    <ul className="list-disc pl-5 space-y-1">
-                      {getServicesOfPackage(pkg.ServiceID).map(child => (
-                        <li key={child.ServiceID} className="text-gray-700">
-                          <span className="font-medium text-blue-700">{child.ServiceName}</span> - {child.Description} <span className="text-pink-600 font-bold">({child.Price.toLocaleString('vi-VN')}đ)</span>
-                        </li>
-                      ))}
-                    </ul>
-                    <div className="mt-4 flex justify-end">
-                      <button
-                        className="px-6 py-2 rounded bg-pink-500 text-white font-semibold text-lg shadow hover:bg-pink-600"
-                        onClick={() => router.push(`/booking?package=${pkg.ServiceID}`)}
-                      >
-                        Đặt gói này
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </motion.div>
-            ))}
-          </div>
-        </div>
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold mb-2">Dịch vụ lẻ</h2>
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {singleServices.map((stype) => (
-              <motion.div
-                key={stype.ServiceID}
-                className="bg-white rounded-xl shadow p-6 flex flex-col items-center hover:shadow-lg transition"
-                initial={{ opacity: 0, y: 40 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, ease: 'easeOut' }}
-              >
-                <h3 className="text-xl font-semibold text-blue-700 mb-2">{stype.ServiceName}</h3>
-                <p className="text-gray-600 text-center text-sm mb-2">{stype.Description}</p>
-                <span className="text-pink-600 font-bold mb-2">{stype.Price.toLocaleString('vi-VN')}đ</span>
-                <div className="text-sm text-gray-500 mb-2">Thời gian: {stype.Duration}</div>
-                <button
-                  className="mt-2 px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600"
-                  onClick={() => setServiceDetail(stype)}
-                >
-                  Xem chi tiết
-                </button>
-                <button
-                  className="mt-2 px-4 py-2 rounded bg-pink-500 text-white font-semibold hover:bg-pink-600"
-                  onClick={() => router.push(`/booking?service=${stype.ServiceID}`)}
-                >
-                  Đặt dịch vụ này
-                </button>
-              </motion.div>
-            ))}
-          </div>
-        </div>
-        {serviceDetail && (
-          <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl shadow-xl p-8 max-w-lg w-full relative">
-              <button className="absolute top-2 right-2 text-xl" onClick={() => setServiceDetail(null)}>&times;</button>
-              <h2 className="text-2xl font-bold text-pink-600 mb-4">Chi tiết dịch vụ</h2>
-              <div className="mb-2"><span className="font-semibold">Tên dịch vụ: </span>{serviceDetail.ServiceName}</div>
-              <div className="mb-2"><span className="font-semibold">Giá: </span><span className="text-pink-600 font-bold">{serviceDetail.Price.toLocaleString('vi-VN')}đ</span></div>
-              <div className="mb-2"><span className="font-semibold">Thời gian: </span>{serviceDetail.Duration}</div>
-              <div className="mb-2"><span className="font-semibold">Mô tả: </span>{serviceDetail.Description}</div>
-            </div>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        {/* Header Section */}
+        <motion.div
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+            Dịch vụ của chúng tôi
+          </h1>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Chọn gói dịch vụ hoặc các dịch vụ lẻ để đặt lịch chăm sóc chuyên nghiệp
+          </p>
+        </motion.div>
+
+        {/* Search and Filter Section */}
+        <SearchFilter
+          searchText={searchText}
+          setSearchText={setSearchText}
+          selectedCategory={selectedCategory}
+          setSelectedCategory={setSelectedCategory}
+        />
+
+        {/* Service Packages Section */}
+        {filteredServicePackages.length > 0 && (
+          <ServiceSection
+            title="Gói dịch vụ"
+            services={filteredServicePackages}
+            type="package"
+            selectedItems={selectedPackage ? [selectedPackage] : []}
+            onSelect={handleSelectPackage}
+            onDetail={setPackageDetail}
+            onBook={handleBook}
+            isDisabled={selectedServices.length > 0}
+            expandedPackage={expandedPackage}
+            onToggleExpand={handleToggleExpand}
+            getServicesOfPackage={getServicesOfPackage}
+            getRating={getRating}
+          />
+        )}
+
+        {/* Single Services Section */}
+        {filteredSingleServices.length > 0 && (
+          <ServiceSection
+            title="Dịch vụ lẻ"
+            services={filteredSingleServices}
+            type="service"
+            selectedItems={selectedServices}
+            onSelect={handleToggleService}
+            onDetail={setServiceDetail}
+            onBook={handleBook}
+            isDisabled={!!selectedPackage}
+            getRating={getRating}
+            serviceQuantities={serviceQuantities}
+            onQuantityChange={handleQuantityChange}
+          />
+        )}
+
+        {/* Empty State */}
+        {filteredServicePackages.length === 0 && filteredSingleServices.length === 0 && (
+          <div className="text-center py-16">
+            <div className="text-gray-400 text-6xl mb-4">🏥</div>
+            <h3 className="text-xl font-semibold text-gray-600 mb-2">
+              Không tìm thấy dịch vụ nào
+            </h3>
+            <p className="text-gray-500">
+              Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc
+            </p>
           </div>
         )}
+
+        {/* Multi-Service Booking Button */}
+        <MultiServiceBooking 
+          selectedServices={selectedServices} 
+          serviceQuantities={serviceQuantities}
+          serviceTypes={serviceTypes}
+        />
+
+        {/* Service Detail Modal */}
+        <DetailModal
+          isOpen={!!serviceDetail}
+          onClose={() => setServiceDetail(null)}
+          item={serviceDetail}
+          type="service"
+        />
+
+        {/* Package Detail Modal */}
+        <DetailModal
+          isOpen={!!packageDetail}
+          onClose={() => setPackageDetail(null)}
+          item={packageDetail}
+          type="package"
+          getServicesOfPackage={getServicesOfPackage}
+        />
       </div>
     </div>
   );

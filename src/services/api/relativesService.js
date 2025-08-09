@@ -1,37 +1,70 @@
-import relatives from '../../mock/Relatives';
+﻿import { getAuthHeaders } from './serviceUtils';
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
+// Tạo base service với factory
 
-const relativesService = {
-  getRelatives: async () => {
-    if (USE_MOCK) return Promise.resolve(relatives);
-    const res = await fetch('/api/relatives');
-    return res.json();
+// Thêm method đặc biệt
+const relativesService = {  // Count method
+  getRelativeCount: async () => {
+    const res = await fetch('/api/relatives/count', {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng relatives');
+    return data;
   },
-  getRelativeById: async (id) => {
-    if (USE_MOCK) return Promise.resolve(relatives.find(r => r.RelativeID === id));
-    const res = await fetch(`/api/relatives/${id}`);
-    return res.json();
-  },
+
+  // Thêm method createRelative để đảm bảo
   createRelative: async (data) => {
-    if (USE_MOCK) return Promise.resolve({ ...data, RelativeID: relatives.length + 1 });
-    const res = await fetch('/api/relatives', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    const res = await fetch('/api/relatives/create', {
+      method: 'POST',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json-patch+json' },
+      body: JSON.stringify(data)
     });
-    return res.json();
+    const responseData = await res.json();
+    if (!res.ok) throw new Error(responseData.error || 'Không thể tạo relative');
+    return responseData;
   },
+
+  // Thêm method getRelatives để đảm bảo
+  getRelatives: async () => {
+    const res = await fetch('/api/relatives/getall', {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách relatives');
+    return data;
+  },
+
+  // Thêm method getRelative để lấy relative cụ thể
+  getRelative: async (id) => {
+    const res = await fetch(`/api/relatives/get/${id}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy relative');
+    return data;
+  },
+
+  // Thêm method updateRelative để đảm bảo
   updateRelative: async (id, data) => {
-    if (USE_MOCK) return Promise.resolve({ ...relatives.find(r => r.RelativeID === id), ...data });
-    const res = await fetch(`/api/relatives/${id}`, {
-      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+    const res = await fetch(`/api/relatives/update/${id}`, {
+      method: 'PUT',
+      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json-patch+json' },
+      body: JSON.stringify(data)
     });
-    return res.json();
-  },
-  deleteRelative: async (id) => {
-    if (USE_MOCK) return Promise.resolve(true);
-    const res = await fetch(`/api/relatives/${id}`, { method: 'DELETE' });
-    return res.ok;
+    
+    const responseData = await res.json();
+    
+    if (!res.ok) {
+      throw new Error(responseData.error || 'Không thể cập nhật relative');
+    }
+    
+    return responseData;
   }
 };
 
 export default relativesService; 
+

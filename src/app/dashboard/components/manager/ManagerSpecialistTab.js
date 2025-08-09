@@ -1,192 +1,261 @@
-import React, { useState } from 'react';
-import accounts from '@/mock/Account';
-import nursingSpecialists from '@/mock/NursingSpecialist';
-
-const specialists = accounts.filter(acc => acc.role_id === 5);
+'use client';
+import { useState, useEffect, useContext } from 'react';
+import { AuthContext } from '@/context/AuthContext';
+import nursingSpecialistService from '@/services/api/nursingSpecialistService';
+import accountService from '@/services/api/accountService';
+import zoneService from '@/services/api/zoneService';
+import SpecialistList from './specialist/SpecialistList';
+import SpecialistFilters from './specialist/SpecialistFilters';
+import AddSpecialistModal from './specialist/AddSpecialistModal';
+import EditSpecialistModal from './specialist/EditSpecialistModal';
 
 const ManagerSpecialistTab = () => {
-  const [showDetail, setShowDetail] = useState(false);
-  const [detailData, setDetailData] = useState(null);
-  const [showCreateModal, setShowCreateModal] = useState(false);
-  const [avatarUrl, setAvatarUrl] = useState('');
-  const [avatarPreview, setAvatarPreview] = useState('');
-  const [fullName, setFullName] = useState('');
-  const [email, setEmail] = useState('');
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
-  const [specialistList, setSpecialistList] = useState(specialists);
-  const [editStatus, setEditStatus] = useState('');
+  const { user } = useContext(AuthContext);
+  const [specialists, setSpecialists] = useState([]);
+  const [zones, setZones] = useState([]);
+  const [managedZone, setManagedZone] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterStatus, setFilterStatus] = useState('all');
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [selectedSpecialist, setSelectedSpecialist] = useState(null);
 
-  const handleView = (specialist) => {
-    const detail = nursingSpecialists.find(n => n.AccountID === specialist.AccountID);
-    setDetailData({ ...specialist, ...detail });
-    setEditStatus(specialist.status);
-    setShowDetail(true);
-  };
+  // Load data
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        setLoading(true);
+        setError('');
 
-  const handleCloseDetail = () => {
-    setShowDetail(false);
-    setDetailData(null);
-  };
+        const [specialistsData, zonesData, accountsData] = await Promise.all([
+          nursingSpecialistService.getAllNursingSpecialists(),
+          zoneService.getZones(),
+          accountService.getAllAccounts()
+        ]);
 
-  const handleCreateSpecialistClick = () => setShowCreateModal(true);
-  const handleCloseCreateModal = () => {
-    setShowCreateModal(false);
-    setAvatarUrl(''); setAvatarPreview(''); setFullName(''); setEmail(''); setPhone(''); setPassword('');
-  };
-  const handleAvatarChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatarPreview(reader.result);
-        setAvatarUrl('');
-      };
-      reader.readAsDataURL(file);
+        // Lọc chuyên gia (major = 'specialist') trong khu vực quản lý
+        const managedZone = zonesData.find(zone => zone.managerID === user.accountID);
+        setManagedZone(managedZone);
+
+        if (managedZone) {
+          const zoneSpecialists = specialistsData.filter(specialist =>
+            specialist.zoneID === managedZone.zoneID && specialist.major === 'specialist'
+          );
+
+          // Gắn thông tin liên hệ từ account
+          const specialistsWithContact = zoneSpecialists.map(s => {
+            const acc = accountsData.find(a => (a.accountID) === (s.accountID));
+            return {
+              ...s,
+              phoneNumber: acc?.phoneNumber || s.phoneNumber,
+              email: acc?.email || s.email
+            };
+          });
+
+          setSpecialists(specialistsWithContact);
+        } else {
+          setSpecialists([]);
+        }
+
+        setZones(zonesData);
+      } catch (error) {
+        console.error('Error fetching specialist data:', error);
+        setError('Không thể tải dữ liệu chuyên gia. Vui lòng thử lại sau.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user.accountID]);
+
+  // Lọc và tìm kiếm
+  const filteredSpecialists = specialists.filter(specialist => {
+    const matchesSearch = specialist.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         specialist.phoneNumber?.includes(searchTerm) ||
+                         specialist.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = filterStatus === 'all' || specialist.status === filterStatus;
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  // Xử lý thêm chuyên gia mới
+  const handleAddSpecialist = async (specialistData) => {
+    try {
+      // Sử dụng API register nursing specialist trực tiếp
+      const response = await accountService.registerNursingSpecialist({
+        fullName: specialistData.fullName,
+        phoneNumber: specialistData.phoneNumber,
+        email: specialistData.email,
+        password: specialistData.password,
+        avatarUrl: specialistData.avatarUrl || "string",
+        dateOfBirth: specialistData.dateOfBirth,
+        address: specialistData.address,
+        gender: specialistData.gender,
+        major: "specialist",
+        experience: specialistData.experience,
+        slogan: specialistData.slogan,
+        zoneID: managedZone.zoneID
+      });
+
+      // Cập nhật local state
+      setSpecialists(prev => [...prev, response]);
+      setShowAddModal(false);
+    } catch (error) {
+      console.error('Error adding specialist:', error);
+      throw new Error('Không thể thêm chuyên gia. Vui lòng thử lại.');
     }
   };
-  const handleAvatarUrlChange = (e) => {
-    setAvatarUrl(e.target.value);
-    setAvatarPreview('');
-  };
-  const handleCreateSpecialistSubmit = (e) => {
-    e.preventDefault();
-    alert('Tạo specialist thành công (giả lập)');
-    handleCloseCreateModal();
+
+  // Xử lý cập nhật chuyên gia
+  const handleUpdateSpecialist = async (specialistId, specialistData) => {
+    try {
+      // Chỉ gọi 1 API update theo swagger cho hồ sơ specialist
+      await nursingSpecialistService.updateNursingSpecialist(specialistId, {
+        zoneID: specialistData.zoneID,
+        gender: specialistData.gender,
+        dateOfBirth: specialistData.dateOfBirth ? new Date(specialistData.dateOfBirth).toISOString() : null,
+        fullName: specialistData.fullName,
+        address: specialistData.address,
+        experience: specialistData.experience,
+        slogan: specialistData.slogan,
+        major: specialistData.major,
+        status: specialistData.status
+      });
+
+      // Refresh data để lấy thông tin mới nhất
+      const [specialistsData, accountsData] = await Promise.all([
+        nursingSpecialistService.getAllNursingSpecialists(),
+        accountService.getAllAccounts()
+      ]);
+
+      const managedZone = zones.find(zone => zone.managerID === user.accountID);
+      if (managedZone) {
+        const zoneSpecialists = specialistsData.filter(specialist =>
+          specialist.zoneID === managedZone.zoneID && specialist.major === 'specialist'
+        );
+
+        const specialistsWithContact = zoneSpecialists.map(s => {
+          const acc = accountsData.find(a => (a.accountID) === (s.accountID));
+          return {
+            ...s,
+            phoneNumber: acc?.phoneNumber || s.phoneNumber,
+            email: acc?.email || s.email
+          };
+        });
+
+        setSpecialists(specialistsWithContact);
+      }
+      setShowEditModal(false);
+      setSelectedSpecialist(null);
+    } catch (error) {
+      console.error('Error updating specialist:', error);
+      throw new Error('Không thể cập nhật chuyên gia. Vui lòng thử lại.');
+    }
   };
 
-  // Đổi trạng thái specialist
-  const handleToggleStatus = (accountId) => {
-    setSpecialistList(prev => prev.map(s => s.AccountID === accountId ? { ...s, status: s.status === 'active' ? 'inactive' : 'active' } : s));
+  // Xử lý xóa chuyên gia
+  const handleDeleteSpecialist = async (specialistId, accountId) => {
+    try {
+      // Chỉ xóa hồ sơ specialist
+      await nursingSpecialistService.deleteNursingSpecialist(specialistId);
+
+      // Cập nhật local state
+      setSpecialists(prev => prev.filter(specialist => specialist.nursingID !== specialistId));
+    } catch (error) {
+      console.error('Error deleting specialist:', error);
+      throw new Error('Không thể xóa chuyên gia. Vui lòng thử lại.');
+    }
   };
 
-  // Xác nhận đổi trạng thái trong popup
-  const handleConfirmStatus = () => {
-    setSpecialistList(prev => prev.map(s => s.AccountID === detailData.AccountID ? { ...s, status: editStatus } : s));
-    setShowDetail(false);
-    setDetailData(null);
-  };
+  // Loading state
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+        <p className="text-gray-600">Đang tải dữ liệu chuyên gia...</p>
+      </div>
+    );
+  }
 
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h3 className="text-xl font-semibold">Danh sách Specialist</h3>
-        <button
-          className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:shadow-lg"
-          onClick={handleCreateSpecialistClick}
-        >
-          Thêm mới
+  // Error state
+  if (error) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-red-500 text-6xl mb-4">⚠️</div>
+        <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
+        <p className="text-gray-600 mb-4">{error}</p>
+        <button onClick={() => window.location.reload()} className="bg-purple-500 hover:bg-purple-600 text-white px-6 py-2 rounded-lg transition-colors">
+          Thử lại
         </button>
       </div>
-      {/* Popup tạo specialist */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl p-8 relative">
-            <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl" onClick={handleCloseCreateModal}>&times;</button>
-            <h3 className="text-2xl font-bold mb-6 text-center">Tạo Specialist mới</h3>
-            <form onSubmit={handleCreateSpecialistSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
-                  <input type="text" required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Nhập họ và tên" value={fullName} onChange={e => setFullName(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                  <input type="email" required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Nhập email" value={email} onChange={e => setEmail(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
-                  <input type="text" required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Nhập số điện thoại" value={phone} onChange={e => setPhone(e.target.value)} />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
-                  <input type="password" required className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Nhập mật khẩu" value={password} onChange={e => setPassword(e.target.value)} />
-                </div>
-              </div>
-              <div className="flex flex-col items-center justify-center gap-4">
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ảnh đại diện</label>
-                <div className="relative w-28 h-28 rounded-full border-2 border-purple-300 flex items-center justify-center overflow-hidden mb-2">
-                  <img src={avatarPreview || avatarUrl || '/images/avatar1.jpg'} alt="avatar" className="object-cover w-full h-full" />
-                  <label className="absolute bottom-1 right-1 bg-pink-500 text-white rounded-full p-1 cursor-pointer shadow-md hover:bg-pink-600 transition" title="Đổi ảnh">
-                    <input type="file" accept="image/*" onChange={handleAvatarChange} className="hidden" />
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.25 2.25 0 1 1 3.182 3.182M6.75 21h10.5A2.25 2.25 0 0 0 19.5 18.75V8.25A2.25 2.25 0 0 0 17.25 6H6.75A2.25 2.25 0 0 0 4.5 8.25v10.5A2.25 2.25 0 0 0 6.75 21z" />
-                    </svg>
-                  </label>
-                </div>
-                <input type="text" className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500" placeholder="Dán URL ảnh đại diện" value={avatarUrl} onChange={handleAvatarUrlChange} />
-              </div>
-              <div className="md:col-span-2 flex justify-end mt-4">
-                <button type="submit" className="px-8 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg">Lưu</button>
-              </div>
-            </form>
-          </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div>
+          <h3 className="text-2xl font-bold text-gray-900">Quản lý Chuyên gia</h3>
+          <p className="text-gray-600">
+            Khu vực: {managedZone?.zoneName || 'N/A'} | 
+            Tổng số: {specialists.length} chuyên gia
+          </p>
         </div>
+        <button
+          onClick={() => setShowAddModal(true)}
+          className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
+        >
+          <span>➕</span>
+          <span>Thêm Chuyên gia</span>
+        </button>
+      </div>
+
+      {/* Filters */}
+      <SpecialistFilters
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        filterStatus={filterStatus}
+        setFilterStatus={setFilterStatus}
+        totalSpecialists={specialists.length}
+        filteredCount={filteredSpecialists.length}
+      />
+
+      {/* Specialists List */}
+      <SpecialistList
+        specialists={filteredSpecialists}
+        onEdit={(specialist) => {
+          setSelectedSpecialist(specialist);
+          setShowEditModal(true);
+        }}
+        onDelete={handleDeleteSpecialist}
+      />
+
+      {/* Add Specialist Modal */}
+      {showAddModal && (
+        <AddSpecialistModal
+          onClose={() => setShowAddModal(false)}
+          onAdd={handleAddSpecialist}
+          managedZone={managedZone}
+        />
       )}
-      {/* Popup chi tiết specialist */}
-      {showDetail && detailData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-lg p-8 relative max-h-[90vh] overflow-y-auto">
-            <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl" onClick={handleCloseDetail}>&times;</button>
-            <div className="flex flex-col items-center mb-4">
-              <div className="w-24 h-24 rounded-full border-4 border-pink-300 overflow-hidden mb-2">
-                <img src={detailData.avatar_url || '/images/avatar1.jpg'} alt="avatar" className="object-cover w-full h-full" />
-              </div>
-              <h3 className="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 mb-1">{detailData.full_name || 'Không có'}</h3>
-              <div className="flex items-center gap-2 mt-2">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${editStatus === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{editStatus === 'active' ? 'Đang hoạt động' : 'Vô hiệu hóa'}</span>
-                <select value={editStatus} onChange={e => setEditStatus(e.target.value)} className="ml-2 px-2 py-1 rounded border focus:ring-2 focus:ring-purple-400">
-                  <option value="active">Đang hoạt động</option>
-                  <option value="inactive">Vô hiệu hóa</option>
-                </select>
-                <button onClick={handleConfirmStatus} className="ml-2 px-3 py-1 rounded bg-gradient-to-r from-purple-500 to-pink-500 text-white text-xs hover:shadow-lg">Xác nhận</button>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm">
-              <div className="font-medium text-gray-600">Email:</div>
-              <div>{detailData.email || 'Không có'}</div>
-              <div className="font-medium text-gray-600">Số điện thoại:</div>
-              <div>{detailData.phone_number || 'Không có'}</div>
-              <div className="font-medium text-gray-600">Địa chỉ:</div>
-              <div>{detailData.Address || 'Không có'}</div>
-              <div className="font-medium text-gray-600">Kinh nghiệm:</div>
-              <div>{detailData.Experience || 'Không có'} năm</div>
-              <div className="font-medium text-gray-600">Chuyên ngành:</div>
-              <div>{detailData.Major || 'Không có'}</div>
-              <div className="font-medium text-gray-600">Slogan:</div>
-              <div>{detailData.Slogan || 'Không có'}</div>
-              <div className="font-medium text-gray-600">Giới tính:</div>
-              <div>{detailData.Gender || 'Không có'}</div>
-              <div className="font-medium text-gray-600">Ngày sinh:</div>
-              <div>{detailData.DateOfBirth || 'Không có'}</div>
-            </div>
-          </div>
-        </div>
+
+      {/* Edit Specialist Modal */}
+      {showEditModal && selectedSpecialist && (
+        <EditSpecialistModal
+          specialist={selectedSpecialist}
+          onClose={() => {
+            setShowEditModal(false);
+            setSelectedSpecialist(null);
+          }}
+          onUpdate={handleUpdateSpecialist}
+          zones={zones}
+        />
       )}
-      <table className="w-full bg-white rounded-lg overflow-hidden shadow-lg">
-        <thead className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-          <tr>
-            <th className="px-6 py-3 text-left">Tên</th>
-            <th className="px-6 py-3 text-left">Email</th>
-            <th className="px-6 py-3 text-left">Trạng thái</th>
-            <th className="px-6 py-3 text-left">Thao tác</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-200">
-          {specialistList.map(specialist => (
-            <tr key={specialist.AccountID} className="hover:bg-gray-50">
-              <td className="px-6 py-4">{specialist.full_name}</td>
-              <td className="px-6 py-4">{specialist.email}</td>
-              <td className="px-6 py-4">
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${specialist.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{specialist.status}</span>
-              </td>
-              <td className="px-6 py-4">
-                <button onClick={() => handleView(specialist)} className="bg-pink-500 text-white px-3 py-1 rounded hover:bg-pink-600">Xem chi tiết</button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
     </div>
   );
 };

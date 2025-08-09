@@ -1,50 +1,41 @@
-import roles from '../../mock/Role';
+// Role Service - Xử lý tất cả các thao tác liên quan đến vai trò
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
+// Utility function để lấy token từ localStorage
+const getAuthToken = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('token');
+  }
+  return null;
+};
+
+// Utility function để tạo headers với token
+const getAuthHeaders = () => {
+  const token = getAuthToken();
+  return {
+    'Content-Type': 'application/json',
+    ...(token && { 'Authorization': `Bearer ${token}` })
+  };
+};
 
 const roleService = {
-  getAllRoles: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve(roles);
-    }
-    const res = await fetch('/api/roles');
-    return res.json();
-  },
-  getRole: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(roles.find(r => r.RoleID === id));
-    }
-    const res = await fetch(`/api/roles/${id}`);
-    return res.json();
-  },
-  createRole: async (data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...data, RoleID: roles.length + 1 });
-    }
+  getRoles: async () => {
     const res = await fetch('/api/roles', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      method: 'GET',
+      headers: getAuthHeaders()
     });
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách roles');
+    return data;
   },
-  updateRole: async (id, data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...roles.find(r => r.RoleID === id), ...data });
-    }
+
+  getRoleById: async (id) => {
     const res = await fetch(`/api/roles/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      method: 'GET',
+      headers: getAuthHeaders()
     });
-    return res.json();
-  },
-  deleteRole: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(true);
-    }
-    const res = await fetch(`/api/roles/${id}`, { method: 'DELETE' });
-    return res.ok;
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin role');
+    return data;
   }
 };
 

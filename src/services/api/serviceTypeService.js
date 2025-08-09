@@ -1,51 +1,153 @@
-import serviceTypes from '../../mock/ServiceType';
+﻿import { getAuthHeaders } from './serviceUtils';
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
+// Tạo base service với factory
 
-const serviceTypeService = {
+// Thêm method đặc biệt
+const serviceTypeService = {  // Thêm method getServiceTypes để đảm bảo
   getServiceTypes: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve(serviceTypes);
-    }
-    const res = await fetch('/api/service-types');
-    return res.json();
+    const res = await fetch('/api/servicetypes/getall', {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách service types');
+    return data;
   },
-  getServiceTypeById: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(serviceTypes.find(s => s.ServiceID === id));
-    }
-    const res = await fetch(`/api/service-types/${id}`);
-    return res.json();
+
+  // Alias cho getAllServiceTypes để tương thích
+  getAllServiceTypes: async () => {
+    const res = await fetch('/api/servicetypes/getall', {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách service types');
+    return data;
   },
+
+  // Create single service type via Next route /api/servicetypes/create (proxies to backend createsingle)
   createServiceType: async (data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...data, ServiceID: serviceTypes.length + 1 });
+    try {
+      const res = await fetch('/api/servicetypes/create', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data)
+      });
+      const text = await res.text();
+      let result;
+      try { result = text ? JSON.parse(text) : {}; } catch { result = { error: text?.slice(0, 200) || 'Invalid server response' }; }
+      if (!res.ok) throw new Error(result.error || `HTTP ${res.status}: ${res.statusText}`);
+      return result;
+    } catch (e) {
+      throw e;
     }
-    const res = await fetch('/api/service-types', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return res.json();
   },
+
+  // Update service type
   updateServiceType: async (id, data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...serviceTypes.find(s => s.ServiceID === id), ...data });
-    }
-    const res = await fetch(`/api/service-types/${id}`, {
+    const res = await fetch(`/api/servicetypes/update/${id}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data)
     });
-    return res.json();
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Cập nhật service type thất bại');
+    return result;
   },
-  deleteServiceType: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(true);
+
+  // Count method
+  getServiceTypeCount: async () => {
+    const res = await fetch('/api/servicetypes/count', {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng service types');
+    return data;
+  },
+
+  // Get by major
+  getServiceTypesByMajor: async (major) => {
+    const res = await fetch(`/api/servicetypes/getbymajor/${major}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy service types theo major');
+    return data;
+  },
+
+  // Create package
+  createServiceTypePackage: async (data) => {
+    try {
+      const res = await fetch('/api/servicetypes/createpackage', {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data)
+      });
+      const text = await res.text();
+      let result;
+      try { result = text ? JSON.parse(text) : {}; } catch { result = { error: text?.slice(0, 200) || 'Invalid server response' }; }
+      if (!res.ok) throw new Error(result.error || `HTTP ${res.status}: ${res.statusText}`);
+      return result;
+    } catch (e) {
+      throw e;
     }
-    const res = await fetch(`/api/service-types/${id}`, { method: 'DELETE' });
-    return res.ok;
+  },
+
+  // Activate service type
+  activateServiceType: async (id, data) => {
+    const res = await fetch(`/api/servicetypes/activate/${id}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data)
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Kích hoạt service type thất bại');
+    return result;
+  },
+
+  // Soft delete service type
+  softDeleteServiceType: async (id, data = {}) => {
+    try {
+      const res = await fetch(`/api/servicetypes/softdelete/${id}`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(data)
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        try {
+          const errorData = JSON.parse(errorText);
+          
+          // Nếu dịch vụ đã được đánh dấu removed, không coi là lỗi
+          if (errorData.error && errorData.error.includes('already marked as removed')) {
+            return { message: 'Service type already deleted', alreadyDeleted: true };
+          }
+          
+          throw new Error(errorData.error || 'Soft delete service type thất bại');
+        } catch (parseError) {
+          throw new Error(`Server error: ${res.status} - ${errorText.substring(0, 100)}`);
+        }
+      }
+
+      const responseText = await res.text();
+      if (!responseText) {
+        return { message: 'Service type deleted successfully' };
+      }
+
+      try {
+        const result = JSON.parse(responseText);
+        return result;
+      } catch (parseError) {
+        return { message: 'Service type deleted successfully' };
+      }
+    } catch (error) {
+      throw error;
+    }
   }
 };
 
 export default serviceTypeService; 
+

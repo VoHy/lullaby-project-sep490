@@ -1,141 +1,363 @@
 "use client";
-import { useEffect, useState } from "react";
+import React, { useEffect, useState, useContext, useMemo, useCallback } from "react";
 import { useRouter } from 'next/navigation';
-import authService from '@/services/auth/authService';
+import { motion } from 'framer-motion';
+import { FaCalendar, FaPlus, FaSync } from 'react-icons/fa';
+import { AuthContext } from '@/context/AuthContext';
+import { useWalletContext } from '@/context/WalletContext';
 import bookingService from '@/services/api/bookingService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
+import serviceTaskService from '@/services/api/serviceTaskService';
 import invoiceService from '@/services/api/invoiceService';
+import zoneDetailService from '@/services/api/zoneDetailService';
+import customizePackageService from '@/services/api/customizePackageService';
+import customizeTaskService from '@/services/api/customizeTaskService';
+import {
+  AppointmentCard,
+  AppointmentDetailModal,
+  SearchFilter,
+  EmptyState
+} from './components';
+import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import {
+  getServiceNames,
+  getNurseNames,
+  getStatusColor,
+  getStatusText,
+  formatDate,
+  filterAppointments
+} from './utils/appointmentUtils';
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
+  const [serviceTasks, setServiceTasks] = useState([]);
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
+  const [zoneDetails, setZoneDetails] = useState([]);
   const [invoices, setInvoices] = useState([]);
-  const [selected, setSelected] = useState(null); // Lịch hẹn đang xem chi tiết
-  const router = useRouter();
+  const [customizePackages, setCustomizePackages] = useState([]);
+  const [customizeTasks, setCustomizeTasks] = useState([]);
+  const [selectedAppointment, setSelectedAppointment] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState(null);
+  const [searchText, setSearchText] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [dateFilter, setDateFilter] = useState('all');
 
-  useEffect(() => {
-    if (!authService.isAuthenticated()) {
+  const router = useRouter();
+  const { user } = useContext(AuthContext);
+  const { refreshWalletData } = useWalletContext();
+
+  // Optimized data fetching with enhanced information
+  const fetchData = useCallback(async (isRefresh = false) => {
+    if (!user) {
       router.push('/auth/login');
       return;
     }
-    const user = authService.getCurrentUser();
-    bookingService.getBookingServices().then(data => {
-      setAppointments(data.filter(a => a.AccountID === user.AccountID));
-    });
-    serviceTypeService.getServiceTypes().then(setServiceTypes);
-    nursingSpecialistService.getNursingSpecialists().then(setNursingSpecialists);
-    invoiceService.getInvoices().then(setInvoices);
-  }, [router]);
 
-  // Hàm render thông tin lịch hẹn
-  const renderAppointment = (appt, idx) => {
-    let pkg = null;
-    let svcs = [];
-    let nurses = [];
-    if (appt.package) {
-      pkg = packages.find(p => p.package_id === Number(appt.package));
+    try {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      setError(null);
+
+      // Fetch data với thông tin đầy đủ
+      const bookings = await bookingService.getAllBookingsWithCareProfile();
+
+      const services = await serviceTypeService.getServiceTypes();
+
+      const tasks = await serviceTaskService.getServiceTasks();
+
+      const specialists = await nursingSpecialistService.getAllNursingSpecialists();
+
+      const zones = await zoneDetailService.getZoneDetails();
+
+      const invoiceData = await invoiceService.getAllInvoices();
+
+      const packages = await customizePackageService.getCustomizePackages();
+
+      const customizeTasks = await customizeTaskService.getAllCustomizeTasks();
+
+      // Get user's care profiles từ booking data
+      const userCareProfiles = bookings
+        .map(booking => booking.careProfile)
+        .filter(cp => cp && (cp.accountID === user.accountID || cp.AccountID === user.accountID));
+
+      const userCareProfileIds = new Set(userCareProfiles.map(cp => cp.careProfileID || cp.CareProfileID));
+
+      // Filter appointments for user's care profiles
+      const userAppointments = bookings.filter(booking =>
+        userCareProfileIds.has(booking.careProfileID || booking.CareProfileID)
+      );
+
+
+      // Set all data
+      setAppointments(userAppointments);
+      setServiceTypes(services);
+      setServiceTasks(tasks);
+      setNursingSpecialists(specialists);
+      setZoneDetails(zones);
+      setInvoices(invoiceData);
+      setCustomizePackages(packages);
+      setCustomizeTasks(customizeTasks);
+
+      // Refresh wallet context để đảm bảo wallet data được update
+      if (!isRefresh) {
+        try {
+          await refreshWalletData();
+          console.log('🔄 Wallet context refreshed');
+        } catch (walletError) {
+          console.warn('⚠️ Could not refresh wallet context:', walletError);
+        }
+      }
+
+    } catch (error) {
+      console.error('❌ Error fetching appointments:', error);
+      setError(`Không thể tải dữ liệu: ${error.message}`);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
     }
-    if (appt.services) {
-      const ids = appt.services.split(",").map(Number);
-      svcs = serviceTypes.filter(s => ids.includes(s.servicetype_id));
+  }, [user, router]);
+
+  useEffect(() => {
+    if (!user) return;
+    fetchData();
+  }, [fetchData]);
+
+  // Optimized memoized functions for better performance
+  const filteredAppointments = useMemo(() => {
+    if (!Array.isArray(appointments)) return [];
+    return filterAppointments(appointments, searchText, statusFilter, dateFilter);
+  }, [appointments, searchText, statusFilter, dateFilter]);
+
+  // Handle actions
+  const handleRefresh = () => {
+    fetchData(true);
+  };
+
+  const handleNewAppointment = () => {
+    router.push('/services');
+  };
+
+  // Handle nurse assignment
+  const handleNurseAssignment = async (service, nurseId) => {
+    try {
+      console.log('🚀 Assigning nurse:', { service, nurseId });
+      
+      // Get booking ID
+      const bookingId = selectedAppointment?.bookingID || selectedAppointment?.BookingID;
+      if (!bookingId) {
+        throw new Error('Không tìm thấy booking ID');
+      }
+
+      // Case 1: If service has customizeTaskId, update that task directly
+      if (service.customizeTaskId) {
+        console.log('📋 Updating customize task directly:', service.customizeTaskId);
+        await customizeTaskService.updateTaskNursing(service.customizeTaskId, nurseId, {
+          bookingId,
+          allowSameBooking: true
+        });
+      }
+      // Case 2: Package service with taskId (từ service task)
+      else if (service.taskId) {
+        console.log('📦 Updating package task:', service.taskId);
+        // Directly use the taskId from service task
+        const customizeTaskId = service.taskId;
+        await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId, {
+          bookingId,
+          allowSameBooking: true
+        });
+      } 
+      // Case 3: Individual service - need to find corresponding CustomizeTask
+      else {
+        console.log('🔍 Finding customize task for individual service');
+        
+        // Get all customize packages for this booking
+        const customizePackagesData = await customizePackageService.getAllByBooking(bookingId);
+        
+        // Find the customize package that matches the service
+        const serviceId = service.serviceID || service.serviceTypeID || service.ServiceID;
+        const matchingPackage = customizePackagesData.find(pkg => 
+          (pkg.serviceID === serviceId) || 
+          (pkg.service_ID === serviceId) || 
+          (pkg.Service_ID === serviceId)
+        );
+        
+        if (!matchingPackage) {
+          throw new Error('Không tìm thấy customize package tương ứng');
+        }
+        
+        // Get all customize tasks for this package
+        const customizePackageId = matchingPackage.customizePackageID || matchingPackage.customize_PackageID;
+        const customizeTasksData = await customizeTaskService.getTasksByPackage(customizePackageId);
+        
+        if (customizeTasksData.length === 0) {
+          throw new Error('Không tìm thấy customize task nào');
+        }
+        
+        // For individual service, update the first available task
+        // You might want to add more logic here to select the right task
+        const taskToUpdate = customizeTasksData[0];
+        const customizeTaskId = taskToUpdate.customizeTaskID || taskToUpdate.customize_TaskID;
+        
+        await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId, {
+          bookingId,
+          allowSameBooking: true
+        });
+      }
+
+      // Success notification
+      alert('Đã phân công nurse thành công!');
+
+      // Refresh data to show updated assignment
+      await fetchData(true);
+    } catch (error) {
+      console.error('❌ Error assigning nurse:', error);
+      alert(`Có lỗi xảy ra khi phân công nurse: ${error.message}`);
     }
-    if (appt.nurses) {
-      const ids = appt.nurses.split(",").map(Number);
-      nurses = nursingSpecialists.filter(n => ids.includes(n.nursing_id));
-    }
+  };
+
+  if (loading) {
+    return <LoadingSpinner message="Đang tải lịch hẹn..." fullScreen={true} />;
+  }
+
+  if (error) {
     return (
-      <div key={idx} className="mb-8 p-6 rounded-xl shadow bg-white cursor-pointer hover:bg-pink-50" onClick={() => setSelected({ ...appt, idx })}>
-        <div className="mb-2 text-lg font-bold text-pink-600">Lịch hẹn #{idx + 1}</div>
-        {pkg && (
-          <div className="mb-2">
-            <span className="font-semibold">Gói dịch vụ: </span>{pkg.package_name}
-          </div>
-        )}
-        {svcs.length > 0 && (
-          <div className="mb-2">
-            <span className="font-semibold">Dịch vụ lẻ: </span>
-            {svcs.map(s => s.servicetype_name).join(", ")}
-          </div>
-        )}
-        <div className="mb-2">
-          <span className="font-semibold">Ngày giờ: </span>{appt.datetime ? new Date(appt.datetime).toLocaleString() : "-"}
-        </div>
-        <div className="mb-2">
-          <span className="font-semibold">Nurse: </span>
-          {nurses.length === 0 ? "Không chọn" : nurses.map(n => n.full_name).join(", ")}
-        </div>
-        <div className="mb-2">
-          <span className="font-semibold">Trạng thái: </span>
-          <span className="text-green-600 font-semibold">Đã thanh toán</span>
+      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 flex items-center justify-center">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-red-600 mb-4">Có lỗi xảy ra</h1>
+          <p className="text-gray-600 mb-4">{error}</p>
+          <button
+            onClick={() => fetchData()}
+            className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
+          >
+            Thử lại
+          </button>
         </div>
       </div>
     );
-  };
-
-  // Render chi tiết lịch hẹn (modal đơn giản)
-  const renderDetail = () => {
-    if (!selected) return null;
-    let pkg = null;
-    let svcs = [];
-    let nurses = [];
-    if (selected.package) {
-      pkg = packages.find(p => p.package_id === Number(selected.package));
-    }
-    if (selected.services) {
-      const ids = selected.services.split(",").map(Number);
-      svcs = serviceTypes.filter(s => ids.includes(s.servicetype_id));
-    }
-    if (selected.nurses) {
-      const ids = selected.nurses.split(",").map(Number);
-      nurses = nursingSpecialists.filter(n => ids.includes(n.nursing_id));
-    }
-    // Giả lập lấy invoice đầu tiên (demo)
-    const invoice = invoices[0];
-    return (
-      <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-        <div className="bg-white rounded-xl shadow-xl p-8 max-w-lg w-full relative">
-          <button className="absolute top-2 right-2 text-xl" onClick={() => setSelected(null)}>&times;</button>
-          <h2 className="text-2xl font-bold text-pink-600 mb-4">Chi tiết lịch hẹn</h2>
-          {pkg && (
-            <div className="mb-2"><span className="font-semibold">Gói dịch vụ: </span>{pkg.package_name}</div>
-          )}
-          {svcs.length > 0 && (
-            <div className="mb-2"><span className="font-semibold">Dịch vụ lẻ: </span>{svcs.map(s => s.servicetype_name).join(", ")}</div>
-          )}
-          <div className="mb-2"><span className="font-semibold">Ngày giờ: </span>{selected.datetime ? new Date(selected.datetime).toLocaleString() : "-"}</div>
-          <div className="mb-2"><span className="font-semibold">Nurse: </span>{nurses.length === 0 ? "Không chọn" : nurses.map(n => n.full_name).join(", ")}</div>
-          <div className="mb-2"><span className="font-semibold">Ghi chú: </span>{selected.note || "-"}</div>
-          <div className="mb-2"><span className="font-semibold">Trạng thái: </span><span className="text-green-600 font-semibold">Đã thanh toán</span></div>
-          <div className="mb-4">
-            <span className="font-semibold">Lịch sử thanh toán: </span>
-            <button
-              className="ml-2 px-4 py-2 rounded bg-blue-500 text-white font-semibold hover:bg-blue-600"
-              onClick={() => {
-                setSelected(null);
-                window.location.href = "/payment/history";
-              }}
-            >
-              Xem lịch sử thanh toán
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
+  }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-10">
-      <div className="max-w-3xl mx-auto px-4">
-        <h1 className="text-3xl font-bold text-pink-600 mb-8">Lịch hẹn của bạn</h1>
-        {appointments.length === 0 ? (
-          <div className="text-gray-500">Bạn chưa có lịch hẹn nào.</div>
+    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
+      <div className="container mx-auto px-4 py-8">
+        {/* Header */}
+        <motion.div
+          className="text-center mb-12"
+          initial={{ opacity: 0, y: -30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <div className="flex items-center justify-center gap-4 mb-6">
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+              Lịch hẹn của bạn
+            </h1>
+            <button
+              onClick={handleRefresh}
+              disabled={refreshing}
+              className="p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
+              title="Làm mới dữ liệu"
+            >
+              {refreshing ? '🔄' : <FaSync />}
+            </button>
+          </div>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
+            Quản lý và theo dõi tất cả lịch hẹn chăm sóc sức khỏe của bạn
+          </p>
+        </motion.div>
+
+        {/* Search and Filter Section */}
+        <SearchFilter
+          searchText={searchText}
+          setSearchText={setSearchText}
+          statusFilter={statusFilter}
+          setStatusFilter={setStatusFilter}
+          dateFilter={dateFilter}
+          setDateFilter={setDateFilter}
+        />
+
+        {/* Results Count */}
+        <motion.div
+          className="mb-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6, delay: 0.2 }}
+        >
+          <p className="text-gray-600">
+            Tìm thấy <span className="font-semibold text-purple-600">{filteredAppointments.length}</span> lịch hẹn
+            {searchText && ` cho "${searchText}"`}
+            {statusFilter !== 'all' && ` với trạng thái "${getStatusText(statusFilter)}"`}
+          </p>
+        </motion.div>
+
+        {/* Appointments List */}
+        {!Array.isArray(filteredAppointments) || filteredAppointments.length === 0 ? (
+          <EmptyState onNewAppointment={handleNewAppointment} />
         ) : (
-          appointments.map(renderAppointment)
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {filteredAppointments.map((appointment, idx) => {
+              if (!appointment) return null;
+
+              const bookingKey = appointment.bookingID || appointment.BookingID || `appointment-${idx}`;
+
+              return (
+                <AppointmentCard
+                  key={bookingKey}
+                  appointment={appointment}
+                  index={idx}
+                  serviceTypes={serviceTypes || []}
+                  onSelect={setSelectedAppointment}
+                  getStatusColor={getStatusColor}
+                  getStatusText={getStatusText}
+                  formatDate={formatDate}
+                />
+              );
+            })}
+          </div>
         )}
-        {renderDetail()}
+
+        {/* New Appointment Button */}
+        {filteredAppointments.length > 0 && (
+          <motion.div
+            className="text-center mt-12"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.4 }}
+          >
+            <button
+              onClick={handleNewAppointment}
+              className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+            >
+              <FaPlus className="inline mr-2" />
+              Đặt lịch hẹn mới
+            </button>
+          </motion.div>
+        )}
+
+        {/* Appointment Detail Modal */}
+        {selectedAppointment && (
+          <AppointmentDetailModal
+            appointment={selectedAppointment}
+            onClose={() => setSelectedAppointment(null)}
+            serviceTypes={serviceTypes}
+            serviceTasks={serviceTasks}
+            nursingSpecialists={nursingSpecialists}
+            zoneDetails={zoneDetails}
+            invoices={invoices}
+            customizePackages={customizePackages}
+            customizeTasks={customizeTasks}
+            getStatusColor={getStatusColor}
+            getStatusText={getStatusText}
+            formatDate={formatDate}
+            onAssignNursing={handleNurseAssignment}
+          />
+        )}
       </div>
     </div>
   );
-} 
+}

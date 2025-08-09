@@ -1,51 +1,81 @@
-import invoices from '../../mock/Invoice';
+﻿import { getAuthHeaders } from './serviceUtils';
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
+// Tạo base service với factory
 
-const invoiceService = {
-  getInvoices: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve(invoices);
-    }
-    const res = await fetch('/api/invoices');
-    return res.json();
+// Thêm method đặc biệt
+const invoiceService = {  // GET /api/Invoice/GetAll
+  getAllInvoices: async () => {
+    const res = await fetch('/api/invoice/getall', {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách invoices');
+    return data;
   },
+
+  // GET /api/Invoice/{invoiceId}
   getInvoiceById: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(invoices.find(i => i.InvoiceID === id));
-    }
-    const res = await fetch(`/api/invoices/${id}`);
-    return res.json();
-  },
-  createInvoice: async (data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...data, InvoiceID: invoices.length + 1 });
-    }
-    const res = await fetch('/api/invoices', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+    const res = await fetch(`/api/invoice/${id}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
     });
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin invoice');
+    return data;
   },
-  updateInvoice: async (id, data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...invoices.find(i => i.InvoiceID === id), ...data });
-    }
-    const res = await fetch(`/api/invoices/${id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    return res.json();
-  },
+
+  // DELETE /api/Invoice/{invoiceId}
   deleteInvoice: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(true);
+    const res = await fetch(`/api/invoice/${id}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể xóa invoice');
+    return data;
+  },
+
+  // GET /api/Invoice/GetByBooking/{bookingId}
+  getInvoiceByBooking: async (bookingId) => {
+    const res = await fetch(`/api/invoice/getbybooking/${bookingId}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy invoice theo booking');
+    return data;
+  },
+
+  // POST /api/Invoice
+  createInvoice: async (invoiceData) => {
+    // Validate required fields
+    if (!invoiceData.bookingID || !invoiceData.content) {
+      throw new Error('bookingID và content là bắt buộc');
     }
-    const res = await fetch(`/api/invoices/${id}`, { method: 'DELETE' });
-    return res.ok;
+
+    const res = await fetch('/api/invoice', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json-patch+json' },
+      body: JSON.stringify(invoiceData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Tạo invoice thất bại');
+    return data;
+  },
+
+  // PUT /api/Invoice/UpdateStatus/{invoiceId}
+  updateInvoiceStatus: async (invoiceId, statusData) => {
+    const res = await fetch(`/api/invoice/updatestatus/${invoiceId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders(),
+      body: JSON.stringify(statusData)
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Cập nhật trạng thái invoice thất bại');
+    return data;
   }
 };
 
 export default invoiceService; 
+

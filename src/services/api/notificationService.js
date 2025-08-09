@@ -1,51 +1,108 @@
-import notifications from '../../mock/Notification';
+﻿import { getAuthHeaders } from './serviceUtils';
 
-const USE_MOCK = process.env.NEXT_PUBLIC_USE_MOCK === 'true';
+// Tạo base service với factory
 
-const notificationService = {
-  getNotifications: async () => {
-    if (USE_MOCK) {
-      return Promise.resolve(notifications);
-    }
-    const res = await fetch('/api/notifications');
-    return res.json();
+// Thêm method đặc biệt
+const notificationService = {  // Get all notifications
+  getAllNotifications: async () => {
+    const res = await fetch('/api/notification/getall', {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách notifications');
+    return data;
   },
-  getNotificationById: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(notifications.find(n => n.NotificationID === id));
-    }
-    const res = await fetch(`/api/notifications/${id}`);
-    return res.json();
+
+  // Get notification by ID
+  getNotificationById: async (notificationId) => {
+    const res = await fetch(`/api/notification/${notificationId}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin notification');
+    return data;
   },
-  createNotification: async (data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...data, NotificationID: notifications.length + 1 });
-    }
-    const res = await fetch('/api/notifications', {
+
+  // Create new notification
+  createNotification: async (notificationData) => {
+    const res = await fetch('/api/notification', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      headers: getAuthHeaders(),
+      body: JSON.stringify(notificationData)
     });
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Tạo notification thất bại');
+    return data;
   },
-  updateNotification: async (id, data) => {
-    if (USE_MOCK) {
-      return Promise.resolve({ ...notifications.find(n => n.NotificationID === id), ...data });
-    }
-    const res = await fetch(`/api/notifications/${id}`, {
+
+  // Delete notification
+  deleteNotification: async (notificationId) => {
+    const res = await fetch(`/api/notification/${notificationId}`, {
+      method: 'DELETE',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Xóa notification thất bại');
+    return data;
+  },
+
+  // Get all notifications by account
+  getAllNotificationsByAccount: async (accountId) => {
+    const res = await fetch(`/api/notification/getallbyaccount/${accountId}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách notifications theo account');
+    return data;
+  },
+
+  // Get unread notifications by account
+  getUnreadNotificationsByAccount: async (accountId) => {
+    const res = await fetch(`/api/notification/getunreadbyaccount/${accountId}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách notifications chưa đọc');
+    return data;
+  },
+
+  // Mark notification as read
+  markNotificationAsRead: async (notificationId) => {
+    const res = await fetch(`/api/notification/markasread/${notificationId}`, {
       method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
+      headers: getAuthHeaders()
     });
-    return res.json();
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Đánh dấu notification đã đọc thất bại');
+    return data;
   },
-  deleteNotification: async (id) => {
-    if (USE_MOCK) {
-      return Promise.resolve(true);
-    }
-    const res = await fetch(`/api/notifications/${id}`, { method: 'DELETE' });
-    return res.ok;
+
+  // Mark all notifications as read by account
+  markAllNotificationsAsReadByAccount: async (accountId) => {
+    const res = await fetch(`/api/notification/markallasreadbyaccount/${accountId}`, {
+      method: 'PUT',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Đánh dấu tất cả notifications đã đọc thất bại');
+    return data;
+  },
+
+  // Get unread notifications count by account
+  getUnreadNotificationsCountByAccount: async (accountId) => {
+    const res = await fetch(`/api/notification/getunreadcountbyaccount/${accountId}`, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng notifications chưa đọc');
+    return data;
   }
 };
 
 export default notificationService; 
+
