@@ -39,7 +39,7 @@ export default function WalletPage() {
         setLoadingHistories(true);
         setHistoryError(null);
         const accountId = user.accountID || user.AccountID;
-        const data = await transactionHistoryService.getAllTransactionHistoriesByAccount(accountId);
+        const data = await transactionHistoryService.getAllByAccount(accountId);
         setHistories(Array.isArray(data) ? data : []);
       } catch (e) {
         setHistoryError(e?.message || 'Không thể tải lịch sử giao dịch');
@@ -104,7 +104,7 @@ export default function WalletPage() {
                     walletID: wallet.walletID || wallet.WalletID,
                     amount: value,
                   };
-                  const result = await transactionHistoryService.addMoneyToWallet(payload);
+                  const result = await transactionHistoryService.addMoneyToWalletWeb(payload);
 
                   // Nếu backend trả về link thanh toán PayOS, mở tab mới
                   const payUrl = result?.payUrl || result?.checkoutUrl || result?.url;
@@ -115,7 +115,7 @@ export default function WalletPage() {
                   // Sau khi tạo yêu cầu, refresh dữ liệu để cập nhật lịch sử chờ webhook xác nhận
                   await refreshWalletData();
                   const accountId = user.accountID || user.AccountID;
-                  const data = await transactionHistoryService.getAllTransactionHistoriesByAccount(accountId);
+                  const data = await transactionHistoryService.getAllByAccount(accountId);
                   setHistories(Array.isArray(data) ? data : []);
                   alert('Đã tạo yêu cầu nạp tiền. Nếu có link thanh toán PayOS, vui lòng hoàn tất thanh toán.');
                 } catch (e) {
@@ -164,7 +164,7 @@ export default function WalletPage() {
             onClick={async () => {
               const accountId = user.accountID || user.AccountID;
               setLoadingHistories(true);
-              const data = await transactionHistoryService.getAllTransactionHistoriesByAccount(accountId);
+              const data = await transactionHistoryService.getAllByAccount(accountId);
               setHistories(Array.isArray(data) ? data : []);
               await refreshWalletData();
               setLoadingHistories(false);

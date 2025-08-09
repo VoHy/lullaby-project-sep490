@@ -1,153 +1,20 @@
-﻿import { getAuthHeaders } from './serviceUtils';
+// Service Type Service - Xử lý các loại dịch vụ
+import { API_ENDPOINTS } from '../../config/api';
+import { apiGet, apiPost, apiPut, apiDelete } from './serviceUtils';
 
-// Tạo base service với factory
+const base = API_ENDPOINTS.SERVICE_TYPES; // '/servicetypes'
 
-// Thêm method đặc biệt
-const serviceTypeService = {  // Thêm method getServiceTypes để đảm bảo
-  getServiceTypes: async () => {
-    const res = await fetch('/api/servicetypes/getall', {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách service types');
-    return data;
-  },
-
-  // Alias cho getAllServiceTypes để tương thích
-  getAllServiceTypes: async () => {
-    const res = await fetch('/api/servicetypes/getall', {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách service types');
-    return data;
-  },
-
-  // Create single service type via Next route /api/servicetypes/create (proxies to backend createsingle)
-  createServiceType: async (data) => {
-    try {
-      const res = await fetch('/api/servicetypes/create', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data)
-      });
-      const text = await res.text();
-      let result;
-      try { result = text ? JSON.parse(text) : {}; } catch { result = { error: text?.slice(0, 200) || 'Invalid server response' }; }
-      if (!res.ok) throw new Error(result.error || `HTTP ${res.status}: ${res.statusText}`);
-      return result;
-    } catch (e) {
-      throw e;
-    }
-  },
-
-  // Update service type
-  updateServiceType: async (id, data) => {
-    const res = await fetch(`/api/servicetypes/update/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Cập nhật service type thất bại');
-    return result;
-  },
-
-  // Count method
-  getServiceTypeCount: async () => {
-    const res = await fetch('/api/servicetypes/count', {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng service types');
-    return data;
-  },
-
-  // Get by major
-  getServiceTypesByMajor: async (major) => {
-    const res = await fetch(`/api/servicetypes/getbymajor/${major}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy service types theo major');
-    return data;
-  },
-
-  // Create package
-  createServiceTypePackage: async (data) => {
-    try {
-      const res = await fetch('/api/servicetypes/createpackage', {
-        method: 'POST',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data)
-      });
-      const text = await res.text();
-      let result;
-      try { result = text ? JSON.parse(text) : {}; } catch { result = { error: text?.slice(0, 200) || 'Invalid server response' }; }
-      if (!res.ok) throw new Error(result.error || `HTTP ${res.status}: ${res.statusText}`);
-      return result;
-    } catch (e) {
-      throw e;
-    }
-  },
-
-  // Activate service type
-  activateServiceType: async (id, data) => {
-    const res = await fetch(`/api/servicetypes/activate/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Kích hoạt service type thất bại');
-    return result;
-  },
-
-  // Soft delete service type
-  softDeleteServiceType: async (id, data = {}) => {
-    try {
-      const res = await fetch(`/api/servicetypes/softdelete/${id}`, {
-        method: 'PUT',
-        headers: getAuthHeaders(),
-        body: JSON.stringify(data)
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        try {
-          const errorData = JSON.parse(errorText);
-          
-          // Nếu dịch vụ đã được đánh dấu removed, không coi là lỗi
-          if (errorData.error && errorData.error.includes('already marked as removed')) {
-            return { message: 'Service type already deleted', alreadyDeleted: true };
-          }
-          
-          throw new Error(errorData.error || 'Soft delete service type thất bại');
-        } catch (parseError) {
-          throw new Error(`Server error: ${res.status} - ${errorText.substring(0, 100)}`);
-        }
-      }
-
-      const responseText = await res.text();
-      if (!responseText) {
-        return { message: 'Service type deleted successfully' };
-      }
-
-      try {
-        const result = JSON.parse(responseText);
-        return result;
-      } catch (parseError) {
-        return { message: 'Service type deleted successfully' };
-      }
-    } catch (error) {
-      throw error;
-    }
-  }
+const serviceTypeService = {
+  getServiceTypes: async () => apiGet(`${base}/getall`, 'Không thể lấy danh sách service types'),
+  getAllServiceTypes: async () => apiGet(`${base}/getall`, 'Không thể lấy danh sách service types'),
+  createServiceType: async (data) => apiPost(`${base}/createsingle`, data, 'Không thể tạo service type'),
+  createServiceTypePackage: async (data) => apiPost(`${base}/createpackage`, data, 'Không thể tạo gói dịch vụ'),
+  getServiceTypeById: async (id) => apiGet(`${base}/get/${id}`, 'Không thể lấy thông tin service type'),
+  updateServiceType: async (id, data) => apiPut(`${base}/update/${id}`, data, 'Không thể cập nhật service type'),
+  softDeleteServiceType: async (id) => apiPut(`${base}/softdelete/${id}`, {}, 'Không thể xóa mềm service type'),
+  activateServiceType: async (id) => apiPut(`${base}/activate/${id}`, {}, 'Không thể kích hoạt'),
+  deleteServiceType: async (id) => apiDelete(`${base}/delete/${id}`, 'Không thể xóa service type'),
+  getServiceTypeCount: async () => apiGet(`${base}/count`, 'Không thể lấy số lượng service types'),
 };
 
-export default serviceTypeService; 
-
+export default serviceTypeService;

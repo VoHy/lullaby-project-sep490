@@ -1,78 +1,17 @@
-﻿import { getAuthHeaders } from './serviceUtils';
+// Blog Category Service
+import { API_ENDPOINTS } from '../../config/api';
+import { apiGet, apiPost, apiPut, apiDelete } from './serviceUtils';
 
-// Tạo base service với factory
+const base = API_ENDPOINTS.BLOG_CATEGORIES; // '/BlogCategory'
 
-// Thêm method đặc biệt
-const blogCategoryService = {  // Get all blog categories
-  getAllBlogCategories: async () => {
-    const res = await fetch('/api/blogcategory/getall', {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách blog categories');
-    return data;
-  },
-
-  // Get blog category by ID
-  getBlogCategoryById: async (blogCategoryId) => {
-    const res = await fetch(`/api/blogcategory/${blogCategoryId}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin blog category');
-    return data;
-  },
-
-  // Create new blog category
-  createBlogCategory: async (blogCategoryData) => {
-    const res = await fetch('/api/blogcategory', {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        categoryName: blogCategoryData.categoryName,
-        description: blogCategoryData.description
-      })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Tạo blog category thất bại');
-    return data;
-  },
-
-  // Update blog category
-  updateBlogCategory: async (blogCategoryId, blogCategoryData) => {
-    const res = await fetch(`/api/blogcategory/${blogCategoryId}`, {
-      method: 'PUT',
-      headers: {
-        ...getAuthHeaders(),
-        'Content-Type': 'application/json-patch+json',
-      },
-      body: JSON.stringify({
-        categoryName: blogCategoryData.categoryName,
-        description: blogCategoryData.description
-      })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Cập nhật blog category thất bại');
-    return data;
-  },
-
-  // Delete blog category
-  deleteBlogCategory: async (blogCategoryId) => {
-    const res = await fetch(`/api/blogcategory/${blogCategoryId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    // Some backends return 204 No Content on successful delete
-    if (res.status === 204) {
-      return { success: true };
-    }
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Xóa blog category thất bại');
-    return data;
-  }
+const blogCategoryService = {
+  getAllBlogCategories: async () => apiGet(`${base}/GetAll`, 'Không thể lấy danh mục blog'),
+  getBlogCategoryById: async (id) => apiGet(`${base}/${id}`, 'Không thể lấy thông tin danh mục'),
+  createBlogCategory: async (data) => apiPost(`${base}`, data, 'Không thể tạo danh mục'),
+  updateBlogCategory: async (id, data) => apiPut(`${base}/${id}`, data, 'Không thể cập nhật danh mục'),
+  deleteBlogCategory: async (id) => apiDelete(`${base}/${id}`, 'Không thể xóa danh mục'),
 };
 
-export default blogCategoryService; 
+export default blogCategoryService;
+
 

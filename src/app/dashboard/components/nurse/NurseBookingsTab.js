@@ -34,9 +34,9 @@ const NurseBookingsTab = () => {
         // Optimized: lấy bookings trực tiếp theo nurse qua aggregator route
         const [mine, pkgs, tasks, sts, svTypes] = await Promise.all([
           bookingService.getBookingsByNursing(nursingID),
-          customizePackageService.getCustomizePackages ? customizePackageService.getCustomizePackages() : customizePackageService.getAllCustomizePackages?.() || Promise.resolve([]),
-          customizeTaskService.getAllCustomizeTasks ? customizeTaskService.getAllCustomizeTasks() : customizeTaskService.getAllCustomizeTasks(),
-          serviceTaskService.getServiceTasks ? serviceTaskService.getServiceTasks() : serviceTaskService.getAllServiceTasks?.() || Promise.resolve([]),
+          customizePackageService.getAllCustomizePackages ? customizePackageService.getAllCustomizePackages() : Promise.resolve([]),
+          customizeTaskService.getAllCustomizeTasks ? customizeTaskService.getAllCustomizeTasks() : Promise.resolve([]),
+          serviceTaskService.getServiceTasks ? serviceTaskService.getServiceTasks() : Promise.resolve([]),
           serviceTypeService.getServiceTypes ? serviceTypeService.getServiceTypes() : serviceTypeService.getAllServiceTypes?.() || Promise.resolve([]),
         ]);
         setBookings(Array.isArray(mine) ? mine : []);

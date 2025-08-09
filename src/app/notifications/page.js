@@ -21,8 +21,8 @@ export default function NotificationsPage() {
   const fetchNotifications = async () => {
     try {
       setLoading(true);
-      const response = await notificationService.getAllNotificationsByAccount(user.accountID);
-      setNotifications(response.data || []);
+      const data = await notificationService.getAllByAccount(user.accountID || user.AccountID);
+      setNotifications(Array.isArray(data) ? data : []);
     } catch (error) {
       console.error('Error fetching notifications:', error);
       setError('Không thể tải thông báo. Vui lòng thử lại sau.');

@@ -1,83 +1,17 @@
-﻿import { getAuthHeaders } from './serviceUtils';
+﻿// Customize Package Service
+import { API_ENDPOINTS } from '../../config/api';
+import { apiGet, apiPost, apiPut, apiDelete } from './serviceUtils';
+
+const base = API_ENDPOINTS.CUSTOMIZE_PACKAGES; // '/CustomizePackage'
 
 const customizePackageService = {
-  // Lấy tất cả CustomizePackage
-  getCustomizePackages: async () => {
-    const res = await fetch('/api/customizepackages/getall', {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(typeof window !== 'undefined' && localStorage.getItem('token') && {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        })
-      }
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách CustomizePackage');
-    return data;
-  },
-
-  // Lấy tất cả CustomizePackage theo Booking ID
-  getAllByBooking: async (bookingId) => {
-    const res = await fetch(`/api/CustomizePackage/GetAllByBooking/${bookingId}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(typeof window !== 'undefined' && localStorage.getItem('token') && {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        })
-      }
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách CustomizePackage theo Booking');
-    return data;
-  },
-
-  // Lấy tất cả CustomizePackage theo Status và Booking ID
-  getAllByStatusAndBooking: async (bookingId, status) => {
-    const res = await fetch(`/api/CustomizePackage/GetAllByStatusAndBooking/${bookingId}/${status}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(typeof window !== 'undefined' && localStorage.getItem('token') && {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        })
-      }
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách CustomizePackage theo Status và Booking');
-    return data;
-  },
-
-  // Lấy tất cả CustomizePackage theo Status
-  getAllByStatus: async (status) => {
-    const res = await fetch(`/api/CustomizePackage/GetAllByStatus/${status}`, {
-      headers: {
-        'Content-Type': 'application/json',
-        ...(typeof window !== 'undefined' && localStorage.getItem('token') && {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        })
-      }
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách CustomizePackage theo Status');
-    return data;
-  },
-
-  // Cập nhật Status của CustomizePackage
-  updateStatus: async (customizePackageId, status) => {
-    const res = await fetch(`/api/CustomizePackage/UpdateStatus/${customizePackageId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        ...(typeof window !== 'undefined' && localStorage.getItem('token') && {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        })
-      },
-      body: JSON.stringify({ status })
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể cập nhật status của CustomizePackage');
-    return data;
-  }
+  getAllCustomizePackages: async () => apiGet(`${base}/GetAll`, 'Không thể lấy danh sách gói tùy chỉnh'),
+  getCustomizePackageById: async (id) => apiGet(`${base}/${id}`, 'Không thể lấy gói'),
+  getAllByBooking: async (bookingId) => apiGet(`${base}/GetAllByBooking/${bookingId}`, 'Không thể lấy gói theo booking'),
+  getAllByStatus: async (status) => apiGet(`${base}/GetAllByStatus/${status}`, 'Không thể lấy gói theo trạng thái'),
+  getAllByStatusAndBooking: async (bookingId, status) => apiGet(`${base}/GetAllByStatusAndBooking/${bookingId}/${status}`, 'Không thể lấy gói theo trạng thái + booking'),
+  updateStatus: async (id, status) => apiPut(`${base}/UpdateStatus/${id}`, { status }, 'Không thể cập nhật trạng thái'),
+  deleteCustomizePackage: async (id) => apiDelete(`${base}/${id}`, 'Không thể xóa gói'),
 };
 
 export default customizePackageService;
-

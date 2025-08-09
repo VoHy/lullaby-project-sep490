@@ -6,6 +6,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { motion } from "framer-motion";
 import { AuthContext } from "../../../context/AuthContext";
+import accountService from '@/services/api/accountService';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -48,29 +49,22 @@ export default function RegisterPage() {
     setIsLoading(true);
 
     try {
-              // Sử dụng API thật
-        const response = await fetch('/api/register', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            fullName: formData.fullName,
-            phoneNumber: formData.phoneNumber,
-            email: formData.email,
-            password: formData.password,
-            avatarUrl: formData.avatarUrl || ''
-          })
-        });
+      // Gọi trực tiếp backend theo Swagger: /api/accounts/register/customer
+      const data = await accountService.registerCustomer({
+        fullName: formData.fullName,
+        phoneNumber: formData.phoneNumber,
+        email: formData.email,
+        password: formData.password,
+        avatarUrl: formData.avatarUrl || ''
+      });
 
-      const data = await response.json();
-
-      if (!response.ok) {
-        throw new Error(data.error || 'Đăng ký thất bại');
-      }
-
-      if (data.account) {
-        login(data.account);
+      if (data?.account) {
+        // Nếu backend trả token, đăng nhập luôn để đồng bộ session
+        if (data.token) {
+          login(data.account, data.token);
+        } else {
+          login(data.account);
+        }
 
         // Hiển thị thông báo thành công
         alert('Đăng ký thành công! Chào mừng bạn đến với Lullaby.');

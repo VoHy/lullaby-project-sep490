@@ -284,14 +284,31 @@ function PaymentContent() {
         return;
       }
 
-      // 3. Tạo invoice
+      // 3. Tạo invoice (nếu đã tồn tại và đã thanh toán, BE có thể trả lỗi "already paid")
       const bookingID = parseInt(booking.bookingID || booking.booking_ID);
       const invoiceData = {
         bookingID: bookingID,
         content: `Thanh toán booking #${bookingID}`
       };
 
-      const invoiceResponse = await invoiceService.createInvoice(invoiceData);
+      let invoiceResponse;
+      try {
+        invoiceResponse = await invoiceService.createInvoice(invoiceData);
+      } catch (createErr) {
+        const msg = createErr?.message || '';
+        if (/already paid/i.test(msg)) {
+          try {
+            const existingInvoice = await invoiceService.getInvoiceByBooking(bookingID);
+            if (existingInvoice?.invoiceID) {
+              await handlePaymentSuccess(existingInvoice.invoiceID);
+              return;
+            }
+          } catch (getErr) {
+            // fallthrough to show error below
+          }
+        }
+        throw createErr;
+      }
 
       // 4. Lấy invoiceId từ response
       let invoiceId;
@@ -328,29 +345,18 @@ function PaymentContent() {
 
       console.log('🎯 Processing payment for invoiceID:', invoiceId);
 
-      // 5. Gọi API InvoicePayment với invoiceId hợp lệ
-      
-      const paymentResponse = await fetch(`/api/transactionhistory/invoicepayment/${invoiceId}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
-        // Không cần body - API tự động xử lý
-      });
-
-      if (paymentResponse.ok) {
-        const paymentData = await paymentResponse.json();
-        
+      // 5. Gọi API InvoicePayment với invoiceId hợp lệ (service trực tiếp)
+      try {
+        await transactionHistoryService.invoicePayment(invoiceId);
         // 6. Success handling
         await handlePaymentSuccess(invoiceId);
-        
-      } else {
-        const errorData = await paymentResponse.json();
-        console.error('❌ Payment failed:', errorData);
-        
-        if (errorData.message === "This invoice has already paid.") {
-          // Invoice đã được thanh toán rồi - coi như thành công
+      } catch (payErr) {
+        // Nếu BE trả lỗi “đã thanh toán” -> coi như thành công
+        const msg = payErr?.message || '';
+        if (/already paid/i.test(msg)) {
           await handlePaymentSuccess(invoiceId);
         } else {
-          throw new Error(errorData.message || 'Thanh toán thất bại');
+          throw payErr;
         }
       }
 

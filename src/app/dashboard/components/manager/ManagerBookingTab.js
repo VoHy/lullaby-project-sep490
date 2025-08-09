@@ -265,10 +265,7 @@ const ManagerBookingTab = () => {
           await Promise.all(assignments.map(async ([taskId, sel]) => {
             const nursingId = sel.nurse || sel.specialist;
             if (!nursingId) return;
-            await customizeTaskService.updateTaskNursing(taskId, nursingId, {
-              bookingId: detailData.bookingID,
-              allowSameBooking: true
-            });
+            await customizeTaskService.updateNursing(taskId, nursingId);
           }));
         }
 
