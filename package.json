@@ -8,7 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "dev:local": "NEXT_PUBLIC_BACKEND_URL=http://localhost:5294 next dev",
-    "dev:prodapi": "NEXT_PUBLIC_BACKEND_URL=https://lullaby-gze5f9dneyena3gb.eastasia-01.azurewebsites.net next dev"
+    "dev:prodapi": "NEXT_PUBLIC_BACKEND_URL=https://cool-dhawan.103-28-36-58.plesk.page next dev"
   },
   "dependencies": {
     "@auth/core": "^0.34.2",

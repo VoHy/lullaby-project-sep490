@@ -1,108 +1,19 @@
-﻿import { getAuthHeaders } from './serviceUtils';
+﻿// Notification Service
+import { API_ENDPOINTS } from '../../config/api';
+import { apiGet, apiPost, apiPut, apiDelete } from './serviceUtils';
 
-// Tạo base service với factory
+const base = API_ENDPOINTS.NOTIFICATIONS; // '/Notification'
 
-// Thêm method đặc biệt
-const notificationService = {  // Get all notifications
-  getAllNotifications: async () => {
-    const res = await fetch('/api/notification/getall', {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách notifications');
-    return data;
-  },
-
-  // Get notification by ID
-  getNotificationById: async (notificationId) => {
-    const res = await fetch(`/api/notification/${notificationId}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin notification');
-    return data;
-  },
-
-  // Create new notification
-  createNotification: async (notificationData) => {
-    const res = await fetch('/api/notification', {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(notificationData)
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Tạo notification thất bại');
-    return data;
-  },
-
-  // Delete notification
-  deleteNotification: async (notificationId) => {
-    const res = await fetch(`/api/notification/${notificationId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Xóa notification thất bại');
-    return data;
-  },
-
-  // Get all notifications by account
-  getAllNotificationsByAccount: async (accountId) => {
-    const res = await fetch(`/api/notification/getallbyaccount/${accountId}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách notifications theo account');
-    return data;
-  },
-
-  // Get unread notifications by account
-  getUnreadNotificationsByAccount: async (accountId) => {
-    const res = await fetch(`/api/notification/getunreadbyaccount/${accountId}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách notifications chưa đọc');
-    return data;
-  },
-
-  // Mark notification as read
-  markNotificationAsRead: async (notificationId) => {
-    const res = await fetch(`/api/notification/markasread/${notificationId}`, {
-      method: 'PUT',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Đánh dấu notification đã đọc thất bại');
-    return data;
-  },
-
-  // Mark all notifications as read by account
-  markAllNotificationsAsReadByAccount: async (accountId) => {
-    const res = await fetch(`/api/notification/markallasreadbyaccount/${accountId}`, {
-      method: 'PUT',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Đánh dấu tất cả notifications đã đọc thất bại');
-    return data;
-  },
-
-  // Get unread notifications count by account
-  getUnreadNotificationsCountByAccount: async (accountId) => {
-    const res = await fetch(`/api/notification/getunreadcountbyaccount/${accountId}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng notifications chưa đọc');
-    return data;
-  }
+const notificationService = {
+  getAllNotifications: async () => apiGet(`${base}/GetAll`, 'Không thể lấy thông báo'),
+  getNotificationById: async (id) => apiGet(`${base}/${id}`, 'Không thể lấy thông báo'),
+  getAllByAccount: async (accountId) => apiGet(`${base}/GetAllByAccount/${accountId}`, 'Không thể lấy thông báo'),
+  getUnreadByAccount: async (accountId) => apiGet(`${base}/GetUnReadByAccount/${accountId}`, 'Không thể lấy thông báo chưa đọc'),
+  getUnreadCountByAccount: async (accountId) => apiGet(`${base}/GetUnReadCountByAccount/${accountId}`, 'Không thể lấy số thông báo chưa đọc'),
+  markAllAsReadByAccount: async (accountId) => apiPut(`${base}/MarkAllAsReadByAccount/${accountId}`, {}, 'Không thể đánh dấu đã đọc'),
+  markAsRead: async (notificationId) => apiPut(`${base}/IsRead/${notificationId}`, {}, 'Không thể đánh dấu đã đọc'),
+  createNotification: async (data) => apiPost(`${base}`, data, 'Không thể tạo thông báo'),
+  deleteNotification: async (id) => apiDelete(`${base}/${id}`, 'Không thể xóa thông báo'),
 };
 
-export default notificationService; 
-
+export default notificationService;

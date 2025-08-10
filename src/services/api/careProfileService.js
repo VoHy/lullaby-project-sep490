@@ -1,81 +1,18 @@
-﻿import { getAuthHeaders } from './serviceUtils';
+// Care Profile Service
+import { API_ENDPOINTS } from '../../config/api';
+import { apiGet, apiPost, apiPut, apiDelete } from './serviceUtils';
 
-// Tạo base service với factory
+const base = API_ENDPOINTS.CARE_PROFILES; // '/careprofiles'
 
-// Thêm method đặc biệt
-const careProfileService = {  // Count method
-  getCareProfileCount: async () => {
-    const res = await fetch('/api/careprofiles/count', {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng care profiles');
-    return data;
-  },
-
-  // Thêm method createCareProfile để đảm bảo
-  createCareProfile: async (data) => {
-    const res = await fetch('/api/careprofiles/create', {
-      method: 'POST',
-      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json-patch+json' },
-      body: JSON.stringify(data)
-    });
-    const responseData = await res.json();
-    if (!res.ok) throw new Error(responseData.error || 'Không thể tạo care profile');
-    return responseData;
-  },
-
-  // Thêm method getCareProfiles để đảm bảo
-  getCareProfiles: async () => {
-    try {
-      const res = await fetch('/api/careprofiles/getall', {
-        method: 'GET',
-        headers: getAuthHeaders()
-      });
-
-      const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || 'Không thể lấy danh sách care profiles');
-      }
-      return data;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  updateCareProfile: async (id, data) => {
-    const res = await fetch(`/api/careprofiles/update/${id}`, {
-      method: 'PUT',
-      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json-patch+json' },
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Không thể cập nhật care profile');
-    return result;
-  },
-
-  getCareProfileById: async (id) => {
-    const res = await fetch(`/api/careprofiles/get/${id}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const responseData = await res.json();
-    if (!res.ok) throw new Error(responseData.error || 'Không thể lấy thông tin care profile');
-    return responseData;
-  },
-
-  deleteCareProfile: async (id) => {
-    const res = await fetch(`/api/careprofiles/delete/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    const responseData = await res.json();
-    if (!res.ok) throw new Error(responseData.error || 'Không thể xóa care profile');
-    return responseData;
-  }
+const careProfileService = {
+  getCareProfiles: async () => apiGet(`${base}/getall`, 'Không thể lấy danh sách care profiles'),
+  getCareProfileById: async (id) => apiGet(`${base}/get/${id}`, 'Không thể lấy thông tin care profile'),
+  getCount: async () => apiGet(`${base}/count`, 'Không thể lấy thống kê care profiles'),
+  createCareProfile: async (data) => apiPost(`${base}/create`, data, 'Không thể tạo care profile'),
+  updateCareProfile: async (id, data) => apiPut(`${base}/update/${id}`, data, 'Không thể cập nhật care profile'),
+  deleteCareProfile: async (id) => apiDelete(`${base}/delete/${id}`, 'Không thể xóa care profile'),
 };
 
 export default careProfileService;
+
 

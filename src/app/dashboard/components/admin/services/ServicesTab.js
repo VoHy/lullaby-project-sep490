@@ -424,6 +424,7 @@ const ServicesTab = () => {
         setFormData={setFormData}
         title="Thêm dịch vụ mới"
         submitText="Tạo dịch vụ"
+        editingService={null}
       />
 
       <ServiceModal
@@ -434,6 +435,7 @@ const ServicesTab = () => {
         setFormData={setFormData}
         title="Chỉnh sửa dịch vụ"
         submitText="Cập nhật"
+        editingService={selectedService}
       />
 
       <PackageDetailModal

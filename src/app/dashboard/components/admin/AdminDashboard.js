@@ -19,7 +19,6 @@ import ManagerTab from './manager/ManagerTab';
 import BookingsTab from './booking/BookingsTab';
 import ServicesTab from './services/ServicesTab';
 import RevenueTab from './revenue/RevenueTab';
-import SettingsTab from './settings/SettingsTab';
 import BlogTab from './blog/BlogTab';
 import HolidayTab from './holiday/HolidayTab';
 import AdminZoneTab from './zone/AdminZoneTab';
@@ -38,7 +37,6 @@ const AdminDashboard = ({ user, initialTab }) => {
     { id: 'revenue', label: 'Doanh thu', icon: faMoneyBill, color: 'from-yellow-500 to-orange-500' },
     { id: 'blog', label: 'Quản lý Blog', icon: faFileAlt, color: 'from-pink-500 to-rose-500' },
     { id: 'holiday', label: 'Quản lý Holiday', icon: faCalendarAlt, color: 'from-violet-500 to-purple-500' },
-    { id: 'settings', label: 'Cài đặt', icon: faCog, color: 'from-gray-500 to-slate-500' },
   ];
 
   const validTabIds = tabsConfig.map(tab => tab.id);

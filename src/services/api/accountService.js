@@ -1,216 +1,31 @@
-// Account Service - Xử lý tất cả các thao tác liên quan đến tài khoản
+// Account Service - Gọi trực tiếp Swagger backend (không dùng proxy)
+import { API_ENDPOINTS } from '../../config/api';
+import { apiGet, apiPost, apiPut, apiDelete } from './serviceUtils';
 
-// Utility function để lấy token từ localStorage
-const getAuthToken = () => {
-  if (typeof window !== 'undefined') {
-    return localStorage.getItem('token');
-  }
-  return null;
-};
-
-// Utility function để tạo headers với token
-const getAuthHeaders = () => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
-  };
-};
+const base = API_ENDPOINTS.ACCOUNTS; // '/accounts'
 
 const accountService = {
+  // Auth related
+  login: async (payload) => apiPost(`${base}/login`, payload, 'Đăng nhập thất bại'),
 
-  // === BASIC CRUD METHODS ===
-  getAccount: async (id) => {
-    const res = await fetch(`/api/accounts/get/${id}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin account');
-    return data;
-  },
+  // Basic accounts
+  getAllAccounts: async () => apiGet(`${base}/getall`, 'Không thể lấy danh sách tài khoản'),
+  getAccountById: async (id) => apiGet(`${base}/get/${id}`, 'Không thể lấy thông tin tài khoản'),
+  updateAccount: async (id, data) => apiPut(`${base}/update/${id}`, data, 'Không thể cập nhật tài khoản'),
+  deleteAccount: async (id) => apiDelete(`${base}/delete/${id}`, 'Không thể xóa tài khoản'),
+  banAccount: async (id) => apiPost(`${base}/ban/${id}`, {}, 'Không thể cấm tài khoản'),
 
-  getAllAccounts: async () => {
-    const res = await fetch('/api/accounts/getall', {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách accounts');
-    return data;
-  },
+  // Managers
+  getManagers: async () => apiGet(`${base}/managers`, 'Không thể lấy managers'),
+  getManagerById: async (id) => apiGet(`${base}/get/${id}`, 'Không thể lấy thông tin manager'),
+  registerManager: async (data) => apiPost(`${base}/register/manager`, data, 'Không thể tạo manager'),
+  updateManager: async (id, data) => apiPut(`${base}/update/${id}`, data, 'Không thể cập nhật manager'),
 
-  getAccountById: async (id) => {
-    const res = await fetch(`/api/accounts/get/${id}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin account');
-    return data;
-  },
-
-  updateAccount: async (id, data) => {
-    const res = await fetch(`/api/accounts/update/${id}`, {
-      method: 'PUT',
-      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json-patch+json' },
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Cập nhật account thất bại');
-    return result;
-  },
-
-  // === REGISTER METHODS ===
-  registerNursingSpecialist: async (data) => {
-    const res = await fetch('/api/accounts/register/nursingspecialist', {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Đăng ký nursing specialist thất bại');
-    return result;
-  },
-
-  registerManager: async (data) => {
-    const res = await fetch('/api/accounts/register/manager', {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Đăng ký manager thất bại');
-    return result;
-  },
-
-  registerCustomer: async (data) => {
-    const res = await fetch('/api/accounts/register/customer', {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Đăng ký customer thất bại');
-    return result;
-  },
-
-  // === RESET PASSWORD ===
-  resetPassword: async (data) => {
-    const res = await fetch('/api/accounts/reset-password', {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Đặt lại mật khẩu thất bại');
-    return result;
-  },
-
-  // === BAN/UNBAN METHODS ===
-  banAccount: async (id) => {
-    const res = await fetch(`/api/accounts/ban/${id}`, {
-      method: 'POST',
-      headers: getAuthHeaders()
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Ban tài khoản thất bại');
-    return result;
-  },
-
-  // === DELETE METHODS ===
-  deleteAccount: async (id) => {
-    const res = await fetch(`/api/accounts/delete/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Xóa tài khoản thất bại');
-    return result;
-  },
-
-  removeAccount: async (id) => {
-    const res = await fetch(`/api/accounts/remove/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Xóa tài khoản thất bại');
-    return result;
-  },
-
-  // === GET SPECIFIC ACCOUNTS ===
-  getManagers: async () => {
-    const res = await fetch('/api/accounts/managers', {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách managers');
-    return data;
-  },
-
-  getManagerById: async (id) => {
-    const res = await fetch(`/api/accounts/get/${id}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin manager');
-    return data;
-  },
-
-  updateManager: async (id, data) => {
-    const res = await fetch(`/api/accounts/update/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Cập nhật manager thất bại');
-    return result;
-  },
-
-  getCustomers: async () => {
-    const res = await fetch('/api/accounts/customers', {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách customers');
-    return data;
-  },
-
-  // === COUNT METHODS ===
-  getNonAdminCount: async () => {
-    const res = await fetch('/api/accounts/count/non-admin', {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng non-admin accounts');
-    return data;
-  },
-
-  getManagerCount: async () => {
-    const res = await fetch('/api/accounts/count/managers', {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng managers');
-    return data;
-  },
-
-  getCustomerCount: async () => {
-    const res = await fetch('/api/accounts/count/customers', {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy số lượng customers');
-    return data;
-  }
+  // Nursing specialists
+  registerNursingSpecialist: async (data) => apiPost(`${base}/register/nursingspecialist`, data, 'Không thể tạo nursing specialist'),
+  registerCustomer: async (data) => apiPost(`${base}/register/customer`, data, 'Không thể tạo khách hàng'),
 };
 
-export default accountService; 
+export default accountService;
+
+

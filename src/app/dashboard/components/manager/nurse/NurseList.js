@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FaUserNurse, FaEye, FaEdit, FaTrash } from 'react-icons/fa';
 import NurseDetailModal from './NurseDetailModal';
 
 const NurseList = ({ nurses, onEdit, onDelete }) => {
@@ -12,9 +13,9 @@ const NurseList = ({ nurses, onEdit, onDelete }) => {
 
     return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      {nurses.length === 0 ? (
+    {nurses.length === 0 ? (
         <div className="text-center py-16">
-          <div className="text-gray-300 text-8xl mb-6">👩‍⚕️</div>
+      <FaUserNurse className="text-gray-300 text-8xl mb-6 mx-auto" />
           <h3 className="text-2xl font-bold text-gray-800 mb-3">
             Chưa có y tá nào
           </h3>
@@ -96,21 +97,21 @@ const NurseList = ({ nurses, onEdit, onDelete }) => {
                         }}
                         className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors duration-200"
                       >
-                        <span className="mr-1">👁️</span>
+                        <FaEye className="mr-1" />
                         Xem chi tiết
                       </button>
                       <button
                         onClick={() => onEdit(nurse)}
                         className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors duration-200"
                       >
-                        <span className="mr-1">✏️</span>
+                        <FaEdit className="mr-1" />
                         Sửa
                       </button>
                       <button
                         onClick={() => handleDelete(nurse)}
                         className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors duration-200"
                       >
-                        <span className="mr-1">🗑️</span>
+                        <FaTrash className="mr-1" />
                         Xóa
                       </button>
                     </div>

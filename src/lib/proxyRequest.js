@@ -34,7 +34,7 @@ export async function proxyRequest(path, method = 'GET', options = {}) {
         headers: {
           'Content-Type': 'application/json',
           ...(options.headers || {}),
-          // Thêm header debug để dễ trace phía client/devtools
+      
           'x-proxy-backend-url': backendUrl,
         },
         ...options,
@@ -86,7 +86,7 @@ export async function proxyRequest(path, method = 'GET', options = {}) {
           ? 'Không thể kết nối tới backend (refused/not found)'
           : 'Lỗi kết nối đến backend';
 
-      // In log phía server để dễ debug khi chạy dev
+  
       try {
         // eslint-disable-next-line no-console
         console.error('[proxyRequest] Error:', {

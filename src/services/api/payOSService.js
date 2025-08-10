@@ -1,55 +1,13 @@
-﻿import { getAuthHeaders } from './serviceUtils';
+﻿// PayOS Web Service
+import { API_ENDPOINTS } from '../../config/api';
+import { apiPost, apiDelete } from './serviceUtils';
 
-// Tạo base service với factory
+const base = API_ENDPOINTS.PAYOS; // '/PayOS_Web'
 
-// Thêm method đặc biệt
-const payOSService = {  // Confirm webhook
-  confirmWebhook: async (webhookData) => {
-    const res = await fetch('/api/payos/confirmwebhook', {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(webhookData)
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Xác nhận webhook thất bại');
-    return data;
-  },
-
-  // Webhook handler
-  webhookHandler: async (webhookData) => {
-    const res = await fetch('/api/payos/webhookhandler', {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(webhookData)
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Xử lý webhook thất bại');
-    return data;
-  },
-
-  // Webhook process
-  webhookProcess: async (webhookData) => {
-    const res = await fetch('/api/payos/webhookprocess', {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(webhookData)
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Xử lý webhook process thất bại');
-    return data;
-  },
-
-  // Delete PayOS
-  deletePayOS: async () => {
-    const res = await fetch('/api/payos', {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Xóa PayOS thất bại');
-    return data;
-  }
+const payOSService = {
+  confirmWebhook: async (data) => apiPost(`${base}/ConfirmWebhook`, data, 'Không thể xác nhận webhook'),
+  webhookHandler: async (data) => apiPost(`${base}/WebhookHandler`, data, 'Không thể xử lý webhook'),
+  delete: async () => apiDelete(`${base}`, 'Không thể xóa PayOS config'),
 };
 
-export default payOSService; 
-
+export default payOSService;

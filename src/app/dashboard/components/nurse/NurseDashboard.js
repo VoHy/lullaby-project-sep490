@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useContext } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { FaBell } from 'react-icons/fa';
 import NurseOverviewTab from './NurseOverviewTab';
 import NurseScheduleTab from './NurseScheduleTab';
 import NurseBookingsTab from './NurseBookingsTab';
@@ -12,7 +13,7 @@ import NurseMedicalNoteTab from './NurseMedicalNoteTab';
 import { AuthContext } from '@/context/AuthContext';
 // import bookingService from '@/services/api/bookingService';
 import careProfileService from '@/services/api/careProfileService';
-// import notificationService from '@/services/api/notificationService';
+import notificationService from '@/services/api/notificationService';
 import workScheduleService from '@/services/api/workScheduleService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 // import medicalNoteService from '@/services/api/medicalNoteService';
@@ -32,6 +33,7 @@ const NurseDashboard = ({ user, initialTab }) => {
   const [specialist, setSpecialist] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   // Load data từ API
   useEffect(() => {
@@ -78,6 +80,15 @@ const NurseDashboard = ({ user, initialTab }) => {
         // setPatients(filteredPatients); // Comment vì bookingService chưa hoàn thiện
         // setNotifications(filteredNotifications);
         // setMedicalNotes(filteredMedicalNotes);
+
+        // Fetch unread notifications
+        try {
+          const unread = await notificationService.getUnreadByAccount(user.accountID);
+          setUnreadNotifications(Array.isArray(unread) ? unread.length : 0);
+        } catch (error) {
+          console.error('Error fetching notifications:', error);
+          setUnreadNotifications(0);
+        }
 
       } catch (error) {
         console.error('Error fetching nurse dashboard data:', error);
@@ -145,7 +156,21 @@ const NurseDashboard = ({ user, initialTab }) => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4">
-      <h2 className="text-2xl font-bold text-gray-900 mb-4">Chào mừng {user?.fullName || 'User'}!</h2>
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold text-gray-900">Chào mừng {user?.fullName || 'User'}!</h2>
+        <button
+          onClick={() => router.push('/notifications')}
+          className="relative p-2 text-gray-600 hover:text-purple-600 transition-colors"
+          title="Xem thông báo"
+        >
+          <FaBell className="text-xl" />
+          {unreadNotifications > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 min-w-[1.25rem] px-1 flex items-center justify-center">
+              {unreadNotifications}
+            </span>
+          )}
+        </button>
+      </div>
       <div className="flex gap-4 mb-6">
         {tabs.map(tab => (
           <button

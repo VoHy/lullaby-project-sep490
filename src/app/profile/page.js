@@ -5,7 +5,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import { FaUser, FaUsers, FaWallet } from 'react-icons/fa';
 
 import { AuthContext } from '@/context/AuthContext';
-import accountsService from '@/services/api/accountService';
+import accountService from '@/services/api/accountService';
 import ProfileCard from './components/ProfileCard';
 
 const TabNavigation = () => {
@@ -70,7 +70,7 @@ export default function ProfilePage() {
     const syncLatestProfile = async () => {
       try {
         if (user?.accountID) {
-          const fresh = await accountsService.getAccount(user.accountID);
+          const fresh = await accountService.getAccountById(user.accountID);
           updateUser(fresh);
         }
       } catch (e) {

@@ -1,4 +1,14 @@
 // Service Utils - Common utilities for all API services
+import { API_BASE_URL } from '../../config/api';
+
+/**
+ * Utility function để tạo full URL từ endpoint
+ * @param {string} endpoint - API endpoint
+ * @returns {string} Full API URL
+ */
+export const createApiUrl = (endpoint) => {
+  return `${API_BASE_URL}${endpoint}`;
+};
 
 /**
  * Utility function để lấy token từ localStorage
@@ -30,69 +40,113 @@ export const getAuthHeaders = () => {
  * @returns {Promise<any>} Parsed JSON data hoặc throw error
  */
 export const handleApiResponse = async (response, defaultMessage = 'API request failed') => {
-  const data = await response.json();
+  const text = await response.text();
+  const data = text ? (() => { try { return JSON.parse(text); } catch { return { raw: text }; } })() : null;
   if (!response.ok) {
-    throw new Error(data.error || defaultMessage);
+    const message = data?.error || data?.message || defaultMessage;
+    throw new Error(message);
   }
   return data;
 };
 
+// Simple in-memory GET cache with TTL and in-flight deduplication
+const GET_CACHE = new Map(); // key: url, value: { at: number, data: any }
+const INFLIGHT = new Map(); // key: url, value: Promise
+const DEFAULT_GET_TTL_MS = Number(process.env.NEXT_PUBLIC_API_GET_CACHE_TTL_MS || 60_000);
+
+const isFresh = (entry, ttlMs) => entry && (Date.now() - entry.at) < ttlMs;
+
+export const invalidateAllGetCache = () => {
+  GET_CACHE.clear();
+};
+
 /**
  * Generic GET request
- * @param {string} url - API endpoint URL
+ * @param {string} endpoint - API endpoint (relative path)
  * @param {string} errorMessage - Custom error message
  * @returns {Promise<any>} API response data
  */
-export const apiGet = async (url, errorMessage = 'Không thể lấy dữ liệu') => {
-  const response = await fetch(url, {
-    method: 'GET',
-    headers: getAuthHeaders()
-  });
-  return handleApiResponse(response, errorMessage);
+export const apiGet = async (endpoint, errorMessage = 'Không thể lấy dữ liệu', options = {}) => {
+  const url = createApiUrl(endpoint);
+  const { cache = true, ttlMs = DEFAULT_GET_TTL_MS } = options || {};
+
+  if (cache) {
+    const cached = GET_CACHE.get(url);
+    if (isFresh(cached, ttlMs)) {
+      return cached.data;
+    }
+    const running = INFLIGHT.get(url);
+    if (running) return running;
+  }
+
+  const promise = (async () => {
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: getAuthHeaders()
+    });
+    const data = await handleApiResponse(response, errorMessage);
+    if (cache) {
+      GET_CACHE.set(url, { at: Date.now(), data });
+    }
+    INFLIGHT.delete(url);
+    return data;
+  })();
+
+  if (cache) INFLIGHT.set(url, promise);
+  return promise;
 };
 
 /**
  * Generic POST request
- * @param {string} url - API endpoint URL
+ * @param {string} endpoint - API endpoint (relative path)
  * @param {object} data - Request body data
  * @param {string} errorMessage - Custom error message
  * @returns {Promise<any>} API response data
  */
-export const apiPost = async (url, data, errorMessage = 'Không thể tạo dữ liệu') => {
+export const apiPost = async (endpoint, data, errorMessage = 'Không thể tạo dữ liệu') => {
+  const url = createApiUrl(endpoint);
   const response = await fetch(url, {
     method: 'POST',
     headers: getAuthHeaders(),
     body: JSON.stringify(data)
   });
-  return handleApiResponse(response, errorMessage);
+  const result = await handleApiResponse(response, errorMessage);
+  invalidateAllGetCache();
+  return result;
 };
 
 /**
  * Generic PUT request
- * @param {string} url - API endpoint URL
+ * @param {string} endpoint - API endpoint (relative path)
  * @param {object} data - Request body data
  * @param {string} errorMessage - Custom error message
  * @returns {Promise<any>} API response data
  */
-export const apiPut = async (url, data, errorMessage = 'Không thể cập nhật dữ liệu') => {
+export const apiPut = async (endpoint, data, errorMessage = 'Không thể cập nhật dữ liệu') => {
+  const url = createApiUrl(endpoint);
   const response = await fetch(url, {
     method: 'PUT',
     headers: getAuthHeaders(),
     body: JSON.stringify(data)
   });
-  return handleApiResponse(response, errorMessage);
+  const result = await handleApiResponse(response, errorMessage);
+  invalidateAllGetCache();
+  return result;
 };
 
 /**
  * Generic DELETE request
- * @param {string} url - API endpoint URL
+ * @param {string} endpoint - API endpoint (relative path)
  * @param {string} errorMessage - Custom error message
  * @returns {Promise<any>} API response data
  */
-export const apiDelete = async (url, errorMessage = 'Không thể xóa dữ liệu') => {
+export const apiDelete = async (endpoint, errorMessage = 'Không thể xóa dữ liệu') => {
+  const url = createApiUrl(endpoint);
   const response = await fetch(url, {
     method: 'DELETE',
     headers: getAuthHeaders()
   });
-  return handleApiResponse(response, errorMessage);
+  const result = await handleApiResponse(response, errorMessage);
+  invalidateAllGetCache();
+  return result;
 };

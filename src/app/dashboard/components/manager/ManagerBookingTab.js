@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
+import { FaExclamationTriangle, FaClipboardList } from 'react-icons/fa';
 import { AuthContext } from '@/context/AuthContext';
 import bookingService from '@/services/api/bookingService';
 import accountService from '@/services/api/accountService';
@@ -265,10 +266,7 @@ const ManagerBookingTab = () => {
           await Promise.all(assignments.map(async ([taskId, sel]) => {
             const nursingId = sel.nurse || sel.specialist;
             if (!nursingId) return;
-            await customizeTaskService.updateTaskNursing(taskId, nursingId, {
-              bookingId: detailData.bookingID,
-              allowSameBooking: true
-            });
+            await customizeTaskService.updateNursing(taskId, nursingId);
           }));
         }
 
@@ -311,7 +309,7 @@ const ManagerBookingTab = () => {
   if (error) {
     return (
       <div className="text-center py-12">
-        <div className="text-red-500 text-6xl mb-4">⚠️</div>
+  <FaExclamationTriangle className="text-red-500 text-6xl mb-4 inline-block" />
         <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
         <p className="text-gray-600 mb-4">{error}</p>
         <button onClick={() => window.location.reload()} className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
@@ -326,7 +324,7 @@ const ManagerBookingTab = () => {
       <h3 className="text-xl font-semibold mb-4">Danh sách Booking</h3>
       {bookings.length === 0 ? (
         <div className="text-center py-8">
-          <div className="text-gray-500 text-lg mb-2">📋</div>
+    <FaClipboardList className="text-gray-500 text-2xl mb-2 mx-auto" />
           <p className="text-gray-600 text-lg font-medium">Không có booking nào</p>
           <p className="text-gray-400 text-sm mt-1">Hiện tại chưa có booking nào thuộc khu vực quản lý của bạn</p>
         </div>
@@ -348,9 +346,9 @@ const ManagerBookingTab = () => {
                 <tr key={booking.bookingID} className="hover:bg-gray-50">
                   <td className="px-6 py-4">#{booking.bookingID}</td>
                   <td className="px-6 py-4">
-                    <div className="font-semibold">{careProfile?.ProfileName || '-'}</div>
-                    <div className="text-xs text-gray-500">SĐT: {careProfile?.PhoneNumber || '-'}</div>
-                    <div className="text-xs text-gray-500">Địa chỉ: {careProfile?.Address || '-'}</div>
+                    <div className="font-semibold">{careProfile?.profileName || '-'}</div>
+                    <div className="text-xs text-gray-500">SĐT: {careProfile?.phoneNumber || '-'}</div>
+                    <div className="text-xs text-gray-500">Địa chỉ: {careProfile?.address || '-'}</div>
                     <div className="text-xs text-gray-500">Email: {account?.email || '-'}</div>
                   </td>
                   <td className="px-6 py-4">
@@ -369,12 +367,12 @@ const ManagerBookingTab = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className={` inline-block min-w-[80px] px-2 py-0.5 rounded-full text-xs font-semibold text-center shadow-sm 
-                  ${booking.Status === 'completed' ? 'bg-green-100 text-green-800' :
-                        booking.Status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          booking.Status === 'confirmed' ? 'bg-blue-100 text-blue-800' :
+                  ${booking.status === 'paid' ? 'bg-green-100 text-green-800' :
+                        booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                          booking.status === 'cancel' ? 'bg-blue-100 text-blue-800' :
                             'bg-red-100 text-red-800'
                       }`}>
-                      {statusOptions.find(opt => opt.value === booking.Status)?.label || booking.Status}
+                      {statusOptions.find(opt => opt.value === booking.status)?.label || booking.status}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -408,11 +406,11 @@ const ManagerBookingTab = () => {
                     <div className="space-y-3">
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Tên khách hàng</div>
-                        <div className="text-gray-800 font-medium">{careProfile?.ProfileName || '-'}</div>
+                        <div className="text-gray-800 font-medium">{careProfile?.profileName || '-'}</div>
                       </div>
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Số điện thoại</div>
-                        <div className="text-gray-800">{careProfile?.PhoneNumber || '-'}</div>
+                        <div className="text-gray-800">{careProfile?.phoneNumber || '-'}</div>
                       </div>
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Email</div>
@@ -420,7 +418,7 @@ const ManagerBookingTab = () => {
                       </div>
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Địa chỉ</div>
-                        <div className="text-gray-800 text-sm leading-relaxed">{careProfile?.Address || '-'}</div>
+                        <div className="text-gray-800 text-sm leading-relaxed">{careProfile?.address || '-'}</div>
                       </div>
                     </div>
                   </div>
@@ -435,7 +433,7 @@ const ManagerBookingTab = () => {
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Dịch vụ</div>
                         {/* <div className="text-gray-800 font-medium">{packageInfo ? packageInfo.Name : (service?.ServiceName || '-')}</div> */}
-                        <div className="text-gray-800 font-medium">{service?.ServiceName || '-'}</div>
+                        <div className="text-gray-800 font-medium">{service?.serviceName || '-'}</div>
                       </div>
                       {/* {packageInfo && (
                         <div>
@@ -445,7 +443,7 @@ const ManagerBookingTab = () => {
                       )} */}
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ngày đặt</div>
-                        <div className="text-gray-800">{detailData.CreatedAt ? new Date(detailData.CreatedAt).toLocaleString('vi-VN') : '-'}</div>
+                        <div className="text-gray-800">{detailData.workdate ? new Date(detailData.workdate).toLocaleString('vi-VN') : '-'}</div>
                       </div>
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ngày làm việc</div>
@@ -463,12 +461,12 @@ const ManagerBookingTab = () => {
                     <div className="space-y-3">
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Giá tiền</div>
-                        <div className="text-2xl font-bold text-purple-600">{detailData.Amount?.toLocaleString('vi-VN') || '-'} ₫</div>
-                      </div>
+                        <div className="text-2xl font-bold text-purple-600">{detailData.amount?.toLocaleString('vi-VN') || '-'} ₫</div>
+                      </div>    
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Trạng thái</div>
                         <select
-                          value={selectedStatus || detailData.Status}
+                          value={selectedStatus || detailData.status}
                           onChange={e => setSelectedStatus(e.target.value)}
                           className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-purple-400 focus:border-purple-400 bg-white"
                         >

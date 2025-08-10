@@ -422,8 +422,8 @@ import workScheduleService from '@/services/api/workScheduleService';
     if (holiday) {
       eventsOfDay.push({
         type: 'holiday',
-        startDate: holiday.startDate,
-        endDate: holiday.endDate,
+        workDate: holiday.startDate,
+        endTime: holiday.endDate,
         label: holiday.holidayName,
         status: 'holiday',
         holidayObj: holiday,
@@ -596,7 +596,7 @@ import workScheduleService from '@/services/api/workScheduleService';
 
       {/* Event Detail Modal */}
       {selectedEvent && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center">
           <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold">Chi tiết sự kiện</h3>
