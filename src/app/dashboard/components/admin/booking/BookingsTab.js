@@ -1,7 +1,7 @@
 'use client';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
+import {
   faEye, faEdit, faTrash, faSearch, faCalendarAlt,
   faMoneyBill, faUser, faClock, faCheckCircle, faTimesCircle, faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
@@ -41,7 +41,7 @@ const BookingsTab = ({ bookings }) => {
       try {
         setLoading(true);
         setError("");
-        
+
         const [
           careProfilesData,
           accountsData,
@@ -223,189 +223,288 @@ const BookingsTab = ({ bookings }) => {
 
       return () => { isMounted = false; };
     }, [booking?.BookingID, booking?.bookingID, serviceTasksOfBooking, localNursesByServiceId, localInvoice]);
-    
+
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-4xl relative max-h-[90vh] overflow-y-auto">
-          <button className="absolute top-4 right-4 text-gray-500 hover:text-pink-500 text-2xl font-bold" onClick={onClose}>&times;</button>
-          
-          <div className="mb-6">
+      <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl relative max-h-[95vh] overflow-y-auto">
+          <button className="absolute top-4 right-4 text-gray-500 hover:text-red-500 p-2 rounded-full hover:bg-gray-100 transition-colors z-10" onClick={onClose}>
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+
+          {/* Header */}
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-lg p-6">
             <h3 className="text-2xl font-bold mb-2">Chi tiết Booking #{booking?.BookingID ?? booking?.bookingID}</h3>
-            <div className="w-20 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded"></div>
+            <p className="text-blue-100">Ngày đặt: {new Date(booking?.workdate ?? booking?.Workdate ?? booking?.bookingDate ?? booking?.BookingDate).toLocaleDateString('vi-VN')}</p>
           </div>
-          
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* Thông tin khách hàng */}
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-xl">
-                <h4 className="font-semibold text-blue-800 mb-3 flex items-center">
-                  <FontAwesomeIcon icon={faUser} className="mr-2" />
-                  Thông tin khách hàng
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="font-medium">Tên:</span>
-                    <span>{careProfile ? (careProfile.profileName ?? careProfile.ProfileName) : '-'} {account ? `(${account.full_name ?? account.fullName})` : ''}</span>
+
+          {/* Content */}
+          <div className="p-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Thông tin khách hàng */}
+              <div className="space-y-4">
+                <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+                  <h4 className="font-semibold text-gray-900 mb-4 flex items-center text-lg">
+                    <div className="p-2 bg-blue-100 rounded-lg mr-3">
+                      <FontAwesomeIcon icon={faUser} className="text-blue-600" />
+                    </div>
+                    Thông tin khách hàng
+                  </h4>
+                  <div className="space-y-3 text-sm">
+                    <div className="flex justify-between py-2 border-b border-gray-100">
+                      <span className="font-medium text-gray-600">Tên:</span>
+                      <span className="text-gray-900 font-medium">{careProfile ? (careProfile.profileName ?? careProfile.ProfileName) : '-'} {account ? `(${account.full_name ?? account.fullName})` : ''}</span>
+                    </div>
+                    <div className="flex justify-between py-2 border-b border-gray-100">
+                      <span className="font-medium text-gray-600">Điện thoại:</span>
+                      <span className="text-gray-900">{account?.phone_number || account?.phoneNumber || careProfile?.phoneNumber || careProfile?.PhoneNumber || '-'}</span>
+                    </div>
+                    <div className="flex justify-between py-2">
+                      <span className="font-medium text-gray-600">Địa chỉ:</span>
+                      <span className="text-right text-gray-900 max-w-xs">{careProfile?.address || careProfile?.Address || '-'}</span>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Điện thoại:</span>
-                    <span>{account?.phone_number || account?.phoneNumber || careProfile?.phoneNumber || careProfile?.PhoneNumber || '-'}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Địa chỉ:</span>
-                    <span className="text-right">{careProfile?.address || careProfile?.Address || '-'}</span>
+                </div>
+
+                <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+                  <h4 className="font-semibold text-gray-900 mb-4 flex items-center text-lg">
+                    <div className="p-2 bg-green-100 rounded-lg mr-3">
+                      <FontAwesomeIcon icon={faCalendarAlt} className="text-green-600" />
+                    </div>
+                    Thông tin booking
+                  </h4>
+                  <div className="space-y-3 text-sm">
+                    {packageInfo && (
+                      <div className="flex justify-between py-2 border-b border-gray-100">
+                        <span className="font-medium text-gray-600">Mô tả:</span>
+                        <span className="text-right text-gray-900 max-w-xs">{packageInfo.description ?? packageInfo.Description}</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between py-2 border-b border-gray-100">
+                      <span className="font-medium text-gray-600">Ngày đặt:</span>
+                      <span className="text-gray-900">{new Date(booking?.workdate ?? booking?.Workdate ?? booking?.bookingDate ?? booking?.BookingDate).toLocaleDateString('vi-VN')}</span>
+                    </div>
+                    <div className="flex justify-between py-2">
+                      <span className="font-medium text-gray-600">Trạng thái:</span>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold
+                       ${String(booking.status ?? booking.Status).toLowerCase() === 'paid' ? 'bg-pink-100 text-pink-700' :
+                          String(booking.status ?? booking.Status).toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                            String(booking.status ?? booking.Status).toLowerCase() === 'isscheduled' ? 'bg-blue-100 text-blue-700' :
+                              String(booking.status ?? booking.Status).toLowerCase() === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                                String(booking.status ?? booking.Status).toLowerCase() === 'cancelled' || String(booking.status ?? booking.Status).toLowerCase() === 'canceled' ? 'bg-red-100 text-red-700' :
+                                  'bg-gray-100 text-gray-700'
+                        }`}>
+                        {(() => {
+                          const s = String(booking.status ?? booking.Status).toLowerCase();
+                          if (s === 'paid') return 'Đã thanh toán';
+                          if (s === 'pending' || s === 'unpaid') return 'Chờ thanh toán';
+                          if (s === 'completed') return 'Hoàn thành';
+                          if (s === 'isscheduled') return 'Đã lên lịch';
+                          if (s === 'cancelled' || s === 'canceled') return 'Đã hủy';
+                          return 'Không xác định';
+                        })()}
+                      </span>
+                    </div>
                   </div>
                 </div>
               </div>
-              
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl">
-                <h4 className="font-semibold text-green-800 mb-3 flex items-center">
-                  <FontAwesomeIcon icon={faCalendarAlt} className="mr-2" />
-                  Thông tin dịch vụ
-                </h4>
-                <div className="space-y-2 text-sm">
-                  {packageInfo && (
-                    <div className="flex justify-between">
-                      <span className="font-medium">Mô tả:</span>
-                      <span className="text-right">{packageInfo.description ?? packageInfo.Description}</span>
+
+              {/* Thông tin thanh toán */}
+              <div className="space-y-4">
+                <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
+                  <h4 className="font-semibold text-gray-900 mb-4 flex items-center text-lg">
+                    <div className="p-2 bg-orange-100 rounded-lg mr-3">
+                      <FontAwesomeIcon icon={faMoneyBill} className="text-orange-600" />
                     </div>
-                  )}
-                  <div className="flex justify-between">
-                    <span className="font-medium">Ngày đặt:</span>
-                    <span>{new Date(booking?.workdate ?? booking?.Workdate ?? booking?.bookingDate ?? booking?.BookingDate).toLocaleDateString('vi-VN')}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="font-medium">Trạng thái:</span>
-                    <span className={`px-2 py-1 rounded-full text-xs font-semibold ${(booking.status ?? booking.Status) === 'paid' ? 'bg-green-100 text-green-700' :
-                      (booking.status ?? booking.Status) === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-red-100 text-red-700'
-                    }`}>
-                      {(booking.status ?? booking.Status) === 'paid' ? 'Hoàn thành' :
-                       (booking.status ?? booking.Status) === 'pending' ? 'Đang xử lý' : 'Đã hủy'}
-                    </span>
+                    Hóa đơn
+                  </h4>
+                  <div className="space-y-3 text-sm">
+                    {(() => {
+                      const inv = localInvoice;
+                      const total = inv?.totalAmount ?? inv?.total_amount ?? booking.totalPrice ?? booking.TotalPrice ?? booking.amount ?? booking.Amount;
+                      const status = inv?.status ?? inv?.Status ?? (booking.paymentStatus ?? booking.PaymentStatus ?? booking.Status ?? booking.status);
+                      const invoiceId = inv?.invoiceID ?? inv?.invoice_ID ?? (invoiceID || '-');
+                      return (
+                        <>
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="font-medium text-gray-600">Mã hóa đơn:</span>
+                            <span className="text-gray-900 font-mono">#{invoiceId}</span>
+                          </div>
+                          <div className="flex justify-between py-2 border-b border-gray-100">
+                            <span className="font-medium text-gray-600">Tổng tiền:</span>
+                            <span className="font-bold text-green-600 text-lg">{(total)?.toLocaleString()} VNĐ</span>
+                          </div>
+                          <div className="flex justify-between py-2">
+                            <span className="font-medium text-gray-600">Trạng thái:</span>
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold 
+                               ${String(status).toLowerCase() === 'paid'
+                                ? 'bg-pink-100 text-pink-700'
+                                : 'bg-red-100 text-red-700'
+                              }`}>
+                              {String(status).toLowerCase() === 'paid' ? 'Đã thanh toán' : 'Hoàn tiền'}
+                            </span>
+                          </div>
+                        </>
+                      );
+                    })()}
                   </div>
                 </div>
               </div>
             </div>
-            
-            {/* Thông tin thanh toán */}
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-yellow-50 to-orange-50 p-4 rounded-xl">
-                <h4 className="font-semibold text-orange-800 mb-3 flex items-center">
-                  <FontAwesomeIcon icon={faMoneyBill} className="mr-2" />
-                  Hóa đơn
-                </h4>
-                <div className="space-y-2 text-sm">
-                  {(() => {
-                    const inv = localInvoice;
-                    const total = inv?.totalAmount ?? inv?.total_amount ?? booking.totalPrice ?? booking.TotalPrice ?? booking.amount ?? booking.Amount;
-                    const status = inv?.status ?? inv?.Status ?? (booking.paymentStatus ?? booking.PaymentStatus ?? booking.Status ?? booking.status);
-                    const invoiceId = inv?.invoiceID ?? inv?.invoice_ID ?? (invoiceID || '-');
-                    return (
-                      <>
-                        <div className="flex justify-between"><span className="font-medium">Mã hóa đơn:</span><span>#{invoiceId}</span></div>
-                        <div className="flex justify-between"><span className="font-medium">Tổng tiền:</span><span className="font-bold text-green-600">{(total)?.toLocaleString()} VNĐ</span></div>
-                        <div className="flex justify-between"><span className="font-medium">Trạng thái:</span>
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${String(status).toLowerCase()==='paid' || String(status).toLowerCase()==='hoàn thành' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                            {status || 'Chưa thanh toán'}
-                          </span>
-                        </div>
-                      </>
-                    );
-                  })()}
-                </div>
-              </div>
-              
-              {serviceTasksOfBooking.length > 0 && (
-                <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl">
-                  <h4 className="font-semibold text-purple-800 mb-3 flex items-center">
-                    <FontAwesomeIcon icon={faClock} className="mr-2" />
-                    Chi tiết dịch vụ
-                  </h4>
-                  {/* Packages list */}
-                  {packagesOfBooking?.length > 0 && (
-                    <div className="space-y-3 mb-4">
-                      {packagesOfBooking.map((pkg) => {
-                        const pkgService = serviceTypes.find((s) => (s?.serviceID ?? s?.ServiceID) === (pkg?.serviceID ?? pkg?.ServiceID));
-                        return (
-                          <div key={pkg.customizePackageID ?? pkg.CustomizePackageID} className="bg-white rounded-lg p-3 border border-gray-200 flex justify-between">
-                            <div>
-                              <div className="font-semibold text-gray-800">{pkg.name ?? pkg.Name} — {pkgService?.serviceName ?? pkgService?.ServiceName}</div>
-                              <div className="text-xs text-gray-600">Số lượng: {pkg.quantity} • Trạng thái: {pkg.status}</div>
-                            </div>
-                            <div className="text-right">
-                              <div className="font-bold text-green-600">{(pkg.total ?? pkg.Total)?.toLocaleString()} VNĐ</div>
-                              {pkg.price ? <div className="text-xs text-gray-500">Đơn giá: {(pkg.price)?.toLocaleString()} VNĐ</div> : null}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
 
-                  {/* Task list with nurse assignment */}
-                  <div className="space-y-2">
-                    {serviceTasksOfBooking.map((task) => {
-                      const status = task.status;
-                      const hasNurse = !!task.nursingID;
-                      return (
-                        <div key={task.customizeTaskID} className="bg-white rounded-lg p-3 border border-gray-200">
-                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-                            <div>
-                              <div className="font-semibold text-gray-800">{task.description}</div>
-                              <div className="text-xs text-gray-600">{task.quantity} x {task.price?.toLocaleString()} VNĐ</div>
-                            </div>
-                            <div className="flex items-center gap-3">
-                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${status === 'completed' ? 'bg-green-100 text-green-700' :
-                                status === 'isscheduled' ? 'bg-blue-100 text-blue-700' :
-                                status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
-                              }`}>
-                                {status === 'completed' ? 'Hoàn thành' : status === 'isscheduled' ? 'Đã lên lịch' : status === 'pending' ? 'Chờ thực hiện' : status}
-                              </span>
-                              <div className="text-sm">
+            {/* Chi tiết dịch vụ */}
+            {serviceTasksOfBooking.length > 0 && (
+              <div className="col-span-1 lg:col-span-2 mt-6">
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <div className="bg-gradient-to-r from-purple-600 to-purple-700 text-white p-4 rounded-t-lg">
+                    <h4 className="font-semibold text-lg flex items-center">
+                      <FontAwesomeIcon icon={faClock} className="mr-3" />
+                      Chi tiết dịch vụ
+                    </h4>
+                  </div>
+
+                  <div className="p-6">
+                    {/* Packages list */}
+                    {packagesOfBooking?.length > 0 && (
+                      <div className="mb-6">
+                        <h5 className="font-medium text-gray-900 mb-4 flex items-center">
+                          <div className="w-4 h-4 bg-purple-600 rounded mr-2"></div>
+                          Gói dịch vụ đã đặt
+                        </h5>
+                        <div className="space-y-3">
+                          {packagesOfBooking.map((pkg) => {
+                            const pkgService = serviceTypes.find((s) => (s?.serviceID ?? s?.ServiceID) === (pkg?.serviceID ?? pkg?.ServiceID));
+                            return (
+                              <div key={pkg.customizePackageID ?? pkg.CustomizePackageID} className="bg-gray-50 rounded-lg p-4 border border-gray-200">
+                                <div className="flex items-center justify-between">
+                                  <div className="flex-1">
+                                    <div className="font-semibold text-gray-900 text-lg">{pkg.name ?? pkg.Name}</div>
+                                    <div className="text-gray-600 text-sm mt-1">{pkgService?.serviceName ?? pkgService?.ServiceName}</div>
+                                    <div className="flex items-center gap-4 mt-2 text-sm">
+                                      <span className="text-gray-600">Số lượng: <span className="font-medium">{pkg.quantity}</span></span>
+                                      <span className="text-gray-600">Trạng thái: <span className={`px-2 py-1 rounded-full text-xs font-semibold ${pkg.status === 'completed' ? 'bg-green-100 text-green-700' : pkg.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>{pkg.status}</span></span>
+                                    </div>
+                                  </div>
+                                  <div className="text-right ml-4">
+                                    <div className="font-bold text-green-600 text-xl">{(pkg.total ?? pkg.Total)?.toLocaleString()} VNĐ</div>
+                                    {pkg.price ? <div className="text-sm text-gray-500 mt-1">Đơn giá: {(pkg.price)?.toLocaleString()} VNĐ</div> : null}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Task list with nurse assignment */}
+                    <div>
+                      <h5 className="font-medium text-gray-900 mb-4 flex items-center">
+                        <div className="w-4 h-4 bg-blue-600 rounded mr-2"></div>
+                        Danh sách công việc ({serviceTasksOfBooking.length} task)
+                      </h5>
+                      <div className="space-y-4">
+                        {serviceTasksOfBooking.map((task, index) => {
+                          const status = task.status;
+                          const hasNurse = !!task.nursingID;
+                          return (
+                            <div key={task.customizeTaskID} className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                              {/* Task Header */}
+                              <div className="p-4 border-b border-gray-100">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <div className="flex items-center gap-3 mb-2">
+                                      <span className="text-sm font-medium text-gray-500 bg-gray-100 px-2 py-1 rounded">#{index + 1}</span>
+                                      <h6 className="font-semibold text-gray-900 text-lg">{task.description}</h6>
+                                    </div>
+                                    <div className="flex items-center gap-4 text-sm text-gray-600">
+                                      <span>Số lượng: <span className="font-medium">{task.quantity}</span></span>
+                                      <span>Đơn giá: <span className="font-medium text-green-600">{task.price?.toLocaleString()} VNĐ</span></span>
+                                    </div>
+                                  </div>
+                                  <div className="flex items-center gap-3 ml-4">
+                                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${status === 'completed' ? 'bg-green-100 text-green-700' :
+                                      status === 'isscheduled' ? 'bg-blue-100 text-blue-700' :
+                                        status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
+                                      }`}>
+                                      {status === 'completed' ? 'Hoàn thành' : status === 'isscheduled' ? 'Đã lên lịch' : status === 'pending' ? 'Chờ thực hiện' : status}
+                                    </span>
+                                    <div className="text-right font-bold text-green-600 text-xl">{task.total?.toLocaleString()} VNĐ</div>
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Nurse Assignment */}
+                              <div className="p-4">
                                 {hasNurse ? (
-                                  <span className="text-green-700">{task.nurseName} {task.nurseRole ? `(${task.nurseRole})` : ''}</span>
+                                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                    <div className="flex items-center gap-3">
+                                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                        <FontAwesomeIcon icon={faUser} className="text-green-600" />
+                                      </div>
+                                      <div>
+                                        <div className="font-semibold text-green-800">Đã phân công</div>
+                                        <div className="text-green-700">
+                                          <span className="font-medium">{task.nurseName}</span>
+                                          {task.nurseRole && <span className="text-sm ml-2">({task.nurseRole})</span>}
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
                                 ) : (
-                                  <div className="flex items-center gap-2">
-                                     <select
-                                      className="border border-gray-300 rounded px-2 py-1 text-sm"
-                                      value={selectedNurseByTask[task.customizeTaskID] ?? ''}
-                                      onChange={(e) => setSelectedNurseByTask((prev) => ({ ...prev, [task.customizeTaskID]: Number(e.target.value) }))}
-                                    >
-                                      <option value="">Chọn y tá</option>
-                                       {(() => {
-                                         const serviceId = task.serviceID;
-                                         // Combine two filters: (1) zone matched, (2) mapping nurse-service type
-                                         const zoneId = careProfile?.zoneDetailID ?? careProfile?.zoneDetail_ID;
-                                         const pool = localNursesByServiceId[serviceId] || [];
-                                         const filtered = Array.isArray(pool) ? pool.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
-                                         return filtered.map((n) => (
-                                           <option key={n.nursingID ?? n.NursingID} value={n.nursingID ?? n.NursingID}>
-                                             {(n.nursingFullName ?? n.fullName ?? n.FullName) + (n.major ? ` — ${n.major}` : '')}
-                                           </option>
-                                         ));
-                                       })()}
-                                    </select>
-                                    <button
-                                      onClick={() => handleAssignNurse(booking, task)}
-                                      className="bg-pink-500 hover:bg-pink-600 text-white text-xs px-3 py-1 rounded"
-                                      disabled={!selectedNurseByTask[task.customizeTaskID]}
-                                    >
-                                      Phân công
-                                    </button>
+                                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                                          <FontAwesomeIcon icon={faExclamationTriangle} className="text-yellow-600" />
+                                        </div>
+                                        <div>
+                                          <div className="font-semibold text-yellow-800">Chưa phân công điều dưỡng</div>
+                                          <div className="text-yellow-700 text-sm">Vui lòng chọn điều dưỡng phù hợp</div>
+                                        </div>
+                                      </div>
+                                      <div className="flex items-center gap-3">
+                                        <select
+                                          className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-48"
+                                          value={selectedNurseByTask[task.customizeTaskID] ?? ''}
+                                          onChange={(e) => setSelectedNurseByTask((prev) => ({ ...prev, [task.customizeTaskID]: Number(e.target.value) }))}
+                                        >
+                                          <option value="">Chọn điều dưỡng...</option>
+                                          {(() => {
+                                            const serviceId = task.serviceID;
+                                            // Combine two filters: (1) zone matched, (2) mapping nurse-service type
+                                            const zoneId = careProfile?.zoneDetailID ?? careProfile?.zoneDetail_ID;
+                                            const pool = localNursesByServiceId[serviceId] || [];
+                                            const filtered = Array.isArray(pool) ? pool.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
+                                            return filtered.map((n) => (
+                                              <option key={n.nursingID ?? n.NursingID} value={n.nursingID ?? n.NursingID}>
+                                                {(n.nursingFullName ?? n.fullName ?? n.FullName) + (n.major ? ` — ${n.major}` : '')}
+                                              </option>
+                                            ));
+                                          })()}
+                                        </select>
+                                        <button
+                                          onClick={() => handleAssignNurse(booking, task)}
+                                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                                          disabled={!selectedNurseByTask[task.customizeTaskID]}
+                                        >
+                                          Phân công
+                                        </button>
+                                      </div>
+                                    </div>
                                   </div>
                                 )}
                               </div>
-                              <div className="text-right font-semibold text-green-600">{task.total?.toLocaleString()} VNĐ</div>
                             </div>
-                          </div>
-                        </div>
-                      );
-                    })}
+                          );
+                        })}
+                      </div>
+                    </div>
                   </div>
                 </div>
-              )}
-            </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -429,8 +528,8 @@ const BookingsTab = ({ bookings }) => {
         <div className="text-red-500 text-6xl mb-4">⚠️</div>
         <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
         <p className="text-gray-600 mb-4">{error}</p>
-        <button 
-          onClick={() => window.location.reload()} 
+        <button
+          onClick={() => window.location.reload()}
           className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
         >
           Thử lại
@@ -460,9 +559,9 @@ const BookingsTab = ({ bookings }) => {
   const totalBookings = Array.isArray(bookings) ? bookings.length : 0;
   const completedBookings = Array.isArray(bookings)
     ? bookings.filter((b) => {
-        const s = (b.Status ?? b.status ?? '').toLowerCase();
+      const s = (b.Status ?? b.status ?? '').toLowerCase();
       return s === 'paid';
-      }).length
+    }).length
     : 0;
   const pendingBookings = Array.isArray(bookings)
     ? bookings.filter((b) => (b.Status ?? b.status) === 'pending' || (b.Status ?? b.status) === 'confirmed').length
@@ -474,17 +573,17 @@ const BookingsTab = ({ bookings }) => {
   // Lọc bookings
   const filteredBookings = Array.isArray(bookings)
     ? bookings.filter((booking) => {
-        const id = booking?.BookingID ?? booking?.bookingID;
-  const status = (booking?.Status ?? booking?.status)?.toLowerCase();
-        const detail = getBookingDetail(booking);
-        const profileName = detail.careProfile?.ProfileName ?? detail.careProfile?.profileName;
-        const matchesSearch =
-          !searchTerm ||
-          id?.toString().includes(searchTerm) ||
-          profileName?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === 'all' || status === statusFilter;
-        return matchesSearch && matchesStatus;
-      })
+      const id = booking?.BookingID ?? booking?.bookingID;
+      const status = (booking?.Status ?? booking?.status)?.toLowerCase();
+      const detail = getBookingDetail(booking);
+      const profileName = detail.careProfile?.ProfileName ?? detail.careProfile?.profileName;
+      const matchesSearch =
+        !searchTerm ||
+        id?.toString().includes(searchTerm) ||
+        profileName?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || status === statusFilter;
+      return matchesSearch && matchesStatus;
+    })
     : [];
 
   return (
@@ -507,7 +606,7 @@ const BookingsTab = ({ bookings }) => {
               color="from-blue-500 to-cyan-500"
             />
             <StatCard
-              title="Hoàn thành"
+              title="Đã thanh toán"
               value={completedBookings}
               icon={faCheckCircle}
               color="from-green-500 to-emerald-500"
@@ -526,102 +625,115 @@ const BookingsTab = ({ bookings }) => {
             />
           </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex flex-wrap gap-4 items-center justify-between">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
-              <input
-                type="text"
-                placeholder="Tìm kiếm booking..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
-              />
+          {/* Filters */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex flex-wrap gap-4 items-center justify-between">
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center gap-2">
+                  <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm booking..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                  />
+                </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                >
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="pending">Đang xử lý</option>
+                  <option value="paid">Đã thanh toán</option>
+                  <option value="completed">Hoàn thành</option>
+                  <option value="cancelled">Đã hủy</option>
+                </select>
+              </div>
+              <div className="text-sm text-gray-500">
+                {filteredBookings.length} booking được tìm thấy
+              </div>
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
-            >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="pending">Đang xử lý</option>
-                  <option value="paid">Hoàn thành</option>
-              <option value="cancelled">Đã hủy</option>
-            </select>
           </div>
-          <div className="text-sm text-gray-500">
-            {filteredBookings.length} booking được tìm thấy
-          </div>
-        </div>
-      </div>
 
-      {/* Bookings List */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách hàng</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày đặt</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredBookings.map((booking) => {
-                const { careProfile, account, service, packageInfo } = getBookingDetail(booking);
-                const id = booking?.BookingID ?? booking?.bookingID;
-                const workDate = booking?.BookingDate ?? booking?.bookingDate ?? booking?.workdate ?? booking?.Workdate;
-                const price = booking?.TotalPrice ?? booking?.totalPrice ?? booking?.Amount ?? booking?.amount;
-                const status = booking?.Status ?? booking?.status;
-                return (
-                  <tr key={id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      #{id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{careProfile?.ProfileName ?? careProfile?.profileName ?? 'N/A'}</div>
-                      <div className="text-sm text-gray-500">{account?.phone_number || account?.phoneNumber || careProfile?.PhoneNumber || careProfile?.phoneNumber || 'N/A'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {workDate ? new Date(workDate).toLocaleDateString('vi-VN') : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                      {price?.toLocaleString()} VNĐ
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${status === 'paid' ? 'bg-green-100 text-green-700' :
-                        status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {status === 'completed' || status === 'paid' ? 'Đã thanh toán' : status === 'pending' ? 'Chờ thanh toán' : (status || 'Không rõ')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => setSelectedBooking(booking)}
-                        className="text-pink-600 hover:text-pink-900 mr-3"
-                      >
-                        <FontAwesomeIcon icon={faEye} />
-                      </button>
-                      <button className="text-blue-600 hover:text-blue-900 mr-3">
-                        <FontAwesomeIcon icon={faEdit} />
-                      </button>
-                      <button className="text-red-600 hover:text-red-900">
-                        <FontAwesomeIcon icon={faTrash} />
-                      </button>
-                    </td>
+          {/* Bookings List */}
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách hàng</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày đặt</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredBookings.map((booking) => {
+                    const { careProfile, account, service, packageInfo } = getBookingDetail(booking);
+                    const id = booking?.BookingID ?? booking?.bookingID;
+                    const workDate = booking?.BookingDate ?? booking?.bookingDate ?? booking?.workdate ?? booking?.Workdate;
+                    const price = booking?.TotalPrice ?? booking?.totalPrice ?? booking?.Amount ?? booking?.amount;
+                    const status = booking?.Status ?? booking?.status;
+                    return (
+                      <tr key={id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          #{id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{careProfile?.ProfileName ?? careProfile?.profileName ?? 'N/A'}</div>
+                          <div className="text-sm text-gray-500">{account?.phone_number || account?.phoneNumber || careProfile?.PhoneNumber || careProfile?.phoneNumber || 'N/A'}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {workDate ? new Date(workDate).toLocaleDateString('vi-VN') : '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
+                          {price?.toLocaleString()} VNĐ
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold 
+                          ${String(status).toLowerCase() === 'paid' ? 'bg-pink-100 text-pink-700' :
+                              String(status).toLowerCase() === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                                String(status).toLowerCase() === 'pending' || String(status).toLowerCase() === 'unpaid' ? 'bg-yellow-100 text-yellow-700' :
+                                  String(status).toLowerCase() === 'isscheduled' ? 'bg-blue-100 text-blue-700' :
+                                    String(status).toLowerCase() === 'cancelled' || String(status).toLowerCase() === 'canceled' ? 'bg-red-100 text-red-700' :
+                                      'bg-gray-100 text-gray-700'
+                            }`}>
+                            {(() => {
+                              const s = String(status).toLowerCase();
+                              if (s === 'paid') return 'Đã thanh toán';
+                              if (s === 'completed') return 'Hoàn thành';
+                              if (s === 'pending' || s === 'unpaid') return 'Chờ thanh toán';
+                              if (s === 'isscheduled') return 'Đã lên lịch';
+                              if (s === 'cancelled' || s === 'canceled') return 'Đã hủy';
+                              return status || 'Không rõ';
+                            })()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => setSelectedBooking(booking)}
+                            className="text-pink-600 hover:text-pink-900 mr-3"
+                          >
+                            <FontAwesomeIcon icon={faEye} />
+                          </button>
+                          <button className="text-blue-600 hover:text-blue-900 mr-3">
+                            <FontAwesomeIcon icon={faEdit} />
+                          </button>
+                          <button className="text-red-600 hover:text-red-900">
+                            <FontAwesomeIcon icon={faTrash} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
           {/* Detail Modal */}
           {selectedBooking && (

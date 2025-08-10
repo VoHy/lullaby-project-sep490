@@ -442,7 +442,7 @@ function BookingContent() {
     if (!datetime) return false;
     const selectedDate = new Date(datetime);
     const now = new Date();
-    const minTime = new Date(now.getTime() + 30 * 60 * 1000); // 30 minutes from now
+    const minTime = new Date(now.getTime() + 120 * 60 * 1000); // 2 hours from now
     return selectedDate >= minTime;
   }, [datetime]);
 
@@ -470,7 +470,7 @@ function BookingContent() {
     }
     
     if (!datetime || !isDatetimeValid) {
-      setError("Vui lòng chọn ngày giờ hợp lệ (cách hiện tại ít nhất 30 phút)");
+      setError("Vui lòng chọn ngày giờ hợp lệ (cách hiện tại ít nhất 2h phút)");
       return;
     }
 
