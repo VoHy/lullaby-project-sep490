@@ -6,9 +6,10 @@ export default function PaymentInfo({
   error, 
   loading, 
   handleConfirm,
-  isProcessingPayment
+  isProcessingPayment,
+  paymentBreakdown
 }) {
-  // Debug wallet info
+
   const walletAmount = myWallet?.amount || myWallet?.Amount || 0;
   const walletStatus = myWallet?.status || myWallet?.Status || 'unknown';
   const walletAccount = myWallet?.accountID || myWallet?.AccountID || 'unknown';
@@ -21,6 +22,55 @@ export default function PaymentInfo({
         </div>
         <h2 className="text-2xl font-bold text-gray-800">Thông tin thanh toán</h2>
       </div>
+
+      {/* Chi tiết thanh toán */}
+      {paymentBreakdown && (
+        <div className="bg-gray-50 rounded-xl p-4 mb-6">
+          <h4 className="font-semibold text-gray-700 mb-3">Chi tiết thanh toán</h4>
+          <div className="space-y-2 text-sm">
+            {paymentBreakdown.subtotal > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Tổng tiền gốc:</span>
+                <span className="text-gray-700">{paymentBreakdown.subtotal.toLocaleString()}đ</span>
+              </div>
+            )}
+            {paymentBreakdown.totalDiscount > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Giảm giá:</span>
+                <span className="text-green-600 font-medium">-{paymentBreakdown.totalDiscount.toLocaleString()}đ</span>
+              </div>
+            )}
+            {paymentBreakdown.totalDiscount > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Sau giảm giá:</span>
+                <span className="text-gray-700 font-medium">{paymentBreakdown.discountedAmount.toLocaleString()}đ</span>
+              </div>
+            )}
+            {paymentBreakdown.extra && paymentBreakdown.extra > 0 && (
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Phí phát sinh ({paymentBreakdown.extra * 1}%):</span>
+                <span className="text-orange-600 font-medium">+{paymentBreakdown.extraAmount.toLocaleString()}đ</span>
+              </div>
+            )}
+            <div className="border-t border-gray-200 pt-2 mt-2">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-800 font-semibold">Tổng cộng:</span>
+                <span className="text-gray-800 font-bold">{total.toLocaleString()}đ</span>
+              </div>
+            </div>
+          </div>
+          
+          {/* Thông tin giải thích về phí phát sinh */}
+          {paymentBreakdown.extra && paymentBreakdown.extra > 0 && (
+            <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+              <div className="text-blue-800 text-xs">
+                <strong>Lưu ý:</strong> Phí phát sinh {paymentBreakdown.extra * 1}% được áp dụng cho ngày lễ hoặc dịch vụ đặc biệt. 
+                Số tiền này sẽ được tính thêm vào hóa đơn khi thanh toán.
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Tổng tiền */}
       <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-6 mb-6">

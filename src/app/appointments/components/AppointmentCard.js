@@ -1,64 +1,128 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { FaUser, FaCheck, FaEye, FaUserCircle, FaBox, FaStethoscope } from 'react-icons/fa';
+import { FaUser, FaCheck, FaEye, FaUserCircle, FaBox, FaStethoscope, FaTimes, FaCreditCard } from 'react-icons/fa';
+import { useRouter } from 'next/navigation';
+import { calculateFinalAmountWithExtra } from '../../booking/utils/paymentCalculation';
 
-const AppointmentCard = ({ 
-  appointment, 
-  index = 0, 
-  serviceTypes = [], 
+const AppointmentCard = ({
+  appointment,
+  index = 0,
+  serviceTypes = [],
   onSelect,
+  onCancel,
   getStatusColor,
   getStatusText,
   formatDate
 }) => {
+  const router = useRouter();
+  
   // Safety checks
   if (!appointment) return null;
-  
+
   const bookingId = appointment.bookingID || appointment.BookingID;
   const careProfile = appointment.careProfile || {};
-  const amount = appointment.amount || appointment.totalAmount || appointment.total_Amount || 0;
+  const baseAmount = appointment.amount || appointment.totalAmount || appointment.total_Amount || 0;
+  const extra = appointment.extra;
+
+  // Calculate final amount including extra fees
+  const finalAmount = (() => {
+    if (!extra || extra === null) {
+      return baseAmount;
+    }
+    // Convert extra to decimal percentage if it's a whole number
+    const extraPercentage = extra > 1 ? extra / 100 : extra;
+    return baseAmount + (baseAmount * extraPercentage);
+  })();
 
   // Tính toán thông tin dịch vụ
   const getServiceInfo = () => {
     const customizeDto = appointment.customizePackageCreateDto;
     const customizeDtos = appointment.customizePackageCreateDtos || [];
-    
+
     if (customizeDto) {
       // Package booking
       const serviceId = customizeDto.serviceID || customizeDto.service_ID;
-      const service = Array.isArray(serviceTypes) ? serviceTypes.find(s => 
-        s.serviceID === serviceId || 
-        s.serviceTypeID === serviceId || 
+      const service = Array.isArray(serviceTypes) ? serviceTypes.find(s =>
+        s.serviceID === serviceId ||
+        s.serviceTypeID === serviceId ||
         s.ServiceID === serviceId
       ) : null;
       return {
         type: 'package',
         services: service ? [service] : [],
-        total: amount
+        total: finalAmount
       };
     } else if (customizeDtos.length > 0) {
       // Individual services
       const services = customizeDtos.map(dto => {
         const serviceId = dto.serviceID || dto.service_ID;
-        return Array.isArray(serviceTypes) ? serviceTypes.find(s => 
-          s.serviceID === serviceId || 
-          s.serviceTypeID === serviceId || 
+        return Array.isArray(serviceTypes) ? serviceTypes.find(s =>
+          s.serviceID === serviceId ||
+          s.serviceTypeID === serviceId ||
           s.ServiceID === serviceId
         ) : null;
       }).filter(Boolean);
-      
+
       return {
         type: 'services',
         services: services,
-        total: amount
+        total: finalAmount
       };
     }
-    
-    return { type: 'unknown', services: [], total: amount };
+
+    return { type: 'unknown', services: [], total: finalAmount };
   };
 
+
   const serviceInfo = getServiceInfo();
+
+  // Check if cancellation is allowed (3 hours before workdate)
+  const isCancelAllowed = () => {
+    const workdate = appointment.workdate || appointment.Workdate || appointment.BookingDate;
+    if (!workdate) return false;
+
+    const workDateTime = new Date(workdate);
+    const now = new Date();
+    const timeDiff = workDateTime.getTime() - now.getTime();
+    const hoursDiff = timeDiff / (1000 * 60 * 60); // Convert to hours
+
+    // Allow cancellation if more than 2 hours until workdate and status is 'paid'
+    const status = appointment.status || appointment.Status;
+    return hoursDiff > 2 && status === 'paid';
+  };
+
+  // Check if payment is needed (booking not paid yet)
+  const isPaymentNeeded = () => {
+    const status = appointment.status || appointment.Status;
+    return status === 'pending' || status === 'unpaid' || !status;
+  };
+
+  // Handle payment redirect
+  const handlePayment = (e) => {
+    e.stopPropagation();
+    const bookingId = appointment.bookingID || appointment.BookingID;
+    if (bookingId) {
+      router.push(`/payment?bookingId=${bookingId}`);
+    }
+  };
+
+  const handleCancel = (e) => {
+    e.stopPropagation();
+
+    if (!isCancelAllowed()) {
+      alert('Không thể hủy booking này. Booking chỉ có thể hủy trước 3 tiếng so với giờ hẹn và phải ở trạng thái đã thanh toán.');
+      return;
+    }
+
+    const confirmCancel = window.confirm(
+      `Bạn có chắc chắn muốn hủy lịch hẹn #${bookingId}?\n\nViệc hủy sẽ hoàn tiền vào tài khoản của bạn.`
+    );
+
+    if (confirmCancel && onCancel) {
+      onCancel(appointment);
+    }
+  };
 
   return (
     <motion.div
@@ -68,8 +132,8 @@ const AppointmentCard = ({
       className="group"
     >
       <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer"
-           onClick={() => onSelect?.(appointment)}>
-        
+        onClick={() => onSelect?.(appointment)}>
+
         {/* Header */}
         <div className="p-6">
           <div className="flex items-center justify-between mb-4">
@@ -77,7 +141,7 @@ const AppointmentCard = ({
               Lịch hẹn #{bookingId}
             </h3>
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor?.(appointment.status || appointment.Status) || 'bg-gray-100 text-gray-700'}`}>
-              {getStatusText?.(appointment.status || appointment.Status) || 'Không xác định'}
+              {getStatusText?.(appointment.status) || 'Không xác định'}
             </span>
           </div>
 
@@ -102,9 +166,23 @@ const AppointmentCard = ({
           </div>
 
           {/* Date and Time */}
-          <div className="flex items-center gap-2 text-sm text-gray-600 mb-4">
-            <span className="font-medium">Ngày hẹn:</span>
-            <span>{formatDate?.(appointment.workdate || appointment.Workdate || appointment.BookingDate) || 'Chưa xác định'}</span>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <span className="font-medium">Ngày hẹn:</span>
+              <span>{formatDate?.(appointment.workdate || appointment.Workdate || appointment.BookingDate) || 'Chưa xác định'}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              {isCancelAllowed() && (
+                <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                  Có thể hủy
+                </div>
+              )}
+              {isPaymentNeeded() && (
+                <div className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                  Chưa thanh toán
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Total Amount */}
@@ -145,22 +223,44 @@ const AppointmentCard = ({
             </div>
           )}
 
-          {/* Action Button */}
+          {/* Action Buttons */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-purple-600 font-medium text-sm">
               <FaEye className="text-xs" />
               <span>Xem chi tiết</span>
             </div>
-            <button
-              className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 text-white font-medium text-sm hover:bg-purple-600 transition-colors group-hover:gap-3"
-              onClick={(e) => {
-                e.stopPropagation();
-                if (onSelect) onSelect(appointment);
-              }}
-            >
-              Chi tiết
-              <FaEye className="text-xs" />
-            </button>
+            <div className="flex items-center gap-2">
+              {isPaymentNeeded() && (
+                <button
+                  className="flex items-center gap-1 px-3 py-2 rounded-xl bg-orange-500 text-white font-medium text-sm hover:bg-orange-600 transition-colors"
+                  onClick={handlePayment}
+                  title="Thanh toán lại"
+                >
+                  <FaCreditCard className="text-xs" />
+                  Thanh toán
+                </button>
+              )}
+              {isCancelAllowed() && (
+                <button
+                  className="flex items-center gap-1 px-3 py-2 rounded-xl bg-red-500 text-white font-medium text-sm hover:bg-red-600 transition-colors"
+                  onClick={handleCancel}
+                  title="Hủy booking"
+                >
+                  <FaTimes className="text-xs" />
+                  Hủy
+                </button>
+              )}
+              <button
+                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 text-white font-medium text-sm hover:bg-purple-600 transition-colors group-hover:gap-3"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (onSelect) onSelect(appointment);
+                }}
+              >
+                Chi tiết
+                <FaEye className="text-xs" />
+              </button>
+            </div>
           </div>
         </div>
       </div>

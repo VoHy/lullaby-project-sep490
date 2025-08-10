@@ -1,30 +1,15 @@
-﻿import { getAuthHeaders } from './serviceUtils';
+﻿// Nursing Specialist Service Type Service
+import { API_ENDPOINTS } from '../../config/api';
+import { apiGet, apiPost, apiPut, apiDelete } from './serviceUtils';
 
-// Tạo base service với factory
+const base = API_ENDPOINTS.NURSING_SPECIALIST_SERVICE_TYPES; // '/nursingspecialist-servicetype'
 
-// Thêm method đặc biệt
-const nursingSpecialistServiceTypeService = {  // Get by nursing ID
-  getServiceTypesByNursingId: async (nursingId) => {
-    const res = await fetch(`/api/nursingspecialist-servicetypes/getbynursing/${nursingId}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy service types theo nursing ID');
-    return data;
-  },
-
-  // Get by service ID
-  getServiceTypesByServiceId: async (serviceId) => {
-    const res = await fetch(`/api/nursingspecialist-servicetypes/getbyservice/${serviceId}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy service types theo service ID');
-    return data;
-  }
+const nursingSpecialistServiceTypeService = {
+  getByNursing: async (nursingId) => apiGet(`${base}/getbynursing/${nursingId}`, 'Không thể lấy mapping theo nurse'),
+  getByService: async (serviceId) => apiGet(`${base}/getbyservice/${serviceId}`, 'Không thể lấy mapping theo service'),
+  create: async (data) => apiPost(`${base}`, data, 'Không thể tạo mapping'),
+  update: async (id, data) => apiPut(`${base}/${id}`, data, 'Không thể cập nhật mapping'),
+  delete: async (id) => apiDelete(`${base}/${id}`, 'Không thể xóa mapping'),
 };
 
-export default nursingSpecialistServiceTypeService; 
-
+export default nursingSpecialistServiceTypeService;

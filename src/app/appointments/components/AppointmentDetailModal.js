@@ -1,9 +1,10 @@
 ﻿'use client';
 
 import React, { useState } from 'react';
-import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaUserMd, FaPlus, FaFileInvoice } from 'react-icons/fa';
+import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaUserMd, FaPlus, FaFileInvoice, FaCreditCard } from 'react-icons/fa';
 import NurseSelectionModal from './NurseSelectionModal';
-    // import DebugData from './DebugData';
+import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
+
 
 const AppointmentDetailModal = ({
   appointment,
@@ -18,7 +19,8 @@ const AppointmentDetailModal = ({
   getStatusColor,
   getStatusText,
   formatDate,
-  onAssignNursing
+  onAssignNursing,
+  onPayment
 }) => {
   const [showNurseModal, setShowNurseModal] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
@@ -29,7 +31,21 @@ const AppointmentDetailModal = ({
 
   const bookingId = appointment.bookingID || appointment.BookingID;
   const careProfile = appointment.careProfile;
-  const amount = appointment.amount || appointment.totalAmount || appointment.total_Amount || 0;
+  const baseAmount = appointment.amount || appointment.totalAmount || appointment.total_Amount || 0;
+  const extra = appointment.extra;
+
+  // Calculate final amount including extra fees
+  const finalAmount = (() => {
+    if (!extra || extra === null) {
+      return baseAmount;
+    }
+    // Convert extra to decimal percentage if it's a whole number
+    const extraPercentage = extra > 1 ? extra / 100 : extra;
+    return baseAmount + (baseAmount * extraPercentage);
+  })();
+
+  // Calculate extra fee amount
+  const extraAmount = finalAmount - baseAmount;
 
   // Lấy invoice cho booking này
   const bookingInvoice = invoices.find(inv =>
@@ -38,119 +54,208 @@ const AppointmentDetailModal = ({
 
   // Tính toán thông tin dịch vụ và service tasks
   const getServiceDetails = () => {
-    
     const bookingId = appointment.bookingID || appointment.BookingID;
 
-    // APPROACH: Sử dụng customizeTasks thay vì customizePackages để hiển thị từng nút "Add Nurse" riêng biệt
+    // Get customize tasks for this booking
     const bookingCustomizeTasks = customizeTasks?.filter(task => {
       const match = task.bookingID === bookingId ||
         task.BookingID === bookingId ||
         task.booking_ID === bookingId;
-      
       return match;
     }) || [];
 
-    if (bookingCustomizeTasks.length > 0) {
-      // Tạo service instances dựa trên customize tasks
-      const allServiceInstances = [];
-      
-        bookingCustomizeTasks.forEach((task, taskIndex) => {
-        const serviceId = task.serviceID || task.service_ID || task.Service_ID;
-        const customizeTaskId = task.customizeTaskID || task.customize_TaskID;
-          const taskOrder = task.taskOrder || task.task_Order || task.Task_Order;
-        
-        const service = serviceTypes.find(s => {
-          const match = s.serviceID === serviceId ||
-            s.serviceTypeID === serviceId ||
-            s.ServiceID === serviceId;
-          
-          return match;
-        });
-        
-          if (service) {
-          const instance = {
-            ...service,
-            customizeTaskId: customizeTaskId,
-            nursingID: task.nursingID,
-            status: task.status,
-              taskOrder: taskOrder,
-            serviceInstanceKey: `task-${customizeTaskId}`
-          };
-          allServiceInstances.push(instance);
-        } else {
-          console.log('❌ No service found for serviceId:', serviceId);
-        }
-      });
-
-      return {
-        type: 'tasks',
-        mainService: null,
-        tasks: [],
-        services: allServiceInstances,
-        customizeTasks: bookingCustomizeTasks
-      };
-    }
-
-    console.log('❌ No customize tasks found, fallback to packages');
-    
-    // Fallback to old logic with packages
+    // Get customize packages for this booking
     const bookingPackages = customizePackages?.filter(pkg => {
       const match = pkg.bookingID === bookingId ||
         pkg.BookingID === bookingId ||
         pkg.booking_ID === bookingId;
-      
       return match;
     }) || [];
 
-    if (bookingPackages.length > 0) {
-      // SIMPLE APPROACH: Tạo 1 service entry cho mỗi unit quantity
-      const allServiceInstances = [];
-      
-      bookingPackages.forEach((pkg, pkgIndex) => {
-        const serviceId = pkg.serviceID || pkg.service_ID || pkg.Service_ID;
-        
-        const service = serviceTypes.find(s => {
-          const match = s.serviceID === serviceId ||
-            s.serviceTypeID === serviceId ||
-            s.ServiceID === serviceId;
-          
-          return match;
-        });
-        
-        const quantity = pkg.quantity || 1;
-        
-        if (service) {
-          // Tạo nhiều instances theo quantity
+    // Determine if we have true packages (isPackage: true) or individual services
+    let hasRealPackages = false;
+    let packageServices = [];
+    let individualServices = [];
+
+    // Check packages to see if any are real packages (isPackage: true)
+    bookingPackages.forEach((pkg) => {
+      const serviceId = pkg.serviceID || pkg.service_ID || pkg.Service_ID;
+      const service = serviceTypes.find(s =>
+        s.serviceID === serviceId ||
+        s.serviceTypeID === serviceId ||
+        s.ServiceID === serviceId
+      );
+
+      if (service) {
+        // Check if this is a real package
+        const isPackage = service.isPackage === true || service.IsPackage === true;
+
+        if (isPackage) {
+          hasRealPackages = true;
+          packageServices.push({
+            ...service,
+            customizePackage: pkg,
+            quantity: pkg.quantity || 1
+          });
+        } else {
+          // This is an individual service with quantity
+          const quantity = pkg.quantity || 1;
           for (let i = 0; i < quantity; i++) {
-            const instance = {
+            individualServices.push({
               ...service,
               customizePackageId: pkg.customizePackageID,
               instanceNumber: i + 1,
               totalQuantity: quantity,
-              serviceInstanceKey: `${pkg.customizePackageID}-${i + 1}`
-            };
-            allServiceInstances.push(instance);
+              serviceInstanceKey: `${pkg.customizePackageID || pkg.customize_PackageID}-${i + 1}`,
+              isIndividualWithQuantity: true
+            });
           }
-        } else {
-          console.log('❌ No service found for serviceId:', serviceId);
+        }
+      }
+    });
+
+    // Case 1: Real package booking (isPackage: true)
+    if (hasRealPackages && packageServices.length > 0) {
+      const mainPackageService = packageServices[0]; // Assume one main package
+
+      // Get service tasks (child services) for this package
+      // Use package_ServiceID from ServiceTasks to match with the main package service ID
+      const packageServiceTasks = serviceTasks?.filter(task => {
+        const packageServiceId = task.package_ServiceID || task.packageServiceID || task.Package_ServiceID;
+        const mainServiceId = mainPackageService.serviceID || mainPackageService.serviceTypeID || mainPackageService.ServiceID;
+        return packageServiceId === mainServiceId;
+      }) || [];
+
+      // Map service tasks to actual services with customize task info
+      const childServices = [];
+      packageServiceTasks.forEach((serviceTask) => {
+        const childServiceId = serviceTask.child_ServiceID || serviceTask.childServiceID || serviceTask.Child_ServiceID;
+        const childService = serviceTypes.find(s =>
+          s.serviceID === childServiceId ||
+          s.serviceTypeID === childServiceId ||
+          s.ServiceID === childServiceId
+        );
+
+        if (childService) {
+          // Find corresponding customize task for this child service
+          const correspondingTask = bookingCustomizeTasks.find(task => {
+            const taskServiceId = task.serviceID || task.service_ID || task.Service_ID;
+            return taskServiceId === childServiceId;
+          });
+
+
+
+          childServices.push({
+            ...childService,
+            serviceTask: serviceTask,
+            customizeTask: correspondingTask,
+            customizeTaskId: correspondingTask?.customizeTaskID || correspondingTask?.customize_TaskID,
+            nursingID: correspondingTask?.nursingID,
+            status: correspondingTask?.status || 'pending',
+            taskOrder: serviceTask.taskOrder || serviceTask.task_Order || serviceTask.Task_Order || 1,
+            serviceInstanceKey: `package-child-${childServiceId}-${serviceTask.taskOrder || 0}`,
+            isPackageChild: true
+          });
         }
       });
 
       return {
-        type: 'services',
-        mainService: null,
-        tasks: [],
-        services: allServiceInstances
+        type: 'package',
+        mainService: mainPackageService,
+        mainPackage: mainPackageService.customizePackage,
+        tasks: packageServiceTasks,
+        services: childServices,
+        customizeTasks: bookingCustomizeTasks
       };
     }
 
-    console.log('❌ No packages found or empty');
+    // Case 2: Individual services with tasks (from customize tasks)
+    if (bookingCustomizeTasks.length > 0) {
+      const taskBasedServices = [];
+
+      bookingCustomizeTasks.forEach((task) => {
+        const serviceId = task.serviceID || task.service_ID || task.Service_ID;
+        const customizeTaskId = task.customizeTaskID || task.customize_TaskID;
+        const taskOrder = task.taskOrder || task.task_Order || task.Task_Order;
+
+        const service = serviceTypes.find(s => {
+          const match = s.serviceID === serviceId ||
+            s.serviceTypeID === serviceId ||
+            s.ServiceID === serviceId;
+          return match;
+        });
+
+        if (service) {
+          taskBasedServices.push({
+            ...service,
+            customizeTaskId: customizeTaskId,
+            nursingID: task.nursingID,
+            status: task.status,
+            taskOrder: taskOrder,
+            serviceInstanceKey: `task-${customizeTaskId}`,
+            isTaskBased: true
+          });
+        }
+      });
+
+      return {
+        type: 'individual_services',
+        mainService: null,
+        tasks: [],
+        services: taskBasedServices,
+        customizeTasks: bookingCustomizeTasks
+      };
+    }
+
+    // Case 3: Individual services with quantity (from customize packages)
+    if (individualServices.length > 0) {
+      return {
+        type: 'individual_services_with_quantity',
+        mainService: null,
+        tasks: [],
+        services: individualServices,
+        customizePackages: bookingPackages
+      };
+    }
+
     return { type: 'unknown', mainService: null, tasks: [], services: [] };
   };
 
   const serviceDetails = getServiceDetails();
 
-  // Lọc nurses theo zone
+  // Get nurses for a service using per-nurse mapping and zone filter
+  const getServiceSpecificNurses = async (serviceId) => {
+    try {
+      const zoneId = careProfile?.zoneDetailID || careProfile?.zoneDetail_ID;
+      const candidatePool = Array.isArray(nursingSpecialists)
+        ? nursingSpecialists.filter(n => !zoneId || (n.zoneID || n.zone_ID || n.Zone_ID) === zoneId)
+        : [];
+
+      // For each candidate nurse, verify they can perform this service via getByNursing
+      const checks = await Promise.all(
+        candidatePool.map(async (nurse) => {
+          const nid = nurse.nursingID || nurse.nursing_ID || nurse.Nursing_ID;
+          try {
+            const mappings = await nursingSpecialistServiceTypeService.getByNursing(nid);
+            const canDo = Array.isArray(mappings)
+              ? mappings.some(m => (m.serviceID || m.ServiceID) === serviceId)
+              : false;
+            return canDo ? nurse : null;
+          } catch {
+            return null;
+          }
+        })
+      );
+
+      return checks.filter(Boolean);
+    } catch (error) {
+      console.error('Error fetching nurses by nursing mapping:', error);
+      // Fallback: zone filter only
+      return getAvailableNurses();
+    }
+  };
+
+  // Lọc nurses theo zone (fallback method)
   const getAvailableNurses = () => {
     if (!careProfile?.zoneDetailID && !careProfile?.zoneDetail_ID) return nursingSpecialists;
 
@@ -167,13 +272,13 @@ const AppointmentDetailModal = ({
   // Helper function to get nurse info by ID
   const getNurseInfo = (nursingId) => {
     if (!nursingId) return null;
-    
-    const nurse = nursingSpecialists.find(n => 
-      n.nursingID === nursingId || 
-      n.nursing_ID === nursingId || 
+
+    const nurse = nursingSpecialists.find(n =>
+      n.nursingID === nursingId ||
+      n.nursing_ID === nursingId ||
       n.Nursing_ID === nursingId
     );
-    
+
     return nurse ? {
       id: nursingId,
       name: nurse.fullName || nurse.full_Name || nurse.Full_Name || 'Không có tên',
@@ -187,10 +292,27 @@ const AppointmentDetailModal = ({
     };
   };
 
-  const handleAddNurse = (service) => {
-    console.log('🖱️ Add Nurse button clicked!', service);
-    setSelectedService(service);
-    setShowNurseModal(true);
+  const handleAddNurse = async (service) => {
+    try {
+      setSelectedService(service);
+
+      // Get service-specific nurses if we have a service ID
+      const serviceId = service.serviceID || service.serviceTypeID || service.ServiceID;
+      if (serviceId) {
+        const specificNurses = await getServiceSpecificNurses(serviceId);
+        setSelectedService({
+          ...service,
+          availableNurses: specificNurses
+        });
+      }
+
+      setShowNurseModal(true);
+    } catch (error) {
+      console.error('Error loading nurses for service:', error);
+      // Still show modal with fallback nurses
+      setSelectedService(service);
+      setShowNurseModal(true);
+    }
   };
 
   const handleNurseAssignment = async (nurseId) => {
@@ -203,6 +325,43 @@ const AppointmentDetailModal = ({
     } catch (error) {
       console.error('Error assigning nurse:', error);
     }
+  };
+
+  const handlePayment = async () => {
+    if (!bookingInvoice) {
+      alert('Không tìm thấy hóa đơn để thanh toán');
+      return;
+    }
+
+    const invoiceId = bookingInvoice.invoiceID || bookingInvoice.invoice_ID;
+    const amount = bookingInvoice.totalAmount || bookingInvoice.total_amount;
+
+    const confirmPayment = window.confirm(
+      `Bạn có chắc chắn muốn thanh toán hóa đơn #${invoiceId}?\n\nSố tiền: ${amount?.toLocaleString('vi-VN')}₫`
+    );
+
+    if (confirmPayment && onPayment) {
+      try {
+        await onPayment(invoiceId);
+      } catch (error) {
+        console.error('Error processing payment:', error);
+      }
+    }
+  };
+
+  // Check if invoice is eligible for payment
+  const isInvoiceUnpaid = () => {
+    if (!bookingInvoice) return false;
+    const raw = bookingInvoice.status || bookingInvoice.Status || '';
+    const status = String(raw).toLowerCase().trim();
+    // Disallow paying if already paid or refunded/cancelled/void
+    const disallowed = new Set([
+      'paid', 'completed', 'refunded', 'refund', 'cancelled', 'canceled', 'void', 'failed'
+    ]);
+    if (disallowed.has(status)) return false;
+    // Require positive amount
+    const amount = bookingInvoice.totalAmount || bookingInvoice.total_amount || 0;
+    return amount > 0;
   };
 
   return (
@@ -226,7 +385,7 @@ const AppointmentDetailModal = ({
               Chi tiết lịch hẹn #{bookingId}
             </h1>
             <p className="text-purple-100 text-lg">
-              {formatDate(appointment.workdate || appointment.Workdate || appointment.BookingDate)}
+              {formatDate(appointment.workdate || appointment.Workdate)}
             </p>
           </div>
         </div>
@@ -248,10 +407,9 @@ const AppointmentDetailModal = ({
                   Trạng thái
                 </h3>
                 <span className={`px-4 py-2 rounded-full text-sm font-medium ${getStatusColor(appointment.status || appointment.Status)}`}>
-                  {getStatusText(appointment.status || appointment.Status)}
+                  {getStatusText(appointment.status)}
                 </span>
               </div>
-
               {/* Care Profile */}
               <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl p-6 border border-green-200">
                 <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-3">
@@ -292,7 +450,16 @@ const AppointmentDetailModal = ({
                   Tổng tiền
                 </h3>
                 <div className="text-3xl font-bold text-yellow-600">
-                  {amount.toLocaleString('vi-VN')}₫
+                  {finalAmount.toLocaleString('vi-VN')}₫
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  <strong>Số tiền cơ bản:</strong> {baseAmount.toLocaleString('vi-VN')}₫
+                  {extraAmount > 0 && (
+                    <>
+                      <br />
+                      <strong>Phí thêm:</strong> {extraAmount.toLocaleString('vi-VN')}₫
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -304,91 +471,127 @@ const AppointmentDetailModal = ({
                   <h3 className="text-xl font-bold flex items-center gap-3">
                     {serviceDetails.type === 'package' ? (
                       <><FaBox />Gói dịch vụ</>
-                    ) : serviceDetails.type === 'tasks' ? (
-                      <><FaStethoscope />Dịch vụ từ CustomizeTask</>
+                    ) : serviceDetails.type === 'individual_services' ? (
+                      <><FaStethoscope />Dịch vụ lẻ</>
+                    ) : serviceDetails.type === 'individual_services_with_quantity' ? (
+                      <><FaStethoscope />Dịch vụ lẻ</>
                     ) : (
-                      <><FaStethoscope />Dịch vụ</>
+                      <><FaStethoscope />Dịch vụ đã đặt</>
                     )}
                   </h3>
                 </div>
                 <div className="p-6 space-y-4">
+                  {/* Package Display */}
                   {serviceDetails.type === 'package' && serviceDetails.mainService && (
                     <div className="mb-6">
-                      <div className="font-semibold text-lg text-gray-900 mb-2">
-                        {serviceDetails.mainService.serviceName || serviceDetails.mainService.ServiceName}
-                      </div>
-                      {serviceDetails.mainService.description && (
-                        <div className="text-sm text-gray-600 mb-4">
-                          {serviceDetails.mainService.description}
+                      {/* Main Package Info */}
+                      <div className="bg-gradient-to-r from-purple-50 to-pink-50 border-l-4 border-purple-500 p-4 rounded-lg mb-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <FaBox className="text-purple-600" />
+                          <div className="font-bold text-lg text-purple-900">
+                            {serviceDetails.mainService.serviceName || serviceDetails.mainService.ServiceName}
+                          </div>
                         </div>
-                      )}
+                        {serviceDetails.mainService.description && (
+                          <div className="text-sm text-purple-700 mb-2">
+                            {serviceDetails.mainService.description}
+                          </div>
+                        )}
+                        <div className="text-xs text-purple-600">
+                          Gói dịch vụ • {serviceDetails.services.length} dịch vụ con
+                        </div>
+                      </div>
 
-                      {/* Service Tasks of Package */}
-                      {serviceDetails.tasks.length > 0 ? (
+                      {/* Child Services */}
+                      {serviceDetails.services.length > 0 ? (
                         <div className="space-y-3">
-                          <h4 className="font-medium text-gray-800 border-b pb-2">Dịch vụ trong gói:</h4>
-                          {serviceDetails.tasks.map((task, index) => {
-                            const childService = serviceTypes.find(s =>
-                              s.serviceID === (task.childServiceID || task.child_ServiceID || task.Child_ServiceID) ||
-                              s.serviceTypeID === (task.childServiceID || task.child_ServiceID || task.Child_ServiceID)
-                            );
+                          <h4 className="font-medium text-gray-800 border-b pb-2 flex items-center gap-2">
+                            <FaStethoscope className="text-blue-500" />
+                            Dịch vụ trong gói:
+                          </h4>
+                          {serviceDetails.services.map((service, index) => {
+                            const hasNurse = !!service.nursingID;
+                            const isCompleted = service.status === 'completed';
+                            const nurseInfo = hasNurse ? getNurseInfo(service.nursingID) : null;
 
                             return (
-                              <div key={index} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                              <div key={service.serviceInstanceKey || `service-${index}`}
+                                className="flex items-center justify-between p-4 bg-blue-50 rounded-lg border border-blue-200">
                                 <div className="flex-1">
-                                  <div className="font-medium text-gray-800">
-                                    Tên: {childService?.serviceName || childService?.ServiceName || 'Dịch vụ không xác định'}
+                                  <div className="font-medium text-gray-800 flex items-center gap-2">
+                                    <span className="text-blue-600 font-bold text-sm">#{service.taskOrder || index + 1}</span>
+                                    {service.serviceName || service.ServiceName}
+                                    {hasNurse && (
+                                      <span className="ml-2 text-xs bg-green-100 text-green-600 px-2 py-1 rounded-full">
+                                        Đã có nurse
+                                      </span>
+                                    )}
                                   </div>
-                                  {childService?.description && (
+                                  {service.description && (
                                     <div className="text-sm text-gray-600 mt-1">
-                                      Mô tả: {childService.description}
+                                      {service.description}
+                                    </div>
+                                  )}
+                                  <div className="text-xs text-blue-600 mt-1">
+                                    Trạng thái: {service.status || 'Chờ xử lý'}
+                                  </div>
+                                  {hasNurse && nurseInfo && (
+                                    <div className="text-sm text-green-600 mt-2 bg-green-50 p-2 rounded border border-green-200">
+                                      <div className="font-medium">Điều dưỡng: {nurseInfo.name}</div>
+                                      <div className="text-xs text-green-700">
+                                        ID: {nurseInfo.id}
+                                        {nurseInfo.phone && ` | SĐT: ${nurseInfo.phone}`}
+                                        {nurseInfo.experience && ` | Kinh nghiệm: ${nurseInfo.experience}`}
+                                      </div>
                                     </div>
                                   )}
                                 </div>
-                                <button
-                                  onClick={(e) => {
-                                    e.preventDefault();
-                                    e.stopPropagation();
-                                    console.log('🖱️ Package task button clicked!');
-                                    handleAddNurse({ ...childService, taskId: task.taskID || task.task_ID });
-                                  }}
-                                  className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
-                                  style={{ pointerEvents: 'auto', zIndex: 10 }}
-                                >
-                                  <FaUserMd className="text-xs" />
-                                  Add Nurse
-                                </button>
+                                {!hasNurse && !isCompleted && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      handleAddNurse({
+                                        ...service,
+                                        customizeTaskId: service.customizeTaskId
+                                      });
+                                    }}
+                                    className="flex items-center gap-2 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors text-sm"
+                                    style={{ pointerEvents: 'auto', zIndex: 10 }}
+                                  >
+                                    <FaUserMd className="text-xs" />
+                                    Chọn điều dưỡng
+                                  </button>
+                                )}
+                                {isCompleted && (
+                                  <div className="text-sm text-gray-500 font-medium">
+                                    🎉 Hoàn thành
+                                  </div>
+                                )}
                               </div>
                             );
                           })}
                         </div>
                       ) : (
                         <div className="text-center py-6 bg-gray-50 rounded-lg">
-                          <p className="text-gray-500">Không có service tasks nào cho gói này</p>
+                          <p className="text-gray-500">Không có dịch vụ con nào trong gói này</p>
                         </div>
                       )}
                     </div>
                   )}
-
-                  {serviceDetails.type === 'tasks' && serviceDetails.services.length > 0 && (
+                  {serviceDetails.type === 'individual_services' && serviceDetails.services.length > 0 && (
                     <div className="space-y-3">
-                      <h4 className="font-medium text-gray-800 border-b pb-2">
-                        Dịch vụ từ CustomizeTask: ({serviceDetails.services.length} tasks)
-                      </h4>
                       {serviceDetails.services.map((service, index) => {
                         const hasNurse = !!service.nursingID;
                         const isCompleted = service.status === 'completed';
                         const nurseInfo = hasNurse ? getNurseInfo(service.nursingID) : null;
-                        
+
                         return (
-                          <div key={service.serviceInstanceKey || `task-${index}`} 
-                               className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                          <div key={service.serviceInstanceKey || `task-${index}`}
+                            className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
                             <div className="flex-1">
                               <div className="font-medium text-gray-800">
                                 {service.serviceName || service.ServiceName}
-                                <span className="ml-2 text-sm bg-purple-100 text-purple-600 px-2 py-1 rounded-full">
-                                  Task #{service.customizeTaskId}
-                                </span>
                                 {hasNurse && (
                                   <span className="ml-2 text-sm bg-green-100 text-green-600 px-2 py-1 rounded-full">
                                     Đã có nurse
@@ -405,7 +608,7 @@ const AppointmentDetailModal = ({
                               </div>
                               {hasNurse && nurseInfo && (
                                 <div className="text-sm text-green-600 mt-2 bg-green-50 p-2 rounded border border-green-200">
-                                  <div className="font-medium">👩‍⚕️ Điều dưỡng: {nurseInfo.name}</div>
+                                  <div className="font-medium">Điều dưỡng: {nurseInfo.name}</div>
                                   <div className="text-xs text-green-700">
                                     ID: {nurseInfo.id}
                                     {nurseInfo.phone && ` | SĐT: ${nurseInfo.phone}`}
@@ -419,7 +622,6 @@ const AppointmentDetailModal = ({
                                 onClick={(e) => {
                                   e.preventDefault();
                                   e.stopPropagation();
-                                  console.log('🖱️ Customize task button clicked!');
                                   handleAddNurse({
                                     ...service,
                                     customizeTaskId: service.customizeTaskId
@@ -429,7 +631,7 @@ const AppointmentDetailModal = ({
                                 style={{ pointerEvents: 'auto', zIndex: 10 }}
                               >
                                 <FaUserMd className="text-xs" />
-                                Add Nurse
+                                Chọn điều dưỡng
                               </button>
                             )}
                             {isCompleted && (
@@ -443,7 +645,53 @@ const AppointmentDetailModal = ({
                     </div>
                   )}
 
-                  {serviceDetails.type === 'services' && serviceDetails.services.length > 0 && (
+                  {/* Individual Services with Quantity */}
+                  {serviceDetails.type === 'individual_services_with_quantity' && serviceDetails.services.length > 0 && (
+                    <div className="space-y-3">
+                      <h4 className="font-medium text-gray-800 border-b pb-2">Dịch vụ lẻ: ({serviceDetails.services.length} lần thực hiện)</h4>
+                      {serviceDetails.services.map((service, index) => (
+                        <div key={service.serviceInstanceKey || `service-${index}`} className="flex items-center justify-between p-4 bg-orange-50 rounded-lg border border-orange-200">
+                          <div className="flex-1">
+                            <div className="font-medium text-gray-800">
+                              {service.serviceName || service.ServiceName}
+                              {service.totalQuantity > 1 && (
+                                <span className="ml-2 text-sm bg-orange-100 text-orange-600 px-2 py-1 rounded-full">
+                                  Lần #{service.instanceNumber}/{service.totalQuantity}
+                                </span>
+                              )}
+                            </div>
+                            {service.description && (
+                              <div className="text-sm text-gray-600 mt-1">
+                                {service.description}
+                              </div>
+                            )}
+                            <div className="text-xs text-orange-600 mt-1">
+                              Service ID: {service.serviceID || service.serviceTypeID || service.ServiceID}
+                              {service.customizePackageId && ` | Package ID: ${service.customizePackageId}`}
+                            </div>
+                          </div>
+                          <button
+                            onClick={(e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              handleAddNurse({
+                                ...service,
+                                customizePackageId: service.customizePackageId,
+                                instanceNumber: service.instanceNumber
+                              });
+                            }}
+                            className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors text-sm"
+                            style={{ pointerEvents: 'auto', zIndex: 10 }}
+                          >
+                            <FaUserMd className="text-xs" />
+                            Chọn điều dưỡng
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {serviceDetails.type === 'legacy_services' && serviceDetails.services.length > 0 && (
                     <div className="space-y-3">
                       <h4 className="font-medium text-gray-800 border-b pb-2">Dịch vụ lẻ: ({serviceDetails.services.length} services)</h4>
                       {serviceDetails.services.map((service, index) => (
@@ -471,7 +719,6 @@ const AppointmentDetailModal = ({
                             onClick={(e) => {
                               e.preventDefault();
                               e.stopPropagation();
-                              console.log('🖱️ Individual service button clicked!');
                               handleAddNurse({
                                 ...service,
                                 customizePackageId: service.customizePackageId,
@@ -482,7 +729,7 @@ const AppointmentDetailModal = ({
                             style={{ pointerEvents: 'auto', zIndex: 10 }}
                           >
                             <FaUserMd className="text-xs" />
-                            Add Nurse
+                            Chọn điều dưỡng
                           </button>
                         </div>
                       ))}
@@ -533,10 +780,26 @@ const AppointmentDetailModal = ({
                         <div className="flex justify-between text-lg font-bold border-t pt-2">
                           <span>Tổng tiền:</span>
                           <span className="text-green-600">
-                            {(bookingInvoice.totalAmount || bookingInvoice.total_amount || amount).toLocaleString('vi-VN')}₫
+                            {(bookingInvoice.totalAmount || bookingInvoice.total_amount || finalAmount).toLocaleString('vi-VN')}₫
                           </span>
                         </div>
                       </div>
+
+                      {/* Payment Button for Unpaid Invoices */}
+                      {isInvoiceUnpaid() && (
+                        <div className="mt-4 pt-4 border-t">
+                          <button
+                            onClick={handlePayment}
+                            className="w-full flex items-center justify-center gap-2 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white font-semibold rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+                          >
+                            <FaCreditCard className="text-lg" />
+                            Thanh toán ngay
+                          </button>
+                          <p className="text-xs text-gray-500 text-center mt-2">
+                            Thanh toán để kích hoạt dịch vụ
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="text-center text-gray-500 py-8">
@@ -559,7 +822,7 @@ const AppointmentDetailModal = ({
               setSelectedService(null);
             }}
             service={selectedService}
-            availableNurses={availableNurses}
+            availableNurses={selectedService?.availableNurses || availableNurses}
             onAssign={handleNurseAssignment}
             bookingDate={appointment.workdate || appointment.Workdate || appointment.BookingDate}
             bookingId={appointment.bookingID || appointment.BookingID}

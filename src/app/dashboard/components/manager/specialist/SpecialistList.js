@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FaUserMd, FaEye, FaEdit, FaTrash } from 'react-icons/fa';
 import SpecialistDetailModal from './SpecialistDetailModal';
 
 const SpecialistList = ({ specialists, onEdit, onDelete }) => {
@@ -13,9 +14,9 @@ const SpecialistList = ({ specialists, onEdit, onDelete }) => {
 
   return (
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-      {specialists.length === 0 ? (
+    {specialists.length === 0 ? (
         <div className="text-center py-16">
-          <div className="text-gray-300 text-8xl mb-6">👨‍⚕️</div>
+      <FaUserMd className="text-gray-300 text-8xl mb-6 mx-auto" />
           <h3 className="text-2xl font-bold text-gray-800 mb-3">
             Chưa có chuyên gia nào
           </h3>
@@ -97,21 +98,21 @@ const SpecialistList = ({ specialists, onEdit, onDelete }) => {
                         }}
                         className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg hover:bg-emerald-100 transition-colors duration-200"
                       >
-                        <span className="mr-1">👁️</span>
+                        <FaEye className="mr-1" />
                         Xem chi tiết
                       </button>
                       <button
                         onClick={() => onEdit(specialist)}
                         className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors duration-200"
                       >
-                        <span className="mr-1">✏️</span>
+                        <FaEdit className="mr-1" />
                         Sửa
                       </button>
                       <button
                         onClick={() => handleDelete(specialist)}
                         className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-red-700 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors duration-200"
                       >
-                        <span className="mr-1">🗑️</span>
+                        <FaTrash className="mr-1" />
                         Xóa
                       </button>
                     </div>

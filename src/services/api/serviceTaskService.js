@@ -1,75 +1,17 @@
-﻿import { getAuthHeaders } from './serviceUtils';
+﻿// Service Task Service
+import { API_ENDPOINTS } from '../../config/api';
+import { apiGet, apiPost, apiPut, apiDelete } from './serviceUtils';
 
-// Tạo base service với factory
+const base = API_ENDPOINTS.SERVICE_TASKS; // '/servicetasks'
 
-// Thêm method đặc biệt
-const serviceTaskService = {  // Thêm method getServiceTasks để đảm bảo
-  getServiceTasks: async () => {
-    const res = await fetch('/api/servicetasks/getall', {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách service tasks');
-    return data;
-  },
-
-  getServiceTaskById: async (id) => {
-    const res = await fetch(`/api/servicetasks/get/${id}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin service task');
-    return data;
-  },
-
-  // Get by package
-  getServiceTasksByPackage: async (packageServiceId) => {
-    const res = await fetch(`/api/servicetasks/getbypackage/${packageServiceId}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy service tasks theo package');
-    return data;
-  },
-
-  // Soft delete service task
-  softDeleteServiceTask: async (id, data) => {
-    const res = await fetch(`/api/servicetasks/softdelete/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Soft delete service task thất bại');
-    return result;
-  },
-
-  // Create service task
-  createServiceTask: async (data) => {
-    const res = await fetch('/api/servicetasks/create', {
-      method: 'POST',
-      headers: { ...getAuthHeaders(), 'Content-Type': 'application/json' },
-      body: JSON.stringify(data)
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Tạo service task thất bại');
-    return result;
-  },
-
-  // Delete service task
-  deleteServiceTask: async (id) => {
-    const res = await fetch(`/api/servicetasks/delete/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    const result = await res.json();
-    if (!res.ok) throw new Error(result.error || 'Xóa service task thất bại');
-    return result;
-  }
+const serviceTaskService = {
+  getServiceTasks: async () => apiGet(`${base}/getall`, 'Không thể lấy service tasks'),
+  getServiceTaskById: async (id) => apiGet(`${base}/get/${id}`, 'Không thể lấy service task'),
+  getServiceTasksByPackage: async (packageServiceId) => apiGet(`${base}/getbypackage/${packageServiceId}`, 'Không thể lấy service tasks của gói'),
+  createServiceTask: async (data) => apiPost(`${base}/create`, data, 'Không thể tạo service task'),
+  updateServiceTask: async (id, data) => apiPut(`${base}/update/${id}`, data, 'Không thể cập nhật service task'),
+  softDeleteServiceTask: async (id) => apiPut(`${base}/softdelete/${id}`, {}, 'Không thể soft delete'),
+  deleteServiceTask: async (id) => apiDelete(`${base}/delete/${id}`, 'Không thể xóa service task'),
 };
 
-export default serviceTaskService; 
-
+export default serviceTaskService;

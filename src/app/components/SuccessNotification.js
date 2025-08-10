@@ -1,53 +1,96 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { FaCheckCircle, FaTimes, FaBell } from 'react-icons/fa';
 
-export default function SuccessNotification({ message, onClose }) {
-  const [isVisible, setIsVisible] = useState(true);
+export default function SuccessNotification({ 
+  message, 
+  isVisible, 
+  onClose, 
+  type = 'success',
+  duration = 5000 
+}) {
+  const [isAnimating, setIsAnimating] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setIsVisible(false);
-      setTimeout(() => {
-        onClose();
-      }, 300);
-    }, 5000);
+    if (isVisible) {
+      setIsAnimating(true);
+      const timer = setTimeout(() => {
+        setIsAnimating(false);
+        setTimeout(onClose, 300); // Wait for animation to complete
+      }, duration);
+      return () => clearTimeout(timer);
+    }
+  }, [isVisible, duration, onClose]);
 
-    return () => clearTimeout(timer);
-  }, [onClose]);
+  if (!isVisible) return null;
 
-  if (!isVisible) {
-    return null;
-  }
+  const getNotificationStyles = () => {
+    switch (type) {
+      case 'success':
+        return {
+          bg: 'bg-gradient-to-r from-green-500 to-emerald-500',
+          icon: <FaCheckCircle className="text-2xl text-white" />,
+          border: 'border-green-200'
+        };
+      case 'info':
+        return {
+          bg: 'bg-gradient-to-r from-blue-500 to-indigo-500',
+          icon: <FaBell className="text-2xl text-white" />,
+          border: 'border-blue-200'
+        };
+      case 'warning':
+        return {
+          bg: 'bg-gradient-to-r from-yellow-500 to-orange-500',
+          icon: <FaBell className="text-2xl text-white" />,
+          border: 'border-yellow-200'
+        };
+      case 'error':
+        return {
+          bg: 'bg-gradient-to-r from-red-500 to-pink-500',
+          icon: <FaTimes className="text-2xl text-white" />,
+          border: 'border-red-200'
+        };
+      default:
+        return {
+          bg: 'bg-gradient-to-r from-green-500 to-emerald-500',
+          icon: <FaCheckCircle className="text-2xl text-white" />,
+          border: 'border-green-200'
+        };
+    }
+  };
+
+  const styles = getNotificationStyles();
 
   return (
-    <div className="fixed top-4 right-4 z-50 bg-gradient-to-r from-green-500 to-green-600 text-white px-6 py-4 rounded-lg shadow-xl animate-fadeIn border-l-4 border-green-400">
-      <div className="flex items-center">
-        <div className="flex-shrink-0">
-          <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-          </svg>
-        </div>
-        <div className="ml-3">
-          <p className="text-sm font-semibold">
-            {message}
-          </p>
-          <p className="text-xs opacity-90 mt-1">
-            Tài khoản của bạn đã được tạo thành công.
-          </p>
-        </div>
-        <div className="ml-auto pl-3">
+    <div className={`fixed top-4 right-4 z-50 animate-slide-in-right ${isAnimating ? 'animate-slide-in-right' : 'animate-slide-in-up'}`}>
+      <div className={`${styles.bg} text-white rounded-2xl shadow-2xl border ${styles.border} p-4 min-w-80 max-w-md transform transition-all duration-300 ${isAnimating ? 'scale-100' : 'scale-95'}`}>
+        <div className="flex items-start gap-3">
+          <div className="flex-shrink-0 mt-1">
+            {styles.icon}
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-white font-medium text-lg leading-relaxed">
+              {message}
+            </p>
+          </div>
           <button
-            onClick={() => {
-              setIsVisible(false);
-              setTimeout(() => onClose(), 300);
-            }}
-            className="text-white hover:text-green-200 transition-colors duration-200"
+            onClick={onClose}
+            className="flex-shrink-0 text-white hover:text-gray-200 transition-colors duration-200 p-1 hover:bg-white hover:bg-opacity-20 rounded-full"
           >
-            <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 20 20">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
+            <FaTimes className="text-lg" />
           </button>
+        </div>
+        
+        {/* Progress bar */}
+        <div className="mt-3 bg-white bg-opacity-20 rounded-full h-1 overflow-hidden">
+          <div 
+            className="bg-white h-full rounded-full transition-all duration-300 ease-linear"
+            style={{ 
+              width: isAnimating ? '100%' : '0%',
+              transition: `width ${duration}ms linear`
+            }}
+          />
         </div>
       </div>
     </div>

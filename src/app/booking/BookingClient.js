@@ -154,7 +154,7 @@ function BookingContent() {
   // Load packages
   const loadPackages = async () => {
     try {
-      const packagesData = await customizePackageService.getCustomizePackages();
+      const packagesData = await customizePackageService.getAllCustomizePackages();
       setPackages(packagesData);
     } catch (error) {
       console.error("Error loading packages:", error);

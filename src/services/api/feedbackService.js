@@ -1,96 +1,18 @@
-﻿import { getAuthHeaders } from './serviceUtils';
+﻿// Feedback Service
+import { API_ENDPOINTS } from '../../config/api';
+import { apiGet, apiPost, apiPut, apiDelete } from './serviceUtils';
 
-// Thêm method đặc biệt
-const feedbackService = {  // Get all feedbacks
-  getAllFeedbacks: async () => {
-    const res = await fetch('/api/feedback/getall', {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách feedbacks');
-    return data;
-  },
+const base = API_ENDPOINTS.FEEDBACK; // '/Feedback'
 
-  // Get feedback by ID
-  getFeedbackById: async (feedbackId) => {
-    const res = await fetch(`/api/feedback/${feedbackId}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy thông tin feedback');
-    return data;
-  },
-
-  // Update feedback
-  updateFeedback: async (feedbackId, feedbackData) => {
-    const res = await fetch(`/api/feedback/${feedbackId}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(feedbackData)
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Cập nhật feedback thất bại');
-    return data;
-  },
-
-  // Delete feedback
-  deleteFeedback: async (feedbackId) => {
-    const res = await fetch(`/api/feedback/${feedbackId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Xóa feedback thất bại');
-    return data;
-  },
-
-  // Get all feedbacks by service
-  getAllFeedbacksByService: async (serviceId) => {
-    const res = await fetch(`/api/feedback/getallbyservice/${serviceId}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách feedbacks theo service');
-    return data;
-  },
-
-  // Get all feedbacks by nursing
-  getAllFeedbacksByNursing: async (nursingId) => {
-    const res = await fetch(`/api/feedback/getallbynursing/${nursingId}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy danh sách feedbacks theo nursing');
-    return data;
-  },
-
-  // Get feedback by customize task
-  getFeedbackByCustomizeTask: async (customizeTaskId) => {
-    const res = await fetch(`/api/feedback/getbycustomizetask/${customizeTaskId}`, {
-      method: 'GET',
-      headers: getAuthHeaders()
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Không thể lấy feedback theo customize task');
-    return data;
-  },
-
-  // Create feedback
-  createFeedback: async (feedbackData) => {
-    const res = await fetch('/api/feedback', {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(feedbackData)
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || 'Tạo feedback thất bại');
-    return data;
-  }
+const feedbackService = {
+  getAllFeedbacks: async () => apiGet(`${base}/GetAll`, 'Không thể lấy feedback'),
+  getFeedbackById: async (id) => apiGet(`${base}/${id}`, 'Không thể lấy feedback'),
+  getAllByService: async (serviceId) => apiGet(`${base}/GetAllByService/${serviceId}`, 'Không thể lấy feedback theo dịch vụ'),
+  getAllByNursing: async (nursingId) => apiGet(`${base}/GetAllByNursing/${nursingId}`, 'Không thể lấy feedback theo nurse'),
+  getByCustomizeTask: async (customizeTaskId) => apiGet(`${base}/GetByCustomizeTask/${customizeTaskId}`, 'Không thể lấy feedback theo task'),
+  createFeedback: async (data) => apiPost(`${base}`, data, 'Không thể tạo feedback'),
+  updateFeedback: async (id, data) => apiPut(`${base}/${id}`, data, 'Không thể cập nhật feedback'),
+  deleteFeedback: async (id) => apiDelete(`${base}/${id}`, 'Không thể xóa feedback'),
 };
 
-export default feedbackService; 
-
+export default feedbackService;

@@ -9,6 +9,8 @@ export default function ServiceInfo({
   total,
   bookingData
 }) {
+
+
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6">
       <div className="flex items-center gap-3 mb-6">
@@ -134,6 +136,34 @@ export default function ServiceInfo({
               <div className="text-2xl font-bold text-pink-600">
                 {total.toLocaleString()}đ
               </div>
+              {/* Hiển thị thông tin về phí phát sinh nếu có */}
+              {bookingData?.extra && (
+                <div className="text-sm text-orange-600 font-medium">
+                  Phí phát sinh: {bookingData.extra}%
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Extra Fee - Phí phát sinh cho ngày lễ */}
+      {bookingData?.extra && (
+        <div className="bg-gradient-to-r from-orange-50 to-yellow-50 rounded-xl p-4 border-l-4 border-orange-500 mb-4">
+          <div className="flex items-center gap-2 mb-2">
+            <div className="w-6 h-6 rounded-full bg-orange-100 flex items-center justify-center">
+              <span className="text-orange-600 text-sm font-bold">!</span>
+            </div>
+            <h4 className="font-semibold text-orange-700">Phí phát sinh cho ngày lễ</h4>
+          </div>
+          <div className="text-orange-800">
+            <p className="text-sm mb-2">
+              <strong>Lưu ý:</strong> Đặt lịch vào ngày lễ sẽ có phí phát sinh thêm. 
+              Phí này sẽ được tính vào hóa đơn khi thanh toán.
+            </p>
+            <div className="bg-white rounded-lg p-3 border border-orange-200">
+              <div className="text-sm text-gray-600 mb-1">Chi tiết phí phát sinh:</div>
+              <div className="font-medium text-orange-700">{bookingData.extra}%</div>
             </div>
           </div>
         </div>
@@ -146,6 +176,13 @@ export default function ServiceInfo({
             <span className="text-lg font-bold text-gray-700">Tổng tiền:</span>
             <span className="text-2xl font-bold text-pink-600">{total.toLocaleString()}đ</span>
           </div>
+          {bookingData?.extra && (
+            <div className="mt-2 pt-2 border-t border-pink-200">
+              <div className="text-sm text-gray-600">
+                <span className="font-medium">Bao gồm phí phát sinh cho ngày lễ</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

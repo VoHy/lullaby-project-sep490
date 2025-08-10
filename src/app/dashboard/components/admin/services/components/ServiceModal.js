@@ -1,5 +1,10 @@
+"use client";
+
 import React, { useEffect, useState } from 'react';
 import serviceTypeService from '@/services/api/serviceTypeService';
+import serviceTaskService from '@/services/api/serviceTaskService';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faPlus, faTrash, faClock, faDollarSign, faList } from '@fortawesome/free-solid-svg-icons';
 
 function PackageBuilder({ formData, setFormData }) {
   const childTasks = formData.childServiceTasks || [];
@@ -102,7 +107,7 @@ function PackageBuilder({ formData, setFormData }) {
   );
 }
 
-const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title, submitText }) => {
+const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title, submitText, editingService }) => {
   if (!isOpen) return null;
 
   return (
@@ -313,14 +318,14 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                     </select>
                   </div>
                 </div>
-
-                {/* Package builder: chọn dịch vụ con từ list service */}
-                {formData.isPackage && (
-                  <div className="mt-6 border-t pt-6">
-                    <h5 className="text-md font-semibold mb-3">Danh sách dịch vụ con</h5>
-                    <PackageBuilder formData={formData} setFormData={setFormData} />
-                  </div>
-                )}
+                {/* Package management */}
+                <PackageChildrenManager
+                  isOpen={isOpen}
+                  isPackage={!!formData.isPackage}
+                  editingService={editingService}
+                  formData={formData}
+                  setFormData={setFormData}
+                />
               </div>
             </div>
 
@@ -347,3 +352,305 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
 };
 
 export default ServiceModal; 
+
+// Reusable manager to make edit modal look/behave like detail modal
+function PackageChildrenManager({ isOpen, isPackage, editingService, formData, setFormData }) {
+  // If creating a new package (no editingService), reuse the simple builder
+  const isEditingExistingPackage = Boolean(isPackage && editingService?.serviceID);
+
+  // State for existing package management
+  const [packageTasks, setPackageTasks] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [availableServices, setAvailableServices] = useState([]);
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [selectedServiceId, setSelectedServiceId] = useState('');
+  const [taskFormData, setTaskFormData] = useState({ description: '', price: 0, quantity: 1 });
+  const [editingTaskMap, setEditingTaskMap] = useState({});
+  const [editDraftMap, setEditDraftMap] = useState({});
+
+  // Load for edit case to mimic detail modal
+  useEffect(() => {
+    const load = async () => {
+      if (!isEditingExistingPackage || !isOpen) return;
+      try {
+        setLoading(true);
+        const [tasks, allServices] = await Promise.all([
+          serviceTaskService.getServiceTasksByPackage(editingService.serviceID),
+          serviceTypeService.getServiceTypes(),
+        ]);
+        setPackageTasks(tasks || []);
+        const singles = (allServices || []).filter(s => !s.isPackage && (s.status === 'active' || !s.status));
+        setAvailableServices(singles);
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, [isEditingExistingPackage, isOpen, editingService?.serviceID]);
+
+  // Create/Remove tasks for existing package
+  const handleAddTask = async () => {
+    if (!selectedServiceId) {
+      alert('Vui lòng chọn dịch vụ con');
+      return;
+    }
+    if (!taskFormData.description.trim()) {
+      alert('Vui lòng nhập mô tả cho dịch vụ con');
+      return;
+    }
+    await serviceTaskService.createServiceTask({
+      package_ServiceID: editingService.serviceID,
+      childServiceTasks: [
+        {
+          child_ServiceID: parseInt(selectedServiceId),
+          taskOrder: (packageTasks?.length || 0) + 1,
+          quantity: parseInt(taskFormData.quantity) || 1,
+        },
+      ],
+    });
+    const refreshed = await serviceTaskService.getServiceTasksByPackage(editingService.serviceID);
+    setPackageTasks(refreshed || []);
+    setSelectedServiceId('');
+    setTaskFormData({ description: '', price: 0, quantity: 1 });
+    setShowAddTaskModal(false);
+  };
+
+  const handleDeleteTask = async (taskId) => {
+    if (!window.confirm('Bạn có chắc chắn muốn xóa dịch vụ con này khỏi gói?')) return;
+    await serviceTaskService.deleteServiceTask(taskId);
+    const refreshed = await serviceTaskService.getServiceTasksByPackage(editingService.serviceID);
+    setPackageTasks(refreshed || []);
+  };
+
+  const toggleEditTask = (task) => {
+    const id = task.serviceTaskID || task.taskID;
+    setEditingTaskMap(prev => ({ ...prev, [id]: !prev[id] }));
+    setEditDraftMap(prev => ({
+      ...prev,
+      [id]: prev[id] || { description: task.description || '', price: task.price || 0, quantity: task.quantity || 1 },
+    }));
+  };
+
+  const updateEditDraft = (id, field, value) => {
+    setEditDraftMap(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+  };
+
+  const saveTaskEdits = async (task) => {
+    const id = task.serviceTaskID || task.taskID;
+    const draft = editDraftMap[id];
+    await serviceTaskService.updateServiceTask(id, {
+      description: draft.description,
+      price: parseInt(draft.price) || 0,
+      quantity: parseInt(draft.quantity) || 1,
+    });
+    const refreshed = await serviceTaskService.getServiceTasksByPackage(editingService.serviceID);
+    setPackageTasks(refreshed || []);
+    setEditingTaskMap(prev => ({ ...prev, [id]: false }));
+  };
+
+  const calculateTotalPrice = () => (packageTasks || []).reduce((sum, t) => sum + (t.price * t.quantity), 0);
+  const calculateTotalDuration = () => (packageTasks || []).reduce((sum, t) => {
+    const svc = availableServices.find(s => s.serviceID === t.child_ServiceID);
+    return sum + ((svc?.duration || 0) * t.quantity);
+  }, 0);
+
+  if (!isPackage) return null;
+
+  // If creating a new package, keep the original builder UI
+  if (!isEditingExistingPackage) {
+    return (
+      <div className="mt-6 border-t pt-6">
+        <h5 className="text-md font-semibold mb-3">Danh sách dịch vụ con</h5>
+        {/* Highlight services already selected in builder by preventing re-select */}
+        <PackageBuilder formData={formData} setFormData={setFormData} />
+      </div>
+    );
+  }
+
+  // Editing existing package -> show detail-like UI with add/edit
+  return (
+    <div className="mt-6 border-t pt-6">
+      <div className="bg-blue-50 rounded-lg p-4 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="flex items-center">
+            <FontAwesomeIcon icon={faDollarSign} className="text-green-500 mr-2" />
+            <div>
+              <p className="text-sm text-gray-600">Số dịch vụ con</p>
+              <p className="font-semibold text-lg">{packageTasks.length}</p>
+            </div>
+          </div>
+          <div className="flex items-center">
+            <FontAwesomeIcon icon={faClock} className="text-blue-500 mr-2" />
+            <div>
+              <p className="text-sm text-gray-600">Tổng thời gian</p>
+              <p className="font-semibold text-lg">{calculateTotalDuration()} phút</p>
+            </div>
+          </div>
+          <div className="flex items-center">
+            <FontAwesomeIcon icon={faList} className="text-purple-500 mr-2" />
+            <div>
+              <p className="text-sm text-gray-600">Tổng giá ước tính</p>
+              <p className="font-semibold text-lg">{calculateTotalPrice().toLocaleString()} VNĐ</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex items-center justify-between mb-3">
+        <h5 className="text-md font-semibold">Dịch vụ con trong gói</h5>
+        <button
+          type="button"
+          onClick={() => setShowAddTaskModal(true)}
+          className="bg-blue-500 hover:bg-blue-600 text-white px-3 py-2 rounded flex items-center"
+        >
+          <FontAwesomeIcon icon={faPlus} className="mr-2" /> Thêm dịch vụ con
+        </button>
+      </div>
+
+      {loading ? (
+        <div className="text-center py-6">Đang tải...</div>
+      ) : packageTasks.length === 0 ? (
+        <div className="text-center py-8 bg-gray-50 rounded-lg">
+          <FontAwesomeIcon icon={faList} className="text-gray-400 text-3xl mb-2" />
+          <p className="text-gray-600">Chưa có dịch vụ con nào trong gói</p>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {packageTasks.map((task, index) => {
+            const childService = availableServices.find(s => s.serviceID === task.child_ServiceID);
+            const taskId = task.serviceTaskID || task.taskID;
+            const isEditing = !!editingTaskMap[taskId];
+            const draft = editDraftMap[taskId] || {};
+            return (
+              <div key={task.serviceTaskID || task.taskID} className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center mb-2">
+                      <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full mr-3">{index + 1}</span>
+                      <h5 className="font-semibold text-gray-800">{childService?.serviceName || `Dịch vụ #${task.child_ServiceID}`}</h5>
+                    </div>
+                    {isEditing ? (
+                      <div className="space-y-2 mb-2">
+                        <textarea
+                          className="w-full px-3 py-2 border rounded"
+                          rows="2"
+                          value={draft.description}
+                          onChange={(e) => updateEditDraft(taskId, 'description', e.target.value)}
+                        />
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                          <div>
+                            <label className="block text-gray-600 mb-1">Giá (VNĐ)</label>
+                            <input type="number" className="w-full px-3 py-2 border rounded" value={draft.price} onChange={(e) => updateEditDraft(taskId, 'price', e.target.value)} />
+                          </div>
+                          <div>
+                            <label className="block text-gray-600 mb-1">Số lượng</label>
+                            <input type="number" className="w-full px-3 py-2 border rounded" value={draft.quantity} onChange={(e) => updateEditDraft(taskId, 'quantity', e.target.value)} />
+                          </div>
+                          {childService && (
+                            <div className="flex items-end">
+                              <span className="text-gray-500">Thời gian: {childService.duration} phút</span>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-gray-600 text-sm mb-2">{task.description}</p>
+                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                          <span>Giá: {task.price?.toLocaleString()} VNĐ</span>
+                          <span>Số lượng: {task.quantity}</span>
+                          {childService && <span>Thời gian: {childService.duration} phút</span>}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  <div className="flex items-center space-x-3 ml-4">
+                    {isEditing ? (
+                      <>
+                        <button type="button" onClick={() => saveTaskEdits(task)} className="px-3 py-2 bg-blue-500 text-white rounded">Lưu</button>
+                        <button type="button" onClick={() => toggleEditTask(task)} className="px-3 py-2 border rounded">Hủy</button>
+                      </>
+                    ) : (
+                      <button type="button" onClick={() => toggleEditTask(task)} className="px-3 py-2 border rounded">Sửa</button>
+                    )}
+                    <button type="button" onClick={() => handleDeleteTask(task.serviceTaskID || task.taskID)} className="text-red-500 hover:text-red-700">
+                      <FontAwesomeIcon icon={faTrash} />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {showAddTaskModal && (
+        <div className="fixed inset-0 bg-black/20 flex items-center justify-center z-50">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h4 className="text-lg font-semibold text-gray-800">Thêm dịch vụ con</h4>
+                <button type="button" onClick={() => setShowAddTaskModal(false)} className="text-gray-400 hover:text-gray-600">×</button>
+              </div>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Chọn dịch vụ con <span className="text-red-500">*</span></label>
+                  <select
+                    value={selectedServiceId}
+                    onChange={(e) => {
+                      setSelectedServiceId(e.target.value);
+                      const selected = availableServices.find(s => s.serviceID == e.target.value);
+                      if (selected) {
+                        setTaskFormData({ ...taskFormData, price: selected.price, description: selected.description || '' });
+                      }
+                    }}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                  >
+                    <option value="">Chọn dịch vụ...</option>
+                    {availableServices.map(s => {
+                      const alreadyInPackage = (packageTasks || []).some(t => t.child_ServiceID === s.serviceID);
+                      return (
+                        <option
+                          key={s.serviceID}
+                          value={s.serviceID}
+                          disabled={alreadyInPackage}
+                          style={alreadyInPackage ? { color: '#dc2626', backgroundColor: '#fff5f5' } : {}}
+                        >
+                          {s.serviceName} - {s.price?.toLocaleString()} VNĐ{alreadyInPackage ? ' (đã có trong gói)' : ''}
+                        </option>
+                      );
+                    })}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Mô tả <span className="text-red-500">*</span></label>
+                  <textarea
+                    value={taskFormData.description}
+                    onChange={(e) => setTaskFormData({ ...taskFormData, description: e.target.value })}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    rows="3"
+                    placeholder="Mô tả chi tiết dịch vụ con..."
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Giá (VNĐ)</label>
+                    <input type="number" value={taskFormData.price} onChange={(e) => setTaskFormData({ ...taskFormData, price: e.target.value })} className="w-full px-3 py-2 border rounded-lg" min="0" />
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Số lượng</label>
+                    <input type="number" value={taskFormData.quantity} onChange={(e) => setTaskFormData({ ...taskFormData, quantity: e.target.value })} className="w-full px-3 py-2 border rounded-lg" min="1" />
+                  </div>
+                </div>
+                <div className="flex space-x-3 pt-4">
+                  <button type="button" onClick={() => setShowAddTaskModal(false)} className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">Hủy</button>
+                  <button type="button" onClick={handleAddTask} className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600">Thêm</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

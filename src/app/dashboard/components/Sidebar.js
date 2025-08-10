@@ -5,9 +5,9 @@ import Link from 'next/link';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faChartBar, faUsers, faUserNurse, faFileAlt, faCog, faCalendarAlt,
-  faUser, faMoneyBill, faHospital, faNotesMedical, faChevronLeft,
-  faChevronRight, faSignOutAlt, faBars, faHome, faStethoscope
+  faChartBar, faUsers, faUserNurse, faCalendarAlt,
+  faUser, faMoneyBill, faNotesMedical, faChevronLeft,
+  faChevronRight, faSignOutAlt, faBars, faStethoscope
   , faUserMd, faNewspaper, faCalendarCheck, faMapLocationDot, faBell
 } from '@fortawesome/free-solid-svg-icons';
 
@@ -95,8 +95,7 @@ const Sidebar = ({ user }) => {
       { name: 'Báo cáo Doanh thu', path: '/dashboard?tab=revenue', icon: faMoneyBill, color: 'text-yellow-500', tab: 'revenue' },
       { name: 'Quản lý Blog', path: '/dashboard?tab=blog', icon: faNewspaper, color: 'text-red-500', tab: 'blog' },
       { name: 'Quản lý Lịch nghỉ', path: '/dashboard?tab=holiday', icon: faCalendarCheck, color: 'text-red-500', tab: 'holiday' },
-      { name: 'Cài đặt Hệ thống', path: '/dashboard?tab=settings', icon: faCog, color: 'text-gray-500', tab: 'settings' },
-    ],
+   ],
     2: [ // Nurse
       { name: 'Tổng quan', path: '/dashboard?tab=overview', icon: faChartBar, color: 'text-purple-500', tab: 'overview' },
       { name: 'Lịch của tôi', path: '/dashboard?tab=schedule', icon: faCalendarAlt, color: 'text-green-500', tab: 'schedule' },

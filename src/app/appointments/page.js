@@ -10,6 +10,7 @@ import serviceTypeService from '@/services/api/serviceTypeService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import invoiceService from '@/services/api/invoiceService';
+import transactionHistoryService from '@/services/api/transactionHistoryService';
 import zoneDetailService from '@/services/api/zoneDetailService';
 import customizePackageService from '@/services/api/customizePackageService';
 import customizeTaskService from '@/services/api/customizeTaskService';
@@ -81,7 +82,7 @@ export default function AppointmentsPage() {
 
       const invoiceData = await invoiceService.getAllInvoices();
 
-      const packages = await customizePackageService.getCustomizePackages();
+      const packages = await customizePackageService.getAllCustomizePackages();
 
       const customizeTasks = await customizeTaskService.getAllCustomizeTasks();
 
@@ -115,6 +116,20 @@ export default function AppointmentsPage() {
         })
         .map(b => {
           const bCareId = b.careProfileID ?? b.CareProfileID;
+          
+
+          const baseAmount = b.amount || b.totalAmount || b.total_Amount || 0;
+          const extra = b.extra;
+          const finalAmount = (() => {
+            if (!extra || extra === null) {
+              return baseAmount;
+            }
+            const extraPercentage = extra > 1 ? extra / 100 : extra;
+            return baseAmount + (baseAmount * extraPercentage);
+          })();
+          
+
+          
           return {
             ...b,
             careProfile: b.careProfile ?? careProfileMap.get(bCareId) ?? null,
@@ -127,6 +142,8 @@ export default function AppointmentsPage() {
       setServiceTasks(tasks);
       setNursingSpecialists(specialists);
       setZoneDetails(zones);
+
+      
       setInvoices(invoiceData);
       setCustomizePackages(packages);
       setCustomizeTasks(customizeTasks);
@@ -135,14 +152,14 @@ export default function AppointmentsPage() {
       if (!isRefresh) {
         try {
           await refreshWalletData();
-          console.log('🔄 Wallet context refreshed');
+          console.log('Wallet context refreshed');
         } catch (walletError) {
-          console.warn('⚠️ Could not refresh wallet context:', walletError);
+          console.warn('Could not refresh wallet context:', walletError);
         }
       }
 
     } catch (error) {
-      console.error('❌ Error fetching appointments:', error);
+      console.error('Error fetching appointments:', error);
       setError(`Không thể tải dữ liệu: ${error.message}`);
     } finally {
       setLoading(false);
@@ -170,6 +187,64 @@ export default function AppointmentsPage() {
     router.push('/services');
   };
 
+  // Handle invoice payment
+  const handleInvoicePayment = async (invoiceId) => {
+    try {
+      // Call payment API
+      await transactionHistoryService.invoicePayment(invoiceId);
+      
+      // Show success message
+      alert('Thanh toán thành công! Hóa đơn đã được thanh toán.');
+      
+      // Refresh data to show updated payment status
+      await fetchData(true);
+      
+      // Refresh wallet context to show updated balance
+      await refreshWalletData();
+      
+    } catch (error) {
+      console.error('Error processing payment:', error);
+      alert(`Có lỗi xảy ra khi thanh toán: ${error.message}`);
+    }
+  };
+
+  // Handle booking cancellation
+  const handleBookingCancel = async (appointment) => {
+    try {
+      const bookingId = appointment.bookingID || appointment.BookingID;
+      
+      // First, get the invoice for this booking
+      const invoice = invoices.find(inv => 
+        (inv.bookingID === bookingId || inv.BookingID === bookingId)
+      );
+      
+      if (!invoice) {
+        throw new Error('Không tìm thấy hóa đơn cho booking này');
+      }
+      
+      const invoiceId = invoice.invoiceID || invoice.invoice_ID;
+      
+      // Call refund API
+      await transactionHistoryService.refundMoneyToWallet(invoiceId);
+      
+      // Update booking status to 'cancelled'
+      // await bookingService.updateStatus(bookingId, 'cancelled');
+      
+      // Show success message
+      alert('Đã hủy booking thành công! Tiền đã được hoàn vào tài khoản của bạn.');
+      
+      // Refresh data to show updated status
+      await fetchData(true);
+      
+      // Refresh wallet context to show updated balance
+      await refreshWalletData();
+      
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      alert(`Có lỗi xảy ra khi hủy booking: ${error.message}`);
+    }
+  };
+
   // Handle nurse assignment
   const handleNurseAssignment = async (service, nurseId) => {
     try {
@@ -183,25 +258,19 @@ export default function AppointmentsPage() {
 
       // Case 1: If service has customizeTaskId, update that task directly
       if (service.customizeTaskId) {
-        console.log('📋 Updating customize task directly:', service.customizeTaskId);
-        await customizeTaskService.updateTaskNursing(service.customizeTaskId, nurseId, {
-          bookingId,
-          allowSameBooking: true
-        });
+        
+        await customizeTaskService.updateNursing(service.customizeTaskId, nurseId);
       }
       // Case 2: Package service with taskId (từ service task)
       else if (service.taskId) {
         console.log('📦 Updating package task:', service.taskId);
         // Directly use the taskId from service task
         const customizeTaskId = service.taskId;
-        await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId, {
-          bookingId,
-          allowSameBooking: true
-        });
+        await customizeTaskService.updateNursing(customizeTaskId, nurseId);
       }
       // Case 3: Individual service - need to find corresponding CustomizeTask
       else {
-        console.log('🔍 Finding customize task for individual service');
+
 
         // Get all customize packages for this booking
         const customizePackagesData = await customizePackageService.getAllByBooking(bookingId);
@@ -231,10 +300,7 @@ export default function AppointmentsPage() {
         const taskToUpdate = customizeTasksData[0];
         const customizeTaskId = taskToUpdate.customizeTaskID || taskToUpdate.customize_TaskID;
 
-        await customizeTaskService.updateTaskNursing(customizeTaskId, nurseId, {
-          bookingId,
-          allowSameBooking: true
-        });
+        await customizeTaskService.updateNursing(customizeTaskId, nurseId);
       }
 
       // Success notification
@@ -243,7 +309,7 @@ export default function AppointmentsPage() {
       // Refresh data to show updated assignment
       await fetchData(true);
     } catch (error) {
-      console.error('❌ Error assigning nurse:', error);
+      console.error('Error assigning nurse:', error);
       alert(`Có lỗi xảy ra khi phân công nurse: ${error.message}`);
     }
   };
@@ -338,6 +404,7 @@ export default function AppointmentsPage() {
                   index={idx}
                   serviceTypes={serviceTypes || []}
                   onSelect={setSelectedAppointment}
+                  onCancel={handleBookingCancel}
                   getStatusColor={getStatusColor}
                   getStatusText={getStatusText}
                   formatDate={formatDate}
@@ -381,6 +448,7 @@ export default function AppointmentsPage() {
             getStatusText={getStatusText}
             formatDate={formatDate}
             onAssignNursing={handleNurseAssignment}
+            onPayment={handleInvoicePayment}
           />
         )}
       </div>
