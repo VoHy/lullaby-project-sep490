@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faTrash, faClock, faDollarSign, faList, faBoxes } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faTrash, faClock, faDollarSign, faList, faBoxes, faTimes } from '@fortawesome/free-solid-svg-icons';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 
@@ -99,25 +99,26 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
   };
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-4 max-h-[90vh] overflow-y-auto border border-gray-100">
         <div className="p-8">
           {/* Header */}
           <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-2xl font-bold text-gray-800 flex items-center">
-                <FontAwesomeIcon icon={faBoxes} className="mr-3 text-blue-500" />
-                Chi tiết gói dịch vụ: {packageService.serviceName}
-              </h3>
-              <p className="text-gray-600 mt-1">{packageService.description}</p>
+            <div className="flex items-center">
+              <div className="mr-3 p-3 rounded-xl bg-gradient-to-r from-purple-100 to-pink-100">
+                <FontAwesomeIcon icon={faBoxes} className="text-purple-600" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-gray-800">Chi tiết gói dịch vụ</h3>
+                <p className="text-gray-600 mt-1">{packageService.serviceName}</p>
+              </div>
             </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 w-9 h-9 rounded-full flex items-center justify-center"
+              aria-label="Đóng"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>
 
@@ -181,7 +182,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
                             </h5>
                           </div>
                           <p className="text-gray-600 text-sm mb-2">{task.description}</p>
-                          <div className="flex items-center space-x-4 text-sm text-gray-500">
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm text-gray-600">
                             <span>Giá: {task.price?.toLocaleString()} VNĐ</span>
                             <span>Số lượng: {task.quantity}</span>
                             {childService && (
@@ -219,7 +220,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
         </div>
       </div>
 
-      {/* Read-only: remove add modal */}
+  {/* Read-only: remove add modal */}
     </div>
   );
 };

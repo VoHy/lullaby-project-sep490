@@ -3,7 +3,8 @@
 import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faPlus, faBoxes, faList, faSearch
+  faPlus, faBoxes, faList, faSearch, faCogs, faHeart, faUserMd, faStethoscope,
+  faFilter, faSort, faStar, faChartLine, faGift, faTags
 } from '@fortawesome/free-solid-svg-icons';
 import serviceTypeService from '@/services/api/serviceTypeService';
 import ServiceCard from './components/ServiceCard';
@@ -25,7 +26,7 @@ const ServicesTab = () => {
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [formData, setFormData] = useState({
     serviceName: '',
-    major: 'nurse',
+    major: '',
     price: 0,
     duration: 0,
     description: '',
@@ -36,6 +37,8 @@ const ServicesTab = () => {
   });
   const [showPackageDetailModal, setShowPackageDetailModal] = useState(false);
   const [showServiceDetailModal, setShowServiceDetailModal] = useState(false);
+
+  
 
   // Load data
   useEffect(() => {
@@ -246,25 +249,55 @@ const ServicesTab = () => {
   return (
     <div className="space-y-6">
       {/* Header Section */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+      <div className="bg-gradient-to-br from-blue-50 via-white to-purple-50 rounded-xl shadow-sm border border-gray-200 p-6">
         <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Quản lý Dịch vụ</h1>
-            <p className="text-gray-600 mt-1">Quản lý dịch vụ lẻ và gói dịch vụ của hệ thống</p>
+            <div className="flex items-center mb-2">
+              <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-3 rounded-xl mr-4">
+                <FontAwesomeIcon icon={faCogs} className="text-white text-2xl" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900">Quản lý Dịch vụ</h1>
+                <p className="text-gray-600 mt-1 flex items-center">
+                  <FontAwesomeIcon icon={faStethoscope} className="mr-2 text-blue-500" />
+                  Quản lý dịch vụ lẻ và gói dịch vụ của hệ thống
+                </p>
+              </div>
+            </div>
+            
+            {/* Quick Stats */}
+            <div className="flex items-center gap-6 mt-4">
+              <div className="flex items-center">
+                <FontAwesomeIcon icon={faList} className="text-blue-500 mr-2" />
+                <span className="text-sm text-gray-600">{services.length} dịch vụ lẻ</span>
+              </div>
+              <div className="flex items-center">
+                <FontAwesomeIcon icon={faBoxes} className="text-purple-500 mr-2" />
+                <span className="text-sm text-gray-600">{packages.length} gói dịch vụ</span>
+              </div>
+              <div className="flex items-center">
+                <FontAwesomeIcon icon={faChartLine} className="text-green-500 mr-2" />
+                <span className="text-sm text-gray-600">
+                  {services.filter(s => s.status === 'active').length + packages.filter(p => p.status === 'active').length} đang hoạt động
+                </span>
+              </div>
+            </div>
           </div>
           <div className="flex flex-col sm:flex-row gap-3">
             <button
               onClick={() => openCreateModal(false)}
-              className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium rounded-lg hover:from-blue-600 hover:to-cyan-600 focus:ring-4 focus:ring-blue-200 transition-all duration-200 shadow-sm"
+              className="group relative inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-blue-500 to-cyan-500 text-white font-medium rounded-xl hover:from-blue-600 hover:to-cyan-600 focus:ring-4 focus:ring-blue-200 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
-              <FontAwesomeIcon icon={faPlus} className="mr-2 text-sm" />
+              <FontAwesomeIcon icon={faPlus} className="mr-3 text-sm group-hover:scale-110 transition-transform" />
+              <FontAwesomeIcon icon={faUserMd} className="mr-2 text-sm opacity-75" />
               Thêm dịch vụ
             </button>
             <button
               onClick={() => openCreateModal(true)}
-              className="inline-flex items-center justify-center px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-lg hover:from-purple-600 hover:to-pink-600 focus:ring-4 focus:ring-purple-200 transition-all duration-200 shadow-sm"
+              className="group relative inline-flex items-center justify-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-xl hover:from-purple-600 hover:to-pink-600 focus:ring-4 focus:ring-purple-200 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
-              <FontAwesomeIcon icon={faBoxes} className="mr-2 text-sm" />
+              <FontAwesomeIcon icon={faPlus} className="mr-3 text-sm group-hover:scale-110 transition-transform" />
+              <FontAwesomeIcon icon={faGift} className="mr-2 text-sm opacity-75" />
               Thêm gói dịch vụ
             </button>
           </div>
@@ -273,20 +306,20 @@ const ServicesTab = () => {
 
       {/* Tab Navigation */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-        <div className="flex space-x-1 bg-gray-100 p-1 rounded-lg">
+        <div className="flex space-x-1 bg-gradient-to-r from-gray-100 to-gray-50 p-1.5 rounded-xl">
           <button
             onClick={() => setActiveServiceTab('services')}
-            className={`flex-1 px-4 py-2 rounded-md font-medium transition-all duration-200 ${activeServiceTab === 'services'
-              ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+            className={`flex-1 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${activeServiceTab === 'services'
+              ? 'bg-gradient-to-r from-blue-500 to-cyan-500 text-white shadow-lg transform scale-[1.02]'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
               }`}
           >
             <div className="flex items-center justify-center">
-              <FontAwesomeIcon icon={faList} className="mr-2 text-sm" />
+              <FontAwesomeIcon icon={faUserMd} className="mr-3 text-sm" />
               Dịch vụ đơn lẻ
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${activeServiceTab === 'services'
+              <span className={`ml-3 px-3 py-1 rounded-full text-xs font-bold ${activeServiceTab === 'services'
                 ? 'bg-white/20 text-white'
-                : 'bg-gray-200 text-gray-700'
+                : 'bg-blue-100 text-blue-700'
                 }`}>
                 {services.length}
               </span>
@@ -294,17 +327,17 @@ const ServicesTab = () => {
           </button>
           <button
             onClick={() => setActiveServiceTab('packages')}
-            className={`flex-1 px-4 py-2 rounded-md font-medium transition-all duration-200 ${activeServiceTab === 'packages'
-              ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-sm'
-              : 'text-gray-600 hover:text-gray-900'
+            className={`flex-1 px-6 py-3 rounded-xl font-medium transition-all duration-300 ${activeServiceTab === 'packages'
+              ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg transform scale-[1.02]'
+              : 'text-gray-600 hover:text-gray-900 hover:bg-white/50'
               }`}
           >
             <div className="flex items-center justify-center">
-              <FontAwesomeIcon icon={faBoxes} className="mr-2 text-sm" />
+              <FontAwesomeIcon icon={faGift} className="mr-3 text-sm" />
               Gói dịch vụ
-              <span className={`ml-2 px-2 py-0.5 rounded-full text-xs font-medium ${activeServiceTab === 'packages'
+              <span className={`ml-3 px-3 py-1 rounded-full text-xs font-bold ${activeServiceTab === 'packages'
                 ? 'bg-white/20 text-white'
-                : 'bg-gray-200 text-gray-700'
+                : 'bg-purple-100 text-purple-700'
                 }`}>
                 {packages.length}
               </span>
@@ -315,9 +348,13 @@ const ServicesTab = () => {
 
       {/* Search & Filter Section */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+        <div className="flex items-center mb-4">
+          <FontAwesomeIcon icon={faFilter} className="text-gray-600 mr-2" />
+          <h3 className="text-lg font-semibold text-gray-800">Tìm kiếm & Lọc</h3>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
               <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
             </div>
             <input
@@ -325,27 +362,33 @@ const ServicesTab = () => {
               placeholder={`Tìm kiếm ${activeServiceTab === 'services' ? 'dịch vụ' : 'gói dịch vụ'}...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              className="w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white"
             />
           </div>
 
-          <div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <FontAwesomeIcon icon={faTags} className="text-gray-400" />
+            </div>
             <select
               value={filterMajor}
               onChange={(e) => setFilterMajor(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              className="w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white appearance-none"
             >
               <option value="all">Tất cả chuyên môn</option>
-              <option value="nurse">Y tá</option>
-              <option value="specialist">Chuyên gia</option>
+              <option value="Nurse">Y tá</option>
+              <option value="Specialist">Chuyên gia</option>
             </select>
           </div>
 
-          <div>
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+              <FontAwesomeIcon icon={faSort} className="text-gray-400" />
+            </div>
             <select
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+              className="w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white appearance-none"
             >
               <option value="name">Sắp xếp theo tên</option>
               <option value="price">Sắp xếp theo giá</option>
@@ -356,50 +399,95 @@ const ServicesTab = () => {
         </div>
       </div>
 
-      {/* Services Content */}
-      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+  {/* Services Content */}
+  <div className="bg-white rounded-xl shadow-sm border border-gray-200">
         {/* Service Cards */}
         {loading ? (
-          <div className="flex justify-center items-center py-16">
+          <div className="flex justify-center items-center py-20">
             <div className="text-center">
-              <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
-              <p className="text-gray-600 font-medium">Đang tải dữ liệu...</p>
+              <div className="relative">
+                <div className="animate-spin rounded-full h-16 w-16 border-4 border-gradient-to-r from-blue-500 to-purple-500 border-t-transparent mx-auto mb-6"></div>
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <FontAwesomeIcon icon={faCogs} className="text-2xl text-blue-500 animate-pulse" />
+                </div>
+              </div>
+              <h3 className="text-xl font-semibold text-gray-700 mb-2">Đang tải dữ liệu...</h3>
+              <p className="text-gray-500">Vui lòng chờ trong giây lát</p>
             </div>
           </div>
         ) : filteredData.length === 0 ? (
-          <div className="text-center py-16">
-            <div className="text-gray-400 text-6xl mb-4">
-              {activeServiceTab === 'services' ? '🏥' : '📦'}
+          <div className="text-center py-20">
+            <div className="relative mb-6">
+              <div className="bg-gradient-to-br from-blue-50 to-purple-50 rounded-full w-24 h-24 mx-auto flex items-center justify-center mb-4">
+                <FontAwesomeIcon 
+                  icon={activeServiceTab === 'services' ? faUserMd : faGift} 
+                  className="text-4xl text-gray-400"
+                />
+              </div>
+              <div className="absolute -top-2 -right-2 bg-yellow-400 rounded-full w-8 h-8 flex items-center justify-center">
+                <FontAwesomeIcon icon={faStar} className="text-white text-sm" />
+              </div>
             </div>
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">
+            <h3 className="text-2xl font-bold text-gray-700 mb-3">
               {activeServiceTab === 'services' ? 'Chưa có dịch vụ nào' : 'Chưa có gói dịch vụ nào'}
             </h3>
-            <p className="text-gray-500 mb-6">
+            <p className="text-gray-500 mb-8 max-w-md mx-auto">
               {activeServiceTab === 'services'
-                ? 'Hãy tạo dịch vụ đầu tiên để bắt đầu quản lý'
-                : 'Hãy tạo gói dịch vụ đầu tiên để bắt đầu quản lý'
+                ? 'Hãy tạo dịch vụ đầu tiên để bắt đầu cung cấp dịch vụ chăm sóc cho khách hàng'
+                : 'Hãy tạo gói dịch vụ đầu tiên để cung cấp các combo dịch vụ hấp dẫn cho khách hàng'
               }
             </p>
             <button
               onClick={() => openCreateModal(activeServiceTab === 'packages')}
-              className="inline-flex items-center px-4 py-2 bg-gradient-to-r from-blue-600 to-blue-700 text-white font-medium rounded-lg hover:from-blue-700 hover:to-blue-800 transition-all duration-200 shadow-sm"
+              className="group inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-500 to-purple-500 text-white font-medium rounded-xl hover:from-blue-600 hover:to-purple-600 transition-all duration-200 shadow-lg hover:shadow-xl transform hover:-translate-y-0.5"
             >
-              <FontAwesomeIcon icon={faPlus} className="mr-2" />
-              Thêm {activeServiceTab === 'services' ? 'dịch vụ' : 'gói dịch vụ'} đầu tiên
+              <FontAwesomeIcon icon={faPlus} className="mr-3 group-hover:scale-110 transition-transform" />
+              <FontAwesomeIcon icon={activeServiceTab === 'services' ? faUserMd : faGift} className="mr-2" />
+              Tạo {activeServiceTab === 'services' ? 'dịch vụ' : 'gói dịch vụ'} đầu tiên
             </button>
           </div>
         ) : (
-          <div className="p-6">
-
-            <div className="mb-4">
-              <h3 className="text-lg font-semibold text-gray-800">
-                {activeServiceTab === 'services' ? 'Danh sách dịch vụ' : 'Danh sách gói dịch vụ'}
-              </h3>
-              <p className="text-sm text-gray-600">
-                Hiển thị {filteredData.length} kết quả
-              </p>
+          <div className="p-8">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center">
+                <div className={`p-3 rounded-xl mr-4 ${activeServiceTab === 'services' 
+                  ? 'bg-gradient-to-r from-blue-100 to-cyan-100' 
+                  : 'bg-gradient-to-r from-purple-100 to-pink-100'
+                }`}>
+                  <FontAwesomeIcon 
+                    icon={activeServiceTab === 'services' ? faUserMd : faGift} 
+                    className={`text-xl ${activeServiceTab === 'services' 
+                      ? 'text-blue-600' 
+                      : 'text-purple-600'
+                    }`}
+                  />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold text-gray-800">
+                    {activeServiceTab === 'services' ? 'Danh sách dịch vụ' : 'Danh sách gói dịch vụ'}
+                  </h3>
+                  <p className="text-sm text-gray-600 flex items-center mt-1">
+                    <FontAwesomeIcon icon={faChartLine} className="mr-2 text-green-500" />
+                    Hiển thị {filteredData.length} kết quả
+                    {searchTerm && ` cho từ khóa "${searchTerm}"`}
+                  </p>
+                </div>
+              </div>
+              
+              {/* Quick Actions */}
+              <div className="flex items-center space-x-3">
+                <span className="text-sm text-gray-500">Thao tác nhanh:</span>
+                <button
+                  onClick={() => openCreateModal(activeServiceTab === 'packages')}
+                  className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                  title={`Thêm ${activeServiceTab === 'services' ? 'dịch vụ' : 'gói dịch vụ'}`}
+                >
+                  <FontAwesomeIcon icon={faPlus} />
+                </button>
+              </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredData.map((item) => (
                 <ServiceCard
                   key={item.serviceID}
