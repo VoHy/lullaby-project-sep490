@@ -10,7 +10,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
   // Hooks must be called unconditionally on every render
   const [packageTasks, setPackageTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [showAddTaskModal, setShowAddTaskModal] = useState(false);
+  const [showAddTaskModal, setShowAddTaskModal] = useState(false); // legacy state, no longer used in read-only view
   const [availableServices, setAvailableServices] = useState([]);
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [taskFormData, setTaskFormData] = useState({
@@ -82,75 +82,9 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
     );
   }
 
-  const handleAddTask = async () => {
-    if (!selectedServiceId) {
-      alert('Vui lòng chọn dịch vụ con');
-      return;
-    }
+  // Read-only modal: no add/edit/delete actions
 
-    if (!taskFormData.description.trim()) {
-      alert('Vui lòng nhập mô tả cho dịch vụ con');
-      return;
-    }
-
-    try {
-      const selectedService = availableServices.find(s => s.serviceID == selectedServiceId);
-      if (!selectedService) {
-        alert('Dịch vụ không tồn tại');
-        return;
-      }
-
-      // Backend expects array schema
-      const payload = {
-        package_ServiceID: packageService.serviceID,
-        childServiceTasks: [
-          {
-            child_ServiceID: parseInt(selectedServiceId),
-            taskOrder: packageTasks.length + 1,
-            quantity: parseInt(taskFormData.quantity) || 1
-          }
-        ]
-      };
-
-      await serviceTaskService.createServiceTask(payload);
-
-      // Reload package tasks
-      const tasks = await serviceTaskService.getServiceTasksByPackage(packageService.serviceID);
-      setPackageTasks(tasks);
-
-      // Reset form
-      setSelectedServiceId('');
-      setTaskFormData({
-        description: '',
-        price: 0,
-        quantity: 1
-      });
-      setShowAddTaskModal(false);
-
-      if (onUpdate) onUpdate();
-    } catch (error) {
-      console.error('Error adding task:', error);
-      alert('Có lỗi xảy ra khi thêm dịch vụ con: ' + error.message);
-    }
-  };
-
-  const handleDeleteTask = async (taskId) => {
-    if (window.confirm('Bạn có chắc chắn muốn xóa dịch vụ con này khỏi gói?')) {
-      try {
-        await serviceTaskService.deleteServiceTask(taskId);
-        const tasks = await serviceTaskService.getServiceTasksByPackage(packageService.serviceID);
-        setPackageTasks(tasks);
-
-        // Thông báo cập nhật
-        if (onUpdate) {
-          onUpdate();
-        }
-      } catch (error) {
-        console.error('Error deleting task:', error);
-        alert('Có lỗi xảy ra khi xóa dịch vụ con');
-      }
-    }
-  };
+  const handleDeleteTask = async () => {};
 
   const calculateTotalPrice = () => {
     return packageTasks.reduce((total, task) => total + (task.price * task.quantity), 0);
@@ -218,13 +152,6 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
           <div className="mb-6">
             <div className="flex items-center justify-between mb-4">
               <h4 className="text-lg font-semibold text-gray-800">Dịch vụ con trong gói</h4>
-              <button
-                onClick={() => setShowAddTaskModal(true)}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg flex items-center transition-colors"
-              >
-                <FontAwesomeIcon icon={faPlus} className="mr-2" />
-                Thêm dịch vụ con
-              </button>
             </div>
 
             {loading ? (
@@ -236,7 +163,6 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
               <div className="text-center py-8 bg-gray-50 rounded-lg">
                 <FontAwesomeIcon icon={faList} className="text-gray-400 text-4xl mb-4" />
                 <p className="text-gray-600">Chưa có dịch vụ con nào trong gói</p>
-                <p className="text-sm text-gray-500 mt-1">Nhấn "Thêm dịch vụ con" để bắt đầu</p>
               </div>
             ) : (
               <div className="space-y-4">
@@ -263,13 +189,9 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
                             )}
                           </div>
                         </div>
-                        <button
-                          onClick={() => handleDeleteTask(task.serviceTaskID || task.taskID)}
-                          className="text-red-500 hover:text-red-700 transition-colors ml-4"
-                          title="Xóa dịch vụ con"
-                        >
-                          <FontAwesomeIcon icon={faTrash} />
-                        </button>
+                        <div className="ml-4 text-gray-300">
+                          {/* read-only: no actions */}
+                        </div>
                       </div>
                     </div>
                   );
@@ -297,114 +219,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
         </div>
       </div>
 
-      {/* Add Task Modal */}
-      {showAddTaskModal && (
-        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-60">
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-md mx-4">
-            <div className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h4 className="text-lg font-semibold text-gray-800">Thêm dịch vụ con</h4>
-                <button
-                  onClick={() => setShowAddTaskModal(false)}
-                  className="text-gray-400 hover:text-gray-600 transition-colors"
-                >
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-                </button>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Chọn dịch vụ con <span className="text-red-500">*</span>
-                  </label>
-                  <select
-                    value={selectedServiceId}
-                    onChange={(e) => {
-                      setSelectedServiceId(e.target.value);
-                      const selected = availableServices.find(s => s.serviceID == e.target.value);
-                      if (selected) {
-                        setTaskFormData({
-                          ...taskFormData,
-                          price: selected.price,
-                          description: selected.description || ''
-                        });
-                      }
-                    }}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  >
-                    <option value="">Chọn dịch vụ...</option>
-                    {availableServices.map(service => (
-                      <option key={service.serviceID} value={service.serviceID}>
-                        {service.serviceName} - {service.price?.toLocaleString()} VNĐ
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Mô tả <span className="text-red-500">*</span>
-                  </label>
-                  <textarea
-                    value={taskFormData.description}
-                    onChange={(e) => setTaskFormData({ ...taskFormData, description: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    rows="3"
-                    placeholder="Mô tả chi tiết dịch vụ con..."
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Giá (VNĐ)
-                    </label>
-                    <input
-                      type="number"
-                      value={taskFormData.price}
-                      onChange={(e) => setTaskFormData({ ...taskFormData, price: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="0"
-                      min="0"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Số lượng
-                    </label>
-                    <input
-                      type="number"
-                      value={taskFormData.quantity}
-                      onChange={(e) => setTaskFormData({ ...taskFormData, quantity: e.target.value })}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="1"
-                      min="1"
-                    />
-                  </div>
-                </div>
-
-                <div className="flex space-x-3 pt-4">
-                  <button
-                    onClick={() => setShowAddTaskModal(false)}
-                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                  >
-                    Hủy
-                  </button>
-                  <button
-                    onClick={handleAddTask}
-                    className="flex-1 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                  >
-                    Thêm
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Read-only: remove add modal */}
     </div>
   );
 };
