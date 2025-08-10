@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useEffect, useState } from 'react';
 import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaUserMd, FaPlus, FaFileInvoice, FaCreditCard } from 'react-icons/fa';
@@ -593,7 +593,7 @@ const AppointmentDetailModal = ({
                 Trạng thái
               </h3>
               <span className={`px-3 py-2 rounded-full text-sm font-medium ${getStatusColor(appointment.status || appointment.Status)}`}>
-                {getStatusText(appointment.status)}
+                {getStatusText(appointment.status || appointment.Status)}
               </span>
             </div>
             
@@ -763,7 +763,7 @@ const AppointmentDetailModal = ({
                             ? 'text-green-600'
                             : 'text-orange-600'
                             }`}>
-                            {bookingInvoice.status || bookingInvoice.Status || 'Chưa thanh toán'}
+                            {String(bookingInvoice.status || bookingInvoice.Status).toLowerCase() === 'paid' ? 'Đã thanh toán' : (bookingInvoice.status || bookingInvoice.Status || 'Chưa thanh toán')}
                           </span>
                         </div>
                         <div className="flex justify-between text-lg font-bold border-t pt-2">

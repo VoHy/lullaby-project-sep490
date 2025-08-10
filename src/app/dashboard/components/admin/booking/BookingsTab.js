@@ -1,7 +1,7 @@
 'use client';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
+import {
   faEye, faEdit, faTrash, faSearch, faCalendarAlt,
   faMoneyBill, faUser, faClock, faCheckCircle, faTimesCircle, faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
@@ -41,7 +41,7 @@ const BookingsTab = ({ bookings }) => {
       try {
         setLoading(true);
         setError("");
-        
+
         const [
           careProfilesData,
           accountsData,
@@ -223,22 +223,22 @@ const BookingsTab = ({ bookings }) => {
 
       return () => { isMounted = false; };
     }, [booking?.BookingID, booking?.bookingID, serviceTasksOfBooking, localNursesByServiceId, localInvoice]);
-    
+
     return (
-      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 backdrop-blur-sm p-4">
+      <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 backdrop-blur-sm p-4">
         <div className="bg-white rounded-lg shadow-xl w-full max-w-6xl relative max-h-[95vh] overflow-y-auto">
           <button className="absolute top-4 right-4 text-gray-500 hover:text-red-500 p-2 rounded-full hover:bg-gray-100 transition-colors z-10" onClick={onClose}>
             <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-          
+
           {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-lg p-6">
+          <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-lg p-6">
             <h3 className="text-2xl font-bold mb-2">Chi tiết Booking #{booking?.BookingID ?? booking?.bookingID}</h3>
             <p className="text-blue-100">Ngày đặt: {new Date(booking?.workdate ?? booking?.Workdate ?? booking?.bookingDate ?? booking?.BookingDate).toLocaleDateString('vi-VN')}</p>
           </div>
-          
+
           {/* Content */}
           <div className="p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -266,7 +266,7 @@ const BookingsTab = ({ bookings }) => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
                   <h4 className="font-semibold text-gray-900 mb-4 flex items-center text-lg">
                     <div className="p-2 bg-green-100 rounded-lg mr-3">
@@ -287,18 +287,29 @@ const BookingsTab = ({ bookings }) => {
                     </div>
                     <div className="flex justify-between py-2">
                       <span className="font-medium text-gray-600">Trạng thái:</span>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${(booking.status ?? booking.Status) === 'paid' ? 'bg-green-100 text-green-700' :
-                        (booking.status ?? booking.Status) === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-red-100 text-red-700'
-                      }`}>
-                        {(booking.status ?? booking.Status) === 'paid' ? 'Hoàn thành' :
-                         (booking.status ?? booking.Status) === 'pending' ? 'Đang xử lý' : 'Đã hủy'}
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold
+                       ${String(booking.status ?? booking.Status).toLowerCase() === 'paid' ? 'bg-pink-100 text-pink-700' :
+                          String(booking.status ?? booking.Status).toLowerCase() === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                            String(booking.status ?? booking.Status).toLowerCase() === 'isscheduled' ? 'bg-blue-100 text-blue-700' :
+                              String(booking.status ?? booking.Status).toLowerCase() === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                                String(booking.status ?? booking.Status).toLowerCase() === 'cancelled' || String(booking.status ?? booking.Status).toLowerCase() === 'canceled' ? 'bg-red-100 text-red-700' :
+                                  'bg-gray-100 text-gray-700'
+                        }`}>
+                        {(() => {
+                          const s = String(booking.status ?? booking.Status).toLowerCase();
+                          if (s === 'paid') return 'Đã thanh toán';
+                          if (s === 'pending' || s === 'unpaid') return 'Chờ thanh toán';
+                          if (s === 'completed') return 'Hoàn thành';
+                          if (s === 'isscheduled') return 'Đã lên lịch';
+                          if (s === 'cancelled' || s === 'canceled') return 'Đã hủy';
+                          return 'Không xác định';
+                        })()}
                       </span>
                     </div>
                   </div>
                 </div>
               </div>
-              
+
               {/* Thông tin thanh toán */}
               <div className="space-y-4">
                 <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
@@ -326,8 +337,12 @@ const BookingsTab = ({ bookings }) => {
                           </div>
                           <div className="flex justify-between py-2">
                             <span className="font-medium text-gray-600">Trạng thái:</span>
-                            <span className={`px-3 py-1 rounded-full text-xs font-semibold ${String(status).toLowerCase()==='paid' || String(status).toLowerCase()==='hoàn thành' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
-                              {status || 'Chưa thanh toán'}
+                            <span className={`px-3 py-1 rounded-full text-xs font-semibold 
+                               ${String(status).toLowerCase() === 'paid'
+                                ? 'bg-pink-100 text-pink-700'
+                                : 'bg-red-100 text-red-700'
+                              }`}>
+                              {String(status).toLowerCase() === 'paid' ? 'Đã thanh toán' : 'Hoàn tiền'}
                             </span>
                           </div>
                         </>
@@ -337,7 +352,7 @@ const BookingsTab = ({ bookings }) => {
                 </div>
               </div>
             </div>
-            
+
             {/* Chi tiết dịch vụ */}
             {serviceTasksOfBooking.length > 0 && (
               <div className="col-span-1 lg:col-span-2 mt-6">
@@ -348,7 +363,7 @@ const BookingsTab = ({ bookings }) => {
                       Chi tiết dịch vụ
                     </h4>
                   </div>
-                  
+
                   <div className="p-6">
                     {/* Packages list */}
                     {packagesOfBooking?.length > 0 && (
@@ -411,8 +426,8 @@ const BookingsTab = ({ bookings }) => {
                                   <div className="flex items-center gap-3 ml-4">
                                     <span className={`px-3 py-1 rounded-full text-sm font-semibold ${status === 'completed' ? 'bg-green-100 text-green-700' :
                                       status === 'isscheduled' ? 'bg-blue-100 text-blue-700' :
-                                      status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
-                                    }`}>
+                                        status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
+                                      }`}>
                                       {status === 'completed' ? 'Hoàn thành' : status === 'isscheduled' ? 'Đã lên lịch' : status === 'pending' ? 'Chờ thực hiện' : status}
                                     </span>
                                     <div className="text-right font-bold text-green-600 text-xl">{task.total?.toLocaleString()} VNĐ</div>
@@ -456,18 +471,18 @@ const BookingsTab = ({ bookings }) => {
                                           onChange={(e) => setSelectedNurseByTask((prev) => ({ ...prev, [task.customizeTaskID]: Number(e.target.value) }))}
                                         >
                                           <option value="">Chọn điều dưỡng...</option>
-                                           {(() => {
-                                             const serviceId = task.serviceID;
-                                             // Combine two filters: (1) zone matched, (2) mapping nurse-service type
-                                             const zoneId = careProfile?.zoneDetailID ?? careProfile?.zoneDetail_ID;
-                                             const pool = localNursesByServiceId[serviceId] || [];
-                                             const filtered = Array.isArray(pool) ? pool.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
-                                             return filtered.map((n) => (
-                                               <option key={n.nursingID ?? n.NursingID} value={n.nursingID ?? n.NursingID}>
-                                                 {(n.nursingFullName ?? n.fullName ?? n.FullName) + (n.major ? ` — ${n.major}` : '')}
-                                               </option>
-                                             ));
-                                           })()}
+                                          {(() => {
+                                            const serviceId = task.serviceID;
+                                            // Combine two filters: (1) zone matched, (2) mapping nurse-service type
+                                            const zoneId = careProfile?.zoneDetailID ?? careProfile?.zoneDetail_ID;
+                                            const pool = localNursesByServiceId[serviceId] || [];
+                                            const filtered = Array.isArray(pool) ? pool.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
+                                            return filtered.map((n) => (
+                                              <option key={n.nursingID ?? n.NursingID} value={n.nursingID ?? n.NursingID}>
+                                                {(n.nursingFullName ?? n.fullName ?? n.FullName) + (n.major ? ` — ${n.major}` : '')}
+                                              </option>
+                                            ));
+                                          })()}
                                         </select>
                                         <button
                                           onClick={() => handleAssignNurse(booking, task)}
@@ -513,8 +528,8 @@ const BookingsTab = ({ bookings }) => {
         <div className="text-red-500 text-6xl mb-4">⚠️</div>
         <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
         <p className="text-gray-600 mb-4">{error}</p>
-        <button 
-          onClick={() => window.location.reload()} 
+        <button
+          onClick={() => window.location.reload()}
           className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
         >
           Thử lại
@@ -544,9 +559,9 @@ const BookingsTab = ({ bookings }) => {
   const totalBookings = Array.isArray(bookings) ? bookings.length : 0;
   const completedBookings = Array.isArray(bookings)
     ? bookings.filter((b) => {
-        const s = (b.Status ?? b.status ?? '').toLowerCase();
+      const s = (b.Status ?? b.status ?? '').toLowerCase();
       return s === 'paid';
-      }).length
+    }).length
     : 0;
   const pendingBookings = Array.isArray(bookings)
     ? bookings.filter((b) => (b.Status ?? b.status) === 'pending' || (b.Status ?? b.status) === 'confirmed').length
@@ -558,17 +573,17 @@ const BookingsTab = ({ bookings }) => {
   // Lọc bookings
   const filteredBookings = Array.isArray(bookings)
     ? bookings.filter((booking) => {
-        const id = booking?.BookingID ?? booking?.bookingID;
-  const status = (booking?.Status ?? booking?.status)?.toLowerCase();
-        const detail = getBookingDetail(booking);
-        const profileName = detail.careProfile?.ProfileName ?? detail.careProfile?.profileName;
-        const matchesSearch =
-          !searchTerm ||
-          id?.toString().includes(searchTerm) ||
-          profileName?.toLowerCase().includes(searchTerm.toLowerCase());
-        const matchesStatus = statusFilter === 'all' || status === statusFilter;
-        return matchesSearch && matchesStatus;
-      })
+      const id = booking?.BookingID ?? booking?.bookingID;
+      const status = (booking?.Status ?? booking?.status)?.toLowerCase();
+      const detail = getBookingDetail(booking);
+      const profileName = detail.careProfile?.ProfileName ?? detail.careProfile?.profileName;
+      const matchesSearch =
+        !searchTerm ||
+        id?.toString().includes(searchTerm) ||
+        profileName?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesStatus = statusFilter === 'all' || status === statusFilter;
+      return matchesSearch && matchesStatus;
+    })
     : [];
 
   return (
@@ -591,7 +606,7 @@ const BookingsTab = ({ bookings }) => {
               color="from-blue-500 to-cyan-500"
             />
             <StatCard
-              title="Hoàn thành"
+              title="Đã thanh toán"
               value={completedBookings}
               icon={faCheckCircle}
               color="from-green-500 to-emerald-500"
@@ -610,102 +625,115 @@ const BookingsTab = ({ bookings }) => {
             />
           </div>
 
-      {/* Filters */}
-      <div className="bg-white rounded-xl shadow-lg p-6">
-        <div className="flex flex-wrap gap-4 items-center justify-between">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
-              <input
-                type="text"
-                placeholder="Tìm kiếm booking..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
-              />
+          {/* Filters */}
+          <div className="bg-white rounded-xl shadow-lg p-6">
+            <div className="flex flex-wrap gap-4 items-center justify-between">
+              <div className="flex flex-wrap gap-4">
+                <div className="flex items-center gap-2">
+                  <FontAwesomeIcon icon={faSearch} className="text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Tìm kiếm booking..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                  />
+                </div>
+                <select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
+                >
+                  <option value="all">Tất cả trạng thái</option>
+                  <option value="pending">Đang xử lý</option>
+                  <option value="paid">Đã thanh toán</option>
+                  <option value="completed">Hoàn thành</option>
+                  <option value="cancelled">Đã hủy</option>
+                </select>
+              </div>
+              <div className="text-sm text-gray-500">
+                {filteredBookings.length} booking được tìm thấy
+              </div>
             </div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
-            >
-              <option value="all">Tất cả trạng thái</option>
-              <option value="pending">Đang xử lý</option>
-                  <option value="paid">Hoàn thành</option>
-              <option value="cancelled">Đã hủy</option>
-            </select>
           </div>
-          <div className="text-sm text-gray-500">
-            {filteredBookings.length} booking được tìm thấy
-          </div>
-        </div>
-      </div>
 
-      {/* Bookings List */}
-      <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50">
-              <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách hàng</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày đặt</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              {filteredBookings.map((booking) => {
-                const { careProfile, account, service, packageInfo } = getBookingDetail(booking);
-                const id = booking?.BookingID ?? booking?.bookingID;
-                const workDate = booking?.BookingDate ?? booking?.bookingDate ?? booking?.workdate ?? booking?.Workdate;
-                const price = booking?.TotalPrice ?? booking?.totalPrice ?? booking?.Amount ?? booking?.amount;
-                const status = booking?.Status ?? booking?.status;
-                return (
-                  <tr key={id} className="hover:bg-gray-50">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                      #{id}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-900">{careProfile?.ProfileName ?? careProfile?.profileName ?? 'N/A'}</div>
-                      <div className="text-sm text-gray-500">{account?.phone_number || account?.phoneNumber || careProfile?.PhoneNumber || careProfile?.phoneNumber || 'N/A'}</div>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {workDate ? new Date(workDate).toLocaleDateString('vi-VN') : '-'}
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
-                      {price?.toLocaleString()} VNĐ
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                          <span className={`px-2 py-1 rounded-full text-xs font-semibold ${status === 'paid' ? 'bg-green-100 text-green-700' :
-                        status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {status === 'completed' || status === 'paid' ? 'Đã thanh toán' : status === 'pending' ? 'Chờ thanh toán' : (status || 'Không rõ')}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                      <button
-                        onClick={() => setSelectedBooking(booking)}
-                        className="text-pink-600 hover:text-pink-900 mr-3"
-                      >
-                        <FontAwesomeIcon icon={faEye} />
-                      </button>
-                      <button className="text-blue-600 hover:text-blue-900 mr-3">
-                        <FontAwesomeIcon icon={faEdit} />
-                      </button>
-                      <button className="text-red-600 hover:text-red-900">
-                        <FontAwesomeIcon icon={faTrash} />
-                      </button>
-                    </td>
+          {/* Bookings List */}
+          <div className="bg-white rounded-xl shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Khách hàng</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ngày đặt</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tổng tiền</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Trạng thái</th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Thao tác</th>
                   </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {filteredBookings.map((booking) => {
+                    const { careProfile, account, service, packageInfo } = getBookingDetail(booking);
+                    const id = booking?.BookingID ?? booking?.bookingID;
+                    const workDate = booking?.BookingDate ?? booking?.bookingDate ?? booking?.workdate ?? booking?.Workdate;
+                    const price = booking?.TotalPrice ?? booking?.totalPrice ?? booking?.Amount ?? booking?.amount;
+                    const status = booking?.Status ?? booking?.status;
+                    return (
+                      <tr key={id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          #{id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <div className="text-sm text-gray-900">{careProfile?.ProfileName ?? careProfile?.profileName ?? 'N/A'}</div>
+                          <div className="text-sm text-gray-500">{account?.phone_number || account?.phoneNumber || careProfile?.PhoneNumber || careProfile?.phoneNumber || 'N/A'}</div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {workDate ? new Date(workDate).toLocaleDateString('vi-VN') : '-'}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
+                          {price?.toLocaleString()} VNĐ
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <span className={`px-2 py-1 rounded-full text-xs font-semibold 
+                          ${String(status).toLowerCase() === 'paid' ? 'bg-pink-100 text-pink-700' :
+                              String(status).toLowerCase() === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                                String(status).toLowerCase() === 'pending' || String(status).toLowerCase() === 'unpaid' ? 'bg-yellow-100 text-yellow-700' :
+                                  String(status).toLowerCase() === 'isscheduled' ? 'bg-blue-100 text-blue-700' :
+                                    String(status).toLowerCase() === 'cancelled' || String(status).toLowerCase() === 'canceled' ? 'bg-red-100 text-red-700' :
+                                      'bg-gray-100 text-gray-700'
+                            }`}>
+                            {(() => {
+                              const s = String(status).toLowerCase();
+                              if (s === 'paid') return 'Đã thanh toán';
+                              if (s === 'completed') return 'Hoàn thành';
+                              if (s === 'pending' || s === 'unpaid') return 'Chờ thanh toán';
+                              if (s === 'isscheduled') return 'Đã lên lịch';
+                              if (s === 'cancelled' || s === 'canceled') return 'Đã hủy';
+                              return status || 'Không rõ';
+                            })()}
+                          </span>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <button
+                            onClick={() => setSelectedBooking(booking)}
+                            className="text-pink-600 hover:text-pink-900 mr-3"
+                          >
+                            <FontAwesomeIcon icon={faEye} />
+                          </button>
+                          <button className="text-blue-600 hover:text-blue-900 mr-3">
+                            <FontAwesomeIcon icon={faEdit} />
+                          </button>
+                          <button className="text-red-600 hover:text-red-900">
+                            <FontAwesomeIcon icon={faTrash} />
+                          </button>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
 
           {/* Detail Modal */}
           {selectedBooking && (

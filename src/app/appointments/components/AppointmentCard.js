@@ -141,7 +141,7 @@ const AppointmentCard = ({
               Lịch hẹn #{bookingId}
             </h3>
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor?.(appointment.status || appointment.Status) || 'bg-gray-100 text-gray-700'}`}>
-              {getStatusText?.(appointment.status) || 'Không xác định'}
+              {getStatusText?.(appointment.status || appointment.Status) || 'Không xác định'}
             </span>
           </div>
 
