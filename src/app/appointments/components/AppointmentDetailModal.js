@@ -1,9 +1,10 @@
 ﻿'use client';
 
-import React, { useState } from 'react';
-import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaUserMd, FaPlus, FaFileInvoice, FaCreditCard } from 'react-icons/fa';
+import React, { useEffect, useState } from 'react';
+import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaUserMd, FaPlus, FaFileInvoice, FaCreditCard, FaStar } from 'react-icons/fa';
 import NurseSelectionModal from './NurseSelectionModal';
 import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
+import feedbackService from '@/services/api/feedbackService';
 
 
 const AppointmentDetailModal = ({
@@ -24,6 +25,10 @@ const AppointmentDetailModal = ({
 }) => {
   const [showNurseModal, setShowNurseModal] = useState(false);
   const [selectedService, setSelectedService] = useState(null);
+  const [feedbackInputs, setFeedbackInputs] = useState({}); // { [customizeTaskId]: { rate, content } }
+  const [feedbackSubmitting, setFeedbackSubmitting] = useState({}); // { [customizeTaskId]: boolean }
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState({}); // { [customizeTaskId]: boolean }
+  const [feedbackByTask, setFeedbackByTask] = useState({}); // { [customizeTaskId]: feedback }
 
   if (!appointment) {
     return null;
@@ -364,6 +369,162 @@ const AppointmentDetailModal = ({
     return amount > 0;
   };
 
+  // Helpers for feedback
+  const getCustomizeTaskId = (service) => (
+    service?.customizeTaskId || service?.customizeTaskID || service?.customize_TaskID
+  );
+
+  // Load existing feedbacks per task when services are ready
+  useEffect(() => {
+    const services = Array.isArray(serviceDetails?.services) ? serviceDetails.services : [];
+    const ids = Array.from(new Set(
+      services
+        .map((s) => getCustomizeTaskId(s))
+        .filter(Boolean)
+    ));
+    if (ids.length === 0) return;
+
+    let isCancelled = false;
+    const load = async () => {
+      try {
+        const results = await Promise.all(
+          ids.map((id) => feedbackService.getByCustomizeTask(id).catch(() => null))
+        );
+        if (isCancelled) return;
+        const map = {};
+        results.forEach((fb, idx) => {
+          const id = ids[idx];
+          if (fb) {
+            map[id] = fb;
+            // Seed default input values from existing feedback
+            setFeedbackInputs((prev) => ({
+              ...prev,
+              [id]: {
+                rate: Number(fb.rate || fb.Rate || 0),
+                content: fb.content || fb.Content || '',
+              },
+            }));
+          }
+        });
+        setFeedbackByTask((prev) => ({ ...prev, ...map }));
+      } catch (e) {
+        // ignore
+      }
+    };
+    load();
+    return () => { isCancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [appointment?.bookingID, appointment?.BookingID, serviceDetails?.type]);
+
+  const handleFeedbackRate = (taskId, rate) => {
+    setFeedbackInputs((prev) => ({
+      ...prev,
+      [taskId]: {
+        ...(prev[taskId] || {}),
+        rate,
+      },
+    }));
+  };
+
+  const handleFeedbackContent = (taskId, content) => {
+    setFeedbackInputs((prev) => ({
+      ...prev,
+      [taskId]: {
+        ...(prev[taskId] || {}),
+        content,
+      },
+    }));
+  };
+
+  const submitFeedback = async (taskId) => {
+    try {
+      if (!taskId) return;
+      const payload = {
+        customizeTaskID: taskId,
+        rate: Number(feedbackInputs?.[taskId]?.rate || 0),
+        content: feedbackInputs?.[taskId]?.content || '',
+      };
+      if (!payload.rate && !payload.content) {
+        alert('Vui lòng chọn sao hoặc nhập nội dung đánh giá.');
+        return;
+      }
+      setFeedbackSubmitting((s) => ({ ...s, [taskId]: true }));
+      const existing = feedbackByTask[taskId];
+      if (existing) {
+        const fid = existing.feedbackID || existing.FeedbackID || existing.id || existing.ID;
+        await feedbackService.updateFeedback(fid, {
+          rate: payload.rate,
+          content: payload.content,
+        });
+        setFeedbackByTask((prev) => ({
+          ...prev,
+          [taskId]: { ...existing, rate: payload.rate, content: payload.content },
+        }));
+        setFeedbackSubmitted((s) => ({ ...s, [taskId]: true }));
+      } else {
+        await feedbackService.createFeedback(payload);
+        const fb = await feedbackService.getByCustomizeTask(taskId).catch(() => null);
+        if (fb) setFeedbackByTask((prev) => ({ ...prev, [taskId]: fb }));
+        setFeedbackSubmitted((s) => ({ ...s, [taskId]: true }));
+      }
+    } catch (e) {
+      console.error('Gửi feedback thất bại', e);
+      alert('Gửi feedback thất bại. Vui lòng thử lại.');
+    } finally {
+      setFeedbackSubmitting((s) => ({ ...s, [taskId]: false }));
+    }
+  };
+
+  const renderFeedbackForm = (service) => {
+    const taskId = getCustomizeTaskId(service);
+    if (!taskId) return null;
+    const input = feedbackInputs[taskId] || { rate: 0, content: '' };
+    const isSubmitting = !!feedbackSubmitting[taskId];
+    const isSubmitted = !!feedbackSubmitted[taskId];
+    const isExisting = !!feedbackByTask[taskId];
+
+    return (
+      <div className="mt-2 p-3 bg-gray-50 rounded border border-gray-200">
+        <div className="text-xs font-semibold text-gray-700 mb-2">Đánh giá dịch vụ</div>
+        <div className="flex items-center gap-1 mb-2">
+          {[1, 2, 3, 4, 5].map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => handleFeedbackRate(taskId, s)}
+              className="focus:outline-none"
+              disabled={isSubmitted}
+            >
+              <FaStar className={
+                (input.rate || 0) >= s ? 'text-yellow-400' : 'text-gray-300'
+              } />
+            </button>
+          ))}
+        </div>
+        <textarea
+          rows={2}
+          placeholder="Nội dung (không bắt buộc)"
+          value={input.content}
+          onChange={(e) => handleFeedbackContent(taskId, e.target.value)}
+          className="w-full text-sm p-2 border rounded mb-2 focus:outline-none focus:ring-1 focus:ring-gray-300"
+          disabled={isSubmitting}
+        />
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => submitFeedback(taskId)}
+            disabled={isSubmitting}
+            className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-60"
+          >
+            {isSubmitting ? 'Đang gửi...' : (isExisting ? 'Cập nhật feedback' : 'Gửi feedback')}
+          </button>
+          {isSubmitted && (
+            <span className="text-green-600 text-xs font-medium">Đã lưu đánh giá</span>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div
       className="fixed inset-0  backdrop-blur-sm flex items-center justify-center z-50 p-4"
@@ -564,8 +725,9 @@ const AppointmentDetailModal = ({
                                   </button>
                                 )}
                                 {isCompleted && (
-                                  <div className="text-sm text-gray-500 font-medium">
-                                    🎉 Hoàn thành
+                                  <div className="space-y-2">
+                                    <div className="text-sm text-gray-500 font-medium">🎉 Hoàn thành</div>
+                                    {renderFeedbackForm(service)}
                                   </div>
                                 )}
                               </div>
@@ -635,8 +797,9 @@ const AppointmentDetailModal = ({
                               </button>
                             )}
                             {isCompleted && (
-                              <div className="text-sm text-gray-500 font-medium">
-                                🎉 Hoàn thành
+                              <div className="space-y-2">
+                                <div className="text-sm text-gray-500 font-medium">🎉 Hoàn thành</div>
+                                {renderFeedbackForm(service)}
                               </div>
                             )}
                           </div>

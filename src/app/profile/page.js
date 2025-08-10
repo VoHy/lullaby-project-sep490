@@ -48,7 +48,7 @@ const StatusDisplay = ({ type, message }) => (
         </>
       ) : (
         <>
-          <div className="text-6xl mb-4">😕</div>
+          <div className="text-6xl mb-4"></div>
           <p className="text-gray-600 text-lg">{message}</p>
         </>
       )}
@@ -113,7 +113,7 @@ export default function ProfilePage() {
       await accountsService.updateAccount(user.accountID, updatedData);
 
       const refreshedUser = await accountsService.getAccount(user.accountID);
-      updateUser(refreshedUser); // ⚡ Trigger global update
+      updateUser(refreshedUser);
 
       setIsEditing(false);
       setSuccess('Cập nhật thành công!');
