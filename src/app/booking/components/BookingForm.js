@@ -40,7 +40,7 @@ export default function BookingForm({
         />
         {!isDatetimeValid && datetime && (
           <div className="text-red-500 text-sm mt-1">
-            Thời gian phải cách hiện tại ít nhất 30 phút
+            Thời gian phải cách hiện tại ít nhất 120 phút
           </div>
         )}
       </section>

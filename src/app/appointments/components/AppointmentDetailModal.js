@@ -1,10 +1,11 @@
 ﻿'use client';
 
 import React, { useEffect, useState } from 'react';
-import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaUserMd, FaPlus, FaFileInvoice, FaCreditCard, FaStar } from 'react-icons/fa';
+import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaUserMd, FaPlus, FaFileInvoice, FaCreditCard } from 'react-icons/fa';
 import NurseSelectionModal from './NurseSelectionModal';
 import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
 import feedbackService from '@/services/api/feedbackService';
+import FeedbackForm from './FeedbackForm';
 
 
 const AppointmentDetailModal = ({
@@ -478,51 +479,7 @@ const AppointmentDetailModal = ({
   const renderFeedbackForm = (service) => {
     const taskId = getCustomizeTaskId(service);
     if (!taskId) return null;
-    const input = feedbackInputs[taskId] || { rate: 0, content: '' };
-    const isSubmitting = !!feedbackSubmitting[taskId];
-    const isSubmitted = !!feedbackSubmitted[taskId];
-    const isExisting = !!feedbackByTask[taskId];
-
-    return (
-      <div className="mt-2 p-3 bg-gray-50 rounded border border-gray-200">
-        <div className="text-xs font-semibold text-gray-700 mb-2">Đánh giá dịch vụ</div>
-        <div className="flex items-center gap-1 mb-2">
-          {[1, 2, 3, 4, 5].map((s) => (
-            <button
-              key={s}
-              type="button"
-              onClick={() => handleFeedbackRate(taskId, s)}
-              className="focus:outline-none"
-              disabled={isSubmitted}
-            >
-              <FaStar className={
-                (input.rate || 0) >= s ? 'text-yellow-400' : 'text-gray-300'
-              } />
-            </button>
-          ))}
-        </div>
-        <textarea
-          rows={2}
-          placeholder="Nội dung (không bắt buộc)"
-          value={input.content}
-          onChange={(e) => handleFeedbackContent(taskId, e.target.value)}
-          className="w-full text-sm p-2 border rounded mb-2 focus:outline-none focus:ring-1 focus:ring-gray-300"
-          disabled={isSubmitting}
-        />
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => submitFeedback(taskId)}
-            disabled={isSubmitting}
-            className="px-3 py-1.5 text-sm bg-blue-500 text-white rounded hover:bg-blue-600 disabled:opacity-60"
-          >
-            {isSubmitting ? 'Đang gửi...' : (isExisting ? 'Cập nhật feedback' : 'Gửi feedback')}
-          </button>
-          {isSubmitted && (
-            <span className="text-green-600 text-xs font-medium">Đã lưu đánh giá</span>
-          )}
-        </div>
-      </div>
-    );
+    return <FeedbackForm customizeTaskId={taskId} />;
   };
 
   return (
@@ -672,7 +629,8 @@ const AppointmentDetailModal = ({
                           </h4>
                           {serviceDetails.services.map((service, index) => {
                             const hasNurse = !!service.nursingID;
-                            const isCompleted = service.status === 'completed';
+                            const statusLc = String(service.status || '').toLowerCase();
+                            const isDone = statusLc === 'completed' || statusLc === 'cancelled' || statusLc === 'canceled';
                             const nurseInfo = hasNurse ? getNurseInfo(service.nursingID) : null;
 
                             return (
@@ -707,7 +665,7 @@ const AppointmentDetailModal = ({
                                     </div>
                                   )}
                                 </div>
-                                {!hasNurse && !isCompleted && (
+                                {!hasNurse && !isDone && (
                                   <button
                                     onClick={(e) => {
                                       e.preventDefault();
@@ -724,9 +682,9 @@ const AppointmentDetailModal = ({
                                     Chọn điều dưỡng
                                   </button>
                                 )}
-                                {isCompleted && (
+                                {isDone && (
                                   <div className="space-y-2">
-                                    <div className="text-sm text-gray-500 font-medium">🎉 Hoàn thành</div>
+                                    <div className="text-sm text-gray-500 font-medium">{statusLc === 'completed' ? '🎉 Hoàn thành' : '⛔ Đã hủy'}</div>
                                     {renderFeedbackForm(service)}
                                   </div>
                                 )}
@@ -745,7 +703,8 @@ const AppointmentDetailModal = ({
                     <div className="space-y-3">
                       {serviceDetails.services.map((service, index) => {
                         const hasNurse = !!service.nursingID;
-                        const isCompleted = service.status === 'completed';
+                        const statusLc = String(service.status || '').toLowerCase();
+                        const isDone = statusLc === 'completed' || statusLc === 'cancelled' || statusLc === 'canceled';
                         const nurseInfo = hasNurse ? getNurseInfo(service.nursingID) : null;
 
                         return (
@@ -779,7 +738,7 @@ const AppointmentDetailModal = ({
                                 </div>
                               )}
                             </div>
-                            {!hasNurse && !isCompleted && (
+                            {!hasNurse && !isDone && (
                               <button
                                 onClick={(e) => {
                                   e.preventDefault();
@@ -796,9 +755,9 @@ const AppointmentDetailModal = ({
                                 Chọn điều dưỡng
                               </button>
                             )}
-                            {isCompleted && (
+                            {isDone && (
                               <div className="space-y-2">
-                                <div className="text-sm text-gray-500 font-medium">🎉 Hoàn thành</div>
+                                <div className="text-sm text-gray-500 font-medium">{statusLc === 'completed' ? '🎉 Hoàn thành' : '⛔ Đã hủy'}</div>
                                 {renderFeedbackForm(service)}
                               </div>
                             )}
