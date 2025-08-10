@@ -116,6 +116,20 @@ export default function AppointmentsPage() {
         })
         .map(b => {
           const bCareId = b.careProfileID ?? b.CareProfileID;
+          
+
+          const baseAmount = b.amount || b.totalAmount || b.total_Amount || 0;
+          const extra = b.extra;
+          const finalAmount = (() => {
+            if (!extra || extra === null) {
+              return baseAmount;
+            }
+            const extraPercentage = extra > 1 ? extra / 100 : extra;
+            return baseAmount + (baseAmount * extraPercentage);
+          })();
+          
+
+          
           return {
             ...b,
             careProfile: b.careProfile ?? careProfileMap.get(bCareId) ?? null,
@@ -128,6 +142,8 @@ export default function AppointmentsPage() {
       setServiceTasks(tasks);
       setNursingSpecialists(specialists);
       setZoneDetails(zones);
+
+      
       setInvoices(invoiceData);
       setCustomizePackages(packages);
       setCustomizeTasks(customizeTasks);
@@ -136,14 +152,14 @@ export default function AppointmentsPage() {
       if (!isRefresh) {
         try {
           await refreshWalletData();
-          console.log('🔄 Wallet context refreshed');
+          console.log('Wallet context refreshed');
         } catch (walletError) {
-          console.warn('⚠️ Could not refresh wallet context:', walletError);
+          console.warn('Could not refresh wallet context:', walletError);
         }
       }
 
     } catch (error) {
-      console.error('❌ Error fetching appointments:', error);
+      console.error('Error fetching appointments:', error);
       setError(`Không thể tải dữ liệu: ${error.message}`);
     } finally {
       setLoading(false);
@@ -187,7 +203,7 @@ export default function AppointmentsPage() {
       await refreshWalletData();
       
     } catch (error) {
-      console.error('❌ Error processing payment:', error);
+      console.error('Error processing payment:', error);
       alert(`Có lỗi xảy ra khi thanh toán: ${error.message}`);
     }
   };
@@ -224,7 +240,7 @@ export default function AppointmentsPage() {
       await refreshWalletData();
       
     } catch (error) {
-      console.error('❌ Error cancelling booking:', error);
+      console.error('Error cancelling booking:', error);
       alert(`Có lỗi xảy ra khi hủy booking: ${error.message}`);
     }
   };
@@ -242,7 +258,7 @@ export default function AppointmentsPage() {
 
       // Case 1: If service has customizeTaskId, update that task directly
       if (service.customizeTaskId) {
-        console.log('📋 Updating customize task directly:', service.customizeTaskId);
+        
         await customizeTaskService.updateNursing(service.customizeTaskId, nurseId);
       }
       // Case 2: Package service with taskId (từ service task)
@@ -254,7 +270,7 @@ export default function AppointmentsPage() {
       }
       // Case 3: Individual service - need to find corresponding CustomizeTask
       else {
-        console.log('🔍 Finding customize task for individual service');
+
 
         // Get all customize packages for this booking
         const customizePackagesData = await customizePackageService.getAllByBooking(bookingId);
@@ -293,7 +309,7 @@ export default function AppointmentsPage() {
       // Refresh data to show updated assignment
       await fetchData(true);
     } catch (error) {
-      console.error('❌ Error assigning nurse:', error);
+      console.error('Error assigning nurse:', error);
       alert(`Có lỗi xảy ra khi phân công nurse: ${error.message}`);
     }
   };

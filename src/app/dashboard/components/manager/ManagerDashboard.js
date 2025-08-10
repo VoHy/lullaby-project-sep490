@@ -1,14 +1,14 @@
 'use client';
-import { useState, useEffect } from 'react';
-import { FaUserNurse, FaUserMd, FaCalendarAlt, FaExclamationTriangle, FaCheckCircle, FaUsers, FaMapMarkedAlt } from 'react-icons/fa';
+import { useState, useEffect, useContext } from 'react';
+import { FaUserNurse, FaUserMd, FaCalendarAlt, FaExclamationTriangle, FaCheckCircle, FaUsers, FaMapMarkedAlt, FaBell } from 'react-icons/fa';
 import ManagerNurseTab from './ManagerNurseTab';
 import ManagerSpecialistTab from './ManagerSpecialistTab';
 import ManagerBookingTab from './ManagerBookingTab';
 import { useRouter, useSearchParams } from 'next/navigation';
 import zoneService from '@/services/api/zoneService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
+import notificationService from '@/services/api/notificationService';
 import { AuthContext } from '@/context/AuthContext';
-import { useContext } from 'react';
 
 const TABS = [
   { id: 'nurse', label: 'Quản lý Nurse', icon: FaUserNurse },
@@ -19,6 +19,7 @@ const TABS = [
 const ManagerDashboard = ({ user }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { user: authUser } = useContext(AuthContext);
   const validTabs = TABS.map(t => t.id);
   const getInitialTab = () => {
     const tabParam = searchParams.get('tab');
@@ -36,6 +37,7 @@ const ManagerDashboard = ({ user }) => {
   const [tabLoading, setTabLoading] = useState(false);
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   // Load data từ API
   useEffect(() => {
@@ -61,6 +63,25 @@ const ManagerDashboard = ({ user }) => {
 
     fetchData();
   }, []);
+
+  // Fetch unread notifications
+  useEffect(() => {
+    const fetchNotifications = async () => {
+      try {
+        if (!authUser) return;
+        const accountId = authUser.accountID || authUser.AccountID;
+        if (!accountId) return;
+        
+        const unread = await notificationService.getUnreadByAccount(accountId);
+        setUnreadNotifications(Array.isArray(unread) ? unread.length : 0);
+      } catch (error) {
+        console.error('Error fetching notifications:', error);
+        setUnreadNotifications(0);
+      }
+    };
+
+    fetchNotifications();
+  }, [authUser]);
 
   useEffect(() => {
     if (!selectedZone) {
@@ -174,7 +195,21 @@ const ManagerDashboard = ({ user }) => {
       )}
 
       <div className="bg-white rounded-lg shadow-lg p-6">
-        <h2 className="text-2xl font-bold text-gray-900 mb-6">Chào mừng Manager: {user.fullName}</h2>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold text-gray-900">Chào mừng Manager: {user.fullName}</h2>
+          <button
+            onClick={() => router.push('/notifications')}
+            className="relative p-2 text-gray-600 hover:text-purple-600 transition-colors"
+            title="Xem thông báo"
+          >
+            <FaBell className="text-xl" />
+            {unreadNotifications > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 min-w-[1.25rem] px-1 flex items-center justify-center">
+                {unreadNotifications}
+              </span>
+            )}
+          </button>
+        </div>
 
         {/* Dashboard Overview */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">

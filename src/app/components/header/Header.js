@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AuthContext } from '../../../context/AuthContext';
 import WalletIcon from './WalletIcon';
+import NotificationBell from './NotificationBell';
 
 export default function Header() {
   const pathname = usePathname();
@@ -100,15 +101,7 @@ export default function Header() {
                    >
                      Tin tức
                    </Link>
-                   <Link
-                     href="/notifications"
-                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/notifications')
-                         ? 'border-blue-500 text-gray-900'
-                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                       }`}
-                   >
-                     Thông báo
-                   </Link>
+                   {/* Notification link removed: now handled by header bell icon */}
                    <Link
                      href="/dashboard"
                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/dashboard')
@@ -151,15 +144,7 @@ export default function Header() {
                    >
                      Tin tức
                    </Link>
-                   <Link
-                     href="/notifications"
-                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/notifications')
-                         ? 'border-blue-500 text-gray-900'
-                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                       }`}
-                   >
-                     Thông báo
-                   </Link>
+                   {/* Notification link removed: now handled by header bell icon */}
                    <Link
                      href="/dashboard"
                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/dashboard')
@@ -217,15 +202,7 @@ export default function Header() {
                    >
                      Lịch hẹn
                    </Link>
-                   <Link
-                     href="/notifications"
-                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/notifications')
-                         ? 'border-blue-500 text-gray-900'
-                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                       }`}
-                   >
-                     Thông báo
-                   </Link>
+                   {/* Notification link removed: now handled by header bell icon */}
                    <Link
                      href="/profile/patient"
                      className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/profile/patient')
@@ -242,6 +219,8 @@ export default function Header() {
           <div className="flex items-center gap-4">
             {/* Wallet Icon - chỉ hiển thị cho customer đã đăng nhập */}
             <WalletIcon />
+            {/* Notification bell: between wallet and avatar for customer; next to avatar for other roles */}
+            <NotificationBell />
             
             {user ? (
               <div className="relative">
@@ -386,16 +365,7 @@ export default function Header() {
                >
                  Tin tức
                </Link>
-               <Link
-                 href="/notifications"
-                 className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/notifications')
-                     ? 'border-blue-500 text-blue-700 bg-blue-50'
-                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                   }`}
-                 onClick={() => setIsMenuOpen(false)}
-               >
-                 Thông báo
-               </Link>
+                {/* Notification link removed on mobile */}
                <Link
                  href="/dashboard"
                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/dashboard')
@@ -442,16 +412,7 @@ export default function Header() {
                >
                  Tin tức
                </Link>
-               <Link
-                 href="/notifications"
-                 className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/notifications')
-                     ? 'border-blue-500 text-blue-700 bg-blue-50'
-                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                   }`}
-                 onClick={() => setIsMenuOpen(false)}
-               >
-                 Thông báo
-               </Link>
+                {/* Notification link removed on mobile */}
                <Link
                  href="/dashboard"
                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/dashboard')
@@ -514,16 +475,7 @@ export default function Header() {
                >
                  Lịch hẹn
                </Link>
-               <Link
-                 href="/notifications"
-                 className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/notifications')
-                     ? 'border-blue-500 text-blue-700 bg-blue-50'
-                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                   }`}
-                 onClick={() => setIsMenuOpen(false)}
-               >
-                 Thông báo
-               </Link>
+                {/* Notification link removed on mobile */}
                <Link
                  href="/profile/patient"
                  className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/profile/patient')

@@ -5,6 +5,8 @@ export default function AppointmentInfo({
   note, 
   selectedCareProfile 
 }) {
+
+
   // Format datetime từ workdate
   const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return 'Chưa có thông tin';

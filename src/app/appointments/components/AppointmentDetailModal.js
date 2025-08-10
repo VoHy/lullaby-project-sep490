@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaUserMd, FaPlus, FaFileInvoice, FaCreditCard } from 'react-icons/fa';
 import NurseSelectionModal from './NurseSelectionModal';
 import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
-// import DebugData from './DebugData';
+
 
 const AppointmentDetailModal = ({
   appointment,
@@ -31,7 +31,21 @@ const AppointmentDetailModal = ({
 
   const bookingId = appointment.bookingID || appointment.BookingID;
   const careProfile = appointment.careProfile;
-  const amount = appointment.amount || appointment.totalAmount || appointment.total_Amount || 0;
+  const baseAmount = appointment.amount || appointment.totalAmount || appointment.total_Amount || 0;
+  const extra = appointment.extra;
+
+  // Calculate final amount including extra fees
+  const finalAmount = (() => {
+    if (!extra || extra === null) {
+      return baseAmount;
+    }
+    // Convert extra to decimal percentage if it's a whole number
+    const extraPercentage = extra > 1 ? extra / 100 : extra;
+    return baseAmount + (baseAmount * extraPercentage);
+  })();
+
+  // Calculate extra fee amount
+  const extraAmount = finalAmount - baseAmount;
 
   // Lấy invoice cho booking này
   const bookingInvoice = invoices.find(inv =>
@@ -129,12 +143,7 @@ const AppointmentDetailModal = ({
             return taskServiceId === childServiceId;
           });
 
-          console.log('🔍 Child Service Debug:', {
-            serviceTask: serviceTask,
-            childServiceId: childServiceId,
-            childService: childService,
-            correspondingTask: correspondingTask
-          });
+
 
           childServices.push({
             ...childService,
@@ -433,7 +442,16 @@ const AppointmentDetailModal = ({
                   Tổng tiền
                 </h3>
                 <div className="text-3xl font-bold text-yellow-600">
-                  {amount.toLocaleString('vi-VN')}₫
+                  {finalAmount.toLocaleString('vi-VN')}₫
+                </div>
+                <div className="text-sm text-gray-600 mt-2">
+                  <strong>Số tiền cơ bản:</strong> {baseAmount.toLocaleString('vi-VN')}₫
+                  {extraAmount > 0 && (
+                    <>
+                      <br />
+                      <strong>Phí thêm:</strong> {extraAmount.toLocaleString('vi-VN')}₫
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -754,7 +772,7 @@ const AppointmentDetailModal = ({
                         <div className="flex justify-between text-lg font-bold border-t pt-2">
                           <span>Tổng tiền:</span>
                           <span className="text-green-600">
-                            {(bookingInvoice.totalAmount || bookingInvoice.total_amount || amount).toLocaleString('vi-VN')}₫
+                            {(bookingInvoice.totalAmount || bookingInvoice.total_amount || finalAmount).toLocaleString('vi-VN')}₫
                           </span>
                         </div>
                       </div>
