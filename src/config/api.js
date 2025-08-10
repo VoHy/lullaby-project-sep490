@@ -10,7 +10,7 @@ export const API_ENDPOINTS = {
 
   // Nursing Specialists
   NURSING_SPECIALISTS: '/nursingspecialists',
-  NURSING_SPECIALIST_SERVICE_TYPES: '/nursingspecialist-servicetypes',
+  NURSING_SPECIALIST_SERVICE_TYPES: '/nursingspecialist-servicetype',
 
   // Bookings
   BOOKINGS: '/Booking',

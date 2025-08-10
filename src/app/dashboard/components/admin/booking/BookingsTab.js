@@ -147,6 +147,20 @@ const BookingsTab = ({ bookings }) => {
     try {
       const nurseId = selectedNurseByTask[task.customizeTaskID];
       if (!nurseId) return;
+      // Validate nurse has mapping with the service of the task before assigning
+      try {
+        const mappings = await nursingSpecialistServiceTypeService.getByNursing(nurseId);
+        const serviceId = task.serviceID;
+        const allowed = Array.isArray(mappings) ? mappings.some(m => (m?.serviceID ?? m?.ServiceID) === serviceId) : false;
+        if (!allowed) {
+          alert('Y tá/chuyên gia được chọn không có chuyên môn phù hợp với dịch vụ của khách hàng.');
+          return;
+        }
+      } catch (e) {
+        // Fall back if API fails: prevent assignment to avoid wrong mapping
+        alert('Không thể lấy mapping của y tá/chuyên gia. Vui lòng thử lại.');
+        return;
+      }
       await customizeTaskService.updateNursing(
         task.customizeTaskID,
         nurseId
@@ -361,9 +375,10 @@ const BookingsTab = ({ bookings }) => {
                                       <option value="">Chọn y tá</option>
                                        {(() => {
                                          const serviceId = task.serviceID;
-                                         const allowed = localNursesByServiceId[serviceId] || [];
+                                         // Combine two filters: (1) zone matched, (2) mapping nurse-service type
                                          const zoneId = careProfile?.zoneDetailID ?? careProfile?.zoneDetail_ID;
-                                         const filtered = Array.isArray(allowed) ? allowed.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
+                                         const pool = localNursesByServiceId[serviceId] || [];
+                                         const filtered = Array.isArray(pool) ? pool.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
                                          return filtered.map((n) => (
                                            <option key={n.nursingID ?? n.NursingID} value={n.nursingID ?? n.NursingID}>
                                              {(n.nursingFullName ?? n.fullName ?? n.FullName) + (n.major ? ` — ${n.major}` : '')}

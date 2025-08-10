@@ -2,7 +2,7 @@
 import { API_ENDPOINTS } from '../../config/api';
 import { apiGet, apiPost, apiPut, apiDelete } from './serviceUtils';
 
-const base = API_ENDPOINTS.NURSING_SPECIALIST_SERVICE_TYPES; // '/nursingspecialist-servicetypes'
+const base = API_ENDPOINTS.NURSING_SPECIALIST_SERVICE_TYPES; // '/nursingspecialist-servicetype'
 
 const nursingSpecialistServiceTypeService = {
   getByNursing: async (nursingId) => apiGet(`${base}/getbynursing/${nursingId}`, 'Không thể lấy mapping theo nurse'),

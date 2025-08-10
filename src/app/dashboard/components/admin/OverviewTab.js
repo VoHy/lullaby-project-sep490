@@ -3,108 +3,84 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUsers, faCalendar, faMoneyBill, faUserCheck, faArrowUp, faArrowDown,
-  faChartLine, faClock, faStar, faExclamationTriangle, faStethoscope, faEye
+  faEye, faUser, faCalendarAlt, faClock
 } from '@fortawesome/free-solid-svg-icons';
 import { useState, useEffect } from 'react';
-// Thay thế import mock data bằng services
 import careProfileService from '@/services/api/careProfileService';
 import accountService from '@/services/api/accountService';
 import serviceTypeService from '@/services/api/serviceTypeService';
-// import customizePackageService from '@/services/api/customizePackageService';
-// import customizeTaskService from '@/services/api/customizeTaskService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import invoiceService from '@/services/api/invoiceService';
 
-const OverviewTab = ({ accounts, bookings, revenue }) => {
-  // State cho API data
+const OverviewTab = ({ bookings, revenue }) => {
   const [careProfiles, setCareProfiles] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
-  // const [customizePackages, setCustomizePackages] = useState([]);
-  // const [customizeTasks, setCustomizeTasks] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [selectedBooking, setSelectedBooking] = useState(null);
 
-  // Load data từ API
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError("");
-        
-        const [
-          careProfilesData,
-          serviceTypesData,
-          // customizePackagesData,
-          // customizeTasksData,
-          serviceTasksData,
-          nursingSpecialistsData
-        ] = await Promise.all([
+        const [careProfilesData, accountsData, serviceTypesData, serviceTasksData, nursingSpecialistsData] = await Promise.all([
           careProfileService.getCareProfiles(),
+          accountService.getAllAccounts(),
           serviceTypeService.getServiceTypes(),
-          // customizePackageService.getCustomizePackages(),
-          // customizeTaskService.getCustomizeTasks(),
           serviceTaskService.getServiceTasks(),
-          nursingSpecialistService.getNursingSpecialists()
+          nursingSpecialistService.getNursingSpecialists(),
         ]);
-
         setCareProfiles(careProfilesData);
+        setAccounts(accountsData);
         setServiceTypes(serviceTypesData);
-        // setCustomizePackages(customizePackagesData);
-        // setCustomizeTasks(customizeTasksData);
         setServiceTasks(serviceTasksData);
         setNursingSpecialists(nursingSpecialistsData);
-      } catch (error) {
-        console.error('Error fetching admin overview data:', error);
+      } catch (e) {
         setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
   function getBookingDetail(booking) {
-    const careProfile = careProfiles.find(c => c.careProfileID === booking.careProfileID);
-    const account = accounts.find(a => a.accountID === careProfile?.accountID);
-    let service = null;
-    let packageInfo = null;
-    // if (booking.CustomizePackageID) {
-    //   packageInfo = customizePackages.find(p => p.CustomizePackageID === booking.CustomizePackageID);
-    //   service = serviceTypes.find(s => s.ServiceID === packageInfo?.ServiceID);
-    // } else if (booking.CareProfileID) {
-      service = serviceTypes.find(s => s.serviceID === booking.careProfileID);
-    // }
-    // const customizeTasksOfBooking = customizeTasks.filter(t => t.BookingID === booking.BookingID);
-    const serviceTasksOfBooking = serviceTasks.filter(t => t.BookingID === booking.BookingID);
-    const serviceTask = serviceTasks.find(st => st.ServiceTaskID === serviceTasksOfBooking.ServiceTaskID);
-    const nurse = nursingSpecialists.find(n => n.NursingID === serviceTask.NursingID);
+    const bookingID = booking?.bookingID ?? booking?.BookingID;
+    const careProfileID = booking?.careProfileID ?? booking?.CareProfileID;
+    const serviceID = booking?.serviceID ?? booking?.ServiceID;
+    const careProfile = careProfiles.find((c) => (c?.careProfileID ?? c?.CareProfileID) === careProfileID);
+    const account = careProfile ? accounts.find((a) => (a?.accountID ?? a?.AccountID) === (careProfile?.accountID ?? careProfile?.AccountID)) : null;
+    const service = serviceTypes.find((s) => (s?.serviceID ?? s?.ServiceID) === serviceID);
+    const serviceTasksOfBooking = serviceTasks.filter((t) => (t?.bookingID ?? t?.BookingID) === bookingID);
+    const detailedTasks = serviceTasksOfBooking.map((t) => {
+      const nurse = nursingSpecialists.find((n) => (n?.nursingID ?? n?.NursingID) === (t?.nursingID ?? t?.NursingID));
       return {
-        ...serviceTask,
-        price: serviceTask.price,
-        quantity: serviceTask.quantity,
-        total: serviceTask.total,
-        status: serviceTask.status,
-        nurseName: nurse?.fullName,
-      nurseRole: nurse?.major
-    };
-    // });
-    return { careProfile, account, service, packageInfo, serviceTasksOfBooking };
+        description: t?.description ?? t?.Description,
+        price: t?.price ?? t?.Price,
+        quantity: t?.quantity ?? t?.Quantity,
+        total: t?.total ?? t?.Total,
+        status: (t?.status ?? t?.Status ?? '').toLowerCase(),
+        nurseName: nurse?.fullName ?? nurse?.FullName,
+        nurseRole: nurse?.major ?? nurse?.Major,
+      };
+    });
+    return { careProfile, account, service, serviceTasksOfBooking: detailedTasks };
   }
 
   const BookingDetailModal = ({ booking, onClose }) => {
     if (!booking) return null;
-    const { careProfile, account, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(booking);
+    const { careProfile, account, service, serviceTasksOfBooking } = getBookingDetail(booking);
     return (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
         <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative max-h-[90vh] overflow-y-auto">
           <button className="absolute top-4 right-4 text-gray-500 hover:text-pink-500 text-2xl font-bold" onClick={onClose}>&times;</button>
           <div className="mb-6">
-            <h3 className="text-2xl font-bold mb-2">Chi tiết Booking #{booking.bookingID}</h3>
+            <h3 className="text-2xl font-bold mb-2">Chi tiết Booking #{booking?.BookingID ?? booking?.bookingID}</h3>
             <div className="w-20 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded"></div>
           </div>
           
@@ -113,19 +89,18 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
               <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-xl">
                 <h4 className="font-semibold text-blue-800 mb-2">Thông tin khách hàng</h4>
                 <div className="space-y-2 text-sm">
-                  <div><span className="font-medium">Tên:</span> {careProfile?.profileName} ({account?.full_name})</div>
-                  <div><span className="font-medium">Điện thoại:</span> {careProfile?.phoneNumber}</div>
-                  <div><span className="font-medium">Địa chỉ:</span> {careProfile?.address}</div>
+                  <div><span className="font-medium">Tên:</span> {careProfile?.profileName ?? careProfile?.ProfileName} {account ? `(${account.full_name ?? account.fullName})` : ''}</div>
+                  <div><span className="font-medium">Điện thoại:</span> {account?.phone_number || account?.phoneNumber || careProfile?.phoneNumber || '-'}</div>
+                  <div><span className="font-medium">Địa chỉ:</span> {careProfile?.address || '-'}</div>
                 </div>
               </div>
               
               <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl">
                 <h4 className="font-semibold text-green-800 mb-2">Thông tin dịch vụ</h4>
                 <div className="space-y-2 text-sm">
-                  <div><span className="font-medium">Dịch vụ:</span> {packageInfo ? packageInfo.name : (service?.serviceName || '-')}</div>
-                  {packageInfo && <div><span className="font-medium">Mô tả:</span> {packageInfo.description}</div>}
-                  <div><span className="font-medium">Ngày đặt:</span> {booking.createdAt ? new Date(booking.createdAt).toLocaleString('vi-VN') : '-'}</div>
-                  <div><span className="font-medium">Ngày thực hiện:</span> {booking.workDate ? new Date(booking.workDate).toLocaleString('vi-VN') : '-'}</div>
+                  <div><span className="font-medium">Dịch vụ:</span> {service?.serviceName ?? service?.ServiceName ?? '-'}</div>
+                  <div><span className="font-medium">Ngày đặt:</span> {booking?.createdAt ? new Date(booking.createdAt).toLocaleString('vi-VN') : '-'}</div>
+                  <div><span className="font-medium">Ngày thực hiện:</span> {booking?.workDate ? new Date(booking.workDate).toLocaleString('vi-VN') : '-'}</div>
                 </div>
               </div>
             </div>
@@ -137,17 +112,17 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
                   <div className="flex items-center justify-between">
                     <span className="font-medium">Trạng thái:</span>
                     <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      booking.Status === 'completed' ? 'bg-green-100 text-green-700' : 
-                      booking.Status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
+                      (booking.Status ?? booking.status) === 'paid' ? 'bg-green-100 text-green-700' : 
+                      (booking.Status ?? booking.status) === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
                       'bg-red-100 text-red-700'
                     }`}>
-                      {booking.Status === 'completed' ? 'Hoàn thành' : 
-                       booking.Status === 'pending' ? 'Đang xử lý' : 'Đã hủy'}
+                      {(booking.Status ?? booking.status) === 'paid' ? 'Hoàn thành' : 
+                       (booking.Status ?? booking.status) === 'pending' ? 'Đang xử lý' : 'Đã hủy'}
                     </span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className="font-medium">Tổng tiền:</span>
-                    <span className="text-lg font-bold text-green-600">{booking.amount?.toLocaleString('vi-VN') || '-'} VND</span>
+                    <span className="text-lg font-bold text-green-600">{(booking.amount ?? booking.Amount ?? 0).toLocaleString('vi-VN')} VND</span>
                   </div>
                 </div>
               </div>
@@ -163,7 +138,7 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
                           <div className="flex items-center justify-between text-xs text-gray-600 mt-2">
                             <span className="font-medium">{task?.price?.toLocaleString()}đ</span>
                             {task.nurseName && (
-                              <span className="text-blue-700">- {task.nurseName} ({task.nurseRole})</span>
+                              <span className="text-blue-700">- {task.nurseName} {task.nurseRole ? `(${task.nurseRole})` : ''}</span>
                             )}
                             {task.status && (
                               <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
@@ -185,9 +160,6 @@ const OverviewTab = ({ accounts, bookings, revenue }) => {
           <div className="mt-6 flex justify-end space-x-3">
             <button className="px-6 py-2 rounded-lg bg-gray-500 text-white font-semibold hover:bg-gray-600 transition-all duration-300" onClick={onClose}>
               Đóng
-            </button>
-            <button className="px-6 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300">
-              Cập nhật trạng thái
             </button>
           </div>
         </div>

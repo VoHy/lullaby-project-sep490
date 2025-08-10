@@ -223,26 +223,34 @@ const AppointmentDetailModal = ({
 
   const serviceDetails = getServiceDetails();
 
-  // Get service-specific nurses
+  // Get nurses for a service using per-nurse mapping and zone filter
   const getServiceSpecificNurses = async (serviceId) => {
     try {
-      // Use the new API to get nurses who can perform this specific service
-      const serviceNurses = await nursingSpecialistServiceTypeService.getByService(serviceId);
+      const zoneId = careProfile?.zoneDetailID || careProfile?.zoneDetail_ID;
+      const candidatePool = Array.isArray(nursingSpecialists)
+        ? nursingSpecialists.filter(n => !zoneId || (n.zoneID || n.zone_ID || n.Zone_ID) === zoneId)
+        : [];
 
-      // Also filter by zone if care profile has zone info
-      const careProfileZoneId = careProfile?.zoneDetailID || careProfile?.zoneDetail_ID;
+      // For each candidate nurse, verify they can perform this service via getByNursing
+      const checks = await Promise.all(
+        candidatePool.map(async (nurse) => {
+          const nid = nurse.nursingID || nurse.nursing_ID || nurse.Nursing_ID;
+          try {
+            const mappings = await nursingSpecialistServiceTypeService.getByNursing(nid);
+            const canDo = Array.isArray(mappings)
+              ? mappings.some(m => (m.serviceID || m.ServiceID) === serviceId)
+              : false;
+            return canDo ? nurse : null;
+          } catch {
+            return null;
+          }
+        })
+      );
 
-      if (careProfileZoneId) {
-        return serviceNurses.filter(nurse => {
-          const nurseZoneId = nurse.zoneID || nurse.zone_ID || nurse.Zone_ID;
-          return nurseZoneId === careProfileZoneId;
-        });
-      }
-
-      return serviceNurses;
+      return checks.filter(Boolean);
     } catch (error) {
-      console.error('Error fetching service-specific nurses:', error);
-      // Fallback to zone-based filtering
+      console.error('Error fetching nurses by nursing mapping:', error);
+      // Fallback: zone filter only
       return getAvailableNurses();
     }
   };
