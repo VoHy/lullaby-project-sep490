@@ -248,7 +248,6 @@ export default function AppointmentsPage() {
   // Handle nurse assignment
   const handleNurseAssignment = async (service, nurseId) => {
     try {
-      console.log('🚀 Assigning nurse:', { service, nurseId });
 
       // Get booking ID
       const bookingId = selectedAppointment?.bookingID || selectedAppointment?.BookingID;
@@ -263,7 +262,6 @@ export default function AppointmentsPage() {
       }
       // Case 2: Package service with taskId (từ service task)
       else if (service.taskId) {
-        console.log('📦 Updating package task:', service.taskId);
         // Directly use the taskId from service task
         const customizeTaskId = service.taskId;
         await customizeTaskService.updateNursing(customizeTaskId, nurseId);
