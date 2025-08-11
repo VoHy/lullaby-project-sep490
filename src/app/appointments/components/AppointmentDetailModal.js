@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaUserMd, FaPlus, FaFileInvoice, FaCreditCard } from 'react-icons/fa';
-import NurseSelectionModal from './NurseSelectionModal';
+// Customer view only: hide interactive nurse selection on appointments page
+// import NurseSelectionModal from './NurseSelectionModal';
 import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
 import feedbackService from '@/services/api/feedbackService';
 import FeedbackForm from './FeedbackForm';
@@ -510,23 +511,7 @@ const AppointmentDetailModal = ({
             </div>
           </div>
           <div className="ml-4 flex-shrink-0">
-            {!hasNurse && !isDone && (
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  handleAddNurse({
-                    ...service,
-                    customizeTaskId: service.customizeTaskId
-                  });
-                }}
-                className="flex items-center gap-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm whitespace-nowrap"
-                style={{ pointerEvents: 'auto', zIndex: 10 }}
-              >
-                <FaUserMd className="text-xs" />
-                Chọn điều dưỡng
-              </button>
-            )}
+            {/* Hidden nurse selection button for customer view */}
             {isDone && (
               <div className="text-sm text-gray-600 font-medium whitespace-nowrap">
                 {String(service.status || '').toLowerCase() === 'completed' ? '✓ Hoàn thành' : '✗ Đã hủy'}
@@ -802,22 +787,7 @@ const AppointmentDetailModal = ({
           </div>
         </div>
 
-        {/* Nurse Selection Modal */}
-        {showNurseModal && selectedService && (
-          <NurseSelectionModal
-            isOpen={showNurseModal}
-            onClose={() => {
-              setShowNurseModal(false);
-              setSelectedService(null);
-            }}
-            service={selectedService}
-            availableNurses={selectedService?.availableNurses || availableNurses}
-            onAssign={handleNurseAssignment}
-            bookingDate={appointment.workdate || appointment.Workdate || appointment.BookingDate}
-            bookingId={appointment.bookingID || appointment.BookingID}
-            customizeTasks={customizeTasks?.filter(t => (t.bookingID || t.BookingID) === (appointment.bookingID || appointment.BookingID)) || []}
-          />
-        )}
+        {/* Nurse selection modal is disabled in appointment view for customers */}
       </div>
     </div>
   );
