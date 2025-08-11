@@ -4,6 +4,7 @@ import Header from "./components/header/Header";
 import Footer from "./components/footer/Footer";
 import { AuthProvider } from "../context/AuthContext";
 import { WalletProvider } from "../context/WalletContext";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -16,18 +17,21 @@ export const metadata = {
 };
 
 export default function RootLayout({ children }) {
+  const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '';
   return (
     <html lang="en">
       <body className={`${inter.className} antialiased`}>
-        <AuthProvider>
-          <WalletProvider>
-            <Header />
-            <main className="max-w-full mx-auto">
-              {children}
-            </main>
-            <Footer />
-          </WalletProvider>
-        </AuthProvider>
+        <GoogleOAuthProvider clientId={googleClientId}>
+          <AuthProvider>
+            <WalletProvider>
+              <Header />
+              <main className="max-w-full mx-auto">
+                {children}
+              </main>
+              <Footer />
+            </WalletProvider>
+          </AuthProvider>
+        </GoogleOAuthProvider>
       </body>
     </html>
   );

@@ -19,6 +19,13 @@ export default function RegisterPage() {
     avatarUrl: '',
   });
   const [error, setError] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({
+    fullName: '',
+    phoneNumber: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+  });
   const [isLoading, setIsLoading] = useState(false);
   const { login } = useContext(AuthContext);
 
@@ -33,16 +40,35 @@ export default function RegisterPage() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
+    setFieldErrors({ fullName: '', phoneNumber: '', email: '', password: '', confirmPassword: '' });
 
-    // Kiểm tra mật khẩu nhập lại
+    // Validate phía client trước khi gọi API
+    const newErrors = {};
+    // Họ tên (optional: không để trống)
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Vui lòng nhập họ tên';
+    }
+    // Số điện thoại: 9-11 chữ số
+    const digitsPhone = formData.phoneNumber.replace(/\D/g, '');
+    if (!/^\d{9,11}$/.test(digitsPhone)) {
+      newErrors.phoneNumber = 'Số điện thoại phải gồm 9–11 chữ số';
+    }
+    // Email format
+    const emailRegex = /[^\s@]+@[^\s@]+\.[^\s@]+/;
+    if (!emailRegex.test(formData.email)) {
+      newErrors.email = 'Email không hợp lệ';
+    }
+    // Mật khẩu tối thiểu 6 ký tự
+    if ((formData.password || '').length < 6) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+    }
+    // Xác nhận mật khẩu trùng khớp
     if (formData.password !== formData.confirmPassword) {
-      setError('Mật khẩu nhập lại không khớp');
-      return;
+      newErrors.confirmPassword = 'Mật khẩu nhập lại không khớp';
     }
 
-    // Kiểm tra độ dài mật khẩu
-    if (formData.password.length < 6) {
-      setError('Mật khẩu phải có ít nhất 6 ký tự');
+    if (Object.keys(newErrors).length > 0) {
+      setFieldErrors(prev => ({ ...prev, ...newErrors }));
       return;
     }
 
@@ -52,7 +78,7 @@ export default function RegisterPage() {
       // Gọi trực tiếp backend theo Swagger: /api/accounts/register/customer
       const data = await accountService.registerCustomer({
         fullName: formData.fullName,
-        phoneNumber: formData.phoneNumber,
+        phoneNumber: digitsPhone,
         email: formData.email,
         password: formData.password,
         avatarUrl: formData.avatarUrl || ''
@@ -98,8 +124,13 @@ export default function RegisterPage() {
       console.error('Lỗi đăng ký:', err);
       let errorMessage = 'Đăng ký thất bại. Vui lòng kiểm tra lại thông tin.';
 
-      if (err.message) {
-        errorMessage = err.message;
+      const msg = (err?.message || '').toLowerCase();
+      // Bắt trường hợp email trùng (theo thông báo phổ biến của BE)
+      if (msg.includes('email') && (msg.includes('exists') || msg.includes('already') || msg.includes('đã tồn tại') || msg.includes('duplicate'))) {
+        setFieldErrors(prev => ({ ...prev, email: 'Email đã tồn tại. Vui lòng dùng email khác.' }));
+        errorMessage = '';
+      } else {
+        if (err.message) errorMessage = err.message;
       }
 
       setError(errorMessage);
@@ -133,11 +164,12 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
               />
+              {fieldErrors.fullName && <p className="text-red-500 text-xs mt-1">{fieldErrors.fullName}</p>}
             </div>
             <div>
               <label className="mb-2 block text-xs font-semibold">Số điện thoại</label>
               <input
-                type="text"
+                type="tel"
                 name="phoneNumber"
                 placeholder="Nhập số điện thoại"
                 className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
@@ -145,6 +177,7 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
               />
+              {fieldErrors.phoneNumber && <p className="text-red-500 text-xs mt-1">{fieldErrors.phoneNumber}</p>}
             </div>
             <div>
               <label className="mb-2 block text-xs font-semibold">Email</label>
@@ -157,6 +190,7 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
               />
+              {fieldErrors.email && <p className="text-red-500 text-xs mt-1">{fieldErrors.email}</p>}
             </div>
             <div>
               <label className="mb-2 block text-xs font-semibold">Mật khẩu</label>
@@ -169,6 +203,7 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
               />
+              {fieldErrors.password && <p className="text-red-500 text-xs mt-1">{fieldErrors.password}</p>}
             </div>
             <div>
               <label className="mb-2 block text-xs font-semibold">Xác nhận mật khẩu</label>
@@ -181,6 +216,7 @@ export default function RegisterPage() {
                 onChange={handleChange}
                 required
               />
+              {fieldErrors.confirmPassword && <p className="text-red-500 text-xs mt-1">{fieldErrors.confirmPassword}</p>}
             </div>
             <div>
               <label className="mb-2 block text-xs font-semibold">Avatar URL (tuỳ chọn)</label>

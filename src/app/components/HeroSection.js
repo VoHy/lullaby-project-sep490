@@ -14,38 +14,44 @@ const HeroSection = () => {
     {
       id: 1,
       image: "/images/hero-bg.jpg",
-      alt: "Chăm sóc người cao tuổi",
+      alt: "Chăm sóc mẹ sau sinh",
       icon: <FaHeart className="text-pink-400 text-lg" />,
-      badge: "Dịch vụ chăm sóc tận tâm",
-      title: "Chăm sóc người cao tuổi",
-      subtitle: "với tình yêu thương",
-      description: "Dịch vụ chăm sóc chuyên nghiệp tại nhà, mang đến sự thoải mái và an tâm cho gia đình bạn",
+      badge: "Dịch vụ tận tâm tại nhà",
+      title: "Chăm sóc mẹ sau sinh",
+      subtitle: "khỏe mạnh và hạnh phúc",
+      description:
+        "Đội ngũ điều dưỡng tận tình hỗ trợ mẹ phục hồi sức khỏe, chăm sóc vết mổ và hướng dẫn nuôi con khoa học.",
       gradient: "from-black/60 via-black/40 to-black/20",
-      buttonColor: "from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
+      buttonColor:
+        "from-pink-500 to-pink-600 hover:from-pink-600 hover:to-pink-700"
     },
     {
       id: 2,
       image: "/images/hero-bg.jpg",
-      alt: "Phục hồi chức năng",
+      alt: "Chăm sóc bé sơ sinh",
       icon: <FaUserMd className="text-blue-400 text-lg" />,
-      badge: "Chuyên gia phục hồi",
-      title: "Phục hồi chức năng",
-      subtitle: "chuyên nghiệp",
-      description: "Hỗ trợ tập luyện phục hồi chức năng với đội ngũ chuyên gia giàu kinh nghiệm",
+      badge: "Chuyên gia nuôi dưỡng",
+      title: "Chăm sóc bé sơ sinh",
+      subtitle: "an toàn và yêu thương",
+      description:
+        "Hỗ trợ tắm bé, massage, theo dõi sức khỏe và phát triển toàn diện cho bé trong những tháng đầu đời.",
       gradient: "from-blue-900/60 via-blue-800/40 to-blue-700/20",
-      buttonColor: "from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
+      buttonColor:
+        "from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700"
     },
     {
       id: 3,
       image: "/images/hero-bg.jpg",
-      alt: "Giám sát sức khỏe",
+      alt: "Tư vấn dinh dưỡng mẹ và bé",
       icon: <FaPhone className="text-green-400 text-lg" />,
-      badge: "Giám sát 24/7",
-      title: "Giám sát sức khỏe",
-      subtitle: "thông minh",
-      description: "Theo dõi sức khỏe và báo cáo định kỳ cho gia đình với công nghệ hiện đại",
+      badge: "Hỗ trợ 24/7",
+      title: "Tư vấn dinh dưỡng",
+      subtitle: "cho mẹ và bé",
+      description:
+        "Cung cấp thực đơn khoa học giúp mẹ nhanh phục hồi và bé phát triển khỏe mạnh, thông minh.",
       gradient: "from-green-900/60 via-green-800/40 to-green-700/20",
-      buttonColor: "from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
+      buttonColor:
+        "from-green-500 to-green-600 hover:from-green-600 hover:to-green-700"
     }
   ];
 
@@ -58,7 +64,7 @@ const HeroSection = () => {
     >
       <Swiper
         modules={[Pagination, Autoplay]}
-        pagination={{ 
+        pagination={{
           clickable: true,
           bulletClass: 'swiper-pagination-bullet',
           bulletActiveClass: 'swiper-pagination-bullet-active'
@@ -70,9 +76,9 @@ const HeroSection = () => {
         {slides.map((slide) => (
           <SwiperSlide key={slide.id}>
             <div className="relative w-full h-full">
-              <Image 
-                src={slide.image} 
-                alt={slide.alt} 
+              <Image
+                src={slide.image}
+                alt={slide.alt}
                 fill
                 priority
                 className="object-cover"

@@ -18,18 +18,20 @@
     "@fortawesome/react-fontawesome": "^0.2.2",
     "@radix-ui/react-label": "^2.1.6",
     "@radix-ui/react-separator": "^1.1.6",
+    "@react-oauth/google": "^0.12.2",
     "axios": "^1.9.0",
     "framer-motion": "^12.15.0",
+    "jwt-decode": "^4.0.0",
     "lucide-react": "^0.510.0",
     "next": "15.3.2",
     "next-auth": "^4.24.11",
+    "qrcode": "^1.5.4",
     "react": "^19.0.0",
     "react-calendar": "^6.0.0",
     "react-datepicker": "^8.4.0",
     "react-dom": "^19.0.0",
     "react-icons": "^5.5.0",
-  "swiper": "^11.2.7",
-  "qrcode": "^1.5.4"
+    "swiper": "^11.2.7"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",

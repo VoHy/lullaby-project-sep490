@@ -1,157 +1,126 @@
 'use client';
 
+import React from 'react';
+import { FaStar } from 'react-icons/fa';
 import { motion } from 'framer-motion';
-import { FaStar, FaCheckCircle } from 'react-icons/fa';
 
 const FeaturesSection = () => {
   const features = [
     {
-      icon: (
-        <div className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-pink-100 to-rose-100">
-          <img src="/images/service-elderly.jpg" alt="Combo Chăm sóc toàn diện" className="object-cover w-full h-full" />
-        </div>
-      ),
-      title: 'Combo Chăm sóc toàn diện',
-      desc: (
-        <div className="space-y-3">
-          <div className="space-y-2">
-            {[
-              'Khám sức khỏe tổng quát',
-              'Lên phác đồ chăm sóc cá nhân',
-              'Chăm sóc vệ sinh cá nhân',
-              'Hỗ trợ ăn uống, dinh dưỡng',
-              'Theo dõi chỉ số sức khỏe',
-              'Tư vấn y tế 24/7',
-              'Báo cáo định kỳ cho gia đình'
-            ].map((item, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <FaCheckCircle className="text-green-500 text-sm flex-shrink-0" />
-                <span className="text-gray-600">{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ),
-      badge: 'Giảm 20%'
+      title: 'Gói chăm sóc người cao tuổi',
+      desc: 'Dịch vụ tận tâm, chuyên nghiệp giúp người cao tuổi có cuộc sống khỏe mạnh, vui vẻ và ý nghĩa.',
+      icon: '/images/hero-bg.jpg',
+      badge: 'Nổi bật',
     },
     {
-      icon: (
-        <div className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-blue-100 to-indigo-100">
-          <img src="/images/hero-bg.jpg" alt="Combo Phục hồi chức năng" className="object-cover w-full h-full" />
-        </div>
-      ),
-      title: 'Combo Phục hồi chức năng',
-      desc: (
-        <div className="space-y-3">
-          <div className="space-y-2">
-            {[
-              'Đánh giá chức năng vận động',
-              'Lập kế hoạch phục hồi cá nhân',
-              'Tập vật lý trị liệu chuyên sâu',
-              'Theo dõi tiến trình phục hồi',
-              'Hỗ trợ tâm lý và động viên',
-              'Tư vấn dinh dưỡng phục hồi'
-            ].map((item, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <FaCheckCircle className="text-green-500 text-sm flex-shrink-0" />
-                <span className="text-gray-600">{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ),
-      badge: 'Giảm 15%'
+      title: 'Chăm sóc tại nhà',
+      desc: 'Dịch vụ chăm sóc sức khỏe và hỗ trợ sinh hoạt ngay tại nhà bạn, giúp tiết kiệm thời gian và chi phí.',
+      icon: '/images/service-home.jpg',
+      badge: 'Phổ biến',
     },
     {
-      icon: (
-        <div className="w-16 h-16 rounded-2xl overflow-hidden flex items-center justify-center bg-gradient-to-br from-green-100 to-emerald-100">
-          <img src="/images/service-elderly.jpg" alt="Combo Chăm sóc sau phẫu thuật" className="object-cover w-full h-full" />
-        </div>
-      ),
-      title: 'Combo Chăm sóc sau phẫu thuật',
-      desc: (
-        <div className="space-y-3">
-          <div className="space-y-2">
-            {[
-              'Đánh giá tình trạng hậu phẫu',
-              'Chăm sóc vết mổ, thay băng',
-              'Theo dõi dấu hiệu sinh tồn',
-              'Hỗ trợ vận động nhẹ nhàng',
-              'Tư vấn phục hồi và dinh dưỡng'
-            ].map((item, index) => (
-              <div key={index} className="flex items-center gap-3">
-                <FaCheckCircle className="text-green-500 text-sm flex-shrink-0" />
-                <span className="text-gray-600">{item}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      ),
-      badge: 'Giảm 10%'
-    }
+      title: 'Theo dõi sức khỏe định kỳ',
+      desc: 'Giám sát sức khỏe định kỳ để phát hiện và xử lý kịp thời các vấn đề tiềm ẩn.',
+      icon: '/images/health-check.jpg',
+      badge: 'Mới',
+    },
   ];
+
+  // Motion variants
+  const container = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.15, delayChildren: 0.1 }
+    }
+  };
+  const item = {
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.6, ease: 'easeOut' } }
+  };
 
   return (
     <motion.section
-      className="py-20 bg-gradient-to-br from-gray-50 to-white"
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.8 }}
+      initial="hidden"
+      whileInView="show"
+      viewport={{ once: true, amount: 0.2 }}
+      variants={container}
+      className="py-16 bg-gradient-to-b from-white to-pink-50"
     >
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div
-          className="text-center mb-16"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+      <div className="max-w-6xl mx-auto px-4">
+        {/* Tiêu đề */}
+        <motion.div variants={item} className="text-center mb-12">
+          <motion.h2 variants={item} className="text-4xl font-extrabold text-gray-900 mb-4">
             Dịch vụ của chúng tôi
-          </h2>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Lullaby cung cấp các gói dịch vụ chăm sóc y tế tại nhà toàn diện, 
-            được thiết kế đặc biệt cho nhu cầu của người cao tuổi
-          </p>
+          </motion.h2>
+          <motion.p variants={item} className="text-lg text-gray-600">
+            Mang đến trải nghiệm chăm sóc tận tâm và chuyên nghiệp.
+          </motion.p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Grid features */}
+        <motion.div variants={container} className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {features.map((feature, idx) => (
             <motion.div
               key={idx}
-              initial={{ opacity: 0, y: 40 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.6, delay: idx * 0.1 }}
-              className="group relative bg-white rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden"
+              variants={item}
+              className="relative rounded-2xl overflow-hidden shadow-md hover:shadow-lg transition-shadow duration-300 group h-80"
             >
-              <div className="p-8">
-                <div className="mb-6">
-                  {feature.icon}
-                </div>
-                <h3 className="text-2xl font-bold text-gray-900 mb-4 group-hover:text-pink-600 transition-colors">
+              {/* Background image */}
+              <img
+                src={feature.icon}
+                alt={feature.title}
+                className="absolute inset-0 w-full h-full object-cover transform transition-transform duration-900 ease-out group-hover:scale-110"
+              />
+
+              {/* Overlay tối + gradient */}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/50 to-transparent"></div>
+
+              {/* Nội dung */}
+              <div className="relative z-10 p-6 flex flex-col justify-end h-full text-white 
+                transition-all duration-500 ease-out transform group-hover:translate-y-[-4px] group-hover:opacity-100">
+                
+                {/* Badge */}
+                <motion.span
+                  initial={{ opacity: 0, y: 10 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.5, ease: 'easeOut', delay: 0.1 }}
+                  className="inline-flex items-center gap-2 bg-pink-500/80 text-white font-semibold px-4 py-1 rounded-full text-sm drop-shadow-md mb-3 
+                  transition-all duration-500 ease-out group-hover:translate-y-[-2px] group-hover:shadow-lg"
+                >
+                  <FaStar className="text-yellow-300" />
+                  {feature.badge}
+                </motion.span>
+
+                {/* Tiêu đề */}
+                <motion.h3
+                  initial={{ opacity: 0, y: 12 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.55, ease: 'easeOut', delay: 0.15 }}
+                  className="text-xl font-extrabold mb-2 transition-colors duration-300 group-hover:text-pink-300"
+                >
                   {feature.title}
-                </h3>
-                <div className="text-gray-600 leading-relaxed">
+                </motion.h3>
+
+                {/* Mô tả */}
+                <motion.p
+                  initial={{ opacity: 0, y: 14 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ duration: 0.6, ease: 'easeOut', delay: 0.2 }}
+                  className="text-sm text-gray-200 transition-opacity duration-500 ease-out group-hover:opacity-90"
+                >
                   {feature.desc}
-                </div>
-                {feature.badge && (
-                  <div className="mt-4">
-                    <span className="inline-flex items-center gap-2 bg-gradient-to-r from-pink-100 to-rose-100 text-pink-700 font-semibold px-4 py-2 rounded-full text-sm">
-                      <FaStar className="text-pink-500" />
-                      {feature.badge}
-                    </span>
-                  </div>
-                )}
+                </motion.p>
               </div>
-              <div className="absolute inset-0 bg-gradient-to-r from-pink-500/5 to-purple-500/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
             </motion.div>
           ))}
-        </div>
+        </motion.div>
       </div>
     </motion.section>
   );
 };
 
-export default FeaturesSection; 
+export default FeaturesSection;
