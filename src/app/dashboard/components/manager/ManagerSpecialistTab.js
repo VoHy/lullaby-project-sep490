@@ -42,7 +42,7 @@ const ManagerSpecialistTab = () => {
 
         if (managedZone) {
           const zoneSpecialists = specialistsData.filter(specialist =>
-            specialist.zoneID === managedZone.zoneID && specialist.major === 'specialist'
+            specialist.zoneID === managedZone.zoneID && specialist.major === 'Specialist' || specialist.major === 'Chuyên gia'
           );
 
           // Gắn thông tin liên hệ từ account
@@ -135,8 +135,8 @@ const ManagerSpecialistTab = () => {
 
       const managedZone = zones.find(zone => zone.managerID === user.accountID);
       if (managedZone) {
-        const zoneSpecialists = specialistsData.filter(specialist =>
-          specialist.zoneID === managedZone.zoneID && specialist.major === 'specialist'
+        const zoneSpecialists = specialistsData.filter(specialist =>  
+            specialist.zoneID === managedZone.zoneID && specialist.major === 'Specialist' || specialist.major === 'Chuyên gia'
         );
 
         const specialistsWithContact = zoneSpecialists.map(s => {

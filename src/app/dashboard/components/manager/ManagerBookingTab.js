@@ -255,7 +255,7 @@ const ManagerBookingTab = () => {
       });
 
       if (unassignedTasks.length > 0) {
-        alert(`Vui lòng chọn nhân sự cho các dịch vụ sau:\n${unassignedTasks.map(task => `- ${task.Description}`).join('\n')}`);
+        alert(`Vui lòng chọn nhân sự cho các dịch vụ sau:\n${unassignedTasks.map(task => `- ${task.description}`).join('\n')}`);
         return;
       }
 
