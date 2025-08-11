@@ -42,8 +42,10 @@ export default function LoginPage() {
       });
 
 
-      if (response.account && response.token) {
-        login(response.account, response.token);
+      // Backend may return token at top-level or nested inside account
+      const token = response?.token || response?.account?.token;
+      if (response.account && token) {
+        login(response.account, token);
         // Chuyển hướng dựa trên vai trò của người dùng
         const roleID = response.account.roleID;
 
@@ -94,8 +96,10 @@ export default function LoginPage() {
       // Gửi cả idToken (credential) để backend có thể xác minh chữ ký nếu hỗ trợ
       const response = await authService.loginWithGoogle({ fullName: fullName || 'Google User', email, idToken: credential });
 
-      if (response.account && response.token) {
-        login(response.account, response.token);
+      // Accept token either at top-level or nested under account
+      const token = response?.token || response?.account?.token;
+      if (response.account && token) {
+        login(response.account, token);
         const roleID = response.account.roleID;
         if (roleID === 1 || roleID === 2 || roleID === 3) {
           router.push('/dashboard');
