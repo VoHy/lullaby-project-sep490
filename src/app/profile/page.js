@@ -110,9 +110,9 @@ export default function ProfilePage() {
 
     try {
       const updatedData = { ...user, ...editData };
-      await accountsService.updateAccount(user.accountID, updatedData);
+  await accountService.updateAccount(user.accountID, updatedData);
 
-      const refreshedUser = await accountsService.getAccount(user.accountID);
+  const refreshedUser = await accountService.getAccountById(user.accountID);
       updateUser(refreshedUser);
 
       setIsEditing(false);

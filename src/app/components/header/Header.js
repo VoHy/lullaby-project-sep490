@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useContext } from 'react';
+import { useState, useContext, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AuthContext } from '../../../context/AuthContext';
@@ -12,6 +12,17 @@ export default function Header() {
   const router = useRouter();
   const { user, logout } = useContext(AuthContext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [imgError, setImgError] = useState(false);
+
+  // Derive avatar url and display name robustly across field variants
+  const avatarUrl = user?.avatarUrl || user?.AvatarUrl || user?.avatarURL || user?.AvatarURL || user?.avatar || user?.Avatar || '';
+  const displayName = user?.fullName || user?.full_name || user?.FullName || user?.Full_Name || user?.email || '';
+  const initial = (displayName?.trim?.()[0] || 'U').toUpperCase();
+
+  useEffect(() => {
+    // reset image error when avatar changes
+    setImgError(false);
+  }, [avatarUrl]);
 
 
   const toggleMenu = () => {
@@ -224,8 +235,22 @@ export default function Header() {
             
             {user ? (
               <div className="relative">
-                <button onClick={toggleMenu} className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700 font-bold text-lg">
-                  {user.full_name ? user.full_name[0].toUpperCase() : 'U'}
+                <button
+                  onClick={toggleMenu}
+                  className="w-10 h-10 rounded-full overflow-hidden border border-blue-100 bg-blue-50 flex items-center justify-center text-blue-700 font-bold text-lg"
+                  aria-label="Tài khoản"
+                >
+                  {avatarUrl && !imgError ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={avatarUrl}
+                      alt={displayName || 'Avatar'}
+                      className="w-full h-full object-cover"
+                      onError={() => setImgError(true)}
+                    />
+                  ) : (
+                    <span>{initial}</span>
+                  )}
                 </button>
                 {isMenuOpen && (
                   <div className="absolute right-0 mt-2 w-48 bg-white rounded shadow-lg z-50">
