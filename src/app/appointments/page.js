@@ -80,11 +80,11 @@ export default function AppointmentsPage() {
 
       const zones = await zoneDetailService.getZoneDetails();
 
-      const invoiceData = await invoiceService.getAllInvoices();
+  const invoiceData = await invoiceService.getAllInvoices();
 
       const packages = await customizePackageService.getAllCustomizePackages();
 
-      const customizeTasks = await customizeTaskService.getAllCustomizeTasks();
+  const customizeTasksRaw = await customizeTaskService.getAllCustomizeTasks();
 
       // Lọc care profiles theo account hiện tại
       const currentAccountId = user.accountID || user.AccountID;
@@ -109,6 +109,13 @@ export default function AppointmentsPage() {
       }));
 
       // Lọc bookings theo careProfileID thuộc user và gắn careProfile
+      // Build invoice map: bookingId -> status
+      const invoiceByBooking = new Map((Array.isArray(invoiceData) ? invoiceData : []).map(inv => {
+        const bid = inv.bookingID ?? inv.BookingID ?? inv.booking_Id;
+        const status = String(inv.status ?? inv.Status ?? '').toLowerCase();
+        return [bid, status];
+      }));
+
       const userAppointments = (Array.isArray(bookings) ? bookings : [])
         .filter(b => {
           const bCareId = b.careProfileID ?? b.CareProfileID;
@@ -116,6 +123,7 @@ export default function AppointmentsPage() {
         })
         .map(b => {
           const bCareId = b.careProfileID ?? b.CareProfileID;
+          const bookingId = b.bookingID ?? b.BookingID ?? b.id;
           
 
           const baseAmount = b.amount || b.totalAmount || b.total_Amount || 0;
@@ -130,9 +138,15 @@ export default function AppointmentsPage() {
           
 
           
+          // Normalize/override status from invoice if needed
+          const rawStatus = b.status || b.Status;
+          const invoiceStatus = invoiceByBooking.get(bookingId);
+          const normalizedStatus = invoiceStatus === 'paid' ? 'paid' : rawStatus;
+
           return {
             ...b,
             careProfile: b.careProfile ?? careProfileMap.get(bCareId) ?? null,
+            status: normalizedStatus,
           };
         });
 
@@ -146,7 +160,16 @@ export default function AppointmentsPage() {
       
       setInvoices(invoiceData);
       setCustomizePackages(packages);
-      setCustomizeTasks(customizeTasks);
+      // Normalize customize tasks (ids + nursingID + status)
+      const normalizedTasks = (Array.isArray(customizeTasksRaw) ? customizeTasksRaw : []).map(t => ({
+        ...t,
+        customizeTaskID: t.customizeTaskID ?? t.CustomizeTaskID ?? t.id ?? t.ID,
+        serviceID: t.serviceID ?? t.ServiceID ?? t.service_ID,
+        bookingID: t.bookingID ?? t.BookingID ?? t.booking_ID,
+        nursingID: t.nursingID ?? t.NursingID ?? t.nursing_Id ?? t.nursingId ?? null,
+        status: t.status ?? t.Status ?? 'pending',
+      }));
+      setCustomizeTasks(normalizedTasks);
 
       // Refresh wallet context để đảm bảo wallet data được update
       if (!isRefresh) {

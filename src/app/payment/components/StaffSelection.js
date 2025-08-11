@@ -8,6 +8,7 @@ export default function StaffSelection({
   selectedStaffByTask,
   setSelectedStaffByTask,
   getCandidatesForService,
+  onAssign,
 }) {
   const [loadingMap, setLoadingMap] = useState({}); // { serviceId: boolean }
   const [candidatesByService, setCandidatesByService] = useState({}); // { serviceId: Nurse[] }
@@ -66,12 +67,16 @@ export default function StaffSelection({
                   <select
                     className="border rounded px-3 py-2 text-sm min-w-[240px]"
                     value={selectedStaffByTask?.[row.taskId] || ''}
-                    onChange={(e) => setSelectedStaffByTask?.((prev) => ({ ...prev, [row.taskId]: e.target.value }))}
+                    onChange={(e) => {
+                      const value = e.target.value;
+                      setSelectedStaffByTask?.((prev) => ({ ...prev, [row.taskId]: value }));
+                      onAssign?.(row.taskId, value);
+                    }}
                   >
                     <option value="" disabled={loadingMap[row.serviceId]}>Chọn điều dưỡng</option>
                     {(candidatesByService[row.serviceId] || []).map((n) => (
                       <option key={n.NursingID || n.nursingID} value={n.NursingID || n.nursingID}>
-                        {n.Full_Name || n.fullName}
+                        {n.Full_Name || n.fullName || n.FullName || n.name || `Nurse #${n.NursingID || n.nursingID}`}
                       </option>
                     ))}
                   </select>

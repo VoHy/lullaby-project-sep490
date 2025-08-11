@@ -280,15 +280,14 @@ const AppointmentDetailModal = ({
   const getNurseInfo = (nursingId) => {
     if (!nursingId) return null;
 
-    const nurse = nursingSpecialists.find(n =>
-      n.nursingID === nursingId ||
-      n.nursing_ID === nursingId ||
-      n.Nursing_ID === nursingId
-    );
+    const nurse = nursingSpecialists.find(n => {
+      const id = n.nursingID ?? n.nursing_ID ?? n.Nursing_ID ?? n.NursingID;
+      return String(id) === String(nursingId);
+    });
 
     return nurse ? {
       id: nursingId,
-      name: nurse.fullName || nurse.full_Name || nurse.Full_Name || 'Không có tên',
+  name: nurse.fullName || nurse.full_Name || nurse.Full_Name || nurse.FullName || 'Không có tên',
       phone: nurse.phoneNumber || nurse.phone_Number,
       experience: nurse.experience
     } : {
