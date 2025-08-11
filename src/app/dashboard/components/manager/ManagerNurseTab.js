@@ -42,10 +42,10 @@ const ManagerNurseTab = () => {
 
         if (managedZone) {
           const zoneNurses = nursesData.filter(nurse =>
-            nurse.zoneID === managedZone.zoneID && nurse.major === 'nurse'
+            nurse.zoneID === managedZone.zoneID && nurse.major === 'Nurse' || nurse.major === 'Y tá'
           );
 
-          // Gắn thông tin liên hệ từ account (phone/email)
+          // Gắn thông tin liên hệ từ account (phone/email) 
           const nursesWithContact = zoneNurses.map(n => {
             const acc = accountsData.find(a => (a.accountID) === (n.accountID));
             return {

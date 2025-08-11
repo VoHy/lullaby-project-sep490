@@ -1,6 +1,14 @@
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faEdit, faTrash, faEye } from '@fortawesome/free-solid-svg-icons';
+import {
+  faEdit,
+  faTrash,
+  faEye,
+  faClock,
+  faDollarSign,
+  faUserMd,
+  faGift,
+} from '@fortawesome/free-solid-svg-icons';
 
 const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
   const getStatusColor = (status) => {
@@ -26,12 +34,17 @@ const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-200 hover:shadow-md transition-all duration-200 overflow-hidden">
+    <div className="group bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden">
       {/* Header */}
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-gray-900 mb-1">{item.serviceName}</h3>
+            <div className="flex items-center mb-1">
+              <div className={`mr-3 p-2 rounded-lg ${item.isPackage ? 'bg-purple-100' : 'bg-blue-100'}`}>
+                <FontAwesomeIcon icon={item.isPackage ? faGift : faUserMd} className={`${item.isPackage ? 'text-purple-600' : 'text-blue-600'}`} />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900">{item.serviceName}</h3>
+            </div>
             {item.description && (
               <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>
             )}
@@ -63,8 +76,8 @@ const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
           )}
           {item.major && (
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${getMajorColor(item.major)}`}>
-              {item.major === 'nurse' ? 'Y tá' : 
-               item.major === 'specialist' ? 'Chuyên gia' : item.major}
+              {item.major === 'Nurse' ? 'Y tá' :
+                item.major === 'Specialist' ? 'Chuyên gia' : item.major}
             </span>
           )}
           {item.isPackage && (
@@ -78,14 +91,19 @@ const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
       {/* Content */}
       <div className="p-6">
         {/* Stats */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div className="text-center p-3 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">{item.price?.toLocaleString()}</div>
-            <div className="text-xs text-gray-600">VNĐ</div>
+        <div className="grid grid-cols-2 gap-4 mb-5">
+          <div className="flex items-center justify-center p-3 bg-gray-50 rounded-lg">
+            <div className="text-center">
+              <div className="text-xl font-semibold text-green-700">{item.price?.toLocaleString()}</div>
+              <div className="text-[11px] text-gray-500">VNĐ</div>
+            </div>
           </div>
-          <div className="text-center p-3 bg-gray-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">{item.duration}</div>
-            <div className="text-xs text-gray-600">Phút</div>
+          <div className="flex items-center justify-center p-3 bg-gray-50 rounded-lg">
+            <FontAwesomeIcon icon={faClock} className="text-blue-600 mr-2" />
+            <div className="text-center">
+              <div className="text-xl font-semibold text-blue-700">{item.duration}</div>
+              <div className="text-[11px] text-gray-500">Phút</div>
+            </div>
           </div>
         </div>
 

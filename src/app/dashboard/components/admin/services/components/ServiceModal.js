@@ -4,7 +4,7 @@ import React, { useEffect, useState } from 'react';
 import serviceTypeService from '@/services/api/serviceTypeService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPlus, faTrash, faClock, faDollarSign, faList } from '@fortawesome/free-solid-svg-icons';
+import { faPlus, faTrash, faClock, faDollarSign, faList, faTimes, faUserMd, faGift, faEdit } from '@fortawesome/free-solid-svg-icons';
 
 function PackageBuilder({ formData, setFormData }) {
   const childTasks = formData.childServiceTasks || [];
@@ -48,17 +48,17 @@ function PackageBuilder({ formData, setFormData }) {
   const options = allSingles.filter(s => !alreadySelectedIds.has(s.serviceID));
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       {childTasks.length === 0 && (
         <p className="text-sm text-gray-500">Chưa thêm dịch vụ con nào. Nhấn "Thêm" để bắt đầu.</p>
       )}
       {childTasks.map((row, idx) => (
         <div key={idx} className="grid grid-cols-12 gap-3 items-center">
-          <div className="col-span-6">
+          <div className="col-span-12 md:col-span-6">
             <select
               value={row.child_ServiceID}
               onChange={(e) => updateRow(idx, 'child_ServiceID', e.target.value)}
-              className="w-full px-3 py-2 border rounded"
+              className="w-full px-3 py-2 border rounded-lg"
             >
               <option value="">Chọn dịch vụ...</option>
               {([row.child_ServiceID] // allow keep selected even if filtered out
@@ -72,33 +72,33 @@ function PackageBuilder({ formData, setFormData }) {
               ))}
             </select>
           </div>
-          <div className="col-span-3">
+          <div className="col-span-6 md:col-span-3">
             <input
               type="number"
               placeholder="Số lượng"
               value={row.quantity}
               min={1}
               onChange={(e) => updateRow(idx, 'quantity', e.target.value)}
-              className="w-full px-3 py-2 border rounded"
+              className="w-full px-3 py-2 border rounded-lg"
             />
           </div>
-          <div className="col-span-2">
+          <div className="col-span-5 md:col-span-2">
             <input
               type="number"
               placeholder="#"
               value={row.taskOrder}
               min={1}
               onChange={(e) => updateRow(idx, 'taskOrder', e.target.value)}
-              className="w-full px-3 py-2 border rounded"
+              className="w-full px-3 py-2 border rounded-lg"
             />
           </div>
           <div className="col-span-1 text-right">
-            <button type="button" onClick={() => removeRow(idx)} className="px-3 py-2 text-red-600">Xóa</button>
+            <button type="button" onClick={() => removeRow(idx)} className="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg">Xóa</button>
           </div>
         </div>
       ))}
       <div>
-        <button type="button" onClick={addRow} className="px-4 py-2 bg-blue-500 text-white rounded" disabled={loading}>
+        <button type="button" onClick={addRow} className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600" disabled={loading}>
           {loading ? 'Đang tải...' : 'Thêm'}
         </button>
       </div>
@@ -111,21 +111,25 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
   if (!isOpen) return null;
 
   return (
-      <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl mx-4 max-h-[92vh] overflow-y-auto border border-gray-100">
         <div className="p-8">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-2xl font-bold text-gray-800">{title}</h3>
+            <div className="flex items-center">
+              <div className={`mr-3 p-3 rounded-xl ${formData.isPackage ? 'bg-purple-100' : 'bg-blue-100'}`}>
+                <FontAwesomeIcon icon={formData.isPackage ? faGift : faUserMd} className={`${formData.isPackage ? 'text-purple-600' : 'text-blue-600'}`} />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800">{title}</h3>
+            </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 w-9 h-9 rounded-full flex items-center justify-center"
+              aria-label="Đóng"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>
-          
+
           <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }}>
             <div className="space-y-6">
               {/* Basic Information Section */}
@@ -136,7 +140,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                   </svg>
                   Thông tin cơ bản
                 </h4>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -145,7 +149,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                     <input
                       type="text"
                       value={formData.serviceName}
-                      onChange={(e) => setFormData({...formData, serviceName: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, serviceName: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                       placeholder="Nhập tên dịch vụ..."
                       required
@@ -158,7 +162,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                     </label>
                     <select
                       value={formData.major}
-                      onChange={(e) => setFormData({...formData, major: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, major: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     >
                       <option value="nurse">Y tá</option>
@@ -176,7 +180,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                   </svg>
                   Giá cả & Thời gian
                 </h4>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -187,7 +191,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                       <input
                         type="number"
                         value={formData.price}
-                        onChange={(e) => setFormData({...formData, price: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
                         className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         placeholder="0"
                         min="0"
@@ -209,7 +213,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                       <input
                         type="number"
                         value={formData.duration}
-                        onChange={(e) => setFormData({...formData, duration: e.target.value})}
+                        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
                         className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                         placeholder="0"
                         min="0"
@@ -217,7 +221,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                       />
                     </div>
                   </div>
-                  
+
                   {/* Discount & ForMom */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Giảm giá (%)</label>
@@ -251,14 +255,14 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                   </svg>
                   Mô tả
                 </h4>
-                
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Mô tả dịch vụ
                   </label>
                   <textarea
                     value={formData.description}
-                    onChange={(e) => setFormData({...formData, description: e.target.value})}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                     rows="4"
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors resize-none"
                     placeholder="Mô tả chi tiết về dịch vụ..."
@@ -274,7 +278,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                   </svg>
                   Loại dịch vụ & Trạng thái
                 </h4>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-3">
@@ -286,7 +290,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                           type="radio"
                           name="serviceType"
                           checked={!formData.isPackage}
-                          onChange={() => setFormData({...formData, isPackage: false})}
+                          onChange={() => setFormData({ ...formData, isPackage: false })}
                           className="mr-2 text-blue-600 focus:ring-blue-500"
                         />
                         <span className="text-sm text-gray-700">Dịch vụ lẻ</span>
@@ -296,7 +300,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                           type="radio"
                           name="serviceType"
                           checked={formData.isPackage}
-                          onChange={() => setFormData({...formData, isPackage: true})}
+                          onChange={() => setFormData({ ...formData, isPackage: true })}
                           className="mr-2 text-blue-600 focus:ring-blue-500"
                         />
                         <span className="text-sm text-gray-700">Gói dịch vụ</span>
@@ -310,7 +314,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                     </label>
                     <select
                       value={formData.status || 'active'}
-                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     >
                       <option value="active">Hoạt động</option>
@@ -351,7 +355,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
   );
 };
 
-export default ServiceModal; 
+export default ServiceModal;
 
 // Reusable manager to make edit modal look/behave like detail modal
 function PackageChildrenManager({ isOpen, isPackage, editingService, formData, setFormData }) {
@@ -467,13 +471,13 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
     );
   }
 
-  // Editing existing package -> show detail-like UI with add/edit
+  // Editing existing package -> show detail-like UI with add/edit in two-row layout
   return (
     <div className="mt-6 border-t pt-6">
       <div className="bg-blue-50 rounded-lg p-4 mb-4">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div className="flex items-center">
-            <FontAwesomeIcon icon={faDollarSign} className="text-green-500 mr-2" />
+            <FontAwesomeIcon icon={faList} className="text-blue-500 mr-2" />
             <div>
               <p className="text-sm text-gray-600">Số dịch vụ con</p>
               <p className="font-semibold text-lg">{packageTasks.length}</p>
@@ -487,7 +491,7 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
             </div>
           </div>
           <div className="flex items-center">
-            <FontAwesomeIcon icon={faList} className="text-purple-500 mr-2" />
+            <FontAwesomeIcon icon={faDollarSign} className="text-green-500 mr-2" />
             <div>
               <p className="text-sm text-gray-600">Tổng giá ước tính</p>
               <p className="font-semibold text-lg">{calculateTotalPrice().toLocaleString()} VNĐ</p>
@@ -530,33 +534,38 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
                       <h5 className="font-semibold text-gray-800">{childService?.serviceName || `Dịch vụ #${task.child_ServiceID}`}</h5>
                     </div>
                     {isEditing ? (
-                      <div className="space-y-2 mb-2">
-                        <textarea
-                          className="w-full px-3 py-2 border rounded"
-                          rows="2"
-                          value={draft.description}
-                          onChange={(e) => updateEditDraft(taskId, 'description', e.target.value)}
-                        />
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm">
+                      <div className="space-y-3 mb-2">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                           <div>
-                            <label className="block text-gray-600 mb-1">Giá (VNĐ)</label>
-                            <input type="number" className="w-full px-3 py-2 border rounded" value={draft.price} onChange={(e) => updateEditDraft(taskId, 'price', e.target.value)} />
+                            <label className="block text-gray-600 mb-1">Mô tả</label>
+                            <textarea
+                              className="w-full px-3 py-2 border rounded-lg"
+                              rows="3"
+                              value={draft.description}
+                              onChange={(e) => updateEditDraft(taskId, 'description', e.target.value)}
+                            />
                           </div>
-                          <div>
-                            <label className="block text-gray-600 mb-1">Số lượng</label>
-                            <input type="number" className="w-full px-3 py-2 border rounded" value={draft.quantity} onChange={(e) => updateEditDraft(taskId, 'quantity', e.target.value)} />
-                          </div>
-                          {childService && (
-                            <div className="flex items-end">
-                              <span className="text-gray-500">Thời gian: {childService.duration} phút</span>
+                          <div className="grid grid-cols-2 gap-3 text-sm">
+                            <div>
+                              <label className="block text-gray-600 mb-1">Giá (VNĐ)</label>
+                              <input type="number" className="w-full px-3 py-2 border rounded-lg" value={draft.price} onChange={(e) => updateEditDraft(taskId, 'price', e.target.value)} />
                             </div>
-                          )}
+                            <div>
+                              <label className="block text-gray-600 mb-1">Số lượng</label>
+                              <input type="number" className="w-full px-3 py-2 border rounded-lg" value={draft.quantity} onChange={(e) => updateEditDraft(taskId, 'quantity', e.target.value)} />
+                            </div>
+                            {childService && (
+                              <div className="col-span-2 flex items-end">
+                                <span className="text-gray-500">Thời gian: {childService.duration} phút</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ) : (
                       <>
                         <p className="text-gray-600 text-sm mb-2">{task.description}</p>
-                        <div className="flex items-center space-x-4 text-sm text-gray-500">
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm text-gray-600">
                           <span>Giá: {task.price?.toLocaleString()} VNĐ</span>
                           <span>Số lượng: {task.quantity}</span>
                           {childService && <span>Thời gian: {childService.duration} phút</span>}
@@ -571,7 +580,7 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
                         <button type="button" onClick={() => toggleEditTask(task)} className="px-3 py-2 border rounded">Hủy</button>
                       </>
                     ) : (
-                      <button type="button" onClick={() => toggleEditTask(task)} className="px-3 py-2 border rounded">Sửa</button>
+                      <button type="button" onClick={() => toggleEditTask(task)} className="px-3 py-2 border rounded flex items-center"><FontAwesomeIcon icon={faEdit} className="mr-2" />Sửa</button>
                     )}
                     <button type="button" onClick={() => handleDeleteTask(task.serviceTaskID || task.taskID)} className="text-red-500 hover:text-red-700">
                       <FontAwesomeIcon icon={faTrash} />

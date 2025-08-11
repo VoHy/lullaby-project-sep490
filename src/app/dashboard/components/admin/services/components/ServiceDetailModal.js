@@ -2,24 +2,28 @@
 
 import React from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClock, faDollarSign, faList } from '@fortawesome/free-solid-svg-icons';
+import { faClock, faDollarSign, faList, faTimes, faUserMd } from '@fortawesome/free-solid-svg-icons';
 
 const ServiceDetailModal = ({ isOpen, onClose, service }) => {
   if (!isOpen || !service) return null;
 
   return (
-    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[92vh] overflow-y-auto border border-gray-100">
         <div className="p-8">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-2xl font-bold text-gray-800">Chi tiết dịch vụ</h3>
+            <div className="flex items-center">
+              <div className="mr-3 p-3 rounded-xl bg-gradient-to-r from-blue-100 to-cyan-100">
+                <FontAwesomeIcon icon={faUserMd} className="text-blue-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-gray-800">Chi tiết dịch vụ</h3>
+            </div>
             <button
               onClick={onClose}
-              className="text-gray-400 hover:text-gray-600 transition-colors"
+              className="text-gray-500 hover:text-gray-700 hover:bg-gray-100 w-9 h-9 rounded-full flex items-center justify-center"
+              aria-label="Đóng"
             >
-              <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
+              <FontAwesomeIcon icon={faTimes} />
             </button>
           </div>
 

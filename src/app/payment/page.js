@@ -6,6 +6,7 @@ import serviceTypeService from '@/services/api/serviceTypeService';
 
 
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
+import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
 import bookingService from '@/services/api/bookingService';
 import walletService from '@/services/api/walletService';
 import transactionHistoryService from '@/services/api/transactionHistoryService';
@@ -15,6 +16,7 @@ import { useWalletContext } from "@/context/WalletContext";
 
 // Thay thế import mock data bằng services
 import serviceTaskService from '@/services/api/serviceTaskService';
+import customizeTaskService from '@/services/api/customizeTaskService';
 import careProfileService from '@/services/api/careProfileService';
 import { calculateCompletePayment, formatCurrency } from '../booking/utils/paymentCalculation';
 import {
@@ -22,7 +24,8 @@ import {
   ServiceInfo,
   AppointmentInfo,
   PaymentInfo,
-  PaymentSuccessModal
+  PaymentSuccessModal,
+  StaffSelection,
 } from './components';
 
 function PaymentContent() {
@@ -34,6 +37,7 @@ function PaymentContent() {
   const [packages, setPackages] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
+  const [customizeTasks, setCustomizeTasks] = useState([]); // tasks of this booking
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
   const [wallets, setWallets] = useState([]);
@@ -45,6 +49,9 @@ function PaymentContent() {
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [lastInvoiceId, setLastInvoiceId] = useState(null);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [selectionMode, setSelectionMode] = useState(null); // 'user' | 'auto'
+  const [selectedStaffByTask, setSelectedStaffByTask] = useState({}); // { [customizeTaskId]: nursingId }
+  const [canConfirm, setCanConfirm] = useState(true);
 
   // Load data từ API
   useEffect(() => {
@@ -107,6 +114,29 @@ function PaymentContent() {
             }
 
             setBooking(bookingData);
+            // Load customize tasks for this booking for manual assignment flow
+            try {
+              const tasks = await customizeTaskService.getAllByBooking(parseInt(bookingId));
+              // Normalize and keep minimal needed fields
+              const mapped = Array.isArray(tasks) ? tasks.map(t => ({
+                customizeTaskID: t.customizeTaskID || t.CustomizeTaskID || t.id,
+                serviceID: t.serviceID || t.ServiceID || t.serviceTypeID,
+                nursingID: t.nursingID || t.NursingID || null,
+              })).filter(x => x.customizeTaskID && x.serviceID) : [];
+              setCustomizeTasks(mapped);
+              // Pre-fill selection state if server already assigned
+              if (mapped.some(m => m.nursingID)) {
+                setSelectedStaffByTask(prev => ({
+                  ...prev,
+                  ...mapped.reduce((acc, m) => {
+                    if (m.nursingID) acc[m.customizeTaskID] = String(m.nursingID);
+                    return acc;
+                  }, {})
+                }));
+              }
+            } catch (taskErr) {
+              console.warn('Could not load customize tasks for booking', taskErr);
+            }
           } catch (error) {
             console.error(' Error fetching booking:', {
               bookingId,
@@ -252,6 +282,39 @@ function PaymentContent() {
     };
   }, [booking, serviceTypes, serviceTasks, careProfiles]);
 
+  // Build list of customizeTasks for this booking for user selection flow
+  const bookingCustomizeTasks = useMemo(() => {
+    if (Array.isArray(customizeTasks) && customizeTasks.length > 0) return customizeTasks;
+    // Fallback: try from booking payload createDtos
+    const dtos = booking?.customizePackageCreateDtos || [];
+    return dtos
+      .map(dto => ({
+        customizeTaskID: dto.customizeTaskID || dto.customize_TaskID,
+        serviceID: dto.serviceID || dto.service_ID,
+      }))
+      .filter(x => x.customizeTaskID && x.serviceID);
+  }, [booking, customizeTasks]);
+
+  // Compute canConfirm when user selection required
+  useEffect(() => {
+    if (selectionMode !== 'user') {
+      setCanConfirm(true);
+      return;
+    }
+    // derive task ids from loaded customize tasks
+    const tasks = (bookingCustomizeTasks || [])
+      .map(t => t.customizeTaskID)
+      .filter(Boolean);
+    // If not present, try from booking.customizeTasks if any
+    const unique = Array.from(new Set(tasks));
+    if (unique.length === 0) {
+      setCanConfirm(false);
+      return;
+    }
+    const allSelected = unique.every(tid => !!selectedStaffByTask[tid]);
+    setCanConfirm(allSelected);
+  }, [selectionMode, booking, selectedStaffByTask]);
+
   // Lấy thông tin nhân sự cho từng dịch vụ
   const getStaffInfo = (serviceId) => {
     if (!booking?.SelectedStaff && !booking?.selectedStaff) return null;
@@ -272,6 +335,29 @@ function PaymentContent() {
     };
   };
 
+  // Get candidate nurses per service using mapping + zone
+  const getCandidatesForService = async (serviceId) => {
+    try {
+      // Prefer mapping API to fetch nurses that can do this service
+      const mappings = await nursingSpecialistServiceTypeService.getByService(serviceId);
+      const eligibleIds = Array.isArray(mappings) ? mappings.map(m => m.nursingID || m.NursingID).filter(Boolean) : [];
+      const candidates = Array.isArray(nursingSpecialists) ? nursingSpecialists.filter(n => eligibleIds.includes(n.nursingID || n.NursingID)) : [];
+      return candidates;
+    } catch (e) {
+      console.warn('Fallback to all specialists due to mapping error', e);
+      return Array.isArray(nursingSpecialists) ? nursingSpecialists : [];
+    }
+  };
+
+  // Persist user assignments immediately when changed
+  const handleAssignNursing = async (customizeTaskID, nursingID) => {
+    try {
+      await customizeTaskService.updateNursing(customizeTaskID, nursingID);
+    } catch (err) {
+      console.warn('Không thể lưu gán điều dưỡng, sẽ thử lại khi thanh toán.', err);
+    }
+  };
+
   // Handle payment confirmation
   const handleConfirm = async () => {
     if (!booking || !bookingData) {
@@ -283,7 +369,24 @@ function PaymentContent() {
       setIsProcessingPayment(true);
       setError('');
 
-      // 1. Kiểm tra ví từ context trước
+      // If user mode, ensure selected for all tasks
+      if (selectionMode === 'user' && !canConfirm) {
+        setError('Vui lòng chọn đủ điều dưỡng cho tất cả dịch vụ trước khi thanh toán.');
+        return;
+      }
+
+      // 1.a Nếu người dùng chọn phân công, lưu gán điều dưỡng cho từng task trước khi tạo hóa đơn
+      if (selectionMode === 'user') {
+        const tasks = bookingCustomizeTasks || [];
+        for (const t of tasks) {
+          const tid = t.customizeTaskID;
+          const nid = selectedStaffByTask[tid];
+          if (!nid) continue; // canConfirm ensures all selected
+          try { await customizeTaskService.updateNursing(tid, nid); } catch {}
+        }
+      }
+
+      // 1.b Kiểm tra ví từ context trước
       let userWallet = contextWallet;
 
       // Nếu chưa có ví từ context, fallback sang wallets array
@@ -489,7 +592,34 @@ function PaymentContent() {
               total={bookingData?.total}
               bookingData={bookingData}
               getStaffInfo={getStaffInfo}
+              selectionMode={selectionMode}
+              selectedStaffByTask={selectedStaffByTask}
+              setSelectedStaffByTask={setSelectedStaffByTask}
+              fetchCandidatesForService={(service) => getCandidatesForService(service.serviceID || service.serviceTypeID)}
             />
+
+            {selectionMode === 'user' && (
+              <StaffSelection
+                tasks={bookingCustomizeTasks}
+                serviceTypes={serviceTypes}
+                careProfile={booking?.careProfile}
+                nursingSpecialists={nursingSpecialists}
+                selectedStaffByTask={selectedStaffByTask}
+                setSelectedStaffByTask={(updater) => {
+                  setSelectedStaffByTask(prev => {
+                    const next = typeof updater === 'function' ? updater(prev) : updater;
+                    // Try to detect the last changed key to persist immediately
+                    const changedKey = Object.keys(next).find(k => prev[k] !== next[k]);
+                    if (changedKey) {
+                      const nid = next[changedKey];
+                      if (nid) handleAssignNursing(changedKey, nid);
+                    }
+                    return next;
+                  });
+                }}
+                getCandidatesForService={getCandidatesForService}
+              />
+            )}
 
             <AppointmentInfo
               datetime={bookingData?.datetime}
@@ -532,6 +662,9 @@ function PaymentContent() {
               handleConfirm={handleConfirm}
               isProcessingPayment={isProcessingPayment}
               paymentBreakdown={bookingData?.paymentCalculation}
+              selectionMode={selectionMode}
+              setSelectionMode={setSelectionMode}
+              canConfirm={canConfirm}
             />
 
           </div>

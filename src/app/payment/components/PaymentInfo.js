@@ -7,7 +7,10 @@ export default function PaymentInfo({
   loading, 
   handleConfirm,
   isProcessingPayment,
-  paymentBreakdown
+  paymentBreakdown,
+  selectionMode, // 'user' | 'auto' | null
+  setSelectionMode,
+  canConfirm, // boolean: whether all tasks are assigned when selectionMode==='user'
 }) {
 
   const walletAmount = myWallet?.amount || myWallet?.Amount || 0;
@@ -155,16 +158,40 @@ export default function PaymentInfo({
         </div>
       </div>
 
+      {/* Chọn chế độ phân công */}
+      <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
+        <div className="text-sm font-semibold text-purple-800 mb-2">Chọn cách phân công điều dưỡng</div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+          <button
+            type="button"
+            className={`px-3 py-2 rounded-lg border text-sm font-medium ${selectionMode === 'user' ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+            onClick={() => setSelectionMode?.('user')}
+          >
+            Người dùng chọn điều dưỡng viên
+          </button>
+          <button
+            type="button"
+            className={`px-3 py-2 rounded-lg border text-sm font-medium ${selectionMode === 'auto' ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'}`}
+            onClick={() => setSelectionMode?.('auto')}
+          >
+            Hệ thống tự chọn
+          </button>
+        </div>
+        {selectionMode === 'user' && (
+          <div className="text-xs text-purple-700 mt-2">Bạn cần chọn đủ điều dưỡng cho tất cả dịch vụ trước khi thanh toán.</div>
+        )}
+      </div>
+
       {/* Nút thanh toán */}
       <div className="space-y-3">
         <button
           className={`w-full py-4 rounded-xl font-bold text-lg shadow-lg transition-all duration-200 ${
-            myWallet && walletAmount >= total
+            myWallet && walletAmount >= total && (selectionMode !== 'user' || canConfirm)
               ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:scale-105 hover:shadow-xl"
               : "bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:scale-105 hover:shadow-xl"
           }`}
           onClick={handleConfirm}
-          disabled={loading || isProcessingPayment}
+          disabled={loading || isProcessingPayment || (selectionMode === 'user' && !canConfirm)}
         >
           {loading || isProcessingPayment ? (
             <div className="flex items-center justify-center gap-2">

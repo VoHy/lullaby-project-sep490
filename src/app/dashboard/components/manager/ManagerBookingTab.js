@@ -12,6 +12,8 @@ import zoneDetailService from '@/services/api/zoneDetailService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import zoneService from '@/services/api/zoneService';
 import notificationService from '@/services/api/notificationService';
+import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
+import invoiceService from '@/services/api/invoiceService';
 
 const statusOptions = [
   { value: 'pending', label: 'Chờ xử lý' },
@@ -43,6 +45,9 @@ const ManagerBookingTab = () => {
   const [detailData, setDetailData] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [taskAssignments, setTaskAssignments] = useState({});
+  const [eligibleByService, setEligibleByService] = useState({}); // { [serviceId]: { nurses: [], specialists: [] } }
+  const [loadingEligible, setLoadingEligible] = useState(false);
+  const [localInvoice, setLocalInvoice] = useState(null);
 
   // Load data từ API
   useEffect(() => {
@@ -93,7 +98,7 @@ const ManagerBookingTab = () => {
 
         setAllBookings(bookingsData);
         setAccounts(accountsData);
-  setServiceTypes(serviceTypesData);
+        setServiceTypes(serviceTypesData);
         setCustomizeTasks(customizeTasksData);
         setServiceTasks(serviceTasksData);
         setZoneDetails(zoneDetailsData);
@@ -136,6 +141,7 @@ const ManagerBookingTab = () => {
       return {
         customizeTaskId: task.customizeTaskID,
         description: serviceType.description || serviceType.serviceName || 'Dịch vụ',
+        serviceId: serviceId,
         status: task.status,
         assignedNurseId: nurseId || null,
         assignedNurseName: assignedAccount?.fullName || assignedNurse?.fullName || null,
@@ -176,20 +182,61 @@ const ManagerBookingTab = () => {
     }
   }, [allBookings, currentManagerId]);
 
-  // Lọc nurse/specialist theo khu vực của khách hàng booking
-  function getFilteredNursesSpecialists(careProfile) {
-    if (!careProfile) return { nurses: [], specialists: [] };
+  // Tính danh sách nhân sự đủ điều kiện theo từng dịch vụ: cùng zone với customer và có mapping dịch vụ theo API mới
+  async function computeEligibleByService(careProfile, serviceTasksOfBooking) {
+    if (!careProfile || !Array.isArray(serviceTasksOfBooking)) {
+      setEligibleByService({});
+      return;
+    }
     const zoneDetail = zoneDetails.find(z => (z.zoneDetailID) === (careProfile.zoneDetailID));
-    if (!zoneDetail) return { nurses: [], specialists: [] };
+    if (!zoneDetail) {
+      setEligibleByService({});
+      return;
+    }
     const zoneId = zoneDetail.zoneID;
 
-    const nurses = nursingSpecialists.filter(n =>
-      (n.zoneID === zoneId) && (n.major === 'nurse')
-    );
-    const specialists = nursingSpecialists.filter(s =>
-      (s.zoneID === zoneId) && (s.major === 'specialist')
-    );
-    return { nurses, specialists };
+    // Candidates within the same zone by major
+    const candidates = {
+      Nurse: nursingSpecialists.filter(n => (n.zoneID === zoneId) && (n.major === 'Nurse')),
+      Specialist: nursingSpecialists.filter(s => (s.zoneID === zoneId) && (s.major === 'Specialist')),
+    };
+
+    // Build required service ids set
+    const uniqueServiceIds = Array.from(new Set(serviceTasksOfBooking.map(t => t.serviceId).filter(Boolean)));
+
+    setLoadingEligible(true);
+    try {
+      // Fetch mappings per candidate
+      const [nurseMaps, specialistMaps] = await Promise.all([
+        Promise.all(candidates.Nurse.map(async n => {
+          const id = n.nursingID || n.NursingID;
+          let mappings = [];
+          try { mappings = await nursingSpecialistServiceTypeService.getByNursing(id); } catch (_) {}
+          return { candidate: n, mappings };
+        })),
+        Promise.all(candidates.Specialist.map(async s => {
+          const id = s.nursingID || s.NursingID;
+          let mappings = [];
+          try { mappings = await nursingSpecialistServiceTypeService.getByNursing(id); } catch (_) {}
+          return { candidate: s, mappings };
+        })),
+      ]);
+
+      const result = {};
+      for (const sid of uniqueServiceIds) {
+        const nursesEligible = nurseMaps
+          .filter(({ mappings }) => Array.isArray(mappings) && mappings.some(m => (m.zoneID === zoneId) && ((m.serviceID || m.ServiceTypeID) === sid)))
+          .map(({ candidate }) => candidate);
+        const specialistsEligible = specialistMaps
+          .filter(({ mappings }) => Array.isArray(mappings) && mappings.some(m => (m.zoneID === zoneId) && ((m.serviceID || m.ServiceTypeID) === sid)))
+          .map(({ candidate }) => candidate);
+        result[sid] = { nurses: nursesEligible, specialists: specialistsEligible };
+      }
+
+      setEligibleByService(result);
+    } finally {
+      setLoadingEligible(false);
+    }
   }
 
   const handleViewDetail = (booking) => {
@@ -197,6 +244,25 @@ const ManagerBookingTab = () => {
     setSelectedStatus(booking.Status);
     setTaskAssignments({});
     setShowDetail(true);
+
+    // Prefetch invoice and eligible staff per service
+    (async () => {
+      try {
+        const bookingId = booking?.bookingID || booking?.BookingID;
+        if (bookingId) {
+          try {
+            const inv = await invoiceService.getInvoiceByBooking(bookingId);
+            setLocalInvoice(inv);
+          } catch (_) {
+            setLocalInvoice(null);
+          }
+        }
+        const { careProfile, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(booking);
+        await computeEligibleByService(careProfile, serviceTasksOfBooking);
+      } catch (_) {
+        // ignore
+      }
+    })();
   };
 
   const handleCloseDetail = () => {
@@ -255,7 +321,7 @@ const ManagerBookingTab = () => {
       });
 
       if (unassignedTasks.length > 0) {
-        alert(`Vui lòng chọn nhân sự cho các dịch vụ sau:\n${unassignedTasks.map(task => `- ${task.Description}`).join('\n')}`);
+        alert(`Vui lòng chọn nhân sự cho các dịch vụ sau:\n${unassignedTasks.map(task => `- ${task.description}`).join('\n')}`);
         return;
       }
 
@@ -309,7 +375,7 @@ const ManagerBookingTab = () => {
   if (error) {
     return (
       <div className="text-center py-12">
-  <FaExclamationTriangle className="text-red-500 text-6xl mb-4 inline-block" />
+        <FaExclamationTriangle className="text-red-500 text-6xl mb-4 inline-block" />
         <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
         <p className="text-gray-600 mb-4">{error}</p>
         <button onClick={() => window.location.reload()} className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
@@ -324,7 +390,7 @@ const ManagerBookingTab = () => {
       <h3 className="text-xl font-semibold mb-4">Danh sách Booking</h3>
       {bookings.length === 0 ? (
         <div className="text-center py-8">
-    <FaClipboardList className="text-gray-500 text-2xl mb-2 mx-auto" />
+          <FaClipboardList className="text-gray-500 text-2xl mb-2 mx-auto" />
           <p className="text-gray-600 text-lg font-medium">Không có booking nào</p>
           <p className="text-gray-400 text-sm mt-1">Hiện tại chưa có booking nào thuộc khu vực quản lý của bạn</p>
         </div>
@@ -367,12 +433,22 @@ const ManagerBookingTab = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className={` inline-block min-w-[80px] px-2 py-0.5 rounded-full text-xs font-semibold text-center shadow-sm 
-                  ${booking.status === 'paid' ? 'bg-green-100 text-green-800' :
+                  ${booking.status === 'paid' ? 'bg-pink-100 text-pink-800' :
                         booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          booking.status === 'cancel' ? 'bg-blue-100 text-blue-800' :
-                            'bg-red-100 text-red-800'
+                          booking.status === 'completed' ? 'bg-green-100 text-green-800' :
+                            booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                              booking.status === 'isScheduled' ? 'bg-blue-100 text-blue-800' :
+                                'bg-red-100 text-red-800'
                       }`}>
-                      {statusOptions.find(opt => opt.value === booking.status)?.label || booking.status}
+                      {(() => {
+                        const s = String(booking.status ?? booking.Status).toLowerCase();
+                        if (s === 'paid') return 'Đã thanh toán';
+                        if (s === 'pending' || s === 'unpaid') return 'Chờ thanh toán';
+                        if (s === 'completed') return 'Hoàn thành';
+                        if (s === 'isscheduled') return 'Đã lên lịch';
+                        if (s === 'cancelled' || s === 'canceled') return 'Đã hủy';
+                        return 'Không xác định';
+                      })()}
                     </span>
                   </td>
                   <td className="px-6 py-4">
@@ -388,8 +464,6 @@ const ManagerBookingTab = () => {
       {showDetail && detailData && (() => {
         const { careProfile, account, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(detailData);
         const isPackage = !!detailData.Package_ServiceID;
-        // Lọc nurse/specialist cùng khu vực
-        const { nurses, specialists } = getFilteredNursesSpecialists(careProfile);
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl p-8 relative max-h-[90vh] overflow-y-auto">
@@ -431,28 +505,13 @@ const ManagerBookingTab = () => {
                     </h4>
                     <div className="space-y-3">
                       <div>
-                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Dịch vụ</div>
-                        {/* <div className="text-gray-800 font-medium">{packageInfo ? packageInfo.Name : (service?.ServiceName || '-')}</div> */}
-                        <div className="text-gray-800 font-medium">{service?.serviceName || '-'}</div>
-                      </div>
-                      {/* {packageInfo && (
-                        <div>
-                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Mô tả</div>
-                          <div className="text-gray-800 text-sm leading-relaxed">{packageInfo.Description}</div>
-                        </div>
-                      )} */}
-                      <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ngày đặt</div>
                         <div className="text-gray-800">{detailData.workdate ? new Date(detailData.workdate).toLocaleString('vi-VN') : '-'}</div>
-                      </div>
-                      <div>
-                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Ngày làm việc</div>
-                        <div className="text-gray-800">{detailData.AppointmentDate ? new Date(detailData.AppointmentDate).toLocaleString('vi-VN') : '-'}</div>
                       </div>
                     </div>
                   </div>
 
-                  {/* Thông tin thanh toán */}
+                  {/* Thông tin thanh toán - dùng invoice */}
                   <div className="bg-white rounded-lg p-4 shadow-sm border border-gray-100">
                     <h4 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
                       <span className="w-2 h-2 bg-purple-500 rounded-full mr-3"></span>
@@ -461,26 +520,17 @@ const ManagerBookingTab = () => {
                     <div className="space-y-3">
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Giá tiền</div>
-                        <div className="text-2xl font-bold text-purple-600">{detailData.amount?.toLocaleString('vi-VN') || '-'} ₫</div>
-                      </div>    
+                        <div className="text-2xl font-bold text-purple-600">{(localInvoice?.totalAmount ?? detailData.amount)?.toLocaleString('vi-VN') || '-'} ₫</div>
+                      </div>
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Trạng thái</div>
-                        <select
-                          value={selectedStatus || detailData.status}
-                          onChange={e => setSelectedStatus(e.target.value)}
-                          className="w-full px-3 py-2 rounded-lg border border-gray-200 focus:ring-2 focus:ring-purple-400 focus:border-purple-400 bg-white"
-                        >
-                          {statusOptions.map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                          ))}
-                        </select>
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
+                          localInvoice?.status ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                        }`}>
+                          {localInvoice ? (localInvoice.status ? 'Đã thanh toán' : 'Chưa thanh toán') : 'Chưa có hóa đơn'}
+                        </span>
                       </div>
-                      <button
-                        onClick={() => handleUpdateStatus(detailData.bookingID, selectedStatus)}
-                        className="w-full px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors"
-                      >
-                        Cập nhật trạng thái
-                      </button>
+    
                     </div>
                   </div>
                 </div>
@@ -538,7 +588,7 @@ const ManagerBookingTab = () => {
                                 className="w-full px-2 py-1 rounded border text-xs"
                               >
                                 <option value="">Chọn Y tá</option>
-                                {nurses.map(n => (
+                                {(loadingEligible ? [] : (eligibleByService[task.serviceId]?.nurses || [])).map(n => (
                                   <option key={n.NursingID || n.nursingID} value={n.NursingID || n.nursingID}>{n.Full_Name || n.fullName}</option>
                                 ))}
                               </select>
@@ -548,7 +598,7 @@ const ManagerBookingTab = () => {
                                 className="w-full px-2 py-1 rounded border text-xs"
                               >
                                 <option value="">Chọn Chuyên gia</option>
-                                {specialists.map(s => (
+                                {(loadingEligible ? [] : (eligibleByService[task.serviceId]?.specialists || [])).map(s => (
                                   <option key={s.NursingID || s.nursingID} value={s.NursingID || s.nursingID}>{s.Full_Name || s.fullName}</option>
                                 ))}
                               </select>

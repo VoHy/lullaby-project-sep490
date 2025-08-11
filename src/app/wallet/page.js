@@ -51,7 +51,7 @@ export default function WalletPage() {
     fetchHistories();
   }, [user, isLoading, router, refreshWalletData]);
 
-  // Tính số dư hiện tại dựa theo giao dịch gần nhất (nếu backend chưa cập nhật Amount)
+  // Tính số dư dựa theo giao dịch gần nhất (fallback khi backend chưa cập nhật Amount)
   const computedCurrentBalance = useMemo(() => {
     try {
       const walletId = wallet?.walletID || wallet?.WalletID;
@@ -72,6 +72,15 @@ export default function WalletPage() {
       return wallet ? (wallet.amount || wallet.Amount || 0) : 0;
     }
   }, [histories, wallet]);
+
+  // Hiển thị số dư đồng bộ với header: ưu tiên lấy từ context (wallet.Amount), nếu không có thì fallback computed
+  const displayBalance = useMemo(() => {
+    const amountFromWallet = wallet ? (wallet.amount ?? wallet.Amount) : null;
+    if (typeof amountFromWallet === 'number' && !Number.isNaN(amountFromWallet)) {
+      return amountFromWallet;
+    }
+    return computedCurrentBalance;
+  }, [wallet, computedCurrentBalance]);
 
   if (isLoading) return null;
   if (!user) return null;
@@ -112,7 +121,7 @@ export default function WalletPage() {
                       <span>Số dư hiện tại</span>
                     </div>
                     <div className="text-3xl font-bold text-green-600 mb-1">
-                      {computedCurrentBalance.toLocaleString('vi-VN')}₫
+                      {displayBalance.toLocaleString('vi-VN')}₫
                     </div>
                     <div className="text-sm text-gray-500">
                       Trạng thái: <span className={`font-medium ${(wallet.status || wallet.Status) === 'active' ? 'text-green-600' : 'text-red-600'}`}>
