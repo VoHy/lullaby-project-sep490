@@ -1,0 +1,15 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Restart Next dev server",
+			"type": "shell",
+			"command": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"if($env:NODE_ENV -eq $null) { $env:NODE_ENV='development' }; Stop-Process -Name node -ErrorAction SilentlyContinue; npm run dev\"",
+			"isBackground": false,
+			"problemMatcher": [
+				"$tsc"
+			],
+			"group": "build"
+		}
+	]
+}

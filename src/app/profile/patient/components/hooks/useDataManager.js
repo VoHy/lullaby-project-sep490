@@ -4,6 +4,7 @@ import relativesService from '@/services/api/relativesService';
 import zoneService from '@/services/api/zoneService';
 import zoneDetailService from '@/services/api/zoneDetailService';
 import careProfileService from '@/services/api/careProfileService';
+import { validateCareProfile, validateRelative, prepareCareProfileData, prepareRelativeData } from '../../utils/formUtils';
 
 export const useDataManager = (user, router) => {
   // Data states
@@ -66,22 +67,19 @@ export const useDataManager = (user, router) => {
 
   // CRUD operations for CareProfile
   const saveCareProfile = async (data, editItem, user) => {
-    const submitData = {
-      accountID: user.accountID,
-      zoneDetailID: data.zoneDetailID,
-      profileName: data.profileName || '',
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth).toISOString() : null,
-      phoneNumber: data.phoneNumber || '',
-      address: data.address || '',
-      image: data.image || '',
-      note: data.note || '',
-      status: data.status || 'active'
-    };
+    // Validate
+    const errors = validateCareProfile(data);
+    if (errors.length) {
+      throw new Error(errors[0]);
+    }
+
+    // Normalize and prepare
+    const submitData = prepareCareProfileData({ ...data }, user);
 
     let result;
     if (editItem) {
       // Update
-      result = await careProfileService.updateCareProfile(
+  result = await careProfileService.updateCareProfile(
         editItem.careProfileID || editItem.CareProfileID,
         submitData
       );
@@ -100,7 +98,7 @@ export const useDataManager = (user, router) => {
       return { success: true, message: 'Cập nhật hồ sơ thành công!' };
     } else {
       // Create
-      result = await careProfileService.createCareProfile(submitData);
+  result = await careProfileService.createCareProfile(submitData);
 
       // Add to state optimistically
       if (result && (result.careProfileID || result.CareProfileID)) {
@@ -127,19 +125,18 @@ export const useDataManager = (user, router) => {
 
   // CRUD operations for Relative
   const saveRelative = async (data, editItem, currentCareID) => {
-    const submitData = {
-      ...data,
-      careProfileID: currentCareID,
-      relativeName: data.relativeName,
-      dateOfBirth: data.dateOfBirth ? new Date(data.dateOfBirth) : null,
-      gender: data.gender || 'male',
-      note: data.note || '',
-      status: data.status || 'active'
-    };
+    // Validate
+    const errors = validateRelative(data);
+    if (errors.length) {
+      throw new Error(errors[0]);
+    }
+
+    // Prepare
+    const submitData = prepareRelativeData({ ...data }, currentCareID);
 
     if (editItem) {
       const editId = editItem.relativeID || editItem.RelativeID || editItem.relativeid;
-      const result = await relativesService.updateRelative(editId, submitData);
+  const result = await relativesService.updateRelative(editId, submitData);
 
       // Update state optimistically
       setRelativesList(prevRelatives =>
@@ -153,7 +150,7 @@ export const useDataManager = (user, router) => {
 
       return { success: true, message: 'Cập nhật người thân thành công!' };
     } else {
-      const result = await relativesService.createRelative(submitData);
+  const result = await relativesService.createRelative(submitData);
 
       // Add to state optimistically
       setRelativesList(prevRelatives => [

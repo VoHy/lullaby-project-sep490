@@ -24,11 +24,10 @@ const TabNavigation = () => {
         <button
           key={tab.id}
           onClick={() => router.push(tab.href)}
-          className={`flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${
-            pathname === tab.href
+          className={`flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${pathname === tab.href
               ? 'bg-white text-purple-600 border-b-2 border-purple-600 shadow-sm'
               : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-          }`}
+            }`}
         >
           {tab.icon}
           {tab.name}
@@ -104,15 +103,37 @@ export default function ProfilePage() {
   };
 
   const handleSave = async () => {
-    setLoading(true);
     setError('');
     setSuccess('');
 
+    // ===== Validate =====
+    if (!editData.fullName.trim()) {
+      setError('Họ và tên không được để trống.');
+      return;
+    }
+
+    if (!/^\S+@\S+\.\S+$/.test(editData.email)) {
+      setError('Email không hợp lệ.');
+      return;
+    }
+
+    if (!/^\d{9,11}$/.test(editData.phoneNumber)) {
+      setError('Số điện thoại phải từ 9-11 chữ số.');
+      return;
+    }
+
+    if (editData.avatarUrl && !/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(editData.avatarUrl)) {
+      setError('URL avatar không hợp lệ.');
+      return;
+    }
+
+    setLoading(true);
+
     try {
       const updatedData = { ...user, ...editData };
-  await accountService.updateAccount(user.accountID, updatedData);
+      await accountService.updateAccount(user.accountID, updatedData);
 
-  const refreshedUser = await accountService.getAccountById(user.accountID);
+      const refreshedUser = await accountService.getAccountById(user.accountID);
       updateUser(refreshedUser);
 
       setIsEditing(false);
@@ -124,6 +145,7 @@ export default function ProfilePage() {
       setLoading(false);
     }
   };
+
 
   const handleCancel = () => {
     setIsEditing(false);

@@ -65,7 +65,7 @@ export default function CareProfileFormModal({ open, onClose, onSave, formData, 
             
             <FormField
               label="Khu vực"
-              name="zonedetailid"
+              name="zoneDetailID"
               type="select"
               value={normalized.zoneDetailID || ''}
               onChange={onChange}
