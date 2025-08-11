@@ -27,12 +27,12 @@ const authService = {
     }
   },
 
-  // Đăng nhập với Google: backend yêu cầu { fullName, email }
-  loginWithGoogle: async ({ fullName, email }) => {
+  // Đăng nhập với Google: backend yêu cầu { fullName, email } và nếu có thì kèm idToken để xác minh
+  loginWithGoogle: async ({ fullName, email, idToken }) => {
     try {
       return await apiPost(
         `${API_ENDPOINTS.ACCOUNTS}/login/google`,
-        { fullName, email },
+        { fullName, email, idToken },
         'Đăng nhập Google thất bại'
       );
     } catch (error) {

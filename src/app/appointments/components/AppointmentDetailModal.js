@@ -287,7 +287,7 @@ const AppointmentDetailModal = ({
 
     return nurse ? {
       id: nursingId,
-  name: nurse.fullName || nurse.full_Name || nurse.Full_Name || nurse.FullName || 'Không có tên',
+      name: nurse.fullName || nurse.full_Name || nurse.Full_Name || nurse.FullName || 'Không có tên',
       phone: nurse.phoneNumber || nurse.phone_Number,
       experience: nurse.experience
     } : {
@@ -580,7 +580,7 @@ const AppointmentDetailModal = ({
                 {getStatusText(appointment.status || appointment.Status)}
               </span>
             </div>
-            
+
             {/* Care Profile */}
             <div className="bg-white rounded-lg p-4 border border-gray-200 shadow-sm">
               <h3 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
@@ -743,11 +743,19 @@ const AppointmentDetailModal = ({
                         </div>
                         <div className="flex justify-between">
                           <span className="text-gray-600">Trạng thái:</span>
-                          <span className={`font-medium ${(bookingInvoice.status || bookingInvoice.Status) === 'Hoàn thành'
-                            ? 'text-green-600'
-                            : 'text-orange-600'
-                            }`}>
-                            {String(bookingInvoice.status || bookingInvoice.Status).toLowerCase() === 'paid' ? 'Đã thanh toán' : (bookingInvoice.status || bookingInvoice.Status || 'Chưa thanh toán')}
+                          <span
+                            className={`font-medium ${String(bookingInvoice.status || bookingInvoice.Status).toLowerCase() === 'paid'
+                              ? 'text-green-600'
+                              : String(bookingInvoice.status || bookingInvoice.Status).toLowerCase() === 'refunded'
+                                ? 'text-red-600'
+                                : 'text-orange-600'
+                              }`}
+                          >
+                            {String(bookingInvoice.status || bookingInvoice.Status).toLowerCase() === 'paid'
+                              ? 'Đã thanh toán'
+                              : String(bookingInvoice.status || bookingInvoice.Status).toLowerCase() === 'refunded'
+                                ? 'Hoàn tiền'
+                                : bookingInvoice.status || bookingInvoice.Status || 'Chưa thanh toán'}
                           </span>
                         </div>
                         <div className="flex justify-between text-lg font-bold border-t pt-2">

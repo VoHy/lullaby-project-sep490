@@ -56,6 +56,7 @@ export default function RelativeFormModal({ open, onClose, onSave, formData, onC
               type="date"
               value={normalized.dateOfBirth || ''}
               onChange={onChange}
+              required={true}
             />
             
             <FormField

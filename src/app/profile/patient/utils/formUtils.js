@@ -32,24 +32,61 @@ export const formatDateForAPI = (dateStr) => {
     return dateStr;
 };
 
+// Helpers
+const isValidPhone = (phone) => {
+    if (!phone) return false;
+    // Accept numbers with optional leading +, 8-15 digits total
+    const generic = /^\+?\d{8,15}$/;
+    // Or local VN style 0XXXXXXXXX (9-10 digits after 0)
+    const vn = /^0\d{9,10}$/;
+    return generic.test(phone) || vn.test(phone);
+};
+
+const isValidPastDate = (value) => {
+    if (!value) return false;
+    const d = new Date(value);
+    if (isNaN(d.getTime())) return false;
+    const now = new Date();
+    // Normalize to date-only comparison
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+    // Must not be in the future and not older than 130 years
+    const min = new Date(today.getFullYear() - 130, today.getMonth(), today.getDate());
+    return day <= today && day >= min;
+};
+
 // Common validation functions
 export const validateCareProfile = (formData) => {
     const errors = [];
 
-    if (!formData.profileName && !formData.ProfileName) {
-        errors.push('Vui lòng nhập tên hồ sơ');
+    const profileName = formData.profileName || formData.ProfileName;
+    const dateOfBirth = formData.dateOfBirth || formData.DateOfBirth;
+    const phoneNumber = formData.phoneNumber || formData.PhoneNumber;
+    const address = formData.address || formData.Address;
+    const status = (formData.status || '').toString().toLowerCase();
+
+    if (!profileName || profileName.trim().length < 2) {
+        errors.push('Vui lòng nhập tên hồ sơ (tối thiểu 2 ký tự)');
     }
 
-    if (!formData.dateOfBirth && !formData.DateOfBirth) {
+    if (!dateOfBirth) {
         errors.push('Vui lòng nhập ngày sinh');
+    } else if (!isValidPastDate(dateOfBirth)) {
+        errors.push('Ngày sinh không hợp lệ');
     }
 
-    if (!formData.phoneNumber && !formData.PhoneNumber) {
+    if (!phoneNumber) {
         errors.push('Vui lòng nhập số điện thoại');
+    } else if (!isValidPhone(phoneNumber)) {
+        errors.push('Số điện thoại không hợp lệ');
     }
 
-    if (!formData.address && !formData.Address) {
-        errors.push('Vui lòng nhập địa chỉ');
+    if (!address || address.trim().length < 5) {
+        errors.push('Vui lòng nhập địa chỉ (tối thiểu 5 ký tự)');
+    }
+
+    if (status && !['active', 'inactive'].includes(status)) {
+        errors.push('Trạng thái không hợp lệ');
     }
 
     return errors;
@@ -58,8 +95,27 @@ export const validateCareProfile = (formData) => {
 export const validateRelative = (formData) => {
     const errors = [];
 
-    if (!formData.relativeName) {
-        errors.push('Vui lòng nhập tên người thân');
+    const relativeName = formData.relativeName || formData.RelativeName;
+    const dateOfBirth = formData.dateOfBirth || formData.DateOfBirth;
+    const gender = (formData.gender || formData.Gender || '').toString().toLowerCase();
+    const status = (formData.status || '').toString().toLowerCase();
+
+    if (!relativeName || relativeName.trim().length < 2) {
+        errors.push('Vui lòng nhập tên người thân (tối thiểu 2 ký tự)');
+    }
+
+    if (!dateOfBirth) {
+        errors.push('Vui lòng nhập ngày sinh người thân');
+    } else if (!isValidPastDate(dateOfBirth)) {
+        errors.push('Ngày sinh người thân không hợp lệ');
+    }
+
+    if (gender && !['male', 'female', 'other'].includes(gender)) {
+        errors.push('Giới tính không hợp lệ');
+    }
+
+    if (status && !['active', 'inactive'].includes(status)) {
+        errors.push('Trạng thái không hợp lệ');
     }
 
     return errors;
@@ -67,27 +123,28 @@ export const validateRelative = (formData) => {
 
 // Field name normalization utilities
 export const normalizeFieldNames = (data) => {
+    const d = data || {};
     return {
         // Care Profile fields
-        careProfileID: data.careProfileID,
-        profileName: data.profileName,
-        dateOfBirth: data.dateOfBirth,
-        phoneNumber: data.phoneNumber,
-        address: data.address,
-        image: data.image,
-        note: data.note,
-        status: data.status,
-        zoneDetailID: data.zoneDetailID,
+        careProfileID: d.careProfileID || d.CareProfileID || d.careprofileid,
+        profileName: d.profileName || d.ProfileName,
+        dateOfBirth: d.dateOfBirth || d.DateOfBirth,
+        phoneNumber: d.phoneNumber || d.PhoneNumber,
+        address: d.address || d.Address,
+        image: d.image || d.Image,
+        note: d.note || d.Note,
+        status: d.status || d.Status,
+        zoneDetailID: d.zoneDetailID || d.ZoneDetailID || d.ZonedetailID || d.zonedetailid,
 
         // Relative fields
-        relativeID: data.relativeID,
-        relativeName: data.relativeName,
-        gender: data.gender || data.Gender,
+        relativeID: d.relativeID || d.RelativeID || d.relativeid,
+        relativeName: d.relativeName || d.RelativeName,
+        gender: d.gender || d.Gender,
 
         // Common fields
-        accountID: data.accountID,
-        createdAt: data.createdAt,
-        updatedAt: data.updatedAt
+        accountID: d.accountID || d.AccountID,
+        createdAt: d.createdAt || d.CreatedAt,
+        updatedAt: d.updatedAt || d.UpdatedAt
     };
 };
 
@@ -104,7 +161,7 @@ export const prepareCareProfileData = (formData, user) => {
         address: normalized.address,
         image: normalized.image || '/images/hero-bg.jpg',
         note: normalized.note || '',
-        status: normalized.status || 'active'
+        status: (normalized.status || 'active').toString().toLowerCase()
     };
 };
 
@@ -115,10 +172,10 @@ export const prepareRelativeData = (formData, careProfileID) => {
         careProfileID: careProfileID,
         relativeName: normalized.relativeName,
         dateOfBirth: formatDateForAPI(normalized.dateOfBirth),
-        gender: normalized.gender || 'male',
+        gender: (normalized.gender || 'male').toString().toLowerCase(),
         note: normalized.note || '',
         createdAt: new Date().toISOString(),
-        status: normalized.status || 'active',
+        status: (normalized.status || 'active').toString().toLowerCase(),
         image: normalized.image || '/images/hero-bg.jpg'
     };
 };

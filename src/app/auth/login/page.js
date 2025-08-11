@@ -9,7 +9,7 @@ import { motion } from "framer-motion";
 import { FaEye, FaEyeSlash } from "react-icons/fa";
 import { AuthContext } from "../../../context/AuthContext";
 import { GoogleLogin } from "@react-oauth/google";
-import jwtDecode from "jwt-decode";
+import { jwtDecode } from 'jwt-decode';
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -42,8 +42,10 @@ export default function LoginPage() {
       });
 
 
-      if (response.account && response.token) {
-        login(response.account, response.token);
+      // Backend may return token at top-level or nested inside account
+      const token = response?.token || response?.account?.token;
+      if (response.account && token) {
+        login(response.account, token);
         // Chuyển hướng dựa trên vai trò của người dùng
         const roleID = response.account.roleID;
 
@@ -91,10 +93,13 @@ export default function LoginPage() {
       const fullName = payload.name || `${payload.given_name || ''} ${payload.family_name || ''}`.trim();
       if (!email) throw new Error('Không lấy được email từ Google');
 
-      const response = await authService.loginWithGoogle({ fullName: fullName || 'Google User', email });
+      // Gửi cả idToken (credential) để backend có thể xác minh chữ ký nếu hỗ trợ
+      const response = await authService.loginWithGoogle({ fullName: fullName || 'Google User', email, idToken: credential });
 
-      if (response.account && response.token) {
-        login(response.account, response.token);
+      // Accept token either at top-level or nested under account
+      const token = response?.token || response?.account?.token;
+      if (response.account && token) {
+        login(response.account, token);
         const roleID = response.account.roleID;
         if (roleID === 1 || roleID === 2 || roleID === 3) {
           router.push('/dashboard');

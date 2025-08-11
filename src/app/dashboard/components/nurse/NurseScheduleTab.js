@@ -7,7 +7,6 @@ import customizePackageService from '@/services/api/customizePackageService';
 import { FaRegClock, FaFlag, FaCalendarCheck } from 'react-icons/fa';
 import workScheduleService from '@/services/api/workScheduleService';
 
-// const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
 //   const [currentMonth, setCurrentMonth] = useState(new Date());
 //   const [selectedDate, setSelectedDate] = useState(null);
 //   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -199,7 +198,7 @@ import workScheduleService from '@/services/api/workScheduleService';
 //                 <div className="text-sm font-medium mb-1">
 //                   {format(day, 'd')}
 //                 </div>
-                
+
 //                 {/* Event Indicators */}
 //                 <div className="space-y-1">
 //                   {hasWork && (
@@ -233,7 +232,7 @@ import workScheduleService from '@/services/api/workScheduleService';
 //           <h4 className="text-lg font-semibold mb-4">
 //             Sự kiện ngày {format(parseISO(selectedDate), 'dd/MM/yyyy')}
 //           </h4>
-          
+
 //           {eventsOfDay.length === 0 ? (
 //             <p className="text-gray-500">Không có sự kiện nào trong ngày này.</p>
 //           ) : (
@@ -275,7 +274,7 @@ import workScheduleService from '@/services/api/workScheduleService';
 //                 ✕
 //               </button>
 //             </div>
-            
+
 //             <div className="space-y-3">
 //               <div>
 //                 <span className="font-medium">Loại:</span>
@@ -300,7 +299,7 @@ import workScheduleService from '@/services/api/workScheduleService';
 //                 </div>
 //               )}
 //             </div>
-            
+
 //             <div className="mt-6 flex justify-end">
 //               <button
 //                 onClick={closeEventDetail}
@@ -315,7 +314,7 @@ import workScheduleService from '@/services/api/workScheduleService';
 //     </div>
 //   );
 // };
- const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
+const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -399,7 +398,7 @@ import workScheduleService from '@/services/api/workScheduleService';
       eventsOfDay.push({
         type: 'work',
         time: `${workDate ? new Date(workDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''} - ${endTime ? new Date(endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}`,
-        label: `Ca trực #${ws.workScheduleID || ws.WorkScheduleID}`,
+        label: `Lịch hẹn #${ws.workScheduleID || ws.WorkScheduleID}`,
         status: ws.status || ws.Status,
         isAttended: ws.isAttended || ws.IsAttended,
         workObj: ws,
@@ -464,8 +463,8 @@ import workScheduleService from '@/services/api/workScheduleService';
         <div className="text-center">
           <div className="text-red-500 mb-4">⚠️</div>
           <p className="text-red-600">{error}</p>
-          <button 
-            onClick={() => window.location.reload()} 
+          <button
+            onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
           >
             Thử lại
@@ -528,21 +527,21 @@ import workScheduleService from '@/services/api/workScheduleService';
                 <div className="text-sm font-medium mb-1">
                   {format(day, 'd')}
                 </div>
-                
+
                 {/* Event Indicators */}
                 <div className="space-y-1">
                   {hasWork && (
                     <div className="flex items-center text-xs text-blue-600">
                       <FaRegClock className="mr-1" />
-                      <span>Ca trực</span>
+                      <span>Lịch hẹn</span>
                     </div>
                   )}
                   {/* {hasBooking && ( */}
-                    {/* <div className="flex items-center text-xs text-green-600">
+                  {/* <div className="flex items-center text-xs text-green-600">
                       <FaCalendarCheck className="mr-1" />
                       <span>Lịch hẹn</span>
                     </div> */}
-                  {/* )} */}  
+                  {/* )} */}
                   {holiday && (
                     <div className="flex items-center text-xs text-red-600">
                       <FaFlag className="mr-1" />
@@ -562,7 +561,7 @@ import workScheduleService from '@/services/api/workScheduleService';
           <h4 className="text-lg font-semibold mb-4">
             Sự kiện ngày {format(parseISO(selectedDate), 'dd/MM/yyyy')}
           </h4>
-          
+
           {eventsOfDay.length === 0 ? (
             <p className="text-gray-500">Không có sự kiện nào trong ngày này.</p>
           ) : (
@@ -575,10 +574,9 @@ import workScheduleService from '@/services/api/workScheduleService';
                 >
                   <div className="flex items-center justify-between">
                     <div>
-                      <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${
-                        event.type === 'work' ? 'bg-blue-100 text-blue-800' : event.type === 'holiday' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                      }`}>
-                        {event.type === 'work' ? 'Ca trực' : event.type === 'holiday' ? 'Ngày nghỉ' : 'Lịch hẹn'}
+                      <span className={`inline-block px-2 py-1 rounded text-xs font-medium ${event.type === 'work' ? 'bg-blue-100 text-blue-800' : event.type === 'holiday' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                        }`}>
+                        {event.type === 'work' ? 'Lịch hẹn' : event.type === 'holiday' ? 'Ngày nghỉ' : 'Lịch hẹn'}
                       </span>
                       <span className="ml-2 text-sm font-medium">{event.label}</span>
                     </div>
@@ -604,14 +602,13 @@ import workScheduleService from '@/services/api/workScheduleService';
                 ✕
               </button>
             </div>
-            
+
             <div className="space-y-3">
               <div>
                 <span className="font-medium">Loại:</span>
-                <span className={`ml-2 inline-block px-2 py-1 rounded text-xs font-medium ${
-                  selectedEvent.type === 'work' ? 'bg-blue-100 text-blue-800' : selectedEvent.type === 'holiday' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
-                }`}>
-                  {selectedEvent.type === 'work' ? 'Ca trực' : selectedEvent.type === 'holiday' ? 'Ngày nghỉ' : 'Lịch hẹn'}
+                <span className={`ml-2 inline-block px-2 py-1 rounded text-xs font-medium ${selectedEvent.type === 'work' ? 'bg-blue-100 text-blue-800' : selectedEvent.type === 'holiday' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'
+                  }`}>
+                  {selectedEvent.type === 'work' ? 'Lịch hẹn' : selectedEvent.type === 'holiday' ? 'Ngày nghỉ' : 'Lịch hẹn'}
                 </span>
               </div>
               <div>
@@ -655,7 +652,7 @@ import workScheduleService from '@/services/api/workScheduleService';
                 </div>
               )}
             </div>
-            
+
             <div className="mt-6 flex justify-end">
               <button
                 onClick={closeEventDetail}
