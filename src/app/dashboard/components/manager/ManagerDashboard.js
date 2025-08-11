@@ -142,10 +142,10 @@ const ManagerDashboard = ({ user }) => {
     if (!managedZone) return { nurses: 0, specialists: 0, total: 0 };
 
     const zoneNurses = nursingSpecialists.filter(ns =>
-      ns.zoneID === managedZone.zoneID && ns.major === 'nurse'
+      ns.zoneID === managedZone.zoneID && ns.major === 'Nurse'
     );
     const zoneSpecialists = nursingSpecialists.filter(ns =>
-      ns.zoneID === managedZone.zoneID && ns.major === 'specialist'
+      ns.zoneID === managedZone.zoneID && ns.major === 'Specialist'
     );
 
     return {
