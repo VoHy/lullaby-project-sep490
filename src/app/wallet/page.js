@@ -9,6 +9,7 @@ import dynamic from 'next/dynamic';
 import payOSService from '@/services/api/payOSService';
 import invoiceService from '@/services/api/invoiceService';
 import { FaWallet, FaPlus, FaSyncAlt, FaFileInvoice, FaTimes, FaCheckCircle, FaClock, FaSpinner } from 'react-icons/fa';
+import TopupModal from './components/TopupModal';
 
 export default function WalletPage() {
   const router = useRouter();
@@ -22,6 +23,7 @@ export default function WalletPage() {
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [invoiceLoading, setInvoiceLoading] = useState(false);
   const [invoiceDetail, setInvoiceDetail] = useState(null);
+  const [showTopup, setShowTopup] = useState(false);
 
   const TransactionDetailModal = useMemo(() => dynamic(() => import('./components/TransactionDetailModal'), {
     loading: () => <div className="fixed inset-0 flex items-center justify-center"><div className="bg-white p-6 rounded-xl shadow">Đang tải...</div></div>
@@ -132,29 +134,7 @@ export default function WalletPage() {
                 </div>
                 <div className="pt-4 border-t border-gray-100">
                   <button
-                    onClick={async () => {
-                      const amount = prompt('Nhập số tiền muốn nạp (VNĐ):', '100000');
-                      const value = Number(amount);
-                      if (!amount || Number.isNaN(value) || value <= 0) return;
-                      try {
-                        const payload = {
-                          walletID: wallet.walletID || wallet.WalletID,
-                          amount: value,
-                        };
-                        const result = await transactionHistoryService.addMoneyToWalletWeb(payload);
-                        const payUrl = result?.payUrl || result?.checkoutUrl || result?.url;
-                        if (payUrl) {
-                          window.open(payUrl, '_blank');
-                        }
-                        await refreshWalletData();
-                        const accountId = user.accountID || user.AccountID;
-                        const data = await transactionHistoryService.getAllByAccount(accountId);
-                        setHistories(Array.isArray(data) ? data : []);
-                        alert('Đã tạo yêu cầu nạp tiền. Nếu có link thanh toán PayOS, vui lòng hoàn tất thanh toán.');
-                      } catch (e) {
-                        alert(e?.message || 'Không thể nạp tiền');
-                      }
-                    }}
+                    onClick={() => setShowTopup(true)}
                     className="w-full inline-flex items-center justify-center gap-2 px-4 py-3 bg-gray-900 text-white rounded-lg hover:bg-black transition-colors font-medium"
                   >
                     <FaPlus />
@@ -326,6 +306,18 @@ export default function WalletPage() {
         </div>
       </div>
       <TransactionDetailModal open={showTxModal} onClose={() => setShowTxModal(false)} transaction={selectedTx} />
+      <TopupModal
+        open={showTopup}
+        onClose={() => setShowTopup(false)}
+        wallet={wallet}
+        accountId={user?.accountID || user?.AccountID}
+        onAfterRefresh={async () => {
+          await refreshWalletData();
+          const accountId = user.accountID || user.AccountID;
+          const data = await transactionHistoryService.getAllByAccount(accountId);
+          setHistories(Array.isArray(data) ? data : []);
+        }}
+      />
 
       {/* Invoice Modal */}
       {showInvoiceModal && (
