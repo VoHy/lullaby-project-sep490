@@ -1,10 +1,7 @@
 'use client';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
-  faUsers, faCalendar, faMoneyBill, faUserCheck, faArrowUp, faArrowDown,
-  faEye, faUser, faCalendarAlt, faClock
-} from '@fortawesome/free-solid-svg-icons';
+import { faUsers, faCalendar, faMoneyBill, faUserCheck, faArrowUp, faArrowDown } from '@fortawesome/free-solid-svg-icons';
 import { useState, useEffect } from 'react';
 import careProfileService from '@/services/api/careProfileService';
 import accountService from '@/services/api/accountService';
@@ -13,33 +10,35 @@ import serviceTaskService from '@/services/api/serviceTaskService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import invoiceService from '@/services/api/invoiceService';
 
-const OverviewTab = ({ bookings, revenue }) => {
+const OverviewTab = ({ bookings }) => {
   const [careProfiles, setCareProfiles] = useState([]);
   const [accounts, setAccounts] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
+  const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [selectedBooking, setSelectedBooking] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError("");
-        const [careProfilesData, accountsData, serviceTypesData, serviceTasksData, nursingSpecialistsData] = await Promise.all([
+        const [careProfilesData, accountsData, serviceTypesData, serviceTasksData, nursingSpecialistsData, invoicesData] = await Promise.all([
           careProfileService.getCareProfiles(),
           accountService.getAllAccounts(),
           serviceTypeService.getServiceTypes(),
           serviceTaskService.getServiceTasks(),
           nursingSpecialistService.getNursingSpecialists(),
+          invoiceService.getAllInvoices(),
         ]);
         setCareProfiles(careProfilesData);
         setAccounts(accountsData);
         setServiceTypes(serviceTypesData);
         setServiceTasks(serviceTasksData);
         setNursingSpecialists(nursingSpecialistsData);
+        setInvoices(invoicesData);
       } catch (e) {
         setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
       } finally {
@@ -48,124 +47,6 @@ const OverviewTab = ({ bookings, revenue }) => {
     };
     fetchData();
   }, []);
-
-  function getBookingDetail(booking) {
-    const bookingID = booking?.bookingID ?? booking?.BookingID;
-    const careProfileID = booking?.careProfileID ?? booking?.CareProfileID;
-    const serviceID = booking?.serviceID ?? booking?.ServiceID;
-    const careProfile = careProfiles.find((c) => (c?.careProfileID ?? c?.CareProfileID) === careProfileID);
-    const account = careProfile ? accounts.find((a) => (a?.accountID ?? a?.AccountID) === (careProfile?.accountID ?? careProfile?.AccountID)) : null;
-    const service = serviceTypes.find((s) => (s?.serviceID ?? s?.ServiceID) === serviceID);
-    const serviceTasksOfBooking = serviceTasks.filter((t) => (t?.bookingID ?? t?.BookingID) === bookingID);
-    const detailedTasks = serviceTasksOfBooking.map((t) => {
-      const nurse = nursingSpecialists.find((n) => (n?.nursingID ?? n?.NursingID) === (t?.nursingID ?? t?.NursingID));
-      return {
-        description: t?.description ?? t?.Description,
-        price: t?.price ?? t?.Price,
-        quantity: t?.quantity ?? t?.Quantity,
-        total: t?.total ?? t?.Total,
-        status: (t?.status ?? t?.Status ?? '').toLowerCase(),
-        nurseName: nurse?.fullName ?? nurse?.FullName,
-        nurseRole: nurse?.major ?? nurse?.Major,
-      };
-    });
-    return { careProfile, account, service, serviceTasksOfBooking: detailedTasks };
-  }
-
-  const BookingDetailModal = ({ booking, onClose }) => {
-    if (!booking) return null;
-    const { careProfile, account, service, serviceTasksOfBooking } = getBookingDetail(booking);
-    return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 backdrop-blur-sm">
-        <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-2xl relative max-h-[90vh] overflow-y-auto">
-          <button className="absolute top-4 right-4 text-gray-500 hover:text-pink-500 text-2xl font-bold" onClick={onClose}>&times;</button>
-          <div className="mb-6">
-            <h3 className="text-2xl font-bold mb-2">Chi tiết Booking #{booking?.BookingID ?? booking?.bookingID}</h3>
-            <div className="w-20 h-1 bg-gradient-to-r from-purple-500 to-pink-500 rounded"></div>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 p-4 rounded-xl">
-                <h4 className="font-semibold text-blue-800 mb-2">Thông tin khách hàng</h4>
-                <div className="space-y-2 text-sm">
-                  <div><span className="font-medium">Tên:</span> {careProfile?.profileName ?? careProfile?.ProfileName} {account ? `(${account.full_name ?? account.fullName})` : ''}</div>
-                  <div><span className="font-medium">Điện thoại:</span> {account?.phone_number || account?.phoneNumber || careProfile?.phoneNumber || '-'}</div>
-                  <div><span className="font-medium">Địa chỉ:</span> {careProfile?.address || '-'}</div>
-                </div>
-              </div>
-              
-              <div className="bg-gradient-to-r from-green-50 to-emerald-50 p-4 rounded-xl">
-                <h4 className="font-semibold text-green-800 mb-2">Thông tin dịch vụ</h4>
-                <div className="space-y-2 text-sm">
-                  <div><span className="font-medium">Dịch vụ:</span> {service?.serviceName ?? service?.ServiceName ?? '-'}</div>
-                  <div><span className="font-medium">Ngày đặt:</span> {booking?.createdAt ? new Date(booking.createdAt).toLocaleString('vi-VN') : '-'}</div>
-                  <div><span className="font-medium">Ngày thực hiện:</span> {booking?.workDate ? new Date(booking.workDate).toLocaleString('vi-VN') : '-'}</div>
-                </div>
-              </div>
-            </div>
-            
-            <div className="space-y-4">
-              <div className="bg-gradient-to-r from-purple-50 to-pink-50 p-4 rounded-xl">
-                <h4 className="font-semibold text-purple-800 mb-2">Trạng thái & Giá tiền</h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Trạng thái:</span>
-                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                      (booking.Status ?? booking.status) === 'paid' ? 'bg-green-100 text-green-700' : 
-                      (booking.Status ?? booking.status) === 'pending' ? 'bg-yellow-100 text-yellow-700' : 
-                      'bg-red-100 text-red-700'
-                    }`}>
-                      {(booking.Status ?? booking.status) === 'paid' ? 'Hoàn thành' : 
-                       (booking.Status ?? booking.status) === 'pending' ? 'Đang xử lý' : 'Đã hủy'}
-                    </span>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span className="font-medium">Tổng tiền:</span>
-                    <span className="text-lg font-bold text-green-600">{(booking.amount ?? booking.Amount ?? 0).toLocaleString('vi-VN')} VND</span>
-                  </div>
-                </div>
-              </div>
-              
-              {serviceTasksOfBooking.length > 0 && (
-                <div className="bg-gradient-to-r from-orange-50 to-red-50 p-4 rounded-xl">
-                  <h4 className="font-semibold text-orange-800 mb-2">Danh sách dịch vụ</h4>
-                  <div className="max-h-40 overflow-y-auto">
-                    <ul className="space-y-2">
-                      {serviceTasksOfBooking.map((task, idx) => (
-                        <li key={idx} className="bg-white p-3 rounded-lg border">
-                          <div className="font-medium text-sm">{task?.description}</div>
-                          <div className="flex items-center justify-between text-xs text-gray-600 mt-2">
-                            <span className="font-medium">{task?.price?.toLocaleString()}đ</span>
-                            {task.nurseName && (
-                              <span className="text-blue-700">- {task.nurseName} {task.nurseRole ? `(${task.nurseRole})` : ''}</span>
-                            )}
-                            {task.status && (
-                              <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                                task.status === 'active' ? 'bg-blue-100 text-blue-700' : 
-                                task.status === 'completed' ? 'bg-green-100 text-green-700' : 
-                                'bg-gray-100 text-gray-700'
-                              }`}>{task.status}</span>
-                            )}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          <div className="mt-6 flex justify-end space-x-3">
-            <button className="px-6 py-2 rounded-lg bg-gray-500 text-white font-semibold hover:bg-gray-600 transition-all duration-300" onClick={onClose}>
-              Đóng
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  };
 
   // Loading state
   if (loading) {
@@ -220,11 +101,15 @@ const OverviewTab = ({ bookings, revenue }) => {
   // Tính toán thống kê
   const totalUsers = accounts?.length || 0;
   const totalBookings = bookings?.length || 0;
-  const totalRevenue = revenue?.total || 0;
-  const activeNurses = nursingSpecialists?.filter(n => n.Status === 'active').length || 0;
-
-  // Lấy 5 booking gần nhất
-  const recentBookings = bookings?.slice(0, 5) || [];
+  const totalRevenue = Array.isArray(invoices)
+    ? invoices.reduce((sum, inv) => {
+        const status = inv?.status ?? inv?.Status;
+        const isPaid = status === true || String(status).toLowerCase() === 'paid' || String(status).toLowerCase() === 'completed' || String(status).toLowerCase() === 'success';
+        const amount = inv?.totalAmount ?? inv?.TotalAmount ?? 0;
+        return isPaid ? sum + Number(amount || 0) : sum;
+      }, 0)
+    : 0;
+  const activeNurses = (nursingSpecialists || []).filter(n => String(n?.status ?? n?.Status).toLowerCase() === 'active').length;
 
   return (
     <div className="space-y-6">
@@ -267,72 +152,6 @@ const OverviewTab = ({ bookings, revenue }) => {
           subtitle="So với tháng trước"
         />
       </div>
-
-      {/* Recent Bookings */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-800">Booking gần đây</h3>
-          <button className="text-pink-600 hover:text-pink-700 font-semibold">
-            Xem tất cả →
-          </button>
-        </div>
-        
-        <div className="space-y-4">
-          {recentBookings.length > 0 ? recentBookings.map((booking) => {
-            const { careProfile, account, service, packageInfo } = getBookingDetail(booking);
-            return (
-              <div key={booking.bookingID} className="flex items-center justify-between p-4 bg-gray-50 rounded-xl hover:bg-gray-100 transition-colors">
-                <div className="flex items-center space-x-4">
-                  <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
-                    {careProfile?.profileName?.charAt(0) || '?'}
-                  </div>
-                  <div>
-                    <p className="font-semibold text-gray-800">{careProfile?.profileName || 'N/A'}</p>
-                    <p className="text-sm text-gray-600">
-                      {packageInfo ? packageInfo.name : (service?.serviceName || 'N/A')}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-green-600">{booking.amount?.toLocaleString()} VNĐ</p>
-                  <p className="text-sm text-gray-500">
-                    {booking.createdAt ? new Date(booking.createdAt).toLocaleDateString('vi-VN') : 'N/A'}
-                  </p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                    booking.status === 'completed' ? 'bg-green-100 text-green-700' :
-                    booking.status === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                    'bg-red-100 text-red-700'
-                  }`}>
-                    {booking.status === 'completed' ? 'Hoàn thành' :
-                     booking.status === 'pending' ? 'Đang xử lý' : 'Đã hủy'}
-                  </span>
-                  <button
-                    onClick={() => setSelectedBooking(booking)}
-                    className="text-pink-600 hover:text-pink-700"
-                  >
-                    <FontAwesomeIcon icon={faEye} />
-                  </button>
-                </div>
-              </div>
-            );
-          }) : (
-            <div className="text-center py-8">
-              <FontAwesomeIcon icon={faCalendar} className="text-4xl text-gray-300 mb-4" />
-              <p className="text-gray-500">Chưa có booking nào</p>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Detail Modal */}
-      {selectedBooking && (
-        <BookingDetailModal
-          booking={selectedBooking}
-          onClose={() => setSelectedBooking(null)}
-        />
-      )}
     </div>
   );
 };
