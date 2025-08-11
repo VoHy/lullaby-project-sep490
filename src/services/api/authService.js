@@ -27,10 +27,14 @@ const authService = {
     }
   },
 
-  // Đăng nhập với Google
-  loginWithGoogle: async (googleToken) => {
+  // Đăng nhập với Google: backend yêu cầu { fullName, email }
+  loginWithGoogle: async ({ fullName, email }) => {
     try {
-      return await apiPost(`${API_ENDPOINTS.ACCOUNTS}/login/google`, { token: googleToken }, 'Đăng nhập Google thất bại');
+      return await apiPost(
+        `${API_ENDPOINTS.ACCOUNTS}/login/google`,
+        { fullName, email },
+        'Đăng nhập Google thất bại'
+      );
     } catch (error) {
       throw new Error(error.message || 'Đăng nhập Google thất bại');
     }
@@ -42,6 +46,19 @@ const authService = {
       return await apiPost(`${API_ENDPOINTS.ACCOUNTS}/reset-password`, { email }, 'Gửi yêu cầu đặt lại mật khẩu thất bại');
     } catch (error) {
       throw new Error(error.message || 'Gửi yêu cầu đặt lại mật khẩu thất bại');
+    }
+  },
+
+  // Đổi mật khẩu theo API mới: { emailOrPhoneNumber, oldPassword, newPassword }
+  resetPassword: async ({ emailOrPhoneNumber, oldPassword, newPassword }) => {
+    try {
+      return await apiPost(
+        `${API_ENDPOINTS.ACCOUNTS}/reset-password`,
+        { emailOrPhoneNumber, oldPassword, newPassword },
+        'Đặt lại mật khẩu thất bại'
+      );
+    } catch (error) {
+      throw new Error(error.message || 'Đặt lại mật khẩu thất bại');
     }
   },
 
