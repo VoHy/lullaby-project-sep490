@@ -7,17 +7,12 @@ import NurseOverviewTab from './NurseOverviewTab';
 import NurseScheduleTab from './NurseScheduleTab';
 import NurseBookingsTab from './NurseBookingsTab';
 import NursePatientsTab from './NursePatientsTab';
-import NurseNotificationsTab from './NurseNotificationsTab';
 import NurseProfileTab from './NurseProfileTab';
 import NurseMedicalNoteTab from './NurseMedicalNoteTab';
-import { AuthContext } from '@/context/AuthContext';
-// import bookingService from '@/services/api/bookingService';
 import careProfileService from '@/services/api/careProfileService';
 import notificationService from '@/services/api/notificationService';
 import workScheduleService from '@/services/api/workScheduleService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
-// import medicalNoteService from '@/services/api/medicalNoteService';
-// import customizeTaskService from '@/services/api/customizeTaskService';
 
 const NurseDashboard = ({ user, initialTab }) => {
   const router = useRouter();
@@ -107,7 +102,6 @@ const NurseDashboard = ({ user, initialTab }) => {
     { id: 'bookings', label: 'Lịch hẹn' },
     { id: 'patients', label: 'Hồ sơ bệnh nhân' },
     { id: 'medicalnote', label: 'Ghi chú y tế' },
-    { id: 'notifications', label: 'Thông báo' },
     { id: 'profile', label: 'Tài khoản cá nhân' },
   ];
 

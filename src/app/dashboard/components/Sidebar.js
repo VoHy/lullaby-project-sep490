@@ -7,11 +7,11 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faChartBar, faUsers, faUserNurse, faCalendarAlt,
   faUser, faMoneyBill, faNotesMedical, faChevronLeft,
-  faChevronRight, faSignOutAlt, faBars, faStethoscope
-  , faUserMd, faNewspaper, faCalendarCheck, faMapLocationDot, faBell
+  faChevronRight, faSignOutAlt, faBars, faStethoscope,
+  faUserMd, faNewspaper, faCalendarCheck, faMapLocationDot
 } from '@fortawesome/free-solid-svg-icons';
 
-// Enhanced User Profile Component
+// Enhanced User Profile Component (unchanged)
 const UserProfile = ({ user, getRoleName }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
@@ -41,7 +41,6 @@ const UserProfile = ({ user, getRoleName }) => {
       >
         <div className="relative">
           <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-            {/* Lấy ký tự đầu tiên của tên, ưu tiên fullName, sau đó full_name */}
             {(user?.fullName || user?.full_name || 'U').charAt(0)}
           </div>
           <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full animate-pulse"></div>
@@ -60,7 +59,6 @@ const UserProfile = ({ user, getRoleName }) => {
         />
       </div>
 
-      {/* Dropdown Menu */}
       {dropdownOpen && (
         <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-pink-200/30 py-2 z-50 animate-slideDown">
           <button
@@ -95,53 +93,43 @@ const Sidebar = ({ user }) => {
       { name: 'Báo cáo Doanh thu', path: '/dashboard?tab=revenue', icon: faMoneyBill, color: 'text-yellow-500', tab: 'revenue' },
       { name: 'Quản lý Blog', path: '/dashboard?tab=blog', icon: faNewspaper, color: 'text-red-500', tab: 'blog' },
       { name: 'Quản lý Lịch nghỉ', path: '/dashboard?tab=holiday', icon: faCalendarCheck, color: 'text-red-500', tab: 'holiday' },
-   ],
-    2: [ // Nurse
+    ],
+    2: ({ major }) => [ // Nursing/Specialist
       { name: 'Tổng quan', path: '/dashboard?tab=overview', icon: faChartBar, color: 'text-purple-500', tab: 'overview' },
       { name: 'Lịch của tôi', path: '/dashboard?tab=schedule', icon: faCalendarAlt, color: 'text-green-500', tab: 'schedule' },
-      { name: 'Lịch hẹn', path: '/dashboard?tab=bookings', icon: faStethoscope, color: 'text-red-500', tab: 'bookings' },
+      { name: major === 'Nurse' ? 'Lịch hẹn' : 'Lịch sử lịch hẹn', path: '/dashboard?tab=bookings', icon: faStethoscope, color: 'text-red-500', tab: 'bookings' },
       { name: 'Hồ sơ khách hàng', path: '/dashboard?tab=patients', icon: faNotesMedical, color: 'text-blue-500', tab: 'patients' },
       { name: 'Ghi chú y tế', path: '/dashboard?tab=medicalnote', icon: faNotesMedical, color: 'text-blue-500', tab: 'medicalnote' },
-      { name: 'Thông báo', path: '/dashboard?tab=notifications', icon: faBell, color: 'text-green-500', tab: 'notifications' },
       { name: 'Hồ sơ cá nhân', path: '/dashboard?tab=profile', icon: faUser, color: 'text-pink-500', tab: 'profile' },
     ],
-    3: [ // Manager - Sửa lại role_id cho Manager
+    3: [ // Manager
       { name: 'Quản lý Nurse', path: '/dashboard?tab=nurse', icon: faUserNurse, color: 'text-blue-500', tab: 'nurse' },
       { name: 'Quản lý Specialist', path: '/dashboard?tab=specialist', icon: faUserMd, color: 'text-pink-500', tab: 'specialist' },
       { name: 'Quản lý Booking', path: '/dashboard?tab=booking', icon: faCalendarAlt, color: 'text-green-500', tab: 'booking' },
     ],
-    4: [ // Customer
-      { name: 'Tổng quan', path: '/dashboard?tab=overview', icon: faChartBar, color: 'text-purple-500', tab: 'overview' },
-      { name: 'Lịch hẹn của tôi', path: '/dashboard?tab=bookings', icon: faCalendarAlt, color: 'text-green-500', tab: 'bookings' },
-      { name: 'Thông báo', path: '/dashboard?tab=notifications', icon: faBell, color: 'text-green-500', tab: 'notifications' },
-      { name: 'Hồ sơ cá nhân', path: '/dashboard?tab=profile', icon: faUser, color: 'text-pink-500', tab: 'profile' },
-    ],
-    5: [ // Specialist
-      { name: 'Tổng quan', path: '/dashboard?tab=overview', icon: faChartBar, color: 'text-purple-500', tab: 'overview' },
-      { name: 'Lịch của tôi', path: '/dashboard?tab=schedule', icon: faCalendarAlt, color: 'text-green-500', tab: 'schedule' },
-      { name: 'Lịch hẹn', path: '/dashboard?tab=bookings', icon: faStethoscope, color: 'text-red-500', tab: 'bookings' },
-      { name: 'Hồ sơ khách hàng', path: '/dashboard?tab=patients', icon: faNotesMedical, color: 'text-blue-500', tab: 'patients' },
-      { name: 'Ghi chú y tế', path: '/dashboard?tab=medicalnote', icon: faNotesMedical, color: 'text-blue-500', tab: 'medicalnote' },
-      { name: 'Thông báo', path: '/dashboard?tab=notifications', icon: faBell, color: 'text-green-500', tab: 'notifications' },
-      { name: 'Hồ sơ cá nhân', path: '/dashboard?tab=profile', icon: faUser, color: 'text-pink-500', tab: 'profile' },
-    ],
   };
 
-  // Get role name based on role_id hoặc roleID
+  // Get role name based on role_id or roleID
   const getRoleName = (role_id) => {
     const roleMap = {
-      1: 'Administrator',
-      2: 'NursingSpecialist',
+      1: 'Admin',
+      2: 'Nursing/Specialist',
       3: 'Manager',
-      4: 'Customer',
-      5: 'Specialist',
     };
-    return roleMap[role_id] || 'User';
+    return roleMap[role_id] || 'Unauthorized';
   };
 
-  // Lấy role thực tế từ user
+  // Get role and major from user
   const userRole = user?.roleID || user?.role_id;
-  const currentMenuItems = menuItems[userRole] || [];
+  const userMajor = user?.major; // Assuming major is passed for roleID 2
+  const currentMenuItems = userRole === 2 ? menuItems[2]({ major: userMajor }) : menuItems[userRole] || [];
+
+  // Redirect unauthorized users (e.g., Customer) to login or another page
+  useEffect(() => {
+    if (!menuItems[userRole]) {
+      router.push('/auth/login'); // Redirect to login or another page
+    }
+  }, [userRole, router]);
 
   return (
     <div
@@ -200,28 +188,25 @@ const Sidebar = ({ user }) => {
       {/* Navigation Menu */}
       <nav className="mt-4 px-2 flex-1">
         <div className="space-y-1">
-                     <div className="text-xs text-gray-500 mb-2">Menu items: {currentMenuItems.length}</div>
+          <div className="text-xs text-gray-500 mb-2">Menu items: {currentMenuItems.length}</div>
           {currentMenuItems.length > 0 ? (
             currentMenuItems.map((item, index) => {
-              // Determine if this item is active
               let isActive = false;
               if (item.tab) {
                 isActive = pathname.startsWith('/dashboard') && currentTab === item.tab;
               } else {
                 isActive = pathname === item.path;
               }
-              
-                             // Nếu không có currentTab, mặc định active cho item đầu tiên
-               if (!currentTab && index === 0) {
-                 isActive = true;
-               }
+              if (!currentTab && index === 0) {
+                isActive = true;
+              }
               return (
                 <Link
                   key={item.path}
                   href={item.path}
-                                     onClick={(e) => {
-                     e.stopPropagation();
-                   }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                  }}
                   className={`
                     group flex items-center px-3 py-2 rounded-lg
                     text-sm cursor-pointer w-full text-left select-none
@@ -264,11 +249,10 @@ const Sidebar = ({ user }) => {
               );
             })
           ) : (
-            // Hiển thị thông báo nếu không có menu items
             <div className="text-center py-8">
               <div className="text-gray-400 text-4xl mb-2">📋</div>
               <p className="text-gray-500 text-sm">Không có menu</p>
-              <p className="text-gray-400 text-xs mt-1">Role: {userRole}</p>
+              <p className="text-gray-400 text-xs mt-1">Role: {userRole}, Major: {userMajor || 'N/A'}</p>
             </div>
           )}
         </div>
@@ -294,4 +278,4 @@ const Sidebar = ({ user }) => {
   );
 };
 
-export default Sidebar; 
+export default Sidebar;
