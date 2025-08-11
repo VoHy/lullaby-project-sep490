@@ -5,9 +5,9 @@ import { FaSearch } from 'react-icons/fa';
 
 const SearchFilter = ({ searchText, setSearchText, selectedCategory, setSelectedCategory }) => {
   const categories = [
-    { id: 'all', name: 'Tất cả', icon: '🏥' },
-    { id: 'nurse', name: 'Y tá', icon: '👩‍⚕️' },
-    { id: 'specialist', name: 'Chuyên gia', icon: '👨‍⚕️' }
+    { id: 'all', name: 'Tất cả', icon: '' },
+    { id: 'Nurse', name: 'Y tá', icon: '' },
+    { id: 'Specialist', name: 'Chuyên gia', icon: '' }
   ];
 
   return (
