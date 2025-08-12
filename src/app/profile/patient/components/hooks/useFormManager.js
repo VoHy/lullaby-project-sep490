@@ -20,11 +20,11 @@ const formatDateForInput = (dateStr) => {
 // Initial form states
 const INITIAL_CARE_PROFILE = {
   profileName: '', dateOfBirth: '', phoneNumber: '', address: '', 
-  zoneDetailID: '', note: '', status: 'active', image: ''
+  zoneDetailID: '', note: '', status: 'Active', image: ''
 };
 
 const INITIAL_RELATIVE = {
-  relativeName: '', dateOfBirth: '', gender: '', note: '', status: 'active', image: ''
+  relativeName: '', dateOfBirth: '', gender: '', note: '', status: 'Active', image: ''
 };
 
 export const useFormManager = () => {
@@ -38,12 +38,6 @@ export const useFormManager = () => {
   const [editItems, setEditItems] = useState({
     careProfile: null,
     relative: null
-  });
-
-  // Avatar states
-  const [avatars, setAvatars] = useState({
-    careProfile: { file: null, preview: '' },
-    relative: { file: null, preview: '' }
   });
 
   // Loading states
@@ -69,17 +63,9 @@ export const useFormManager = () => {
         dateOfBirth: formatDateForInput(item.dateOfBirth) 
       };
       setForms(prev => ({ ...prev, [type]: formData }));
-      setAvatars(prev => ({ 
-        ...prev, 
-        [type]: { file: null, preview: item.image || '' }
-      }));
     } else {
       const initialData = type === 'careProfile' ? INITIAL_CARE_PROFILE : INITIAL_RELATIVE;
       setForms(prev => ({ ...prev, [type]: initialData }));
-      setAvatars(prev => ({ 
-        ...prev, 
-        [type]: { file: null, preview: '' }
-      }));
     }
   };
 
@@ -95,17 +81,15 @@ export const useFormManager = () => {
   };
 
   const handleAvatarChange = (type, e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setAvatars(prev => ({ 
-          ...prev, 
-          [type]: { file, preview: reader.result }
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
+    // Now handles URL input instead of file upload
+    const { value } = e.target;
+    setForms(prev => ({ 
+      ...prev, 
+      [type]: {
+        ...prev[type],
+        image: value
+      }
+    }));
   };
 
   const updateLoading = (type, isLoading) => {
@@ -115,10 +99,6 @@ export const useFormManager = () => {
   const resetForm = (type) => {
     const initialData = type === 'careProfile' ? INITIAL_CARE_PROFILE : INITIAL_RELATIVE;
     setForms(prev => ({ ...prev, [type]: initialData }));
-    setAvatars(prev => ({ 
-      ...prev, 
-      [type]: { file: null, preview: '' }
-    }));
     setEditItems(prev => ({ ...prev, [type]: null }));
   };
 
@@ -126,7 +106,6 @@ export const useFormManager = () => {
     // States
     forms,
     editItems,
-    avatars,
     loadingStates,
     currentCareID,
     

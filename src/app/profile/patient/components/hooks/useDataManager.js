@@ -4,6 +4,7 @@ import relativesService from '@/services/api/relativesService';
 import zoneService from '@/services/api/zoneService';
 import zoneDetailService from '@/services/api/zoneDetailService';
 import careProfileService from '@/services/api/careProfileService';
+import bookingService from '@/services/api/bookingService';
 import { validateCareProfile, validateRelative, prepareCareProfileData, prepareRelativeData } from '../../utils/formUtils';
 
 export const useDataManager = (user, router) => {
@@ -113,6 +114,12 @@ export const useDataManager = (user, router) => {
   };
 
   const deleteCareProfile = async (id) => {
+    // Kiểm tra xem hồ sơ có booking nào không
+    const bookings = await bookingService.getAllByCareProfile(id).catch(() => []);
+    if (Array.isArray(bookings) && bookings.length > 0) {
+      throw new Error('Hồ sơ này có booking nên không thể xóa.');
+    }
+
     await careProfileService.deleteCareProfile(id);
     // Remove from state optimistically
     setCareProfiles(prev =>

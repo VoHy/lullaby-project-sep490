@@ -1,10 +1,10 @@
-import { FaPhone, FaMapMarkerAlt, FaStickyNote, FaUsers, FaPlus, FaEdit } from 'react-icons/fa';
+import { FaPhone, FaMapMarkerAlt, FaStickyNote, FaUsers, FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
 import { formatDateToDDMMYYYY } from '../../utils/dateUtils';
 import { StatusBadge } from './shared/FormComponents';
 import { normalizeFieldNames } from '../utils/formUtils';
 import { filterItems, getCareProfileId, getRelativeId } from '../utils/displayUtils';
 
-export default function PatientCareProfileCard({ care, relativesList, relFilter, setRelFilter, handleOpenForm, onViewDetailCareProfile, onViewDetailRelative, handleOpenEditCareProfile, handleOpenEditRelative }) {
+export default function PatientCareProfileCard({ care, relativesList, relFilter, setRelFilter, handleOpenForm, onViewDetailCareProfile, onViewDetailRelative, handleOpenEditCareProfile, handleOpenEditRelative, handleDeleteCareProfile, handleDeleteRelative }) {
   const normalizedCare = normalizeFieldNames(care);
   const careId = getCareProfileId(care);
   
@@ -19,7 +19,7 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => onViewDetailCareProfile && onViewDetailCareProfile(care)}>
           <img
-            src={normalizedCare.image || "/images/hero-bg.jpg"}
+            src={(normalizedCare.image && normalizedCare.image.trim() !== '') ? normalizedCare.image : "/images/hero-bg.jpg"}
             alt={normalizedCare.profileName}
             className="w-16 h-16 rounded-full object-cover border-2 border-purple-200"
           />
@@ -30,13 +30,22 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
         </div>
         <div className="flex flex-col items-end gap-2">
           <StatusBadge status={normalizedCare.status} variant="detailed" />
-          <button
-            className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-purple-600 transition"
-            title="Sửa hồ sơ"
-            onClick={e => { e.stopPropagation(); handleOpenEditCareProfile && handleOpenEditCareProfile(care); }}
-          >
-            <FaEdit />
-          </button>
+          <div className="flex items-center gap-1">
+            <button
+              className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-purple-600 transition"
+              title="Sửa hồ sơ"
+              onClick={e => { e.stopPropagation(); handleOpenEditCareProfile && handleOpenEditCareProfile(care); }}
+            >
+              <FaEdit />
+            </button>
+            <button
+              className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-red-600 transition"
+              title="Xóa hồ sơ"
+              onClick={e => { e.stopPropagation(); handleDeleteCareProfile && handleDeleteCareProfile(careId); }}
+            >
+              <FaTrash />
+            </button>
+          </div>
         </div>
       </div>
       
@@ -105,13 +114,22 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
                   </div>
                   <div className="flex items-center gap-2">
                     <StatusBadge status={normalizedRelative.status} />
-                    <button
-                      className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-purple-600 transition opacity-80 group-hover:opacity-100"
-                      title="Sửa người thân"
-                      onClick={e => { e.stopPropagation(); handleOpenEditRelative && handleOpenEditRelative(relative, careId); }}
-                    >
-                      <FaEdit />
-                    </button>
+                    <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100">
+                      <button
+                        className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-purple-600 transition"
+                        title="Sửa người thân"
+                        onClick={e => { e.stopPropagation(); handleOpenEditRelative && handleOpenEditRelative(relative, careId); }}
+                      >
+                        <FaEdit />
+                      </button>
+                      <button
+                        className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-red-600 transition"
+                        title="Xóa người thân"
+                        onClick={e => { e.stopPropagation(); handleDeleteRelative && handleDeleteRelative(relativeId); }}
+                      >
+                        <FaTrash />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );

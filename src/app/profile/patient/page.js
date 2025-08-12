@@ -124,6 +124,8 @@ export default function PatientProfilePage(props) {
             onViewDetailRelative={manager.handleOpenRelativeDetail}
             handleOpenEditCareProfile={manager.handleOpenCareProfileForm}
             handleOpenEditRelative={manager.handleOpenRelativeForm}
+            handleDeleteCareProfile={manager.handleDeleteCareProfile}
+            handleDeleteRelative={manager.handleDeleteRelative}
           />
         </div>
         {/* Modal form hồ sơ người thân */}
@@ -133,7 +135,6 @@ export default function PatientProfilePage(props) {
           onSave={manager.handleSaveCareProfile}
           formData={manager.careProfileForm}
           onChange={manager.handleCareProfileInputChange}
-          onAvatarChange={manager.handleCareProfileAvatarChange}
           loading={manager.careProfileLoading}
           isEdit={!!manager.editCareProfile}
           zones={manager.zones}
@@ -147,7 +148,6 @@ export default function PatientProfilePage(props) {
           onSave={manager.handleSaveRelative}
           formData={manager.relativeForm}
           onChange={manager.handleRelativeInputChange}
-          onAvatarChange={manager.handleRelativeAvatarChange}
           loading={manager.relativeLoading}
           isEdit={!!manager.editRelative}
         />

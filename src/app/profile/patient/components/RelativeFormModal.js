@@ -3,7 +3,7 @@ import BaseModal from './shared/BaseModal';
 import { FormField, AvatarUpload, FormActions } from './shared/FormComponents';
 import { validateRelative, prepareRelativeData, normalizeFieldNames } from '../utils/formUtils';
 
-export default function RelativeFormModal({ open, onClose, onSave, formData, onChange, onAvatarChange, loading, isEdit }) {
+export default function RelativeFormModal({ open, onClose, onSave, formData, onChange, loading, isEdit }) {
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -73,8 +73,9 @@ export default function RelativeFormModal({ open, onClose, onSave, formData, onC
           <div className="col-span-1 flex flex-col gap-4 justify-between">
             <AvatarUpload
               currentImage={formData.image}
-              onImageChange={onAvatarChange}
+              onImageChange={onChange}
               size="w-24 h-24"
+              name="image"
             />
             
             <FormField

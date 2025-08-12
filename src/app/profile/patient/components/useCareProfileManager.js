@@ -36,9 +36,7 @@ export default function useCareProfileManager(router) {
     let data = dataOrEvent;
     if (dataOrEvent && typeof dataOrEvent.preventDefault === 'function') {
       dataOrEvent.preventDefault();
-      data = { ...formManager.forms.careProfile, image: formManager.avatars.careProfile.preview };
-    } else {
-      data = { ...data, image: formManager.avatars.careProfile.preview };
+      data = formManager.forms.careProfile;
     }
 
     formManager.updateLoading('careProfile', true);
@@ -62,9 +60,7 @@ export default function useCareProfileManager(router) {
     let data = dataOrEvent;
     if (dataOrEvent && typeof dataOrEvent.preventDefault === 'function') {
       dataOrEvent.preventDefault();
-      data = { ...formManager.forms.relative, image: formManager.avatars.relative.preview };
-    } else {
-      data = { ...data, image: formManager.avatars.relative.preview };
+      data = formManager.forms.relative;
     }
 
     formManager.updateLoading('relative', true);
@@ -148,10 +144,6 @@ export default function useCareProfileManager(router) {
     editRelative: formManager.editItems.relative,
     careProfileForm: formManager.forms.careProfile,
     relativeForm: formManager.forms.relative,
-    careProfileAvatar: formManager.avatars.careProfile.preview,
-    careProfileAvatarFile: formManager.avatars.careProfile.file,
-    avatarPreview: formManager.avatars.relative.preview,
-    avatarFile: formManager.avatars.relative.file,
     currentCareID: formManager.currentCareID,
     
     // Loading states
@@ -184,8 +176,6 @@ export default function useCareProfileManager(router) {
     // Input handlers
     handleCareProfileInputChange: (e) => formManager.handleInputChange('careProfile', e),
     handleRelativeInputChange: (e) => formManager.handleInputChange('relative', e),
-    handleCareProfileAvatarChange: (e) => formManager.handleAvatarChange('careProfile', e),
-    handleRelativeAvatarChange: (e) => formManager.handleAvatarChange('relative', e),
     
     // Modal handlers
     handleCloseCareProfileForm: () => modalManager.closeModal('careProfileForm'),
