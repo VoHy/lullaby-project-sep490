@@ -8,6 +8,8 @@ import { FaCheck, FaClock, FaInfoCircle, FaBell, FaEnvelope, FaCalendarAlt, FaCr
 export default function NotificationsPage() {
   const { user } = useContext(AuthContext);
   const [notifications, setNotifications] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10); // Số thông báo mỗi trang
   const [loading, setLoading] = useState(true);
   const [selectedNotification, setSelectedNotification] = useState(null);
 
@@ -17,7 +19,8 @@ export default function NotificationsPage() {
       const data = await notificationService.getAllByAccount(user.accountID || user.AccountID);
       const items = Array.isArray(data) ? data : [];
       // Hiển thị tất cả thông báo thay vì chỉ lọc theo booking
-      setNotifications(items);
+  setNotifications(items);
+  setCurrentPage(1); // Reset về trang đầu khi load mới
     } catch (error) {
       console.error('Error fetching notifications:', error);
       setNotifications([]);
@@ -107,7 +110,65 @@ export default function NotificationsPage() {
     return () => clearInterval(interval);
   }, [user]);
 
+  // Tính toán phân trang
+  const totalPages = Math.ceil(notifications.length / pageSize);
+  const paginatedNotifications = notifications.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
   if (loading) {
+          {notifications.length === 0 ? (
+            <div className="bg-white p-8 text-center border rounded-lg">
+              <FaInfoCircle className="text-3xl text-gray-400 mb-2" />
+              <h3 className="text-lg font-semibold text-gray-700 mb-2">Không có thông báo</h3>
+              <p className="text-gray-500">Bạn chưa có thông báo nào.</p>
+            </div>
+          ) : (
+            <table className="w-full bg-white border rounded-lg">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="py-2 px-3 text-left">Loại</th>
+                  <th className="py-2 px-3 text-left">Nội dung</th>
+                  <th className="py-2 px-3 text-left">Thời gian</th>
+                  <th className="py-2 px-3 text-left">Trạng thái</th>
+                  <th className="py-2 px-3 text-left">Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedNotifications.map((notification) => {
+                  const typeInfo = getNotificationType(notification);
+                  return (
+                    <tr key={notification.notificationID} className="border-b">
+                      <td className="py-2 px-3">{typeInfo.label}</td>
+                      <td className="py-2 px-3">{notification.message || notification.Content || 'Thông báo mới'}</td>
+                      <td className="py-2 px-3">{new Date(notification.createdAt).toLocaleString('vi-VN')}</td>
+                      <td className="py-2 px-3">
+                        {notification.isRead ? (
+                          <span className="text-green-600">Đã đọc</span>
+                        ) : (
+                          <span className="text-purple-600">Chưa đọc</span>
+                        )}
+                      </td>
+                      <td className="py-2 px-3">
+                        {!notification.isRead && (
+                          <button
+                            onClick={() => markAsRead(notification.notificationID)}
+                            className="px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                          >
+                            Đánh dấu đã đọc
+                          </button>
+                        )}
+                        <button
+                          onClick={() => setSelectedNotification(notification)}
+                          className="px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 ml-2"
+                        >
+                          Xem
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          )}
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-8">
         <div className="max-w-4xl mx-auto px-4">
@@ -142,14 +203,7 @@ export default function NotificationsPage() {
               </div>
             </div>
             <div className="flex gap-3">
-              <button
-                onClick={fetchNotifications}
-                className="bg-gradient-to-r from-blue-600 to-cyan-600 text-white px-4 py-3 rounded-xl hover:from-blue-700 hover:to-cyan-700 transition-all duration-300 flex items-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105"
-                title="Làm mới thông báo"
-              >
-                <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                Làm mới
-              </button>
+              {/* Button 'Làm mới' đã bị xoá */}
               {unreadCount > 0 && (
                 <button
                   onClick={markAllAsRead}
@@ -174,7 +228,7 @@ export default function NotificationsPage() {
               <p className="text-gray-600 text-lg">Bạn chưa có thông báo nào liên quan đến booking.</p>
             </div>
           ) : (
-            notifications.map((notification, index) => {
+            paginatedNotifications.map((notification, index) => {
               const typeInfo = getNotificationType(notification);
               return (
                 <div
@@ -235,11 +289,31 @@ export default function NotificationsPage() {
               );
             })
           )}
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="flex justify-center items-center gap-2 mt-8">
+              <button
+                className="px-3 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                Trang trước
+              </button>
+              <span className="mx-2 text-gray-600">Trang {currentPage} / {totalPages}</span>
+              <button
+                className="px-3 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                Trang sau
+              </button>
+            </div>
+          )}
         </div>
 
         {/* Notification Detail Modal */}
         {selectedNotification && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center p-4 z-50 backdrop-blur-sm">
             <div className="bg-white rounded-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto shadow-2xl border border-purple-100 animate-pop-in">
               <div className="p-8">
                 <div className="flex items-center justify-between mb-6">

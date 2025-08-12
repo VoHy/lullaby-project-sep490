@@ -44,8 +44,9 @@ const SearchFilter = ({
               className="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
             >
               <option value="all">Tất cả trạng thái</option>
-              <option value="pending">Chờ xác nhận</option>
-              <option value="confirmed">Đã xác nhận</option>
+              <option value="pending">Chưa thanh toán</option>
+              <option value="isScheduled">Đã lên lịch</option>
+              <option value="paid">Đã thanh toán</option>
               <option value="completed">Hoàn thành</option>
               <option value="cancelled">Đã hủy</option>
             </select>
