@@ -21,15 +21,27 @@ export default function NewsPage() {
       try {
         setLoading(true);
         setCategoriesLoading(true);
-        
-        // Fetch blogs và categories song song
+
         const [blogsData, categoriesData] = await Promise.all([
           blogService.getAllBlogs(),
           blogCategoryService.getAllBlogCategories()
         ]);
-        
-        setBlogs(blogsData);
-        setFilteredBlogs(blogsData);
+
+        // Ánh xạ blogCategoryID sang BlogCategory
+        const processedBlogs = blogsData.map(blog => {
+          const category = categoriesData.find(cat => cat.blogCategoryID === blog.blogCategoryID);
+          return {
+            ...blog,
+            BlogCategory: category || { categoryName: 'Tin tức' },
+            title: blog.title || '',
+            content: blog.content || '',
+            Views: blog.Views || 0,
+            Author: blog.Author || 'Lullaby Team'
+          };
+        });
+
+        setBlogs(processedBlogs);
+        setFilteredBlogs(processedBlogs);
         setCategories(categoriesData);
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -41,28 +53,32 @@ export default function NewsPage() {
     fetchData();
   }, []);
 
-  // Filter blogs based on search and category
   useEffect(() => {
     let filtered = blogs;
-    
+
     if (searchText) {
-      filtered = filtered.filter(blog => 
-        blog.title?.toLowerCase().includes(searchText.toLowerCase()) ||
-        blog.content?.toLowerCase().includes(searchText.toLowerCase()) ||
-        blog.BlogCategory?.categoryName?.toLowerCase().includes(searchText.toLowerCase())
-      );
+      filtered = filtered.filter(blog => {
+        const matches =
+          (blog.title || '').toLowerCase().includes(searchText.toLowerCase()) ||
+          (blog.content || '').toLowerCase().includes(searchText.toLowerCase()) ||
+          (blog.BlogCategory?.categoryName || '').toLowerCase().includes(searchText.toLowerCase());
+        console.log(`Blog ${blog.blogID} matches search "${searchText}":`, matches);
+        return matches;
+      });
     }
-    
+
     if (selectedCategory !== 'all') {
-      filtered = filtered.filter(blog => 
-        blog.BlogCategory?.categoryName === selectedCategory
-      );
+      filtered = filtered.filter(blog => {
+        const matches = (blog.BlogCategory?.categoryName || '') === selectedCategory;
+        console.log(`Blog ${blog.blogID} matches category "${selectedCategory}":`, matches);
+        return matches;
+      });
     }
-    
+
+    console.log('Filtered Blogs:', filtered);
     setFilteredBlogs(filtered);
   }, [blogs, searchText, selectedCategory]);
 
-  // Get unique categories for filter buttons
   const getCategoryOptions = () => {
     const categoryNames = categories.map(cat => cat.categoryName).filter(Boolean);
     return ['all', ...categoryNames];
@@ -110,7 +126,7 @@ export default function NewsPage() {
         >
           <div className="flex items-center justify-center gap-3 mb-4">
             <FaNewspaper className="text-4xl text-purple-600" />
-            <h1 className="text-4xl md:text-5xl font-bold text-gray-900">
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
               Tin tức & Blog
             </h1>
           </div>
@@ -153,11 +169,10 @@ export default function NewsPage() {
                   <button
                     key={category}
                     onClick={() => setSelectedCategory(category)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
-                      selectedCategory === category
-                        ? 'bg-purple-500 text-white shadow-lg'
-                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                    }`}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${selectedCategory === category
+                      ? 'bg-purple-500 text-white shadow-lg'
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                      }`}
                   >
                     <FaFilter className="text-xs" />
                     {category === 'all' ? 'Tất cả' : category}
@@ -205,14 +220,14 @@ export default function NewsPage() {
                 className="group"
               >
                 <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden cursor-pointer"
-                     onClick={() => router.push(`/news/${blog.blogID}`)}>
-                  
+                  onClick={() => router.push(`/news/${blog.blogID}`)}>
+
                   {/* Image */}
                   <div className="relative overflow-hidden">
-                    <img 
-                      src={blog.Image || '/images/hero-bg.jpg'} 
-                      alt={blog.Title} 
-                      className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300" 
+                    <img
+                      src={blog.image || '/images/hero-bg.jpg'}
+                      alt={blog.title}
+                      className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-300"
                     />
                     <div className="absolute top-4 left-4">
                       <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium bg-purple-500 text-white">
@@ -226,9 +241,9 @@ export default function NewsPage() {
                     <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-purple-600 transition-colors">
                       {blog.title}
                     </h3>
-                    
+
                     <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed">
-                      {truncateText(blog.content || blog.summary || 'Nội dung đang được cập nhật...')}
+                      {truncateText(blog.content || 'Nội dung đang được cập nhật...')}
                     </p>
 
                     {/* Meta Info */}
@@ -283,4 +298,4 @@ export default function NewsPage() {
       </div>
     </div>
   );
-} 
+}

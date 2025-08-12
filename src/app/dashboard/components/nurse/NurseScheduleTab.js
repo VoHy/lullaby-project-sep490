@@ -1,74 +1,123 @@
-import React, { useState, useEffect } from 'react';
-import { addMonths, subMonths, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays, format, isSameMonth, isSameDay, isWithinInterval, parseISO } from 'date-fns';
+'use client';
+import React, { useState, useEffect, useRef, useContext } from 'react';
+import {
+  addMonths, subMonths, startOfMonth, endOfMonth,
+  startOfWeek, endOfWeek, addDays, format,
+  isSameMonth, isSameDay, isWithinInterval, parseISO
+} from 'date-fns';
 import { vi } from 'date-fns/locale';
+import {
+  FaFlag, FaCalendarCheck, FaTimes, FaUser, FaClipboardList,
+  FaMoneyBillWave, FaPhone, FaMapMarkerAlt, FaCheckCircle, FaPlus
+} from 'react-icons/fa';
+
 import holidayService from '@/services/api/holidayService';
 import careProfileService from '@/services/api/careProfileService';
 import bookingService from '@/services/api/bookingService';
 import customizeTaskService from '@/services/api/customizeTaskService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import serviceTypeService from '@/services/api/serviceTypeService';
-import { FaFlag, FaCalendarCheck, FaTimes } from 'react-icons/fa';
 import workScheduleService from '@/services/api/workScheduleService';
+import medicalNoteService from '@/services/api/medicalNoteService';
+import { AuthContext } from '@/context/AuthContext';
 
-const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
+export default function NurseScheduleTab({ workSchedules = [] }) {
+  const { user } = useContext(AuthContext); 
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
   const [localSchedules, setLocalSchedules] = useState(Array.isArray(workSchedules) ? workSchedules : []);
   const [holidays, setHolidays] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   const [eventLoading, setEventLoading] = useState(false);
-  const [bookingDetailById, setBookingDetailById] = useState({});
-  const [serviceTasksCache, setServiceTasksCache] = useState(null);
-  const [serviceTypesCache, setServiceTypesCache] = useState(null);
+  const [error, setError] = useState(null);
+
+  // Medical Note modal state
+  const [showNoteModal, setShowNoteModal] = useState(false);
+  const [notePayload, setNotePayload] = useState({ note: '', advice: '', imageFile: null, relativeID: null });
+  const [noteSubmitting, setNoteSubmitting] = useState(false);
+  const [currentCustomizeTask, setCurrentCustomizeTask] = useState(null); // task object being annotated
+
+  // caches to avoid repeated calls
+  const cacheRef = useRef({
+    bookings: new Map(),  
+    serviceTasks: null,  
+    serviceTypes: null       
+  });
 
   const getStatusView = (rawStatus) => {
     const s = (rawStatus || '').toString().toLowerCase();
     switch (s) {
-      case 'paid': return { label: 'Đã thanh toán', cls: 'bg-green-100 text-green-800' };
-      case 'pending': return { label: 'Chờ xử lý', cls: 'bg-yellow-100 text-yellow-800' };
-      case 'confirmed': return { label: 'Đã xác nhận', cls: 'bg-blue-100 text-blue-800' };
-      case 'completed': return { label: 'Hoàn thành', cls: 'bg-teal-100 text-teal-800' };
-      case 'cancelled': case 'canceled': return { label: 'Đã hủy', cls: 'bg-gray-100 text-gray-800' };
-      case 'waiting': return { label: 'Đang chờ', cls: 'bg-gray-100 text-gray-800' };
-      case 'isscheduled': case 'scheduled': return { label: 'Đã lên lịch', cls: 'bg-indigo-100 text-indigo-800' };
-      case 'holiday': return { label: 'Ngày nghỉ', cls: 'bg-red-100 text-red-800' };
-      default: return { label: rawStatus || 'Không xác định', cls: 'bg-gray-100 text-gray-800' };
+      case 'paid': return { label: 'Đã thanh toán', cls: 'bg-green-600 text-white' };
+      case 'pending': return { label: 'Chờ xử lý', cls: 'bg-yellow-500 text-white' };
+      case 'confirmed': return { label: 'Đã xác nhận', cls: 'bg-blue-600 text-white' };
+      case 'completed': return { label: 'Hoàn thành', cls: 'bg-teal-600 text-white' };
+      case 'cancelled': case 'canceled': return { label: 'Đã hủy', cls: 'bg-gray-500 text-white' };
+      case 'waiting': return { label: 'Đang chờ', cls: 'bg-gray-500 text-white' };
+      case 'isscheduled': case 'scheduled': return { label: 'Đã lên lịch', cls: 'bg-indigo-600 text-white' };
+      case 'holiday': return { label: 'Ngày nghỉ', cls: 'bg-red-600 text-white' };
+      default: return { label: rawStatus || 'Không xác định', cls: 'bg-gray-500 text-white' };
     }
   };
 
+  // preload holidays, serviceTasks, serviceTypes once
   useEffect(() => {
-    const fetchData = async () => {
+    (async () => {
+      setLoading(true);
       try {
-        setLoading(true);
-        const holidaysData = await holidayService.getAllHolidays();
-        setHolidays(holidaysData);
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Không thể tải dữ liệu. Vui lòng thử lại.');
+        try {
+          const hs = await holidayService.getAllHolidays();
+          setHolidays(hs || []);
+        } catch (e) {
+          console.error('Holiday fetch error', e);
+          setHolidays([]);
+        }
+
+        if (!cacheRef.current.serviceTasks) {
+          try {
+            cacheRef.current.serviceTasks = await (serviceTaskService.getServiceTasks?.() || serviceTaskService.getAllServiceTasks?.() || []);
+          } catch (e) {
+            console.warn('serviceTasks fetch failed', e);
+            cacheRef.current.serviceTasks = [];
+          }
+        }
+        if (!cacheRef.current.serviceTypes) {
+          try {
+            cacheRef.current.serviceTypes = await (serviceTypeService.getAllServiceTypes?.() || serviceTypeService.getServiceTypes?.() || []);
+          } catch (e) {
+            console.warn('serviceTypes fetch failed', e);
+            cacheRef.current.serviceTypes = [];
+          }
+        }
+      } catch (e) {
+        console.error(e);
+        setError('Không tải được dữ liệu ban đầu.');
       } finally {
         setLoading(false);
       }
-    };
-    fetchData();
+    })();
   }, []);
+
+  // update localSchedules when props change
+  useEffect(() => {
+    setLocalSchedules(Array.isArray(workSchedules) ? workSchedules : []);
+  }, [workSchedules]);
 
   const getHolidayByDate = (dateStr) => {
     for (let h of holidays) {
-      const start = parseISO(h.startDate);
-      const end = parseISO(h.endDate);
-      const d = parseISO(dateStr);
-      if (isWithinInterval(d, { start, end })) {
-        return h;
-      }
+      try {
+        const start = parseISO(h.startDate);
+        const end = parseISO(h.endDate);
+        const d = parseISO(dateStr);
+        if (isWithinInterval(d, { start, end })) return h;
+      } catch (e) { /* ignore parse errors */ }
     }
     return null;
   };
 
-  const getDaysInMonthGrid = (currentMonth) => {
-    const startMonth = startOfMonth(currentMonth);
-    const endMonth = endOfMonth(currentMonth);
+  const getDaysInMonthGrid = (month) => {
+    const startMonth = startOfMonth(month);
+    const endMonth = endOfMonth(month);
     const startDate = startOfWeek(startMonth, { weekStartsOn: 1 });
     const endDate = endOfWeek(endMonth, { weekStartsOn: 1 });
     const days = [];
@@ -80,207 +129,339 @@ const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
     return days;
   };
 
-  useEffect(() => {
-    setLocalSchedules(Array.isArray(workSchedules) ? workSchedules : []);
-  }, [workSchedules]);
+  // fetchBookingBundle: booking + careProfile + customize tasks + serviceMain, normalized detailTasks
+  const fetchBookingBundle = async (bookingId, fallbackServiceId, workObj = null) => {
+    if (!bookingId) return null;
+    if (cacheRef.current.bookings.has(bookingId)) {
+      return cacheRef.current.bookings.get(bookingId);
+    }
+
+    let bookingDetail = null;
+    try {
+      bookingDetail = await bookingService.getBookingById(bookingId);
+    } catch (e) {
+      console.error('Booking API Error:', e);
+      bookingDetail = null;
+    }
+
+    // careProfile
+    let careProfile = null;
+    try {
+      careProfile = bookingDetail?.careProfile || bookingDetail?.CareProfile || null;
+      if (!careProfile) {
+        const cpId = bookingDetail?.careProfileID || bookingDetail?.CareProfileID || bookingDetail?.careProfileId;
+        if (cpId) {
+          careProfile = await careProfileService.getCareProfileById(cpId).catch(e => {
+            console.error('CareProfile API Error:', e);
+            return null;
+          });
+        }
+      }
+    } catch (e) {
+      console.error('CareProfile handling error', e);
+      careProfile = null;
+    }
+
+    // customize tasks
+    let customizeTasks = null;
+    try {
+      const ctId = bookingDetail?.customizeTaskID || bookingDetail?.CustomizeTaskID || bookingDetail?.customizeTaskId;
+      if (ctId && customizeTaskService.getCustomizeTaskById) {
+        customizeTasks = await customizeTaskService.getCustomizeTaskById(ctId).catch(() => null);
+      } else if (customizeTaskService.getAllByBooking) {
+        customizeTasks = await customizeTaskService.getAllByBooking(bookingId).catch(() => []);
+      } else {
+        customizeTasks = null;
+      }
+    } catch (e) {
+      console.error('Customize tasks error', e);
+      customizeTasks = null;
+    }
+
+    const serviceTasksList = cacheRef.current.serviceTasks || [];
+    const serviceTypesList = cacheRef.current.serviceTypes || [];
+
+    // serviceMain prefer booking.serviceID then fallback
+    let serviceMain = null;
+    try {
+      const sid = bookingDetail?.serviceID || bookingDetail?.ServiceID || bookingDetail?.serviceId || fallbackServiceId || workObj?.serviceID || workObj?.ServiceID;
+      if (sid && serviceTypeService.getServiceTypeById) {
+        serviceMain = await serviceTypeService.getServiceTypeById(sid).catch(() => null);
+      } else if (Array.isArray(serviceTypesList) && serviceTypesList.length > 0 && sid) {
+        serviceMain = serviceTypesList.find(st => (st.serviceID || st.ServiceID) === sid) || null;
+      }
+    } catch (e) { console.error('ServiceMain error', e); serviceMain = null; }
+
+    // normalize detailTasks from customizeTasks (array or single)
+    let detailTasksNormalized = [];
+    try {
+      const tasksArray = Array.isArray(customizeTasks) ? customizeTasks : (customizeTasks ? [customizeTasks] : []);
+      detailTasksNormalized = (tasksArray || []).map(t => {
+        const stKey = t.serviceTaskID || t.ServiceTaskID || t.serviceTaskId;
+        const svKey = t.serviceID || t.ServiceID || t.serviceId;
+        const stMeta = serviceTasksList.find(x => (x.serviceTaskID || x.ServiceTaskID) === stKey) || null;
+        const svMeta = serviceTypesList.find(x => (x.serviceID || x.ServiceID) === svKey) || null;
+
+        const serviceName = t.serviceName || t.ServiceName || stMeta?.description || svMeta?.serviceName || '-';
+        const quantity = t.quantity ?? t.Quantity ?? 1;
+        const price = (t.price ?? t.Price) ?? svMeta?.price ?? 0;
+        const total = (t.total ?? t.Total) ?? (price * quantity);
+
+        return {
+          ...t, // preserve original fields like customizeTaskID, nursingID, status...
+          serviceName,
+          quantity,
+          price,
+          total,
+          status: t.status || t.Status || null
+        };
+      });
+    } catch (e) {
+      console.error('Detail tasks normalization error', e);
+      detailTasksNormalized = [];
+    }
+
+    const bundle = {
+      booking: bookingDetail,
+      careProfile,
+      detailTasks: detailTasksNormalized,
+      serviceType: serviceMain,
+      serviceMain
+    };
+
+    cacheRef.current.bookings.set(bookingId, bundle);
+    return bundle;
+  };
+
+  // handle event click
+  const handleEventClick = async (event) => {
+    if (!event) return;
+    setSelectedEvent(event);
+    if (event.type !== 'booking') return;
+
+    setEventLoading(true);
+    try {
+      const bid = event.bookingId || event.bookingID || event.workObj?.bookingID || event.workObj?.BookingID;
+      const fallbackServiceId = event.serviceId || event.serviceID || event.workObj?.serviceID;
+      if (!bid) {
+        console.warn('No booking id in event', event);
+        setEventLoading(false);
+        return;
+      }
+
+      if (cacheRef.current.bookings.has(bid)) {
+        const cached = cacheRef.current.bookings.get(bid);
+        setSelectedEvent(prev => ({ ...prev, bookingDetail: cached }));
+        setEventLoading(false);
+        return;
+      }
+
+      const bundle = await fetchBookingBundle(bid, fallbackServiceId, event.workObj);
+      setSelectedEvent(prev => ({ ...prev, bookingDetail: bundle }));
+    } catch (e) {
+      console.error('Error fetching event details:', e);
+      setError('Không thể tải chi tiết sự kiện.');
+    } finally {
+      setEventLoading(false);
+    }
+  };
+
+  // mark attended AFTER endTime only, show work time in alerts
+  const markAttended = async (ws) => {
+    if (!ws) return;
+    const id = ws.workScheduleID || ws.WorkScheduleID;
+    if (!id) return;
+
+    const startTime = new Date(ws.workDate || ws.WorkDate);
+    const endTime = new Date(ws.endTime || ws.EndTime);
+    const now = new Date();
+
+    const workTimeStr = `${startTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${endTime.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+
+    if (isNaN(endTime.getTime())) {
+      // if endTime invalid, allow but warn
+      if (!confirm(`Không có thời gian kết thúc hợp lệ cho ca làm. Bạn vẫn muốn điểm danh?\nCa làm: ${workTimeStr}`)) return;
+    } else {
+      if (now < endTime) {
+        alert(`Chưa đến giờ điểm danh! Ca làm: ${workTimeStr}\nChỉ được điểm danh sau khi ca làm kết thúc.`);
+        return;
+      }
+    }
+
+    try {
+      await workScheduleService.updateIsAttended(id);
+      setSelectedEvent(prev => {
+        const next = { ...prev, isAttended: true, status: 'completed' };
+        if (next.bookingDetail && next.bookingDetail.booking) {
+          next.bookingDetail.booking.status = 'completed';
+        }
+        return next;
+      });
+      setLocalSchedules(prev => prev.map(item => {
+        const wid = item.workScheduleID || item.WorkScheduleID;
+        if (wid === id) {
+          return { ...item, isAttended: true, IsAttended: true, status: 'completed', Status: 'completed' };
+        }
+        return item;
+      }));
+      alert(`Điểm danh thành công!\nCa làm: ${workTimeStr}`);
+    } catch (e) {
+      console.error('updateIsAttended failed', e);
+      alert(e?.message || 'Không thể điểm danh');
+    }
+  };
+
+  // helper to convert file to base64 string
+  const fileToBase64 = (file) => new Promise((resolve, reject) => {
+    if (!file) return resolve(null);
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result.split(',')[1]);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+
+  // open add-note modal for a customizeTask
+  const openAddNoteModal = (task) => {
+    setCurrentCustomizeTask(task);
+    setNotePayload({ note: '', advice: '', imageFile: null, relativeID: null });
+    setShowNoteModal(true);
+  };
+
+  // submit medical note
+  const submitMedicalNote = async () => {
+    if (!currentCustomizeTask) return;
+    if (!notePayload.note || notePayload.note.trim() === '') {
+      alert('Ghi chú (note) là bắt buộc.');
+      return;
+    }
+    setNoteSubmitting(true);
+    try {
+      const base64Image = notePayload.imageFile ? await fileToBase64(notePayload.imageFile) : null;
+      const payload = {
+        customizeTaskID: currentCustomizeTask.customizeTaskID || currentCustomizeTask.CustomizeTaskID || currentCustomizeTask.customizeTaskId,
+        note: notePayload.note,
+        image: base64Image ? `data:${notePayload.imageFile.type};base64,${base64Image}` : null, // keep data URI style or null
+        advice: notePayload.advice || null,
+        relativeID: notePayload.relativeID ?? null
+      };
+      await medicalNoteService.createMedicalNote(payload);
+      alert('Tạo ghi chú y tế thành công.');
+      console.log('POST medical note', data);
+
+      // clear cache for this booking so that fetching details will include the new note (if BE returns it)
+      const bookingId = selectedEvent?.bookingId || selectedEvent?.bookingId || selectedEvent?.workObj?.bookingID;
+      if (bookingId && cacheRef.current.bookings.has(bookingId)) {
+        cacheRef.current.bookings.delete(bookingId);
+        // reload booking detail into modal
+        const newBundle = await fetchBookingBundle(bookingId, selectedEvent?.serviceId, selectedEvent?.workObj);
+        setSelectedEvent(prev => ({ ...prev, bookingDetail: newBundle }));
+      }
+
+      setShowNoteModal(false);
+      setCurrentCustomizeTask(null);
+    } catch (e) {
+      console.error('Create medical note failed', e);
+      alert(e?.message || 'Không thể tạo ghi chú');
+    } finally {
+      setNoteSubmitting(false);
+    }
+  };
 
   const days = getDaysInMonthGrid(currentMonth);
   const workDates = Array.isArray(localSchedules) ? localSchedules.map(ws => (ws.workDate || ws.WorkDate || '').split('T')[0]).filter(Boolean) : [];
-
   const isWork = (dStr) => workDates.includes(dStr);
-  const isHoliday = (dStr) => !!getHolidayByDate(dStr);
 
+  // build eventsOfDay for UI list
   const eventsOfDay = [];
   if (selectedDate) {
     Array.isArray(localSchedules) && localSchedules.filter(ws => (ws.workDate || ws.WorkDate || '').startsWith(selectedDate)).forEach(ws => {
       const workDate = ws.workDate || ws.WorkDate;
       const endTime = ws.endTime || ws.EndTime;
       const bookingId = ws.bookingID || ws.BookingID || ws.bookingId || ws.BookingId || ws.workScheduleID || ws.WorkScheduleID;
-      const serviceId = ws.serviceID || ws.ServiceID;
+      const serviceId = ws.serviceID || ws.ServiceID || ws.serviceId || ws.ServiceId;
       eventsOfDay.push({
         type: 'booking',
         time: `${workDate ? new Date(workDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''} - ${endTime ? new Date(endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : ''}`,
         label: `Lịch hẹn #${bookingId || '-'}`,
-        status: ws.status || ws.Status,
-        isAttended: ws.isAttended || ws.IsAttended,
+        status: ws.status || ws.Status || 'pending',
+        isAttended: ws.isAttended || ws.IsAttended || false,
         workObj: ws,
-        workDate,
-        endTime,
         bookingId,
-        serviceId,
+        serviceId
       });
     });
+
     const holiday = getHolidayByDate(selectedDate);
     if (holiday) {
       eventsOfDay.push({
         type: 'holiday',
-        workDate: holiday.startDate,
-        endTime: holiday.endDate,
         label: holiday.holidayName,
         status: 'holiday',
-        holidayObj: holiday,
+        holidayObj: holiday
       });
     }
   }
 
-  const handleDateClick = (date) => {
-    setSelectedDate(format(date, 'yyyy-MM-dd'));
-    setSelectedEvent(null);
-  };
-
-  const handleEventClick = (event) => {
-    setSelectedEvent(event);
-    (async () => {
-      if (event?.type === 'booking') {
-        const tryFetchById = async (bid) => {
-          const serviceId = event?.serviceId || event?.workObj?.serviceID || event?.workObj?.ServiceID;
-          const [detail, tasks, svcTasks, svcTypes, serviceMain] = await Promise.all([
-            bookingService.getBookingById(bid),
-            customizeTaskService.getAllByBooking(bid).catch(() => []),
-            serviceTasksCache ? Promise.resolve(serviceTasksCache) : serviceTaskService.getServiceTasks().catch(() => []),
-            serviceTypesCache ? Promise.resolve(serviceTypesCache) : (serviceTypeService.getServiceTypes?.() || serviceTypeService.getAllServiceTypes?.() || Promise.resolve([])),
-            serviceId ? serviceTypeService.getServiceTypeById(serviceId).catch(() => null) : Promise.resolve(null),
-          ]);
-
-          if (!serviceTasksCache && Array.isArray(svcTasks)) setServiceTasksCache(svcTasks);
-          if (!serviceTypesCache && Array.isArray(svcTypes)) setServiceTypesCache(svcTypes);
-
-          let patient = detail.careProfile || detail.CareProfile;
-          if (!patient) {
-            const cpId = detail.careProfileID || detail.CareProfileID;
-            if (cpId) {
-              try { patient = await careProfileService.getCareProfileById(cpId); } catch (_) { }
-            }
-          }
-          const booker = detail.customer || detail.Customer || detail.account || detail.Account || null;
-          const detailTasks = (Array.isArray(tasks) ? tasks : []).map(t => {
-            const st = (Array.isArray(svcTasks) ? svcTasks : []).find(x => (x.serviceTaskID || x.ServiceTaskID) === (t.serviceTaskID || t.ServiceTaskID));
-            const sv = (Array.isArray(svcTypes) ? svcTypes : []).find(sv => (sv.serviceID || sv.ServiceID) === (t.serviceID || t.ServiceID));
-            const serviceName = t.serviceName || t.ServiceName || st?.description || st?.Description || sv?.serviceName || sv?.name || sv?.Name || '-';
-            const quantity = t.quantity ?? t.Quantity ?? 1;
-            const unitPrice = (t.price ?? t.Price ?? sv?.price ?? 0);
-            const total = (t.total ?? t.Total ?? (unitPrice * quantity));
-            const status = t.status || t.Status;
-            return { serviceName, quantity, price: unitPrice, total, status };
-          });
-          const bundle = { booking: detail, patient, booker, detailTasks, serviceMain };
-          setBookingDetailById(prev => ({ ...prev, [bid]: bundle }));
-          setSelectedEvent(prev => ({ ...prev, bookingDetail: bundle }));
-        };
-
-        try {
-          setEventLoading(true);
-          let id = event.bookingId || event.bookingObj?.bookingID || event.bookingObj?.BookingID;
-          if (id && bookingDetailById[id]) {
-            setSelectedEvent(prev => ({ ...prev, bookingDetail: bookingDetailById[id] }));
-            return;
-          }
-          if (!id) return;
-          await tryFetchById(id);
-        } catch (e) {
-          console.error('Không thể lấy chi tiết booking', e);
-        } finally {
-          setEventLoading(false);
-        }
-      }
-    })();
-  };
-
-  const closeEventDetail = () => {
-    setSelectedEvent(null);
-  };
-
-  const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1));
-  const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1));
-
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-500 mx-auto mb-4"></div>
-          <p className="text-gray-600">Đang tải dữ liệu...</p>
-        </div>
+      <div className="flex items-center justify-center py-12">
+        <div className="text-gray-600">Đang tải dữ liệu...</div>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="text-red-500 mb-4">⚠️</div>
-          <p className="text-red-600">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-purple-500 text-white rounded hover:bg-purple-600"
-          >
-            Thử lại
-          </button>
-        </div>
+      <div className="p-6">
+        <div className="text-red-600 mb-3">Có lỗi: {error}</div>
+        <button className="px-4 py-2 bg-purple-600 text-white rounded" onClick={() => window.location.reload()}>Tải lại</button>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 p-4 bg-gray-50">
-      {/* Calendar Header */}
-      <div className="flex justify-between items-center bg-white p-4 rounded-lg shadow-sm">
-        <h3 className="text-xl font-semibold text-gray-800">Lịch làm việc</h3>
-        <div className="flex items-center space-x-4">
-          <button onClick={prevMonth} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" /></svg>
-          </button>
-          <span className="text-lg font-semibold text-gray-800">
-            {format(currentMonth, 'MMMM yyyy', { locale: vi })}
-          </span>
-          <button onClick={nextMonth} className="p-2 hover:bg-gray-100 rounded-full transition-colors">
-            <svg className="w-5 h-5 text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" /></svg>
-          </button>
+    <div className="space-y-6 p-6 bg-gray-50 min-h-[300px]">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div className="flex items-center gap-4">
+          <div className="text-3xl font-extrabold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Lịch làm việc</div>
+          <div className="text-sm text-gray-600">Quản lý lịch & điểm danh</div>
+        </div>
+        <div className="flex items-center gap-3 bg-white p-3 rounded shadow-sm">
+          <button onClick={() => setCurrentMonth(subMonths(currentMonth, 1))} className="px-3 py-2 rounded hover:bg-gray-100">◀</button>
+          <div className="font-medium">{format(currentMonth, 'MMMM yyyy', { locale: vi })}</div>
+          <button onClick={() => setCurrentMonth(addMonths(currentMonth, 1))} className="px-3 py-2 rounded hover:bg-gray-100">▶</button>
         </div>
       </div>
 
-      {/* Calendar Grid */}
-      <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-        <div className="grid grid-cols-7 bg-gray-100">
-          {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map(day => (
-            <div key={day} className="p-3 text-center font-medium text-gray-700 text-sm">
-              {day}
-            </div>
+      {/* Calendar */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="grid grid-cols-7 bg-gradient-to-r from-purple-50 to-blue-50 text-center font-semibold text-sm">
+          {['T2', 'T3', 'T4', 'T5', 'T6', 'T7', 'CN'].map(d => (
+            <div key={d} className="py-3">{d}</div>
           ))}
         </div>
         <div className="grid grid-cols-7">
-          {days.map((day, index) => {
+          {days.map((day, idx) => {
             const dayStr = format(day, 'yyyy-MM-dd');
             const isCurrentMonth = isSameMonth(day, currentMonth);
             const isToday = isSameDay(day, new Date());
-            const hasWork = isWork(dayStr);
             const holiday = getHolidayByDate(dayStr);
-
             return (
               <div
-                key={index}
-                onClick={() => handleDateClick(day)}
-                className={`
-                  min-h-[80px] p-2 border border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors
-                  ${!isCurrentMonth ? 'bg-gray-50 text-gray-400' : 'bg-white'}
-                  ${isToday ? 'border-blue-400 bg-blue-50' : ''}
-                  ${selectedDate === dayStr ? 'border-blue-500 bg-blue-100' : ''}
-                `}
+                key={idx}
+                onClick={() => { setSelectedDate(dayStr); setSelectedEvent(null); }}
+                className={`min-h-[90px] p-3 border-l border-t hover:bg-gray-50 cursor-pointer transition-colors
+                  ${!isCurrentMonth ? 'bg-gray-50 text-gray-300' : 'bg-white'}
+                  ${isToday ? 'ring-2 ring-purple-200' : ''}
+                  ${selectedDate === dayStr ? 'bg-purple-50' : ''}`}
               >
-                <div className="text-sm font-medium text-gray-800">{format(day, 'd')}</div>
-                <div className="mt-2 space-y-1">
-                  {hasWork && (
-                    <div className="flex items-center text-xs text-green-600">
-                      <FaCalendarCheck className="mr-1 w-3 h-3" />
-                      <span>Lịch hẹn</span>
-                    </div>
-                  )}
-                  {holiday && (
-                    <div className="flex items-center text-xs text-red-600">
-                      <FaFlag className="mr-1 w-3 h-3" />
-                      <span className="truncate">{holiday.holidayName}</span>
-                    </div>
-                  )}
+                <div className="flex justify-between items-start">
+                  <div className="text-lg font-semibold">{format(day, 'd')}</div>
+                </div>
+                <div className="mt-3 space-y-1 text-xs">
+                  {isWork(dayStr) && <div className="inline-flex items-center gap-1 px-2 py-1 rounded bg-green-100 text-green-800"><FaCalendarCheck /> <span>Lịch hẹn</span></div>}
+                  {holiday && <div className="inline-flex items-center gap-1 px-2 py-1 rounded bg-red-100 text-red-800"><FaFlag /> <span>{holiday.holidayName}</span></div>}
                 </div>
               </div>
             );
@@ -288,39 +469,33 @@ const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
         </div>
       </div>
 
-      {/* Selected Date Events */}
+      {/* Events list */}
       {selectedDate && (
-        <div className="bg-white rounded-lg shadow-sm p-6">
-          <h4 className="text-lg font-semibold text-gray-800 mb-4">
-            Sự kiện ngày {format(parseISO(selectedDate), 'dd/MM/yyyy')}
-          </h4>
+        <div className="bg-white rounded-lg shadow p-4">
+          <div className="flex justify-between items-center mb-4">
+            <div>
+              <div className="text-lg font-semibold">Sự kiện ngày {format(parseISO(selectedDate), 'dd/MM/yyyy')}</div>
+              <div className="text-sm text-gray-500">Click vào sự kiện để xem chi tiết</div>
+            </div>
+            <div className="text-sm text-gray-500">{eventsOfDay.length} sự kiện</div>
+          </div>
+
           {eventsOfDay.length === 0 ? (
-            <p className="text-gray-500 text-sm">Không có sự kiện nào trong ngày này.</p>
+            <div className="py-6 text-center text-gray-500">Không có sự kiện vào ngày này.</div>
           ) : (
             <div className="space-y-3">
-              {eventsOfDay.map((event, index) => {
-                const typeLabel = event.type === 'holiday' ? 'Ngày nghỉ' : 'Lịch hẹn';
-                const typeCls = event.type === 'holiday' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800';
+              {eventsOfDay.map((ev, idx) => {
+                const sv = getStatusView(ev.status);
                 return (
-                  <div
-                    key={index}
-                    onClick={() => handleEventClick(event)}
-                    className="p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                  <div key={idx}
+                    onClick={() => handleEventClick(ev)}
+                    className="flex items-center justify-between p-3 border rounded-lg hover:shadow-sm transition cursor-pointer"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2">
-                        <span className={`px-2 py-1 rounded text-xs font-medium ${typeCls}`}>
-                          {typeLabel}
-                        </span>
-                        <span className="text-sm font-medium text-gray-800">{event.label}</span>
-                      </div>
-                      <span className="text-xs text-gray-600">{event.time || '-'}</span>
+                    <div className="flex items-center gap-3">
+                      <div className={`px-2 py-1 rounded text-sm ${sv.cls}`}>{sv.label}</div>
+                      <div className="font-medium">{ev.label}</div>
                     </div>
-                    <div className="mt-1 text-xs text-gray-600">
-                      Trạng thái: <span className={`px-2 py-0.5 rounded-full text-xs ${getStatusView(event.status).cls}`}>
-                        {getStatusView(event.status).label}
-                      </span>
-                    </div>
+                    <div className="text-sm text-gray-600">{ev.time || '-'}</div>
                   </div>
                 );
               })}
@@ -329,208 +504,276 @@ const NurseScheduleTab = ({ workSchedules, nurseBookings }) => {
         </div>
       )}
 
-      {/* Event Detail Modal */}
+      {/* Event detail modal */}
       {selectedEvent && (
-        <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold text-gray-800">Chi tiết sự kiện</h3>
-              <button onClick={closeEventDetail} className="text-gray-500 hover:text-gray-700">
-                <FaTimes className="w-5 h-5" />
-              </button>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black opacity-30" onClick={() => setSelectedEvent(null)}></div>
+          <div className="relative bg-white w-full max-w-6xl rounded-xl shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between p-6 border-b">
+              <div className="flex items-center gap-4">
+                <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Chi tiết sự kiện</div>
+                <div className="text-sm text-gray-500">#{selectedEvent.bookingId || selectedEvent.label || ''}</div>
+              </div>
+              <div>
+                <button onClick={() => setSelectedEvent(null)} className="p-2 rounded hover:bg-gray-100"><FaTimes /></button>
+              </div>
             </div>
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Left Column: Booking Info and Attendance */}
+
+            <div className="p-6 grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Left */}
               <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-lg">
-                  <h4 className="font-semibold text-gray-800 mb-2">Thông tin sự kiện</h4>
-                  <div className="grid grid-cols-1 gap-2 text-sm">
-                    <div className="flex items-center">
-                      <span className="w-24 font-medium text-gray-700">Loại:</span>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${selectedEvent.type === 'holiday' ? 'bg-red-100 text-red-800' : 'bg-green-100 text-green-800'}`}>
-                        {selectedEvent.type === 'holiday' ? 'Ngày nghỉ' : 'Lịch hẹn'}
-                      </span>
+                <div className="p-4 border rounded-lg bg-white">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <FaClipboardList className="text-purple-600" />
+                      <div>
+                        <div className="text-sm text-gray-500">Thông tin sự kiện</div>
+                        <div className="text-lg font-semibold">{selectedEvent.type === 'holiday' ? 'Ngày nghỉ' : 'Lịch hẹn'}</div>
+                      </div>
                     </div>
-                    <div className="flex items-center">
-                      <span className="w-24 font-medium text-gray-700">Thời gian:</span>
-                      <span className="text-gray-600">{selectedEvent.time || '-'}</span>
+                    <div className="text-sm text-gray-600">{selectedEvent.time || '-'}</div>
+                  </div>
+
+                  <div className="mt-4 space-y-2 text-sm">
+                    <div className="flex items-center justify-between">
+                      <div className="text-gray-600">Trạng thái</div>
+                      <div className={`px-3 py-1 rounded text-sm ${getStatusView(selectedEvent.status).cls}`}>{getStatusView(selectedEvent.status).label}</div>
                     </div>
-                    <div className="flex items-center">
-                      <span className="w-24 font-medium text-gray-700">Trạng thái:</span>
-                      <span className={`px-2 py-1 rounded text-xs font-medium ${getStatusView(selectedEvent.status).cls}`}>
-                        {getStatusView(selectedEvent.status).label}
-                      </span>
+                    <div className="flex items-center justify-between">
+                      <div className="text-gray-600">Đã tham gia</div>
+                      <div className="text-gray-700">{selectedEvent.isAttended ? 'Có' : 'Chưa'}</div>
                     </div>
                   </div>
                 </div>
-                {(selectedEvent.type === 'booking' || (selectedEvent.type === 'work' && selectedEvent.bookingDetail)) && (
-                  <div className="bg-gray-50 p-4 rounded-lg">
-                    <h4 className="font-medium text-gray-800 mb-2">Thông tin lịch hẹn</h4>
-                    {eventLoading && (
-                      <div className="text-sm text-gray-500 flex items-center">
-                        <div className="animate-spin rounded-full h-4 w-4 border-t-2 border-blue-500 mr-2"></div>
-                        Đang tải chi tiết booking...
+
+                {(selectedEvent.type === 'booking' || selectedEvent.type === 'work') && (
+                  <div className="p-4 border rounded-lg bg-white">
+                    <div className="flex items-center gap-3">
+                      <FaCalendarCheck className="text-green-600" />
+                      <div>
+                        <div className="text-sm text-gray-500">Thông tin lịch hẹn</div>
+                        <div className="text-lg font-semibold">#{selectedEvent.bookingId || selectedEvent.workObj?.bookingID || '-'}</div>
                       </div>
-                    )}
-                    {(() => {
-                      const bundle = selectedEvent.bookingDetail || {};
-                      const detail = bundle.booking || selectedEvent.bookingObj || {};
-                      const mainService = bundle.serviceMain || null;
-                      const bookingCode = selectedEvent.bookingId || detail.bookingID || detail.BookingID || '-';
-                      const workdate = detail.workdate || detail.workDate || detail.WorkDate;
-                      const sv = getStatusView(detail.status || detail.Status || selectedEvent.status);
-                      return (
-                        <div className="grid grid-cols-1 gap-2 text-sm">
-                          <div className="flex items-center">
-                            <span className="w-24 font-medium text-gray-700">Mã:</span>
-                            <span className="font-medium">#{bookingCode}</span>
-                          </div>
-                          <div className="flex items-center">
-                            <span className="w-24 font-medium text-gray-700">Trạng thái:</span>
-                            <span className={`px-2 py-1 rounded text-xs font-medium ${sv.cls}`}>{sv.label}</span>
-                          </div>
-                          {mainService && (
-                            <div className="flex items-center">
-                              <span className="w-24 font-medium text-gray-700">Dịch vụ chính:</span>
-                              <span className="font-medium">{mainService.serviceName || mainService.name || mainService.Name || '-'}</span>
-                            </div>
-                          )}
-                          <div className="flex items-center">
-                            <span className="w-24 font-medium text-gray-700">Ngày làm việc:</span>
-                            <span>{workdate ? new Date(workdate).toLocaleString('vi-VN') : '-'}</span>
-                          </div>
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
-                {selectedEvent.workObj && selectedEvent.status?.toLowerCase() !== 'cancelled' && selectedEvent.status?.toLowerCase() !== 'canceled' && (
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
-                    <div className="flex items-center">
-                      <span className="w-24 font-medium text-gray-700">Đã tham gia:</span>
-                      <span className="text-gray-600">{selectedEvent.isAttended ? 'Có' : 'Chưa'}</span>
                     </div>
-                    {!selectedEvent.isAttended && (
-                      <button
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        onClick={async () => {
-                          const id = selectedEvent.workObj.workScheduleID || selectedEvent.workObj.WorkScheduleID;
-                          try {
-                            await workScheduleService.updateIsAttended(id);
-                            setSelectedEvent(prev => ({ ...prev, isAttended: true, status: 'completed' }));
-                            setLocalSchedules(prev => prev.map(ws => {
-                              const wsId = ws.workScheduleID || ws.WorkScheduleID;
-                              if (wsId === id) {
-                                return { ...ws, isAttended: true, IsAttended: true, status: 'completed', Status: 'completed' };
-                              }
-                              return ws;
-                            }));
-                          } catch (e) {
-                            alert(e?.message || 'Không thể điểm danh');
-                          }
-                        }}
-                      >
-                        Điểm danh
-                      </button>
+
+                    <div className="mt-3 text-sm space-y-2">
+                      {eventLoading ? (
+                        <div className="text-gray-500 flex items-center gap-2">
+                          <div className="animate-spin h-4 w-4 border-t-2 border-purple-600 rounded-full"></div>
+                          Đang tải chi tiết booking...
+                        </div>
+                      ) : (
+                        <>
+                          <div className="flex items-center justify-between">
+                            <div className="text-gray-600">Dịch vụ chính</div>
+                            <div className="text-gray-800">
+                              {selectedEvent.bookingDetail?.serviceMain?.serviceName || selectedEvent.bookingDetail?.serviceType?.serviceName || '-'}
+                            </div>
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div className="text-gray-600">Ngày làm việc</div>
+                            <div className="text-gray-800">
+                              {selectedEvent.bookingDetail?.booking?.workDate
+                                ? new Date(selectedEvent.bookingDetail.booking.workDate).toLocaleString('vi-VN')
+                                : (selectedEvent.workObj?.workDate ? new Date(selectedEvent.workObj.workDate).toLocaleString('vi-VN') : '-')}
+                            </div>
+                          </div>
+                        </>
+                      )}
+                    </div>
+
+                    {/* attendance */}
+                    {selectedEvent.workObj && selectedEvent.status?.toLowerCase() !== 'cancelled' && selectedEvent.status?.toLowerCase() !== 'canceled' && (
+                      <div className="mt-4 flex items-center justify-end">
+                        {!selectedEvent.isAttended ? (
+                          <button className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+                            onClick={async () => { await markAttended(selectedEvent.workObj); }}>
+                            <FaCheckCircle /> Điểm danh
+                          </button>
+                        ) : (
+                          <div className="px-3 py-1 rounded bg-green-100 text-green-800 text-sm flex items-center gap-2"><FaCheckCircle /> Đã điểm danh</div>
+                        )}
+                      </div>
                     )}
                   </div>
                 )}
               </div>
 
-              {/* Right Column: Patient and Services */}
-              {(selectedEvent.type === 'booking' || (selectedEvent.type === 'work' && selectedEvent.bookingDetail)) && (
-                <div className="space-y-4">
-                  {(() => {
-                    const bundle = selectedEvent.bookingDetail || {};
-                    const detail = bundle.booking || selectedEvent.bookingObj || {};
-                    const patient = bundle.patient || detail.careProfile || detail.CareProfile || {};
-                    const patientName = patient.profileName || 'Không xác định';
-                    const phone = patient.phoneNumber || '-';
-                    const addr = patient.address || patient.Address || patient.addressDetail || patient.AddressDetail || '-';
-                    const tasks = bundle.detailTasks || [];
-                    const tasksTotal = tasks.reduce((sum, t) => sum + (t.total || 0), 0);
+              {/* Right */}
+              <div className="space-y-4">
+                {/* Patient */}
+                <div className="p-4 border rounded-lg bg-white">
+                  <div className="flex items-center gap-3">
+                    <FaUser className="text-indigo-600" />
+                    <div>
+                      <div className="text-sm text-gray-500">Bệnh nhân</div>
+                      <div className="text-lg font-semibold">{selectedEvent.bookingDetail?.careProfile?.profileName || '-'}</div>
+                    </div>
+                  </div>
 
-                    return (
-                      <>
-                        <div className="bg-gray-50 p-4 rounded-lg">
-                          <h4 className="font-medium text-gray-800 mb-2">Bệnh nhân</h4>
-                          <div className="grid grid-cols-1 gap-2 text-sm">
-                            <div className="flex items-center">
-                              <span className="w-24 font-medium text-gray-700">Họ tên:</span>
-                              <span className="font-medium">{patientName}</span>
-                            </div>
-                            <div className="flex items-center">
-                              <span className="w-24 font-medium text-gray-700">SĐT:</span>
-                              <span>{phone}</span>
-                            </div>
-                            <div className="flex items-center">
-                              <span className="w-24 font-medium text-gray-700">Địa chỉ:</span>
-                              <span>{addr}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div>
-                          <h4 className="font-medium text-gray-800 mb-2">Dịch vụ chi tiết</h4>
-                          <div className="w-full overflow-x-auto">
-                            <table className="w-full text-sm border border-gray-200 rounded-lg">
-                              <thead className="bg-gray-100 text-gray-700">
-                                <tr>
-                                  <th className="px-4 py-2 text-left font-medium">Dịch vụ</th>
-                                  <th className="px-4 py-2 text-right font-medium">SL</th>
-                                  <th className="px-4 py-2 text-right font-medium">Đơn giá</th>
-                                  <th className="px-4 py-2 text-right font-medium">Thành tiền</th>
-                                  <th className="px-4 py-2 text-left font-medium">Trạng thái</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {tasks.length === 0 && (
-                                  <tr><td colSpan={5} className="px-4 py-3 text-center text-gray-500">Không có dịch vụ.</td></tr>
-                                )}
-                                {tasks.map((t, idx) => (
-                                  <tr key={idx} className="border-t">
-                                    <td className="px-4 py-2">{t.serviceName}</td>
-                                    <td className="px-4 py-2 text-right">{t.quantity || 1}</td>
-                                    <td className="px-4 py-2 text-right">{(t.price || 0).toLocaleString('vi-VN')}đ</td>
-                                    <td className="px-4 py-2 text-right">{(t.total || 0).toLocaleString('vi-VN')}đ</td>
-                                    <td className="px-4 py-2">
-                                      <span className={`px-2 py-1 rounded text-xs ${getStatusView(t.status).cls}`}>
-                                        {getStatusView(t.status).label || '-'}
-                                      </span>
-                                    </td>
-                                  </tr>
-                                ))}
-                              </tbody>
-                              {tasks.length > 0 && (
-                                <tfoot>
-                                  <tr className="border-t bg-gray-100">
-                                    <td className="px-4 py-2 text-right font-semibold" colSpan={3}>Tổng</td>
-                                    <td className="px-4 py-2 text-right font-semibold">{tasksTotal.toLocaleString('vi-VN')}đ</td>
-                                    <td></td>
-                                  </tr>
-                                </tfoot>
-                              )}
-                            </table>
-                          </div>
-                        </div>
-                      </>
-                    );
-                  })()}
+                  <div className="mt-3 text-sm space-y-2 text-gray-700">
+                    <div className="flex items-center gap-3">
+                      <FaPhone className="text-gray-400" /><span>{selectedEvent.bookingDetail?.careProfile?.phoneNumber || '-'}</span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <FaMapMarkerAlt className="text-gray-400" />
+                      <span>{selectedEvent.bookingDetail?.careProfile?.address || selectedEvent.bookingDetail?.careProfile?.addressDetail || '-'}</span>
+                    </div>
+                  </div>
                 </div>
-              )}
+
+                {/* Service details (with +Ghi chú per customizeTask) */}
+                <div className="p-4 border rounded-lg bg-white">
+                  <div className="flex items-center gap-3 mb-3">
+                    <FaMoneyBillWave className="text-green-600" />
+                    <div>
+                      <div className="text-sm text-gray-500">Dịch vụ chi tiết</div>
+                      <div className="text-base font-semibold">{(selectedEvent.bookingDetail?.detailTasks?.length ?? 0)} mục</div>
+                    </div>
+                  </div>
+
+                  <div className="w-full overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-gradient-to-r from-purple-50 to-blue-50 text-gray-700">
+                          <th className="p-2 text-left">Dịch vụ</th>
+                          <th className="p-2 text-right">SL</th>
+                          <th className="p-2 text-right">Đơn giá</th>
+                          <th className="p-2 text-right">Thành tiền</th>
+                          <th className="p-2 text-left">Trạng thái</th>
+                          <th className="p-2 text-center">Ghi chú</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {(selectedEvent.bookingDetail?.detailTasks && selectedEvent.bookingDetail.detailTasks.length > 0) ? (
+                          selectedEvent.bookingDetail.detailTasks.map((t, i) => {
+                            const taskStatus = (t.status || t.Status || '').toString().toLowerCase();
+                            const isTaskOwner = user && (t.nursingID === user.nursingID || t.NursingID === user.nursingID);
+                            const canAddNote = isTaskOwner && selectedEvent.isAttended && taskStatus === 'completed';
+                            return (
+                              <tr key={i} className="hover:bg-purple-50">
+                                <td className="p-2">{t.serviceName || t.ServiceName || '-'}</td>
+                                <td className="p-2 text-right">{t.quantity || t.Quantity || 1}</td>
+                                <td className="p-2 text-right">{(t.price || t.Price || 0).toLocaleString('vi-VN')}đ</td>
+                                <td className="p-2 text-right">{(t.total || t.Total || 0).toLocaleString('vi-VN')}đ</td>
+                                <td className="p-2">
+                                  <span className={`px-2 py-1 rounded text-xs ${getStatusView(t.status || t.Status).cls}`}>
+                                    {getStatusView(t.status || t.Status).label}
+                                  </span>
+                                </td>
+                                <td className="p-2 text-center">
+                                  {canAddNote ? (
+                                    <button
+                                      className="inline-flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                                      onClick={() => openAddNoteModal(t)}
+                                    >
+                                      <FaPlus /> Ghi chú
+                                    </button>
+                                  ) : (
+                                    <div className="text-xs text-gray-400">—</div>
+                                  )}
+                                </td>
+                              </tr>
+                            );
+                          })
+                        ) : (
+                          <tr><td className="p-4 text-center text-gray-500" colSpan={6}>Không có dịch vụ.</td></tr>
+                        )}
+                      </tbody>
+                      {selectedEvent.bookingDetail?.detailTasks && selectedEvent.bookingDetail.detailTasks.length > 0 && (
+                        <tfoot>
+                          <tr className="bg-gray-100">
+                            <td className="p-2 text-right font-semibold" colSpan={3}>Tổng</td>
+                            <td className="p-2 text-right font-semibold">
+                              {selectedEvent.bookingDetail.detailTasks.reduce((s, x) => s + (x.total || x.Total || 0), 0).toLocaleString('vi-VN')}đ
+                            </td>
+                            <td colSpan={2}></td>
+                          </tr>
+                        </tfoot>
+                      )}
+                    </table>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="mt-6 flex justify-end">
-              <button
-                onClick={closeEventDetail}
-                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-              >
-                Đóng
-              </button>
+
+            <div className="p-4 border-t flex justify-end gap-3 bg-white">
+              <button onClick={() => setSelectedEvent(null)} className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200">Đóng</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add Medical Note Modal */}
+      {showNoteModal && currentCustomizeTask && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black opacity-30" onClick={() => setShowNoteModal(false)}></div>
+          <div className="relative bg-white w-full max-w-md rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-lg font-semibold">Thêm ghi chú y tế</div>
+              <button onClick={() => setShowNoteModal(false)} className="p-2 rounded hover:bg-gray-100"><FaTimes /></button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <div className="text-sm text-gray-600 mb-1">Task</div>
+                <div className="font-medium">{currentCustomizeTask.serviceName || currentCustomizeTask.serviceTaskName || `Task #${currentCustomizeTask.customizeTaskID || currentCustomizeTask.CustomizeTaskID}`}</div>
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700">Ghi chú (bắt buộc)</label>
+                <textarea
+                  className="w-full mt-1 p-2 border rounded"
+                  rows={4}
+                  value={notePayload.note}
+                  onChange={e => setNotePayload(p => ({ ...p, note: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700">Lời khuyên (tùy chọn)</label>
+                <textarea
+                  className="w-full mt-1 p-2 border rounded"
+                  rows={2}
+                  value={notePayload.advice}
+                  onChange={e => setNotePayload(p => ({ ...p, advice: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700">Hình ảnh (tùy chọn)</label>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="mt-1"
+                  onChange={e => setNotePayload(p => ({ ...p, imageFile: e.target.files?.[0] || null }))}
+                />
+              </div>
+
+              <div>
+                <label className="text-sm text-gray-700">Relative ID (tùy chọn)</label>
+                <input
+                  type="number"
+                  className="w-full mt-1 p-2 border rounded"
+                  value={notePayload.relativeID ?? ''}
+                  onChange={e => setNotePayload(p => ({ ...p, relativeID: e.target.value ? Number(e.target.value) : null }))}
+                />
+              </div>
+
+              <div className="flex justify-end gap-2">
+                <button className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200" onClick={() => setShowNoteModal(false)}>Hủy</button>
+                <button
+                  className="px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700"
+                  onClick={submitMedicalNote}
+                  disabled={noteSubmitting}
+                >
+                  {noteSubmitting ? 'Đang gửi...' : 'Lưu ghi chú'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
     </div>
   );
-};
-
-export default NurseScheduleTab;
+}

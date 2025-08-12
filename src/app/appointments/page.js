@@ -19,6 +19,7 @@ import {
   AppointmentDetailModal,
   SearchFilter,
   EmptyState
+
 } from './components';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
 import {
@@ -27,7 +28,9 @@ import {
   getStatusColor,
   getStatusText,
   formatDate,
-  filterAppointments
+  filterAppointments,
+  normalizeStatus,
+  STATUS_MAP
 } from './utils/appointmentUtils';
 import careProfileService from "@/services/api/careProfileService";
 
@@ -47,15 +50,13 @@ export default function AppointmentsPage() {
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
-  // Phân trang
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(8); // Số lịch hẹn mỗi trang
+  const [pageSize] = useState(8);
 
   const router = useRouter();
   const { user } = useContext(AuthContext);
   const { refreshWalletData } = useWalletContext();
 
-  // Optimized data fetching with enhanced information
   const fetchData = useCallback(async (isRefresh = false) => {
     if (!user) {
       router.push('/auth/login');
@@ -70,26 +71,16 @@ export default function AppointmentsPage() {
       }
       setError(null);
 
-      // Fetch bookings (GetAll) và tự join theo accountID đang login
       const bookings = await bookingService.getAllBookings();
-
       const careProfiles = await careProfileService.getCareProfiles();
-
       const services = await serviceTypeService.getServiceTypes();
-
       const tasks = await serviceTaskService.getServiceTasks();
-
       const specialists = await nursingSpecialistService.getAllNursingSpecialists();
-
       const zones = await zoneDetailService.getZoneDetails();
-
       const invoiceData = await invoiceService.getAllInvoices();
-
       const packages = await customizePackageService.getAllCustomizePackages();
-
       const customizeTasksRaw = await customizeTaskService.getAllCustomizeTasks();
 
-      // Lọc care profiles theo account hiện tại
       const currentAccountId = user.accountID || user.AccountID;
       const myCareProfiles = (Array.isArray(careProfiles) ? careProfiles : []).filter(cp => {
         const accId = cp.accountID ?? cp.AccountID;
@@ -98,7 +89,6 @@ export default function AppointmentsPage() {
 
       const myCareProfileIds = new Set(myCareProfiles.map(cp => cp.careProfileID ?? cp.CareProfileID));
 
-      // Tạo map careProfile để join nhanh + chuẩn hóa field cho UI
       const careProfileMap = new Map((Array.isArray(careProfiles) ? careProfiles : []).map(cp => {
         const id = cp.careProfileID ?? cp.CareProfileID;
         const normalized = {
@@ -111,8 +101,6 @@ export default function AppointmentsPage() {
         return [id, normalized];
       }));
 
-      // Lọc bookings theo careProfileID thuộc user và gắn careProfile
-      // Build invoice map: bookingId -> status
       const invoiceByBooking = new Map((Array.isArray(invoiceData) ? invoiceData : []).map(inv => {
         const bid = inv.bookingID ?? inv.BookingID ?? inv.booking_Id;
         const status = String(inv.status ?? inv.Status ?? '').toLowerCase();
@@ -128,7 +116,6 @@ export default function AppointmentsPage() {
           const bCareId = b.careProfileID ?? b.CareProfileID;
           const bookingId = b.bookingID ?? b.BookingID ?? b.id;
 
-
           const baseAmount = b.amount || b.totalAmount || b.total_Amount || 0;
           const extra = b.extra;
           const finalAmount = (() => {
@@ -139,9 +126,6 @@ export default function AppointmentsPage() {
             return baseAmount + (baseAmount * extraPercentage);
           })();
 
-
-
-          // Normalize/override status from invoice if needed
           const rawStatus = b.status || b.Status;
           const invoiceStatus = invoiceByBooking.get(bookingId);
           const normalizedStatus = invoiceStatus === 'paid' ? 'paid' : rawStatus;
@@ -153,17 +137,13 @@ export default function AppointmentsPage() {
           };
         });
 
-      // Set all data
       setAppointments(userAppointments);
       setServiceTypes(services);
       setServiceTasks(tasks);
       setNursingSpecialists(specialists);
       setZoneDetails(zones);
-
-
       setInvoices(invoiceData);
       setCustomizePackages(packages);
-      // Normalize customize tasks (ids + nursingID + status)
       const normalizedTasks = (Array.isArray(customizeTasksRaw) ? customizeTasksRaw : []).map(t => ({
         ...t,
         customizeTaskID: t.customizeTaskID ?? t.CustomizeTaskID ?? t.id ?? t.ID,
@@ -174,7 +154,6 @@ export default function AppointmentsPage() {
       }));
       setCustomizeTasks(normalizedTasks);
 
-      // Refresh wallet context để đảm bảo wallet data được update
       if (!isRefresh) {
         try {
           await refreshWalletData();
@@ -198,28 +177,19 @@ export default function AppointmentsPage() {
     fetchData();
   }, [fetchData]);
 
-  // Optimized memoized functions for better performance
-  // Sắp xếp trạng thái theo thứ tự yêu cầu
-  const statusOrder = ["pending", "isScheduled", "paid", "completed", "cancelled"];
   const filteredAppointments = useMemo(() => {
     if (!Array.isArray(appointments)) return [];
     const filtered = filterAppointments(appointments, searchText, statusFilter, dateFilter);
-    // Sắp xếp theo trạng thái
     return filtered.slice().sort((a, b) => {
-      const aStatus = String(a.status).toLowerCase();
-      const bStatus = String(b.status).toLowerCase();
-      const aIdx = statusOrder.indexOf(aStatus);
-      const bIdx = statusOrder.indexOf(bStatus);
-      // Nếu không tìm thấy thì cho xuống cuối
-      return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx);
+      const statusA = normalizeStatus(a);
+      const statusB = normalizeStatus(b);
+      return (STATUS_MAP[statusA]?.sortOrder || 99) - (STATUS_MAP[statusB]?.sortOrder || 99);
     });
   }, [appointments, searchText, statusFilter, dateFilter]);
 
-  // Phân trang
   const totalPages = Math.ceil(filteredAppointments.length / pageSize);
   const paginatedAppointments = filteredAppointments.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  // Handle actions
   const handleRefresh = () => {
     fetchData(true);
   };
@@ -228,33 +198,21 @@ export default function AppointmentsPage() {
     router.push('/services');
   };
 
-  // Handle invoice payment
   const handleInvoicePayment = async (invoiceId) => {
     try {
-      // Call payment API
       await transactionHistoryService.invoicePayment(invoiceId);
-
-      // Show success message
       alert('Thanh toán thành công! Hóa đơn đã được thanh toán.');
-
-      // Refresh data to show updated payment status
       await fetchData(true);
-
-      // Refresh wallet context to show updated balance
       await refreshWalletData();
-
     } catch (error) {
       console.error('Error processing payment:', error);
       alert(`Có lỗi xảy ra khi thanh toán: ${error.message}`);
     }
   };
 
-  // Handle booking cancellation
   const handleBookingCancel = async (appointment) => {
     try {
       const bookingId = appointment.bookingID || appointment.BookingID;
-
-      // First, get the invoice for this booking
       const invoice = invoices.find(inv =>
         (inv.bookingID === bookingId || inv.BookingID === bookingId)
       );
@@ -264,57 +222,30 @@ export default function AppointmentsPage() {
       }
 
       const invoiceId = invoice.invoiceID || invoice.invoice_ID;
-
-      // Call refund API
       await transactionHistoryService.refundMoneyToWallet(invoiceId);
-
-      // Update booking status to 'cancelled'
-      // await bookingService.updateStatus(bookingId, 'cancelled');
-
-      // Show success message
       alert('Đã hủy booking thành công! Tiền đã được hoàn vào tài khoản của bạn.');
-
-      // Refresh data to show updated status
       await fetchData(true);
-
-      // Refresh wallet context to show updated balance
       await refreshWalletData();
-
     } catch (error) {
       console.error('Error cancelling booking:', error);
       alert(`Có lỗi xảy ra khi hủy booking: ${error.message}`);
     }
   };
 
-  // Handle nurse assignment
   const handleNurseAssignment = async (service, nurseId) => {
     try {
-
-      // Get booking ID
       const bookingId = selectedAppointment?.bookingID || selectedAppointment?.BookingID;
       if (!bookingId) {
         throw new Error('Không tìm thấy booking ID');
       }
 
-      // Case 1: If service has customizeTaskId, update that task directly
       if (service.customizeTaskId) {
-
         await customizeTaskService.updateNursing(service.customizeTaskId, nurseId);
-      }
-      // Case 2: Package service with taskId (từ service task)
-      else if (service.taskId) {
-        // Directly use the taskId from service task
+      } else if (service.taskId) {
         const customizeTaskId = service.taskId;
         await customizeTaskService.updateNursing(customizeTaskId, nurseId);
-      }
-      // Case 3: Individual service - need to find corresponding CustomizeTask
-      else {
-
-
-        // Get all customize packages for this booking
+      } else {
         const customizePackagesData = await customizePackageService.getAllByBooking(bookingId);
-
-        // Find the customize package that matches the service
         const serviceId = service.serviceID || service.serviceTypeID || service.ServiceID;
         const matchingPackage = customizePackagesData.find(pkg =>
           (pkg.serviceID === serviceId) ||
@@ -326,7 +257,6 @@ export default function AppointmentsPage() {
           throw new Error('Không tìm thấy customize package tương ứng');
         }
 
-        // Get all customize tasks for this package
         const customizePackageId = matchingPackage.customizePackageID || matchingPackage.customize_PackageID;
         const customizeTasksData = await customizeTaskService.getTasksByPackage(customizePackageId);
 
@@ -334,18 +264,12 @@ export default function AppointmentsPage() {
           throw new Error('Không tìm thấy customize task nào');
         }
 
-        // For individual service, update the first available task
-        // You might want to add more logic here to select the right task
         const taskToUpdate = customizeTasksData[0];
         const customizeTaskId = taskToUpdate.customizeTaskID || taskToUpdate.customize_TaskID;
-
         await customizeTaskService.updateNursing(customizeTaskId, nurseId);
       }
 
-      // Success notification
       alert('Đã phân công nurse thành công!');
-
-      // Refresh data to show updated assignment
       await fetchData(true);
     } catch (error) {
       console.error('Error assigning nurse:', error);
@@ -377,7 +301,6 @@ export default function AppointmentsPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
       <div className="container mx-auto px-4 py-8">
-        {/* Header */}
         <motion.div
           className="text-center mb-12"
           initial={{ opacity: 0, y: -30 }}
@@ -385,9 +308,10 @@ export default function AppointmentsPage() {
           transition={{ duration: 0.8 }}
         >
           <div className="flex items-center justify-center gap-4 mb-6">
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
               Lịch hẹn của bạn
             </h1>
+
             <button
               onClick={handleRefresh}
               disabled={refreshing}
@@ -402,7 +326,6 @@ export default function AppointmentsPage() {
           </p>
         </motion.div>
 
-        {/* Search and Filter Section */}
         <SearchFilter
           searchText={searchText}
           setSearchText={setSearchText}
@@ -412,7 +335,6 @@ export default function AppointmentsPage() {
           setDateFilter={setDateFilter}
         />
 
-        {/* Results Count */}
         <motion.div
           className="mb-6"
           initial={{ opacity: 0, y: 20 }}
@@ -426,7 +348,6 @@ export default function AppointmentsPage() {
           </p>
         </motion.div>
 
-        {/* Appointments List */}
         {!Array.isArray(filteredAppointments) || filteredAppointments.length === 0 ? (
           <EmptyState onNewAppointment={handleNewAppointment} />
         ) : (
@@ -450,7 +371,6 @@ export default function AppointmentsPage() {
                 );
               })}
             </div>
-            {/* Pagination Controls */}
             {totalPages > 1 && (
               <div className="flex justify-center items-center gap-2 mt-8">
                 <button
@@ -473,7 +393,6 @@ export default function AppointmentsPage() {
           </>
         )}
 
-        {/* New Appointment Button */}
         {filteredAppointments.length > 0 && (
           <motion.div
             className="text-center mt-12"
@@ -491,7 +410,6 @@ export default function AppointmentsPage() {
           </motion.div>
         )}
 
-        {/* Appointment Detail Modal */}
         {selectedAppointment && (
           <AppointmentDetailModal
             appointment={selectedAppointment}

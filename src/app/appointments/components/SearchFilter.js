@@ -4,13 +4,13 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { FaSearch, FaFilter, FaCalendar } from 'react-icons/fa';
 
-const SearchFilter = ({ 
-  searchText, 
-  setSearchText, 
-  statusFilter, 
-  setStatusFilter, 
-  dateFilter, 
-  setDateFilter 
+const SearchFilter = ({
+  searchText,
+  setSearchText,
+  statusFilter,
+  setStatusFilter,
+  dateFilter,
+  setDateFilter
 }) => {
   return (
     <motion.div
@@ -44,9 +44,9 @@ const SearchFilter = ({
               className="px-4 py-2 rounded-lg border border-gray-300 focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
             >
               <option value="all">Tất cả trạng thái</option>
-              <option value="pending">Chưa thanh toán</option>
-              {/* <option value="isScheduled">Đã lên lịch</option> */}
+              <option value="pending">Chờ thanh toán</option>
               <option value="paid">Đã thanh toán</option>
+              <option value="scheduled">Đã lên lịch</option>
               <option value="completed">Hoàn thành</option>
               <option value="cancelled">Đã hủy</option>
             </select>
@@ -71,4 +71,4 @@ const SearchFilter = ({
   );
 };
 
-export default SearchFilter; 
+export default SearchFilter;

@@ -10,41 +10,47 @@ export const getNurseNames = (nurseIds, nursingSpecialists) => {
   return nursingSpecialists.filter(n => ids.includes(n.NursingID)).map(n => n.FullName);
 };
 
+// Định nghĩa các trạng thái hợp lệ
+export const STATUS_MAP = {
+  pending: { uiText: 'Chờ thanh toán', sortOrder: 2 },
+  paid: { uiText: 'Đã thanh toán', sortOrder: 3 },
+  scheduled: { uiText: 'Đã lên lịch', sortOrder: 1 },
+  completed: { uiText: 'Hoàn thành', sortOrder: 6 },
+  cancelled: { uiText: 'Đã hủy', sortOrder: 4 },
+};
+
+// Chuẩn hóa trạng thái
+export const normalizeStatus = (appointment) => {
+  const status = String(appointment?.status ?? appointment?.Status ?? '').toLowerCase();
+  const isSchedule = appointment?.isSchedule === true || appointment?.isSchedule === 'true';
+
+  if (status === 'paid' && isSchedule) return 'scheduled';
+  if (status === 'paid' && !isSchedule) return 'paid';
+  if (status === 'pending') return 'pending';
+  if (status === 'completed' && isSchedule) return 'completed';
+  if (status === 'cancelled') return 'cancelled';
+  return 'unknown';
+};
+
+// Lấy văn bản hiển thị cho trạng thái
+export const getStatusText = (status) => {
+  return STATUS_MAP[status]?.uiText || 'Không xác định';
+};
+
+// Lấy màu sắc cho trạng thái
 export const getStatusColor = (status) => {
-  const normalized = String(status || '').toLowerCase();
-  switch (normalized) {
+  switch (status) {
     case 'completed':
-      return 'bg-green-100 text-green-700';
     case 'paid':
       return 'bg-green-100 text-green-700';
     case 'pending':
       return 'bg-yellow-100 text-yellow-700';
     case 'cancelled':
       return 'bg-red-100 text-red-700';
-    case 'isScheduled':
+    case 'scheduled':
       return 'bg-blue-100 text-blue-700';
     default:
       return 'bg-gray-100 text-gray-700';
-  }
-};
-
-export const getStatusText = (status) => {
-  const normalized = String(status || '').toLowerCase();
-  switch (normalized) {
-    case 'isscheduled':
-      return 'Đã lên lịch';
-    case 'pending':
-      return 'Chờ lên lịch';
-    case 'cancelled':
-      return 'Đã hủy';
-    case 'paid':
-      return 'Đã thanh toán';
-    case 'completed':
-      return 'Đã hoàn thành';
-    case 'confirmed':
-      return 'Đã xác nhận';
-    default:
-      return 'Không xác định';
   }
 };
 
@@ -73,16 +79,20 @@ export const filterAppointments = (appointments, searchText, statusFilter, dateF
   return appointments.filter(appointment => {
     if (!appointment) return false;
 
+    // Tìm kiếm
     const bookingId = appointment.bookingID || appointment.BookingID || '';
     const matchesSearch = searchText === '' ||
       bookingId.toString().includes(searchText) ||
       appointment.Note?.toLowerCase().includes(searchText.toLowerCase()) ||
       appointment.note?.toLowerCase().includes(searchText.toLowerCase());
 
-    const statusLc = String(appointment.Status ?? appointment.status ?? '').toLowerCase();
-    const filterLc = String(statusFilter || '').toLowerCase();
-    const matchesStatus = filterLc === 'all' || statusLc === filterLc;
+    // Chuẩn hóa trạng thái
+    const normalizedStatus = normalizeStatus(appointment);
 
+    // Lọc theo trạng thái
+    const matchesStatus = statusFilter === 'all' || normalizedStatus === statusFilter;
+
+    // Lọc theo ngày
     let matchesDate = true;
     if (dateFilter !== 'all' && (appointment.BookingDate || appointment.workdate)) {
       const appointmentDate = new Date(appointment.BookingDate || appointment.workdate);
@@ -105,4 +115,4 @@ export const filterAppointments = (appointments, searchText, statusFilter, dateF
 
     return matchesSearch && matchesStatus && matchesDate;
   });
-}; 
+};

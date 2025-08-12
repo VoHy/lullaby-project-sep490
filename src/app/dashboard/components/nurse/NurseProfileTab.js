@@ -262,7 +262,7 @@ const NurseProfileTab = ({ nurseAccount }) => {
                   )}
                 </h4>
                 <p className="text-gray-600 mt-1">
-                  {nurseProfile?.major === 'nurse' ? '👩‍⚕️ Y tá' : '👨‍⚕️ Chuyên gia'}
+                  {nurseProfile?.major === 'Nurse' ? 'Y tá' : 'Chuyên gia'}
                 </p>
               </div>
             </div>
@@ -449,12 +449,12 @@ const NurseProfileTab = ({ nurseAccount }) => {
                       onChange={handleProfileInputChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
                     >
-                      <option value="nurse">Y tá</option>
-                      <option value="specialist">Chuyên gia</option>
+                      <option value="Nurse">Y tá</option>
+                      <option value="Specialist">Chuyên gia</option>
                     </select>
                   ) : (
                     <p className="text-gray-800">
-                      {nurseProfile?.major === 'nurse' ? '👩‍⚕️ Y tá' : '👨‍⚕️ Chuyên gia'}
+                      {nurseProfile?.major === 'Nurse' ? 'Y tá' : 'Chuyên gia'}
                     </p>
                   )}
                 </div>
