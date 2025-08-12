@@ -6,7 +6,7 @@ import transactionHistoryService from '@/services/api/transactionHistoryService'
 import payOSService from '@/services/api/payOSService';
 
 export default function TopupModal({ open, onClose, wallet, accountId, onAfterRefresh }) {
-  const [amount, setAmount] = useState('100000');
+  const [amount, setAmount] = useState('0');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [payUrl, setPayUrl] = useState('');

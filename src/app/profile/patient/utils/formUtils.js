@@ -64,6 +64,7 @@ export const validateCareProfile = (formData) => {
     const phoneNumber = formData.phoneNumber || formData.PhoneNumber;
     const address = formData.address || formData.Address;
     const status = (formData.status || '').toString().toLowerCase();
+    const image = formData.image || formData.Image;
 
     if (!profileName || profileName.trim().length < 2) {
         errors.push('Vui lòng nhập tên hồ sơ (tối thiểu 2 ký tự)');
@@ -85,6 +86,10 @@ export const validateCareProfile = (formData) => {
         errors.push('Vui lòng nhập địa chỉ (tối thiểu 5 ký tự)');
     }
 
+    if (image && image !== 'string' && image.trim() !== '' && !/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(image)) {
+        errors.push('URL ảnh đại diện không hợp lệ.');
+    }
+
     if (status && !['active', 'inactive'].includes(status)) {
         errors.push('Trạng thái không hợp lệ');
     }
@@ -99,6 +104,7 @@ export const validateRelative = (formData) => {
     const dateOfBirth = formData.dateOfBirth || formData.DateOfBirth;
     const gender = (formData.gender || formData.Gender || '').toString().toLowerCase();
     const status = (formData.status || '').toString().toLowerCase();
+    const image = formData.image || formData.Image;
 
     if (!relativeName || relativeName.trim().length < 2) {
         errors.push('Vui lòng nhập tên người thân (tối thiểu 2 ký tự)');
@@ -112,6 +118,10 @@ export const validateRelative = (formData) => {
 
     if (gender && !['male', 'female', 'other'].includes(gender)) {
         errors.push('Giới tính không hợp lệ');
+    }
+
+    if (image && image !== 'string' && image.trim() !== '' && !/^https?:\/\/.+\.(jpg|jpeg|png|gif|webp)$/i.test(image)) {
+        errors.push('URL ảnh đại diện không hợp lệ.');
     }
 
     if (status && !['active', 'inactive'].includes(status)) {
@@ -151,6 +161,10 @@ export const normalizeFieldNames = (data) => {
 // Prepare data for API submission
 export const prepareCareProfileData = (formData, user) => {
     const normalized = normalizeFieldNames(formData);
+    // Keep empty string as is for database compatibility
+    const imageUrl = normalized.image && normalized.image !== 'string' 
+        ? normalized.image.trim() 
+        : '';
 
     return {
         accountID: user?.accountID,
@@ -159,7 +173,7 @@ export const prepareCareProfileData = (formData, user) => {
         dateOfBirth: formatDateForAPI(normalized.dateOfBirth),
         phoneNumber: normalized.phoneNumber,
         address: normalized.address,
-        image: normalized.image || '/images/hero-bg.jpg',
+        image: imageUrl,
         note: normalized.note || '',
         status: (normalized.status || 'active').toString().toLowerCase()
     };
@@ -167,6 +181,10 @@ export const prepareCareProfileData = (formData, user) => {
 
 export const prepareRelativeData = (formData, careProfileID) => {
     const normalized = normalizeFieldNames(formData);
+    // Keep empty string as is for database compatibility
+    const imageUrl = normalized.image && normalized.image !== 'string' 
+        ? normalized.image.trim() 
+        : '';
 
     return {
         careProfileID: careProfileID,
@@ -176,6 +194,6 @@ export const prepareRelativeData = (formData, careProfileID) => {
         note: normalized.note || '',
         createdAt: new Date().toISOString(),
         status: (normalized.status || 'active').toString().toLowerCase(),
-        image: normalized.image || '/images/hero-bg.jpg'
+        image: imageUrl
     };
 };

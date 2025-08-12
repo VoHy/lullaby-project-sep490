@@ -59,34 +59,31 @@ export function FormField({
   );
 }
 
-// Avatar Upload Component
+// Avatar URL Component - Similar to profile account
 export function AvatarUpload({ 
   currentImage, 
   onImageChange, 
   size = 'w-24 h-24',
-  name = 'avatar' 
+  name = 'image' 
 }) {
   return (
     <div className="flex flex-col items-center gap-2">
       <label className="block text-sm font-medium mb-1 text-gray-700">Ảnh đại diện</label>
-      <div className={`relative ${size}`}>
+      <div className={`${size} mb-3`}>
         <img 
-          src={currentImage || '/images/hero-bg.jpg'} 
+          src={(currentImage && currentImage !== 'string' && currentImage.trim() !== '') ? currentImage : '/images/hero-bg.jpg'} 
           alt="avatar" 
           className={`${size} rounded-full object-cover border-2 border-purple-200`} 
         />
-        <label className="absolute bottom-0 right-0 bg-purple-600 text-white rounded-full p-1 cursor-pointer shadow-md hover:bg-purple-700 transition" title="Đổi ảnh">
-          <input 
-            type="file" 
-            accept="image/*" 
-            onChange={onImageChange} 
-            className="hidden" 
-            name={name}
-          />
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-4 h-4">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487a2.25 2.25 0 1 1 3.182 3.182M6.75 21h10.5A2.25 2.25 0 0 0 19.5 18.75V8.25A2.25 2.25 0 0 0 17.25 6H6.75A2.25 2.25 0 0 0 4.5 8.25v10.5A2.25 2.25 0 0 0 6.75 21z" />
-          </svg>
-        </label>
+      </div>
+      <div className="w-full">
+        <FormField
+          label="URL Ảnh (tùy chọn)"
+          name={name}
+          value={currentImage || ''}
+          onChange={onImageChange}
+          placeholder="https://example.com/image.jpg"
+        />
       </div>
     </div>
   );

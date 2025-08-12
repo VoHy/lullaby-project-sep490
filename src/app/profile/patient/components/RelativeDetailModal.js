@@ -10,7 +10,7 @@ export default function RelativeDetailModal({ open, onClose, relative }) {
         <button className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-2xl" onClick={onClose}>&times;</button>
         <div className="flex flex-col md:flex-row gap-8 p-8">
           <div className="flex-shrink-0 flex flex-col items-center gap-2">
-            <img src={relative.Image || '/default-avatar.png'} alt="avatar" className="w-28 h-28 rounded-full object-cover border-2 border-blue-200" />
+            <img src={(relative.Image && relative.Image.trim() !== '') ? relative.Image : '/images/hero-bg.jpg'} alt="avatar" className="w-28 h-28 rounded-full object-cover border-2 border-blue-200" />
             <span className={`px-3 py-1 rounded-full text-xs font-semibold ${(relative.Status || relative.status || '').toLowerCase() === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>{(relative.Status || relative.status || '').toLowerCase() === 'active' ? 'Hoạt động' : 'Ngừng hoạt động'}</span>
           </div>
           <div className="flex-1 space-y-3">
