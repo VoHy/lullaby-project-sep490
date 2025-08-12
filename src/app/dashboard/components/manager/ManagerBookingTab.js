@@ -416,28 +416,55 @@ const ManagerBookingTab = () => {
             );
           });
         }
+        // Custom filter theo trạng thái
         if (filterStatus) {
-          if (filterStatus === 'isScheduled') {
-            filtered = filtered.filter(b => b.isSchedule === true || b.IsSchedule === true);
+          const isSchedule = b => b.isSchedule === true || b.IsSchedule === true;
+          if (filterStatus === 'paid') {
+            filtered = filtered.filter(b => String(b.status ?? b.Status).toLowerCase() === 'paid' && !isSchedule(b));
+          } else if (filterStatus === 'isScheduled') {
+            filtered = filtered.filter(b => String(b.status ?? b.Status).toLowerCase() === 'paid' && isSchedule(b));
+          } else if (filterStatus === 'pending') {
+            filtered = filtered.filter(b => {
+              const s = String(b.status ?? b.Status).toLowerCase();
+              return s === 'pending' || s === 'unpaid';
+            });
+          } else if (filterStatus === 'completed') {
+            filtered = filtered.filter(b => String(b.status ?? b.Status).toLowerCase() === 'completed' && isSchedule(b));
+          } else if (filterStatus === 'cancelled') {
+            filtered = filtered.filter(b => {
+              const s = String(b.status ?? b.Status).toLowerCase();
+              return s === 'cancelled' || s === 'canceled';
+            });
           } else {
             filtered = filtered.filter(b => String(b.status ?? b.Status).toLowerCase() === filterStatus);
           }
         }
-        // Sort: isScheduled=false lên đầu, sau đó theo trạng thái
-        const statusOrder = ['paid', 'pending', 'completed', 'cancelled'];
+        // Custom sort
+        const customOrder = [
+          'paid-false',    // isSchedule: false, paid
+          'paid-true',     // isSchedule: true, paid
+          'pending',       // pending (cả isSchedule true/false)
+          'completed-true',// isSchedule: true, completed
+          'cancelled-true',// isSchedule: true, cancelled/canceled
+          'cancelled-false'// isSchedule: false, cancelled/canceled
+        ];
         filtered = filtered.slice().sort((a, b) => {
-          // isScheduled: false lên đầu
-          const aIsSchedule = a.isSchedule ?? a.IsSchedule;
-          const bIsSchedule = b.isSchedule ?? b.IsSchedule;
-          if (aIsSchedule === false && bIsSchedule !== false) return -1;
-          if (bIsSchedule === false && aIsSchedule !== false) return 1;
-          // Tiếp tục sắp xếp theo trạng thái
-          const sa = String(a.status ?? a.Status).toLowerCase();
-          const sb = String(b.status ?? b.Status).toLowerCase();
-          const ia = statusOrder.indexOf(sa);
-          const ib = statusOrder.indexOf(sb);
-          if (ia !== ib) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
-          return b.bookingID - a.bookingID;
+          const getKey = booking => {
+            const s = String(booking.status ?? booking.Status).toLowerCase();
+            const isSchedule = booking.isSchedule === true || booking.IsSchedule === true;
+            if (s === 'paid' && !isSchedule) return 'paid-false';
+            if (s === 'paid' && isSchedule) return 'paid-true';
+            if (s === 'pending' || s === 'unpaid') return 'pending';
+            if (s === 'completed' && isSchedule) return 'completed-true';
+            if ((s === 'cancelled' || s === 'canceled') && isSchedule) return 'cancelled-true';
+            if ((s === 'cancelled' || s === 'canceled') && !isSchedule) return 'cancelled-false';
+            return 'other';
+          };
+          const aKey = getKey(a);
+          const bKey = getKey(b);
+          const aIdx = customOrder.indexOf(aKey);
+          const bIdx = customOrder.indexOf(bKey);
+          return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx);
         });
         // Pagination
         const totalItems = filtered.length;

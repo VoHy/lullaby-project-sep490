@@ -574,7 +574,15 @@ const BookingsTab = ({ bookings }) => {
     : 0;
 
   // Sắp xếp trạng thái theo thứ tự yêu cầu
-  const statusOrder = ["paid", "isScheduled", "pending", "completed", "cancelled", "canceled"];
+  // Thứ tự ưu tiên custom
+  const customOrder = [
+    'paid-false',    // isSchedule: false, paid
+    'paid-true',     // isSchedule: true, paid
+    'pending',       // pending (cả isSchedule true/false)
+    'completed-true',// isSchedule: true, completed
+    'cancelled-true',// isSchedule: true, cancelled/canceled
+    'cancelled-false'// isSchedule: false, cancelled/canceled
+  ];
   // Phân trang
 
   // Lọc và sắp xếp bookings
@@ -589,17 +597,18 @@ const BookingsTab = ({ bookings }) => {
         id?.toString().includes(searchTerm) ||
         profileName?.toLowerCase().includes(searchTerm.toLowerCase());
       let matchesStatus = statusFilter === 'all';
+      const isSchedule = booking.isSchedule === true || booking.isSchedule === 'true' || booking.IsSchedule === true || booking.IsSchedule === 'true';
       if (!matchesStatus) {
-        if (statusFilter === 'isScheduled') {
-          matchesStatus = booking.isSchedule === true || booking.isSchedule === 'true' || booking.IsSchedule === true || booking.IsSchedule === 'true';
-        } else if (statusFilter === 'paid') {
-          matchesStatus = status === 'paid';
+        if (statusFilter === 'paid') {
+          matchesStatus = status === 'paid' && !isSchedule;
+        } else if (statusFilter === 'isScheduled') {
+          matchesStatus = status === 'paid' && isSchedule;
         } else if (statusFilter === 'pending') {
           matchesStatus = status === 'pending' || status === 'unpaid';
         } else if (statusFilter === 'completed') {
-          matchesStatus = status === 'completed';
+          matchesStatus = status === 'completed' && isSchedule;
         } else if (statusFilter === 'cancelled') {
-          matchesStatus = status === 'cancelled' || status === 'canceled';
+          matchesStatus = (status === 'cancelled' || status === 'canceled');
         } else {
           matchesStatus = status === statusFilter;
         }
@@ -608,20 +617,22 @@ const BookingsTab = ({ bookings }) => {
     })
       .slice() // copy array
       .sort((a, b) => {
-        // Sort theo thứ tự: paid, isScheduled, pending, completed, cancelled/canceled
-        const getStatusKey = (booking) => {
+        // Custom sort theo yêu cầu
+        const getKey = (booking) => {
           const status = (booking?.Status ?? booking?.status)?.toLowerCase();
-          if (status === 'paid') return 'paid';
-          if (booking.isSchedule === true || booking.isSchedule === 'true' || booking.IsSchedule === true || booking.IsSchedule === 'true') return 'isScheduled';
+          const isSchedule = booking.isSchedule === true || booking.isSchedule === 'true' || booking.IsSchedule === true || booking.IsSchedule === 'true';
+          if (status === 'paid' && !isSchedule) return 'paid-false';
+          if (status === 'paid' && isSchedule) return 'paid-true';
           if (status === 'pending' || status === 'unpaid') return 'pending';
-          if (status === 'completed') return 'completed';
-          if (status === 'cancelled' || status === 'canceled') return 'cancelled';
+          if (status === 'completed' && isSchedule) return 'completed-true';
+          if ((status === 'cancelled' || status === 'canceled') && isSchedule) return 'cancelled-true';
+          if ((status === 'cancelled' || status === 'canceled') && !isSchedule) return 'cancelled-false';
           return 'other';
         };
-        const aKey = getStatusKey(a);
-        const bKey = getStatusKey(b);
-        const aIdx = statusOrder.indexOf(aKey);
-        const bIdx = statusOrder.indexOf(bKey);
+        const aKey = getKey(a);
+        const bKey = getKey(b);
+        const aIdx = customOrder.indexOf(aKey);
+        const bIdx = customOrder.indexOf(bKey);
         return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx);
       })
     : [];
@@ -741,21 +752,25 @@ const BookingsTab = ({ bookings }) => {
                           <span className={`px-2 py-1 rounded-full text-xs font-semibold 
                           ${(() => {
                             const s = String(status).toLowerCase();
-                            if (s === 'paid') return 'bg-pink-100 text-pink-700';
-                            if (booking.isSchedule === true || booking.isSchedule === 'true' || booking.IsSchedule === true || booking.IsSchedule === 'true') return 'bg-blue-100 text-blue-700';
+                            const isSchedule = booking.isSchedule === true || booking.isSchedule === 'true' || booking.IsSchedule === true || booking.IsSchedule === 'true';
+                            if (s === 'paid' && !isSchedule) return 'bg-pink-100 text-pink-700';
+                            if (s === 'paid' && isSchedule) return 'bg-blue-100 text-blue-700';
                             if (s === 'pending' || s === 'unpaid') return 'bg-yellow-100 text-yellow-700';
-                            if (s === 'completed') return 'bg-emerald-100 text-emerald-700';
-                            if (s === 'cancelled' || s === 'canceled') return 'bg-red-100 text-red-700';
+                            if (s === 'completed' && isSchedule) return 'bg-emerald-100 text-emerald-700';
+                            if ((s === 'cancelled' || s === 'canceled') && isSchedule) return 'bg-red-100 text-red-700';
+                            if ((s === 'cancelled' || s === 'canceled') && !isSchedule) return 'bg-red-100 text-red-700';
                             return 'bg-gray-100 text-gray-700';
                           })()}`}
                           >
                             {(() => {
                               const s = String(status).toLowerCase();
-                              if (s === 'paid') return 'Đã thanh toán';
-                              if (booking.isSchedule === true || booking.isSchedule === 'true' || booking.IsSchedule === true || booking.IsSchedule === 'true') return 'Đã lên lịch';
+                              const isSchedule = booking.isSchedule === true || booking.isSchedule === 'true' || booking.IsSchedule === true || booking.IsSchedule === 'true';
+                              if (s === 'paid' && !isSchedule) return 'Đã thanh toán';
+                              if (s === 'paid' && isSchedule) return 'Đã lên lịch';
                               if (s === 'pending' || s === 'unpaid') return 'Chờ thanh toán';
-                              if (s === 'completed') return 'Hoàn thành';
-                              if (s === 'cancelled' || s === 'canceled') return 'Đã hủy';
+                              if (s === 'completed' && isSchedule) return 'Hoàn thành';
+                              if ((s === 'cancelled' || s === 'canceled') && isSchedule) return 'Đã hủy';
+                              if ((s === 'cancelled' || s === 'canceled') && !isSchedule) return 'Đã hủy';
                               return status || 'Không rõ';
                             })()}
                           </span>
