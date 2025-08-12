@@ -35,6 +35,9 @@ const BookingsTab = ({ bookings }) => {
   const [statusFilter, setStatusFilter] = useState('all');
   const [selectedNurseByTask, setSelectedNurseByTask] = useState({});
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(10); // Số booking mỗi trang
+
   // Load data từ API
   useEffect(() => {
     const fetchData = async () => {
@@ -570,7 +573,11 @@ const BookingsTab = ({ bookings }) => {
     ? bookings.reduce((sum, b) => sum + (b.TotalPrice ?? b.totalPrice ?? b.Amount ?? b.amount ?? 0), 0)
     : 0;
 
-  // Lọc bookings
+  // Sắp xếp trạng thái theo thứ tự yêu cầu
+  const statusOrder = ["paid", "pending", "isscheduled", "completed", "cancelled", "canceled"];
+  // Phân trang
+
+  // Lọc và sắp xếp bookings
   const filteredBookings = Array.isArray(bookings)
     ? bookings.filter((booking) => {
       const id = booking?.BookingID ?? booking?.bookingID;
@@ -584,7 +591,18 @@ const BookingsTab = ({ bookings }) => {
       const matchesStatus = statusFilter === 'all' || status === statusFilter;
       return matchesSearch && matchesStatus;
     })
+      .slice() // copy array
+      .sort((a, b) => {
+        const aStatus = (a?.Status ?? a?.status)?.toLowerCase();
+        const bStatus = (b?.Status ?? b?.status)?.toLowerCase();
+        const aIdx = statusOrder.indexOf(aStatus);
+        const bIdx = statusOrder.indexOf(bStatus);
+        return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx);
+      })
     : [];
+
+  const totalPages = Math.ceil(filteredBookings.length / pageSize);
+  const paginatedBookings = filteredBookings.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   return (
     <div className="space-y-6">
@@ -672,7 +690,7 @@ const BookingsTab = ({ bookings }) => {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredBookings.map((booking) => {
+                  {paginatedBookings.map((booking) => {
                     const { careProfile, account, service, packageInfo } = getBookingDetail(booking);
                     const id = booking?.BookingID ?? booking?.bookingID;
                     const workDate = booking?.BookingDate ?? booking?.bookingDate ?? booking?.workdate ?? booking?.Workdate;
@@ -732,6 +750,26 @@ const BookingsTab = ({ bookings }) => {
                   })}
                 </tbody>
               </table>
+              {/* Pagination Controls */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center gap-2 mt-8">
+                  <button
+                    className="px-3 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                    onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                    disabled={currentPage === 1}
+                  >
+                    Trang trước
+                  </button>
+                  <span className="mx-2 text-gray-600">Trang {currentPage} / {totalPages}</span>
+                  <button
+                    className="px-3 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                    onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                    disabled={currentPage === totalPages}
+                  >
+                    Trang sau
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 

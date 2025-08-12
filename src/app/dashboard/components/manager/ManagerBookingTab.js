@@ -16,13 +16,20 @@ import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialis
 import invoiceService from '@/services/api/invoiceService';
 
 const statusOptions = [
-  { value: 'pending', label: 'Chờ xử lý' },
-  { value: 'confirmed', label: 'Đã xác nhận' },
+  { value: 'pending', label: 'Chưa thanh toán' },
+  { value: 'paid', label: 'Đã thanh toán' },
+  { value: 'isScheduled', label: 'Đã lên lịch' },
   { value: 'completed', label: 'Hoàn thành' },
   { value: 'cancelled', label: 'Đã hủy' },
 ];
 
 const ManagerBookingTab = () => {
+  // Filter, sort, and pagination state
+  const [searchText, setSearchText] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
+
   const { user } = useContext(AuthContext);
   const currentManagerId = user?.accountID || user?.accountID;
 
@@ -178,7 +185,8 @@ const ManagerBookingTab = () => {
   useEffect(() => {
     if (currentManagerId && allBookings.length > 0) {
       const filteredBookings = getFilteredBookings(allBookings, currentManagerId);
-      setBookings(filteredBookings);
+  setBookings(filteredBookings);
+  setCurrentPage(1); // reset page when bookings change
     }
   }, [allBookings, currentManagerId]);
 
@@ -336,27 +344,11 @@ const ManagerBookingTab = () => {
           }));
         }
 
-        // Cập nhật status booking thành confirmed
-        await handleUpdateStatus(detailData.bookingID, 'confirmed');
-
-        // Gửi thông báo cho customer
-        const notificationData = {
-          accountID: account.accountID,
-          Title: 'Booking đã được xác nhận',
-          Content: `Booking #${detailData.bookingID} của ${careProfile.ProfileName} đã được manager xác nhận và sẵn sàng thực hiện.`,
-          Type: 'booking_confirmed',
-          IsRead: false,
-          CreatedAt: new Date().toISOString(),
-          UpdatedAt: new Date().toISOString()
-        };
-
-        await notificationService.createNotification(notificationData);
-
         setShowDetail(false);
-        alert('Đã gán nhân sự (nếu có) và xác nhận booking!');
+        alert('Đã gán nhân sự cho các dịch vụ!');
       } catch (error) {
         console.error('Error accepting booking:', error);
-        alert('Có lỗi xảy ra khi xác nhận booking');
+        alert('Có lỗi xảy ra khi gán nhân sự');
       }
     }
   };
@@ -388,78 +380,157 @@ const ManagerBookingTab = () => {
   return (
     <div>
       <h3 className="text-xl font-semibold mb-4">Danh sách Booking</h3>
-      {bookings.length === 0 ? (
-        <div className="text-center py-8">
-          <FaClipboardList className="text-gray-500 text-2xl mb-2 mx-auto" />
-          <p className="text-gray-600 text-lg font-medium">Không có booking nào</p>
-          <p className="text-gray-400 text-sm mt-1">Hiện tại chưa có booking nào thuộc khu vực quản lý của bạn</p>
-        </div>
-      ) : (
-        <table className="w-full bg-white rounded-lg overflow-hidden shadow-lg">
-          <thead className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-            <tr>
-              <th className="px-6 py-3 text-left">Mã Booking</th>
-              <th className="px-6 py-3 text-left">Khách hàng</th>
-              <th className="px-6 py-3 text-left">Dịch vụ</th>
-              <th className="px-6 py-3 text-left">Trạng thái</th>
-              <th className="px-6 py-3 text-left">Thao tác</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200">
-            {bookings.map(booking => {
-              const { careProfile, account, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(booking);
-              return (
-                <tr key={booking.bookingID} className="hover:bg-gray-50">
-                  <td className="px-6 py-4">#{booking.bookingID}</td>
-                  <td className="px-6 py-4">
-                    <div className="font-semibold">{careProfile?.profileName || '-'}</div>
-                    <div className="text-xs text-gray-500">SĐT: {careProfile?.phoneNumber || '-'}</div>
-                    <div className="text-xs text-gray-500">Địa chỉ: {careProfile?.address || '-'}</div>
-                    <div className="text-xs text-gray-500">Email: {account?.email || '-'}</div>
-                  </td>
-                  <td className="px-6 py-4">
-                    {serviceTasksOfBooking && serviceTasksOfBooking.length > 1
-                      ? (
-                        <ul className="space-y-1">
-                          {serviceTasksOfBooking.map((task, idx) => (
-                            <li key={idx} className="flex items-center text-sm text-gray-800">
-                              <span className="inline-block w-2 h-2 rounded-full bg-purple-400 mr-2"></span>
-                              {task.description}
-                            </li>
-                          ))}
-                        </ul>
-                      )
-                      : (serviceTasksOfBooking[0]?.description || service?.ServiceName || '-')}
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className={` inline-block min-w-[80px] px-2 py-0.5 rounded-full text-xs font-semibold text-center shadow-sm 
-                  ${booking.status === 'paid' ? 'bg-pink-100 text-pink-800' :
-                        booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          booking.status === 'completed' ? 'bg-green-100 text-green-800' :
-                            booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                              booking.status === 'isScheduled' ? 'bg-blue-100 text-blue-800' :
-                                'bg-red-100 text-red-800'
-                      }`}>
-                      {(() => {
-                        const s = String(booking.status ?? booking.Status).toLowerCase();
-                        if (s === 'paid') return 'Đã thanh toán';
-                        if (s === 'pending' || s === 'unpaid') return 'Chờ thanh toán';
-                        if (s === 'completed') return 'Hoàn thành';
-                        if (s === 'isscheduled') return 'Đã lên lịch';
-                        if (s === 'cancelled' || s === 'canceled') return 'Đã hủy';
-                        return 'Không xác định';
-                      })()}
-                    </span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button onClick={() => handleViewDetail(booking)} className="min-w-[80px] px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded hover:shadow-sm">Xem chi tiết</button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      )}
+      {/* Filter/Search UI */}
+      <div className="flex flex-wrap gap-4 mb-4 items-center">
+        <input
+          type="text"
+          placeholder="Tìm kiếm theo tên khách, mã booking, dịch vụ..."
+          className="border px-3 py-2 rounded w-64"
+          value={searchText}
+          onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }}
+        />
+        <select
+          className="border px-3 py-2 rounded"
+          value={filterStatus}
+          onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+        >
+          <option value="">Tất cả trạng thái</option>
+          {statusOptions.map(opt => (
+            <option key={opt.value} value={opt.value}>{opt.label}</option>
+          ))}
+        </select>
+      </div>
+
+      {/* Filter, sort, and paginate bookings */}
+      {(() => {
+        let filtered = bookings;
+        if (searchText) {
+          const lower = searchText.toLowerCase();
+          filtered = filtered.filter(b => {
+            const { careProfile, serviceTasksOfBooking } = getBookingDetail(b);
+            return (
+              String(b.bookingID).includes(lower) ||
+              (careProfile?.profileName?.toLowerCase().includes(lower)) ||
+              (serviceTasksOfBooking?.some(t => t.description?.toLowerCase().includes(lower)))
+            );
+          });
+        }
+        if (filterStatus) {
+          filtered = filtered.filter(b => String(b.status ?? b.Status).toLowerCase() === filterStatus);
+        }
+        // Sort: isScheduled=false lên đầu, sau đó theo trạng thái
+        const statusOrder = ['paid', 'pending', 'completed', 'cancelled'];
+        filtered = filtered.slice().sort((a, b) => {
+          // isScheduled: false lên đầu
+          const aIsScheduled = a.isScheduled ?? a.IsScheduled;
+          const bIsScheduled = b.isScheduled ?? b.IsScheduled;
+          if (aIsScheduled === false && bIsScheduled !== false) return -1;
+          if (bIsScheduled === false && aIsScheduled !== false) return 1;
+          // Tiếp tục sắp xếp theo trạng thái
+          const sa = String(a.status ?? a.Status).toLowerCase();
+          const sb = String(b.status ?? b.Status).toLowerCase();
+          const ia = statusOrder.indexOf(sa);
+          const ib = statusOrder.indexOf(sb);
+          if (ia !== ib) return (ia === -1 ? 99 : ia) - (ib === -1 ? 99 : ib);
+          return b.bookingID - a.bookingID;
+        });
+        // Pagination
+        const totalItems = filtered.length;
+        const totalPages = Math.ceil(totalItems / itemsPerPage);
+        const paged = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+        return (
+          <>
+            {totalItems === 0 ? (
+              <div className="text-center py-8">
+                <FaClipboardList className="text-gray-500 text-2xl mb-2 mx-auto" />
+                <p className="text-gray-600 text-lg font-medium">Không có booking nào</p>
+                <p className="text-gray-400 text-sm mt-1">Hiện tại chưa có booking nào thuộc khu vực quản lý của bạn</p>
+              </div>
+            ) : (
+              <>
+                <table className="w-full bg-white rounded-lg overflow-hidden shadow-lg">
+                  <thead className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                    <tr>
+                      <th className="px-6 py-3 text-left">Mã Booking</th>
+                      <th className="px-6 py-3 text-left">Khách hàng</th>
+                      <th className="px-6 py-3 text-left">Dịch vụ</th>
+                      <th className="px-6 py-3 text-left">Trạng thái</th>
+                      <th className="px-6 py-3 text-left">Thao tác</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200">
+                    {paged.map(booking => {
+                      const { careProfile, account, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(booking);
+                      return (
+                        <tr key={booking.bookingID} className="hover:bg-gray-50">
+                          <td className="px-6 py-4">#{booking.bookingID}</td>
+                          <td className="px-6 py-4">
+                            <div className="font-semibold">{careProfile?.profileName || '-'}</div>
+                            <div className="text-xs text-gray-500">SĐT: {careProfile?.phoneNumber || '-'}</div>
+                            <div className="text-xs text-gray-500">Địa chỉ: {careProfile?.address || '-'}</div>
+                            <div className="text-xs text-gray-500">Email: {account?.email || '-'}</div>
+                          </td>
+                          <td className="px-6 py-4">
+                            {serviceTasksOfBooking && serviceTasksOfBooking.length > 1
+                              ? (
+                                <ul className="space-y-1">
+                                  {serviceTasksOfBooking.map((task, idx) => (
+                                    <li key={idx} className="flex items-center text-sm text-gray-800">
+                                      <span className="inline-block w-2 h-2 rounded-full bg-purple-400 mr-2"></span>
+                                      {task.description}
+                                    </li>
+                                  ))}
+                                </ul>
+                              )
+                              : (serviceTasksOfBooking[0]?.description || service?.ServiceName || '-')}
+                          </td>
+                          <td className="px-6 py-4">
+                            <span className={` inline-block min-w-[80px] px-2 py-0.5 rounded-full text-xs font-semibold text-center shadow-sm 
+                          ${booking.status === 'paid' ? 'bg-pink-100 text-pink-800' :
+                                booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                                  booking.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                    booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
+                                      booking.status === 'isScheduled' ? 'bg-blue-100 text-blue-800' :
+                                        'bg-red-100 text-red-800'
+                              }`}>
+                              {(() => {
+                                const s = String(booking.status ?? booking.Status).toLowerCase();
+                                if (s === 'paid') return 'Đã thanh toán';
+                                if (s === 'pending' || s === 'unpaid') return 'Chờ thanh toán';
+                                if (s === 'completed') return 'Hoàn thành';
+                                if (s === 'isscheduled') return 'Đã lên lịch';
+                                if (s === 'cancelled' || s === 'canceled') return 'Đã hủy';
+                                return 'Không xác định';
+                              })()}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4">
+                            <button onClick={() => handleViewDetail(booking)} className="min-w-[80px] px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded hover:shadow-sm">Xem chi tiết</button>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+                {/* Pagination UI */}
+                <div className="flex justify-center items-center gap-2 mt-4">
+                  <button
+                    className="px-3 py-1 rounded border bg-white hover:bg-gray-100"
+                    disabled={currentPage === 1}
+                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                  >Trước</button>
+                  <span className="px-2">Trang {currentPage} / {totalPages}</span>
+                  <button
+                    className="px-3 py-1 rounded border bg-white hover:bg-gray-100"
+                    disabled={currentPage === totalPages || totalPages === 0}
+                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                  >Sau</button>
+                </div>
+              </>
+            )}
+          </>
+        );
+      })()}
       {/* Popup chi tiết booking */}
       {showDetail && detailData && (() => {
         const { careProfile, account, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(detailData);

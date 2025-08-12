@@ -47,6 +47,9 @@ export default function AppointmentsPage() {
   const [searchText, setSearchText] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
+  // Phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize] = useState(8); // Số lịch hẹn mỗi trang
 
   const router = useRouter();
   const { user } = useContext(AuthContext);
@@ -80,11 +83,11 @@ export default function AppointmentsPage() {
 
       const zones = await zoneDetailService.getZoneDetails();
 
-  const invoiceData = await invoiceService.getAllInvoices();
+      const invoiceData = await invoiceService.getAllInvoices();
 
       const packages = await customizePackageService.getAllCustomizePackages();
 
-  const customizeTasksRaw = await customizeTaskService.getAllCustomizeTasks();
+      const customizeTasksRaw = await customizeTaskService.getAllCustomizeTasks();
 
       // Lọc care profiles theo account hiện tại
       const currentAccountId = user.accountID || user.AccountID;
@@ -124,7 +127,7 @@ export default function AppointmentsPage() {
         .map(b => {
           const bCareId = b.careProfileID ?? b.CareProfileID;
           const bookingId = b.bookingID ?? b.BookingID ?? b.id;
-          
+
 
           const baseAmount = b.amount || b.totalAmount || b.total_Amount || 0;
           const extra = b.extra;
@@ -135,9 +138,9 @@ export default function AppointmentsPage() {
             const extraPercentage = extra > 1 ? extra / 100 : extra;
             return baseAmount + (baseAmount * extraPercentage);
           })();
-          
 
-          
+
+
           // Normalize/override status from invoice if needed
           const rawStatus = b.status || b.Status;
           const invoiceStatus = invoiceByBooking.get(bookingId);
@@ -157,7 +160,7 @@ export default function AppointmentsPage() {
       setNursingSpecialists(specialists);
       setZoneDetails(zones);
 
-      
+
       setInvoices(invoiceData);
       setCustomizePackages(packages);
       // Normalize customize tasks (ids + nursingID + status)
@@ -196,10 +199,25 @@ export default function AppointmentsPage() {
   }, [fetchData]);
 
   // Optimized memoized functions for better performance
+  // Sắp xếp trạng thái theo thứ tự yêu cầu
+  const statusOrder = ["pending", "isScheduled", "paid", "completed", "cancelled"];
   const filteredAppointments = useMemo(() => {
     if (!Array.isArray(appointments)) return [];
-    return filterAppointments(appointments, searchText, statusFilter, dateFilter);
+    const filtered = filterAppointments(appointments, searchText, statusFilter, dateFilter);
+    // Sắp xếp theo trạng thái
+    return filtered.slice().sort((a, b) => {
+      const aStatus = String(a.status).toLowerCase();
+      const bStatus = String(b.status).toLowerCase();
+      const aIdx = statusOrder.indexOf(aStatus);
+      const bIdx = statusOrder.indexOf(bStatus);
+      // Nếu không tìm thấy thì cho xuống cuối
+      return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx);
+    });
   }, [appointments, searchText, statusFilter, dateFilter]);
+
+  // Phân trang
+  const totalPages = Math.ceil(filteredAppointments.length / pageSize);
+  const paginatedAppointments = filteredAppointments.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   // Handle actions
   const handleRefresh = () => {
@@ -215,16 +233,16 @@ export default function AppointmentsPage() {
     try {
       // Call payment API
       await transactionHistoryService.invoicePayment(invoiceId);
-      
+
       // Show success message
       alert('Thanh toán thành công! Hóa đơn đã được thanh toán.');
-      
+
       // Refresh data to show updated payment status
       await fetchData(true);
-      
+
       // Refresh wallet context to show updated balance
       await refreshWalletData();
-      
+
     } catch (error) {
       console.error('Error processing payment:', error);
       alert(`Có lỗi xảy ra khi thanh toán: ${error.message}`);
@@ -235,33 +253,33 @@ export default function AppointmentsPage() {
   const handleBookingCancel = async (appointment) => {
     try {
       const bookingId = appointment.bookingID || appointment.BookingID;
-      
+
       // First, get the invoice for this booking
-      const invoice = invoices.find(inv => 
+      const invoice = invoices.find(inv =>
         (inv.bookingID === bookingId || inv.BookingID === bookingId)
       );
-      
+
       if (!invoice) {
         throw new Error('Không tìm thấy hóa đơn cho booking này');
       }
-      
+
       const invoiceId = invoice.invoiceID || invoice.invoice_ID;
-      
+
       // Call refund API
       await transactionHistoryService.refundMoneyToWallet(invoiceId);
-      
+
       // Update booking status to 'cancelled'
       // await bookingService.updateStatus(bookingId, 'cancelled');
-      
+
       // Show success message
       alert('Đã hủy booking thành công! Tiền đã được hoàn vào tài khoản của bạn.');
-      
+
       // Refresh data to show updated status
       await fetchData(true);
-      
+
       // Refresh wallet context to show updated balance
       await refreshWalletData();
-      
+
     } catch (error) {
       console.error('Error cancelling booking:', error);
       alert(`Có lỗi xảy ra khi hủy booking: ${error.message}`);
@@ -280,7 +298,7 @@ export default function AppointmentsPage() {
 
       // Case 1: If service has customizeTaskId, update that task directly
       if (service.customizeTaskId) {
-        
+
         await customizeTaskService.updateNursing(service.customizeTaskId, nurseId);
       }
       // Case 2: Package service with taskId (từ service task)
@@ -412,27 +430,47 @@ export default function AppointmentsPage() {
         {!Array.isArray(filteredAppointments) || filteredAppointments.length === 0 ? (
           <EmptyState onNewAppointment={handleNewAppointment} />
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {filteredAppointments.map((appointment, idx) => {
-              if (!appointment) return null;
-
-              const bookingKey = appointment.bookingID || appointment.BookingID || `appointment-${idx}`;
-
-              return (
-                <AppointmentCard
-                  key={bookingKey}
-                  appointment={appointment}
-                  index={idx}
-                  serviceTypes={serviceTypes || []}
-                  onSelect={setSelectedAppointment}
-                  onCancel={handleBookingCancel}
-                  getStatusColor={getStatusColor}
-                  getStatusText={getStatusText}
-                  formatDate={formatDate}
-                />
-              );
-            })}
-          </div>
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {paginatedAppointments.map((appointment, idx) => {
+                if (!appointment) return null;
+                const bookingKey = appointment.bookingID || appointment.BookingID || `appointment-${idx}`;
+                return (
+                  <AppointmentCard
+                    key={bookingKey}
+                    appointment={appointment}
+                    index={idx + (currentPage - 1) * pageSize}
+                    serviceTypes={serviceTypes || []}
+                    onSelect={setSelectedAppointment}
+                    onCancel={handleBookingCancel}
+                    getStatusColor={getStatusColor}
+                    getStatusText={getStatusText}
+                    formatDate={formatDate}
+                  />
+                );
+              })}
+            </div>
+            {/* Pagination Controls */}
+            {totalPages > 1 && (
+              <div className="flex justify-center items-center gap-2 mt-8">
+                <button
+                  className="px-3 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage === 1}
+                >
+                  Trang trước
+                </button>
+                <span className="mx-2 text-gray-600">Trang {currentPage} / {totalPages}</span>
+                <button
+                  className="px-3 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
+                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage === totalPages}
+                >
+                  Trang sau
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {/* New Appointment Button */}

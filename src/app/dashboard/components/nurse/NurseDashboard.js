@@ -38,7 +38,7 @@ const NurseDashboard = ({ user, initialTab }) => {
       try {
         setLoading(true);
         setError("");
-        
+
         // Lấy thông tin specialist
         const specialists = await nursingSpecialistService.getAllNursingSpecialists();
         const currentSpecialist = specialists.find(n => n.accountID === user.accountID);
@@ -64,7 +64,7 @@ const NurseDashboard = ({ user, initialTab }) => {
         // const userCustomizeTasks = allCustomizeTasks.filter(task => task.nursingID === nursingID);
         // const bookingIDs = [...new Set(userCustomizeTasks.map(task => task.bookingID))]; // Comment vì bookingService chưa hoàn thiện
         // const filteredBookings = allBookings.filter(b => bookingIDs.includes(b.bookingID)); // Comment vì bookingService chưa hoàn thiện
-        
+
         // const filteredWorkSchedules = allWorkSchedules.filter(ws => ws.nursingID === nursingID);
         // const filteredPatients = allCareProfiles.filter(p => filteredBookings.some(b => b.careProfileID === p.careProfileID)); // Comment vì bookingService chưa hoàn thiện
         // const filteredNotifications = allNotifications.filter(n => n.receiverID === user.accountID || n.receiverRole === user.roleID);
@@ -157,12 +157,6 @@ const NurseDashboard = ({ user, initialTab }) => {
           className="relative p-2 text-gray-600 hover:text-purple-600 transition-colors"
           title="Xem thông báo"
         >
-          <FaBell className="text-xl" />
-          {unreadNotifications > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 min-w-[1.25rem] px-1 flex items-center justify-center">
-              {unreadNotifications}
-            </span>
-          )}
         </button>
       </div>
       <div className="flex gap-4 mb-6">

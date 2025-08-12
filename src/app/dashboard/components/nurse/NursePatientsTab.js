@@ -4,73 +4,8 @@ import careProfileService from '@/services/api/careProfileService';
 import customizeTaskService from '@/services/api/customizeTaskService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import { AuthContext } from '@/context/AuthContext';
+import { formatDateToDDMMYYYY, formatDateTimeToVN } from '@/app/profile/utils/dateUtils';
 
-// const NursePatientsTab = ({ patients }) => {
-//   const [selectedPatient, setSelectedPatient] = useState(null);
-
-//   return (
-//     <div>
-//       <h3 className="font-semibold text-lg mb-2">Hồ sơ bệnh nhân phụ trách</h3>
-//       <ul className="space-y-2">
-//         {patients.length === 0 && (
-//           <li className="text-gray-500">Không có bệnh nhân nào.</li>
-//         )}
-//         {patients.map(p => (
-//           <li key={p.CareProfileID} className="p-3 bg-gray-50 rounded flex flex-col md:flex-row md:justify-between md:items-center">
-//             <div>
-//               <span className="font-semibold">{p.ProfileName}</span> - {p.DateOfBirth}
-//               <div className="text-xs text-gray-500">Địa chỉ: {p.Address}</div>
-//             </div>
-//             <button
-//               className="mt-2 md:mt-0 px-4 py-1 rounded bg-gradient-to-r from-blue-500 to-purple-500 text-white text-xs font-semibold hover:shadow-lg"
-//               onClick={() => setSelectedPatient(p)}
-//             >
-//               Xem hồ sơ
-//             </button>
-//           </li>
-//         ))}
-//       </ul>
-
-//       {/* Modal chi tiết bệnh nhân */}
-//       {selectedPatient && (
-//         <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
-//           <div className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg relative animate-fade-in">
-//             <button
-//               className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl"
-//               onClick={() => setSelectedPatient(null)}
-//               title="Đóng"
-//             >✕</button>
-//             <h4 className="text-xl font-bold mb-4 text-blue-700">Chi tiết hồ sơ bệnh nhân</h4>
-//             <div className="flex flex-col items-center mb-4">
-//               <img
-//                 src={selectedPatient.Image && selectedPatient.Image !== 'string' ? selectedPatient.Image : '/images/logo-eldora.png'}
-//                 alt="avatar"
-//                 className="w-24 h-24 rounded-full object-cover border-2 border-blue-200 mb-2"
-//               />
-//               <div className="font-semibold text-lg text-gray-800 mb-1">{selectedPatient.ProfileName}</div>
-//               <div className="text-xs text-gray-500 mb-1">{selectedPatient.DateOfBirth} - {selectedPatient.Gender}</div>
-//             </div>
-//             <div className="space-y-2 text-sm">
-//               <div><span className="font-medium text-gray-600">Địa chỉ:</span> {selectedPatient.Address}</div>
-//               <div><span className="font-medium text-gray-600">Số điện thoại:</span> {selectedPatient.PhoneNumber}</div>
-//               <div><span className="font-medium text-gray-600">Ghi chú:</span> {selectedPatient.Notes}</div>
-//               <div>
-//                 <span className="font-medium text-gray-600">Trạng thái:</span>{' '}
-//                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-//                   selectedPatient.Status === 'active'
-//                     ? 'bg-green-100 text-green-700'
-//                     : 'bg-red-100 text-red-700'
-//                 }`}>
-//                   {selectedPatient.Status === 'active' ? 'Đang theo dõi' : 'Ngưng theo dõi'}
-//                 </span>
-//               </div>
-//             </div>
-//           </div>
-//         </div>
-//       )}
-//     </div>
-//   );
-// };
 const NursePatientsTab = () => {
   const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
@@ -147,7 +82,7 @@ const NursePatientsTab = () => {
         <table className="w-full table-auto text-sm">
           <thead className="bg-gray-50 text-gray-600">
             <tr>
-              <th className="px-4 py-2 text-left">Booking</th>
+              <th className="px-4 py-2 text-left">STT</th>
               <th className="px-4 py-2 text-left">Bệnh nhân</th>
               <th className="px-4 py-2 text-left">Ngày sinh</th>
               <th className="px-4 py-2 text-left">SĐT</th>
@@ -162,11 +97,11 @@ const NursePatientsTab = () => {
                 <td colSpan={7} className="px-4 py-6 text-center text-gray-500">Không có bệnh nhân nào.</td>
               </tr>
             )}
-            {patientRows.map(({ booking, patient }) => (
+            {patientRows.map(({ booking, patient },index) => (
               <tr key={booking.bookingID || booking.BookingID} className="border-t">
-                <td className="px-4 py-2">#{booking.bookingID || booking.BookingID}</td>
+                <td className="px-4 py-2">{index + 1}</td>
                 <td className="px-4 py-2">{patient?.profileName || patient?.ProfileName || '-'}</td>
-                <td className="px-4 py-2">{patient?.dateOfBirth || patient?.DateOfBirth || '-'}</td>
+                <td className="px-4 py-2">{formatDateToDDMMYYYY(patient?.dateOfBirth || patient?.DateOfBirth) || '-'}</td>
                 <td className="px-4 py-2">{patient?.phoneNumber || patient?.PhoneNumber || '-'}</td>
                 <td className="px-4 py-2">{patient?.address || patient?.Address || '-'}</td>
                 <td className="px-4 py-2">
@@ -210,12 +145,23 @@ const NursePatientsTab = () => {
             <div className="space-y-2 text-sm">
               <div><span className="text-gray-500">Booking:</span> #{selectedPatient.booking.bookingID || selectedPatient.booking.BookingID}</div>
               <div><span className="text-gray-500">Bệnh nhân:</span> {selectedPatient.patient?.profileName || selectedPatient.patient?.ProfileName}</div>
-              <div><span className="text-gray-500">Ngày sinh:</span> {selectedPatient.patient?.dateOfBirth || selectedPatient.patient?.DateOfBirth}</div>
+              <div><span className="text-gray-500">Ngày sinh:</span> {formatDateToDDMMYYYY(selectedPatient.patient?.dateOfBirth || selectedPatient.patient?.DateOfBirth)}</div>
               <div><span className="text-gray-500">SĐT:</span> {selectedPatient.patient?.phoneNumber || selectedPatient.patient?.PhoneNumber}</div>
               <div><span className="text-gray-500">Địa chỉ:</span> {selectedPatient.patient?.address || selectedPatient.patient?.Address}</div>
               <div><span className="text-gray-500">Ghi chú:</span> {selectedPatient.patient?.notes || selectedPatient.patient?.Notes || '-'}</div>
               <div><span className="text-gray-500">Trạng thái booking:</span> {selectedPatient.booking?.status || selectedPatient.booking?.Status}</div>
-              <div><span className="text-gray-500">Ngày làm việc:</span> {(selectedPatient.booking?.workdate || selectedPatient.booking?.workDate || selectedPatient.booking?.WorkDate) ? new Date(selectedPatient.booking.workdate || selectedPatient.booking.workDate || selectedPatient.booking.WorkDate).toLocaleString('vi-VN') : '-'}</div>
+              <div><span className="text-gray-500">Ngày làm việc:</span> {formatDateToDDMMYYYY(selectedPatient.booking?.workdate || selectedPatient.booking?.workDate || selectedPatient.booking?.WorkDate) || '-'}</div>
+              <div><span className="text-gray-500">Giờ làm việc:</span> {(() => {
+                const dt = selectedPatient.booking?.workdate || selectedPatient.booking?.workDate || selectedPatient.booking?.WorkDate;
+                if (!dt) return '-';
+                try {
+                  const date = new Date(dt);
+                  if (isNaN(date.getTime())) return '-';
+                  return date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit', hour12: false });
+                } catch {
+                  return '-';
+                }
+              })()}</div>
             </div>
             <div className="mt-4 text-right">
               <button className="px-4 py-2 bg-gray-100 rounded" onClick={() => setSelectedPatient(null)}>Đóng</button>
@@ -225,5 +171,5 @@ const NursePatientsTab = () => {
       )}
     </div>
   );
-};  
+};
 export default NursePatientsTab; 
