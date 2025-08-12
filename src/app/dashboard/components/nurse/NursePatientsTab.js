@@ -7,6 +7,7 @@ import { AuthContext } from '@/context/AuthContext';
 import { formatDateToDDMMYYYY, formatDateTimeToVN } from '@/app/profile/utils/dateUtils';
 
 const NursePatientsTab = () => {
+  const [filterStatus, setFilterStatus] = useState('all');
   const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -64,94 +65,151 @@ const NursePatientsTab = () => {
     load();
   }, [user]);
 
+  // Filter and sort patientRows
   const patientRows = useMemo(() => {
-    return bookings.map(b => {
+    const rows = bookings.map(b => {
       const cpId = b.careProfileID || b.CareProfileID;
       const cp = (b.careProfile || b.CareProfile) || careProfiles.find(p => (p.careProfileID || p.CareProfileID) === cpId);
       return { booking: b, patient: cp };
     });
-  }, [bookings, careProfiles]);
+    // Filter
+    const filtered = filterStatus === 'all'
+      ? rows
+      : rows.filter(({ booking }) => {
+          const status = (booking.status || booking.Status || '').toLowerCase();
+          return status === filterStatus;
+        });
+    // Sort
+    const statusOrder = {
+      isscheduled: 1,
+      paid: 2,
+      completed: 3,
+      cancelled: 4,
+      canceled: 4,
+    };
+    filtered.sort((a, b) => {
+      const aStatus = (a.booking.status || a.booking.Status || '').toLowerCase();
+      const bStatus = (b.booking.status || b.booking.Status || '').toLowerCase();
+      const aOrder = statusOrder[aStatus] || 99;
+      const bOrder = statusOrder[bStatus] || 99;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      // Secondary sort: by workdate descending
+      const aDate = new Date(a.booking.workdate || a.booking.workDate || a.booking.WorkDate || 0);
+      const bDate = new Date(b.booking.workdate || b.booking.workDate || b.booking.WorkDate || 0);
+      return bDate - aDate;
+    });
+    return filtered;
+  }, [bookings, careProfiles, filterStatus]);
 
-  if (loading) return <div>Đang tải...</div>;
-  if (error) return <div className="text-red-600">{error}</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-blue-500 mr-3"></div>
+      <span className="text-lg text-gray-700">Đang tải...</span>
+    </div>
+  );
+  if (error) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-red-600 text-lg font-semibold">{error}</div>
+    </div>
+  );
 
   return (
-    <div>
-      <h3 className="font-semibold text-lg mb-4">Bệnh nhân tôi phụ trách</h3>
-      <div className="w-full bg-white rounded shadow">
-        <table className="w-full table-auto text-sm">
-          <thead className="bg-gray-50 text-gray-600">
-            <tr>
-              <th className="px-4 py-2 text-left">STT</th>
-              <th className="px-4 py-2 text-left">Bệnh nhân</th>
-              <th className="px-4 py-2 text-left">Ngày sinh</th>
-              <th className="px-4 py-2 text-left">SĐT</th>
-              <th className="px-4 py-2 text-left">Địa chỉ</th>
-              <th className="px-4 py-2 text-left">Trạng thái</th>
-              <th className="px-4 py-2 text-left">Chi tiết</th>
-            </tr>
-          </thead>
-          <tbody>
-            {patientRows.length === 0 && (
-              <tr>
-                <td colSpan={7} className="px-4 py-6 text-center text-gray-500">Không có bệnh nhân nào.</td>
-              </tr>
-            )}
-            {patientRows.map(({ booking, patient },index) => (
-              <tr key={booking.bookingID || booking.BookingID} className="border-t">
-                <td className="px-4 py-2">{index + 1}</td>
-                <td className="px-4 py-2">{patient?.profileName || patient?.ProfileName || '-'}</td>
-                <td className="px-4 py-2">{formatDateToDDMMYYYY(patient?.dateOfBirth || patient?.DateOfBirth) || '-'}</td>
-                <td className="px-4 py-2">{patient?.phoneNumber || patient?.PhoneNumber || '-'}</td>
-                <td className="px-4 py-2">{patient?.address || patient?.Address || '-'}</td>
-                <td className="px-4 py-2">
-                  {(() => {
-                    const raw = (booking.status || booking.Status || '').toString().toLowerCase();
-                    const mapping = {
-                      paid: { label: 'Đã thanh toán', cls: 'bg-green-100 text-green-700' },
-                      pending: { label: 'Chờ xử lý', cls: 'bg-yellow-100 text-yellow-700' },
-                      confirmed: { label: 'Đã xác nhận', cls: 'bg-blue-100 text-blue-700' },
-                      completed: { label: 'Hoàn thành', cls: 'bg-emerald-100 text-emerald-700' },
-                      cancelled: { label: 'Đã hủy', cls: 'bg-gray-200 text-gray-700' },
-                      canceled: { label: 'Đã hủy', cls: 'bg-gray-200 text-gray-700' },
-                      waiting: { label: 'Đang chờ', cls: 'bg-slate-100 text-slate-700' },
-                      isscheduled: { label: 'Đã lên lịch', cls: 'bg-indigo-100 text-indigo-700' },
-                    };
-                    const v = mapping[raw] || { label: booking.status || booking.Status || '-', cls: 'bg-gray-100 text-gray-700' };
-                    return <span className={`px-2 py-1 rounded-full text-xs ${v.cls}`}>{v.label}</span>;
-                  })()}
-                </td>
-                <td className="px-4 py-2">
-                  <button
-                    className="px-3 py-1.5 bg-blue-600 text-white rounded"
-                    onClick={() => setSelectedPatient({ booking, patient })}
-                  >
-                    Xem
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <div className="max-w-5xl mx-auto py-8">
+      <h3 className="font-bold text-2xl mb-6 text-blue-700 flex items-center gap-2">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path stroke="#2563eb" strokeWidth="2" d="M12 6v6l4 2" strokeLinecap="round"/></svg>
+        Bệnh nhân tôi phụ trách
+      </h3>
+      <div className="flex items-center gap-4 mb-6">
+        <label className="font-medium text-gray-700">Lọc trạng thái:</label>
+        <select
+          className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value)}
+        >
+          <option value="all">Tất cả</option>
+          <option value="isscheduled">Đã lên lịch</option>
+          <option value="paid">Đã thanh toán</option>
+          <option value="completed">Hoàn thành</option>
+          <option value="cancelled">Đã hủy</option>
+        </select>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {patientRows.length === 0 && (
+          <div className="col-span-2 flex flex-col items-center justify-center py-12 bg-white rounded-xl shadow text-gray-500">
+            <svg width="48" height="48" fill="none" viewBox="0 0 24 24"><path stroke="#a3a3a3" strokeWidth="2" d="M12 6v6l4 2" strokeLinecap="round"/></svg>
+            Không có bệnh nhân nào.
+          </div>
+        )}
+        {patientRows.map(({ booking, patient }, index) => {
+          const raw = (booking.status || booking.Status || '').toString().toLowerCase();
+          const mapping = {
+            paid: { label: 'Đã thanh toán', cls: 'bg-green-100 text-green-700' },
+            pending: { label: 'Chờ xử lý', cls: 'bg-yellow-100 text-yellow-700' },
+            confirmed: { label: 'Đã xác nhận', cls: 'bg-blue-100 text-blue-700' },
+            completed: { label: 'Hoàn thành', cls: 'bg-emerald-100 text-emerald-700' },
+            cancelled: { label: 'Đã hủy', cls: 'bg-gray-200 text-gray-700' },
+            canceled: { label: 'Đã hủy', cls: 'bg-gray-200 text-gray-700' },
+            waiting: { label: 'Đang chờ', cls: 'bg-slate-100 text-slate-700' },
+            isscheduled: { label: 'Đã lên lịch', cls: 'bg-indigo-100 text-indigo-700' },
+          };
+          const v = mapping[raw] || { label: booking.status || booking.Status || '-', cls: 'bg-gray-100 text-gray-700' };
+          return (
+            <div key={booking.bookingID || booking.BookingID} className="bg-white rounded-xl shadow-lg p-6 flex flex-col gap-3 hover:shadow-2xl transition-shadow duration-200">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-400">#{booking.bookingID || booking.BookingID}</div>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${v.cls}`}>{v.label}</span>
+              </div>
+              <div className="font-semibold text-lg text-gray-800 mb-1 flex items-center gap-2">
+                <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#2563eb" strokeWidth="2"/><path stroke="#2563eb" strokeWidth="2" d="M4 20c0-2.21 3.58-4 8-4s8 1.79 8 4"/></svg>
+                {patient?.profileName || patient?.ProfileName || '-'}
+              </div>
+              <div className="flex flex-col gap-1 text-sm text-gray-600">
+                <div><span className="font-medium">Ngày sinh:</span> {formatDateToDDMMYYYY(patient?.dateOfBirth || patient?.DateOfBirth) || '-'}</div>
+                <div><span className="font-medium">SĐT:</span> {patient?.phoneNumber || patient?.PhoneNumber || '-'}</div>
+                <div><span className="font-medium">Địa chỉ:</span> {patient?.address || patient?.Address || '-'}</div>
+              </div>
+              <div className="flex justify-end mt-2">
+                <button
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow transition-colors duration-150"
+                  onClick={() => setSelectedPatient({ booking, patient })}
+                >
+                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path stroke="#fff" strokeWidth="2" d="M15 12l-6 6V6z"/></svg>
+                  Xem chi tiết
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {selectedPatient && (
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 w-full max-w-lg">
-            <div className="flex items-center justify-between mb-3">
-              <h4 className="text-lg font-semibold">Chi tiết bệnh nhân</h4>
-              <button className="text-gray-500" onClick={() => setSelectedPatient(null)}>✕</button>
-            </div>
-            <div className="space-y-2 text-sm">
-              <div><span className="text-gray-500">Booking:</span> #{selectedPatient.booking.bookingID || selectedPatient.booking.BookingID}</div>
-              <div><span className="text-gray-500">Bệnh nhân:</span> {selectedPatient.patient?.profileName || selectedPatient.patient?.ProfileName}</div>
-              <div><span className="text-gray-500">Ngày sinh:</span> {formatDateToDDMMYYYY(selectedPatient.patient?.dateOfBirth || selectedPatient.patient?.DateOfBirth)}</div>
-              <div><span className="text-gray-500">SĐT:</span> {selectedPatient.patient?.phoneNumber || selectedPatient.patient?.PhoneNumber}</div>
-              <div><span className="text-gray-500">Địa chỉ:</span> {selectedPatient.patient?.address || selectedPatient.patient?.Address}</div>
-              <div><span className="text-gray-500">Ghi chú:</span> {selectedPatient.patient?.notes || selectedPatient.patient?.Notes || '-'}</div>
-              <div><span className="text-gray-500">Trạng thái booking:</span> {selectedPatient.booking?.status || selectedPatient.booking?.Status}</div>
-              <div><span className="text-gray-500">Ngày làm việc:</span> {formatDateToDDMMYYYY(selectedPatient.booking?.workdate || selectedPatient.booking?.workDate || selectedPatient.booking?.WorkDate) || '-'}</div>
-              <div><span className="text-gray-500">Giờ làm việc:</span> {(() => {
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-xl relative animate-fadeIn">
+            <button
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl"
+              onClick={() => setSelectedPatient(null)}
+              aria-label="Đóng"
+            >✕</button>
+            <div className="mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-blue-700 font-bold text-lg">Booking #{selectedPatient.booking.bookingID || selectedPatient.booking.BookingID}</span>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${(() => {
+                  const raw = (selectedPatient.booking.status || selectedPatient.booking.Status || '').toString().toLowerCase();
+                  const mapping = {
+                    paid: 'bg-green-100 text-green-700',
+                    pending: 'bg-yellow-100 text-yellow-700',
+                    confirmed: 'bg-blue-100 text-blue-700',
+                    completed: 'bg-emerald-100 text-emerald-700',
+                    cancelled: 'bg-gray-200 text-gray-700',
+                    canceled: 'bg-gray-200 text-gray-700',
+                    waiting: 'bg-slate-100 text-slate-700',
+                    isscheduled: 'bg-indigo-100 text-indigo-700',
+                  };
+                  return mapping[raw] || 'bg-gray-100 text-gray-700';
+                })()}`}>{selectedPatient.booking?.status || selectedPatient.booking?.Status}</span>
+              </div>
+              <div className="text-gray-600 text-sm">Ngày làm việc: <span className="font-medium">{formatDateToDDMMYYYY(selectedPatient.booking?.workdate || selectedPatient.booking?.workDate || selectedPatient.booking?.WorkDate) || '-'}</span></div>
+              <div className="text-gray-600 text-sm">Giờ làm việc: <span className="font-medium">{(() => {
                 const dt = selectedPatient.booking?.workdate || selectedPatient.booking?.workDate || selectedPatient.booking?.WorkDate;
                 if (!dt) return '-';
                 try {
@@ -161,10 +219,21 @@ const NursePatientsTab = () => {
                 } catch {
                   return '-';
                 }
-              })()}</div>
+              })()}</span></div>
             </div>
-            <div className="mt-4 text-right">
-              <button className="px-4 py-2 bg-gray-100 rounded" onClick={() => setSelectedPatient(null)}>Đóng</button>
+            <div className="mb-4">
+              <div className="font-semibold text-gray-800 mb-1">Bệnh nhân</div>
+              <div className="flex items-center gap-3">
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#2563eb" strokeWidth="2"/><path stroke="#2563eb" strokeWidth="2" d="M4 20c0-2.21 3.58-4 8-4s8 1.79 8 4"/></svg>
+                <span className="text-gray-700 text-base font-medium">{selectedPatient.patient?.profileName || selectedPatient.patient?.ProfileName}</span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1">SĐT: {selectedPatient.patient?.phoneNumber || selectedPatient.patient?.PhoneNumber || '-'}</div>
+              <div className="text-xs text-gray-500 mt-1">Ngày sinh: {formatDateToDDMMYYYY(selectedPatient.patient?.dateOfBirth || selectedPatient.patient?.DateOfBirth) || '-'}</div>
+              <div className="text-xs text-gray-500 mt-1">Địa chỉ: {selectedPatient.patient?.address || selectedPatient.patient?.Address || '-'}</div>
+              <div className="text-xs text-gray-500 mt-1">Ghi chú: {selectedPatient.patient?.notes || selectedPatient.patient?.Notes || '-'}</div>
+            </div>
+            <div className="mt-6 text-right">
+              <button className="px-5 py-2 bg-blue-100 hover:bg-blue-200 text-blue-700 rounded-lg font-semibold transition-colors duration-150" onClick={() => setSelectedPatient(null)}>Đóng</button>
             </div>
           </div>
         </div>

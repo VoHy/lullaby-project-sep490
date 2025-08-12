@@ -22,7 +22,12 @@ import medicalNoteService from '@/services/api/medicalNoteService';
 import { AuthContext } from '@/context/AuthContext';
 
 export default function NurseScheduleTab({ workSchedules = [] }) {
-  const { user } = useContext(AuthContext); 
+  // Modal xem/sửa MedicalNote
+  const [editNoteModal, setEditNoteModal] = useState(false);
+  const [editNotePayload, setEditNotePayload] = useState({ note: '', advice: '', image: '', medicalNoteID: null });
+  const [editNoteLoading, setEditNoteLoading] = useState(false);
+  const [editNoteMeta, setEditNoteMeta] = useState({ task: null, booking: null, careProfile: null });
+  const { user } = useContext(AuthContext);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -40,9 +45,9 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
 
   // caches to avoid repeated calls
   const cacheRef = useRef({
-    bookings: new Map(),  
-    serviceTasks: null,  
-    serviceTypes: null       
+    bookings: new Map(),
+    serviceTasks: null,
+    serviceTypes: null
   });
 
   const getStatusView = (rawStatus) => {
@@ -346,7 +351,7 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
       };
       await medicalNoteService.createMedicalNote(payload);
       alert('Tạo ghi chú y tế thành công.');
-      console.log('POST medical note', data);
+
 
       // clear cache for this booking so that fetching details will include the new note (if BE returns it)
       const bookingId = selectedEvent?.bookingId || selectedEvent?.bookingId || selectedEvent?.workObj?.bookingID;
@@ -648,8 +653,11 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
                         {(selectedEvent.bookingDetail?.detailTasks && selectedEvent.bookingDetail.detailTasks.length > 0) ? (
                           selectedEvent.bookingDetail.detailTasks.map((t, i) => {
                             const taskStatus = (t.status || t.Status || '').toString().toLowerCase();
+                            const medicalNote = t.medicalNote || t.medicalNotes?.[0];
+                            // Only the nurse assigned to the task can add/view/edit notes
                             const isTaskOwner = user && (t.nursingID === user.nursingID || t.NursingID === user.nursingID);
-                            const canAddNote = isTaskOwner && selectedEvent.isAttended && taskStatus === 'completed';
+                            const canAddNote = isTaskOwner && selectedEvent.isAttended && taskStatus === 'completed' && !medicalNote;
+                            const canEditNote = isTaskOwner && medicalNote;
                             return (
                               <tr key={i} className="hover:bg-purple-50">
                                 <td className="p-2">{t.serviceName || t.ServiceName || '-'}</td>
@@ -662,15 +670,45 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
                                   </span>
                                 </td>
                                 <td className="p-2 text-center">
-                                  {canAddNote ? (
-                                    <button
-                                      className="inline-flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
-                                      onClick={() => openAddNoteModal(t)}
-                                    >
-                                      <FaPlus /> Ghi chú
-                                    </button>
+                                  {medicalNote ? (
+                                    canEditNote ? (
+                                      <button
+                                        className="inline-flex items-center gap-2 px-3 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700"
+                                        onClick={() => {
+                                          setEditNotePayload({
+                                            note: medicalNote.note || medicalNote.Note || '',
+                                            advice: medicalNote.advice || medicalNote.Advice || '',
+                                            image: medicalNote.image || medicalNote.Image || '',
+                                            medicalNoteID: medicalNote.medicalNoteID || medicalNote.MedicalNoteID
+                                          });
+                                          setEditNoteMeta({ task: t, booking: selectedEvent.bookingDetail?.booking, careProfile: selectedEvent.bookingDetail?.careProfile });
+                                          setEditNoteModal(true);
+                                        }}
+                                      >Xem/Sửa ghi chú</button>
+                                    ) : (
+                                      <span className="inline-block px-3 py-1 bg-gray-200 text-gray-500 rounded text-xs">Đã có ghi chú</span>
+                                    )
                                   ) : (
-                                    <div className="text-xs text-gray-400">—</div>
+                                    isTaskOwner ? (
+                                      canAddNote ? (
+                                        <button
+                                          className="inline-flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700"
+                                          onClick={() => openAddNoteModal(t)}
+                                        >
+                                          <FaPlus /> Ghi chú
+                                        </button>
+                                      ) : (
+                                        <div className="text-xs text-gray-400">—</div>
+                                      )
+                                    ) : (
+                                      <button
+                                        className="inline-flex items-center gap-2 px-3 py-1 bg-gray-300 text-gray-500 rounded text-xs cursor-not-allowed"
+                                        disabled
+                                        title="Chỉ nurse được phân công mới có thể ghi chú"
+                                      >
+                                        <FaPlus /> Ghi chú
+                                      </button>
+                                    )
                                   )}
                                 </td>
                               </tr>
@@ -678,6 +716,81 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
                           })
                         ) : (
                           <tr><td className="p-4 text-center text-gray-500" colSpan={6}>Không có dịch vụ.</td></tr>
+                        )}
+                        {/* Modal xem/sửa MedicalNote */}
+                        {editNoteModal && (
+                          <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
+                            <div className="absolute inset-0 bg-black opacity-30" onClick={() => setEditNoteModal(false)}></div>
+                            <form
+                              className="relative bg-white w-full max-w-md rounded-lg shadow-lg p-6"
+                              onSubmit={async e => {
+                                e.preventDefault();
+                                if (!editNotePayload.medicalNoteID) return;
+                                setEditNoteLoading(true);
+                                try {
+                                  await medicalNoteService.updateMedicalNote({
+                                    medicalNoteID: editNotePayload.medicalNoteID,
+                                    note: editNotePayload.note,
+                                    advice: editNotePayload.advice,
+                                    image: editNotePayload.image,
+                                    relativeID: editNoteMeta.careProfile?.relativeID || editNoteMeta.careProfile?.RelativeID || null
+                                  });
+                                  setEditNoteModal(false);
+                                  setEditNotePayload({ note: '', advice: '', image: '', medicalNoteID: null });
+                                  alert('Cập nhật ghi chú thành công!');
+                                } catch (err) {
+                                  alert(err?.message || 'Cập nhật ghi chú thất bại');
+                                } finally {
+                                  setEditNoteLoading(false);
+                                }
+                              }}
+                            >
+                              <button
+                                className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl"
+                                onClick={() => setEditNoteModal(false)}
+                                type="button"
+                                title="Đóng"
+                              >✕</button>
+                              <h4 className="text-xl font-bold mb-4 text-purple-700">Xem/Sửa ghi chú y tế</h4>
+                              <div className="mb-2"><span className="font-semibold">Bệnh nhân:</span> {editNoteMeta.careProfile?.profileName || editNoteMeta.careProfile?.ProfileName}</div>
+                              <div className="mb-2"><span className="font-semibold">Booking:</span> #{editNoteMeta.booking?.bookingID || editNoteMeta.booking?.BookingID}</div>
+                              <div className="mb-2"><span className="font-semibold">Task:</span> {editNoteMeta.task?.serviceName || editNoteMeta.task?.ServiceName || '-'}</div>
+                              <div className="mb-2">
+                                <label className="font-semibold">Nội dung:</label>
+                                <textarea
+                                  className="w-full border rounded px-2 py-1"
+                                  value={editNotePayload.note}
+                                  onChange={e => setEditNotePayload(p => ({ ...p, note: e.target.value }))}
+                                  required
+                                />
+                              </div>
+                              <div className="mb-2">
+                                <label className="font-semibold">Lời khuyên:</label>
+                                <textarea
+                                  className="w-full border rounded px-2 py-1"
+                                  value={editNotePayload.advice}
+                                  onChange={e => setEditNotePayload(p => ({ ...p, advice: e.target.value }))}
+                                />
+                              </div>
+                              <div className="mb-2">
+                                <label className="font-semibold">Ảnh (URL):</label>
+                                <input
+                                  className="w-full border rounded px-2 py-1"
+                                  value={editNotePayload.image}
+                                  onChange={e => setEditNotePayload(p => ({ ...p, image: e.target.value }))}
+                                  placeholder="Nhập đường dẫn ảnh hoặc để trống"
+                                />
+                                {editNotePayload.image && <img src={editNotePayload.image} alt="note" className="w-16 h-16 object-cover rounded mt-2" />}
+                              </div>
+                              <button
+                                type="submit"
+                                className="mt-4 px-6 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg"
+                                disabled={editNoteLoading}
+                              >
+                                {editNoteLoading ? 'Đang lưu...' : 'Lưu thay đổi'}
+                              </button>
+                            </form>
+                          </div>
                         )}
                       </tbody>
                       {selectedEvent.bookingDetail?.detailTasks && selectedEvent.bookingDetail.detailTasks.length > 0 && (

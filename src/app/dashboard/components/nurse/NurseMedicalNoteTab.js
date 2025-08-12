@@ -19,7 +19,9 @@ const NurseMedicalNoteTab = () => {
   const [serviceTasks, setServiceTasks] = useState([]);
   const [customizePackages, setCustomizePackages] = useState([]);
   const [selectedTask, setSelectedTask] = useState(null);
+  const [selectedNote, setSelectedNote] = useState(null);
   const [form, setForm] = useState({ Note: '', Advice: '', Image: '' });
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     const load = async () => {
@@ -154,56 +156,72 @@ const NurseMedicalNoteTab = () => {
             </button>
             {/* Hiển thị các ghi chú y tế đã có cho customizeTask này, chỉ của chuyên gia đang đăng nhập */}
             <div className="mt-2">
-              {(notes || []).filter(n => (n.customizeTaskID || n.CustomizeTaskID) === (task.customizeTaskID || task.CustomizeTaskID)).map(note => (
-                <div key={note.medicalNoteID || note.MedicalNoteID} className="p-2 bg-white rounded mb-2 border">
-                  <div className="font-semibold">{note.note || note.Note}</div>
-                  <div className="text-sm text-gray-600">{note.advice || note.Advice}</div>
-                  {note.image && <img src={note.image} alt="note" className="w-16 h-16 object-cover rounded mt-1" />}
-                  <div className="text-xs text-gray-400">{note.createdAt ? new Date(note.createdAt).toLocaleString('vi-VN') : ''}</div>
-                </div>
-              ))}
+              {(notes || []).filter(n => (n.customizeTaskID || n.CustomizeTaskID) === (task.customizeTaskID || task.CustomizeTaskID)).map(note => {
+                const booking = (bookings || []).find(b => (b.bookingID || b.BookingID) === (task.bookingID || task.BookingID));
+                const careProfile = (careProfiles || []).find(p => (p.careProfileID || p.CareProfileID) === (booking?.careProfileID || booking?.CareProfileID));
+                return (
+                  <div key={note.medicalNoteID || note.MedicalNoteID} className="p-2 bg-white rounded mb-2 border cursor-pointer hover:shadow" onClick={() => {
+                    setSelectedNote({ note, booking, careProfile, task });
+                    setForm({
+                      Note: note.note || note.Note || '',
+                      Advice: note.advice || note.Advice || '',
+                      Image: note.image || note.Image || ''
+                    });
+                  }}>
+                    <div className="font-semibold">{note.note || note.Note}</div>
+                    <div className="text-sm text-gray-600">{note.advice || note.Advice}</div>
+                    {note.image && <img src={note.image} alt="note" className="w-16 h-16 object-cover rounded mt-1" />}
+                    <div className="text-xs text-gray-400">{note.createdAt ? new Date(note.createdAt).toLocaleString('vi-VN') : ''}</div>
+                    <div className="text-xs text-blue-500 mt-1">Bấm để xem/sửa</div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         ))}
       </div>
 
-      {/* Form thêm ghi chú cho customizeTask đã chọn */}
-      {selectedTask && (() => {
-        const booking = (bookings || []).find(b => (b.bookingID || b.BookingID) === (selectedTask.bookingID || selectedTask.BookingID));
-        const careProfile = (careProfiles || []).find(p => (p.careProfileID || p.CareProfileID) === (booking?.careProfileID || booking?.CareProfileID));
+      {/* Modal xem/sửa ghi chú y tế */}
+      {selectedNote && (() => {
+        const { note, booking, careProfile, task } = selectedNote;
         return (
           <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
             <form
               className="bg-white rounded-lg p-6 w-full max-w-md shadow-lg relative"
               onSubmit={async e => {
                 e.preventDefault();
+                setEditLoading(true);
                 try {
                   const payload = {
-                    customizeTaskID: selectedTask.customizeTaskID || selectedTask.CustomizeTaskID,
+                    medicalNoteID: note.medicalNoteID || note.MedicalNoteID,
+                    customizeTaskID: task.customizeTaskID || task.CustomizeTaskID,
                     note: form.Note,
                     advice: form.Advice,
                     image: form.Image || '',
                     relativeID: careProfile.relativeID || careProfile.RelativeID || 0
                   };
-                  const created = await medicalNoteService.createMedicalNote(payload);
-                  setNotes(prev => [...prev, created]);
-                  setSelectedTask(null);
+                  const updated = await medicalNoteService.updateMedicalNote(payload);
+                  setNotes(prev => prev.map(n => (n.medicalNoteID || n.MedicalNoteID) === (note.medicalNoteID || note.MedicalNoteID) ? updated : n));
+                  setSelectedNote(null);
                   setForm({ Note: '', Advice: '', Image: '' });
                 } catch (err) {
-                  alert(err?.message || 'Thêm ghi chú thất bại');
+                  alert(err?.message || 'Cập nhật ghi chú thất bại');
+                } finally {
+                  setEditLoading(false);
                 }
               }}
             >
               <button
                 className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl"
-                onClick={() => setSelectedTask(null)}
+                onClick={() => setSelectedNote(null)}
                 type="button"
                 title="Đóng"
               >✕</button>
-              <h4 className="text-xl font-bold mb-4 text-purple-700">Thêm ghi chú y tế</h4>
+              <h4 className="text-xl font-bold mb-4 text-purple-700">Xem/Sửa ghi chú y tế</h4>
               <div className="mb-2"><span className="font-semibold">Bệnh nhân:</span> {careProfile.profileName || careProfile.ProfileName}</div>
               <div className="mb-2"><span className="font-semibold">Booking:</span> #{booking.bookingID || booking.BookingID}</div>
-              <div className="mb-2"><span className="font-semibold">CustomizeTaskID:</span> {selectedTask.customizeTaskID || selectedTask.CustomizeTaskID}</div>
+              <div className="mb-2"><span className="font-semibold">CustomizeTaskID:</span> {task.customizeTaskID || task.CustomizeTaskID}</div>
+              <div className="mb-2"><span className="font-semibold">Thời gian tạo:</span> {note.createdAt ? new Date(note.createdAt).toLocaleString('vi-VN') : ''}</div>
               <div className="mb-2">
                 <label className="font-semibold">Nội dung:</label>
                 <textarea
@@ -229,12 +247,14 @@ const NurseMedicalNoteTab = () => {
                   onChange={e => setForm(f => ({ ...f, Image: e.target.value }))}
                   placeholder="Nhập đường dẫn ảnh hoặc để trống"
                 />
+                {form.Image && <img src={form.Image} alt="note" className="w-16 h-16 object-cover rounded mt-2" />}
               </div>
               <button
                 type="submit"
                 className="mt-4 px-6 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg"
+                disabled={editLoading}
               >
-                Thêm ghi chú
+                {editLoading ? 'Đang lưu...' : 'Lưu thay đổi'}
               </button>
             </form>
           </div>
