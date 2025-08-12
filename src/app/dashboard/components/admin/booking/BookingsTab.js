@@ -574,7 +574,7 @@ const BookingsTab = ({ bookings }) => {
     : 0;
 
   // Sắp xếp trạng thái theo thứ tự yêu cầu
-  const statusOrder = ["paid", "pending", "isscheduled", "completed", "cancelled", "canceled"];
+  const statusOrder = ["paid", "isScheduled", "pending", "completed", "cancelled", "canceled"];
   // Phân trang
 
   // Lọc và sắp xếp bookings
@@ -588,15 +588,40 @@ const BookingsTab = ({ bookings }) => {
         !searchTerm ||
         id?.toString().includes(searchTerm) ||
         profileName?.toLowerCase().includes(searchTerm.toLowerCase());
-      const matchesStatus = statusFilter === 'all' || status === statusFilter;
+      let matchesStatus = statusFilter === 'all';
+      if (!matchesStatus) {
+        if (statusFilter === 'isScheduled') {
+          matchesStatus = booking.isSchedule === true || booking.isSchedule === 'true' || booking.IsSchedule === true || booking.IsSchedule === 'true';
+        } else if (statusFilter === 'paid') {
+          matchesStatus = status === 'paid';
+        } else if (statusFilter === 'pending') {
+          matchesStatus = status === 'pending' || status === 'unpaid';
+        } else if (statusFilter === 'completed') {
+          matchesStatus = status === 'completed';
+        } else if (statusFilter === 'cancelled') {
+          matchesStatus = status === 'cancelled' || status === 'canceled';
+        } else {
+          matchesStatus = status === statusFilter;
+        }
+      }
       return matchesSearch && matchesStatus;
     })
       .slice() // copy array
       .sort((a, b) => {
-        const aStatus = (a?.Status ?? a?.status)?.toLowerCase();
-        const bStatus = (b?.Status ?? b?.status)?.toLowerCase();
-        const aIdx = statusOrder.indexOf(aStatus);
-        const bIdx = statusOrder.indexOf(bStatus);
+        // Sort theo thứ tự: paid, isScheduled, pending, completed, cancelled/canceled
+        const getStatusKey = (booking) => {
+          const status = (booking?.Status ?? booking?.status)?.toLowerCase();
+          if (status === 'paid') return 'paid';
+          if (booking.isSchedule === true || booking.isSchedule === 'true' || booking.IsSchedule === true || booking.IsSchedule === 'true') return 'isScheduled';
+          if (status === 'pending' || status === 'unpaid') return 'pending';
+          if (status === 'completed') return 'completed';
+          if (status === 'cancelled' || status === 'canceled') return 'cancelled';
+          return 'other';
+        };
+        const aKey = getStatusKey(a);
+        const bKey = getStatusKey(b);
+        const aIdx = statusOrder.indexOf(aKey);
+        const bIdx = statusOrder.indexOf(bKey);
         return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx);
       })
     : [];
@@ -663,8 +688,9 @@ const BookingsTab = ({ bookings }) => {
                   className="border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500"
                 >
                   <option value="all">Tất cả trạng thái</option>
-                  <option value="pending">Đang xử lý</option>
                   <option value="paid">Đã thanh toán</option>
+                  <option value="isScheduled">Đã lên lịch</option>
+                  <option value="pending">Chờ thanh toán</option>
                   <option value="completed">Hoàn thành</option>
                   <option value="cancelled">Đã hủy</option>
                 </select>
@@ -713,19 +739,22 @@ const BookingsTab = ({ bookings }) => {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 rounded-full text-xs font-semibold 
-                          ${String(status).toLowerCase() === 'paid' ? 'bg-pink-100 text-pink-700' :
-                              String(status).toLowerCase() === 'completed' ? 'bg-emerald-100 text-emerald-700' :
-                                String(status).toLowerCase() === 'pending' || String(status).toLowerCase() === 'unpaid' ? 'bg-yellow-100 text-yellow-700' :
-                                  String(status).toLowerCase() === 'isscheduled' ? 'bg-blue-100 text-blue-700' :
-                                    String(status).toLowerCase() === 'cancelled' || String(status).toLowerCase() === 'canceled' ? 'bg-red-100 text-red-700' :
-                                      'bg-gray-100 text-gray-700'
-                            }`}>
+                          ${(() => {
+                            const s = String(status).toLowerCase();
+                            if (s === 'paid') return 'bg-pink-100 text-pink-700';
+                            if (booking.isSchedule === true || booking.isSchedule === 'true' || booking.IsSchedule === true || booking.IsSchedule === 'true') return 'bg-blue-100 text-blue-700';
+                            if (s === 'pending' || s === 'unpaid') return 'bg-yellow-100 text-yellow-700';
+                            if (s === 'completed') return 'bg-emerald-100 text-emerald-700';
+                            if (s === 'cancelled' || s === 'canceled') return 'bg-red-100 text-red-700';
+                            return 'bg-gray-100 text-gray-700';
+                          })()}`}
+                          >
                             {(() => {
                               const s = String(status).toLowerCase();
                               if (s === 'paid') return 'Đã thanh toán';
-                              if (s === 'completed') return 'Hoàn thành';
+                              if (booking.isSchedule === true || booking.isSchedule === 'true' || booking.IsSchedule === true || booking.IsSchedule === 'true') return 'Đã lên lịch';
                               if (s === 'pending' || s === 'unpaid') return 'Chờ thanh toán';
-                              if (s === 'isscheduled') return 'Đã lên lịch';
+                              if (s === 'completed') return 'Hoàn thành';
                               if (s === 'cancelled' || s === 'canceled') return 'Đã hủy';
                               return status || 'Không rõ';
                             })()}

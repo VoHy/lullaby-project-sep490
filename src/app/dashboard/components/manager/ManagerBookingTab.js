@@ -27,6 +27,7 @@ const ManagerBookingTab = () => {
   // Filter, sort, and pagination state
   const [searchText, setSearchText] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
 
@@ -185,8 +186,8 @@ const ManagerBookingTab = () => {
   useEffect(() => {
     if (currentManagerId && allBookings.length > 0) {
       const filteredBookings = getFilteredBookings(allBookings, currentManagerId);
-  setBookings(filteredBookings);
-  setCurrentPage(1); // reset page when bookings change
+      setBookings(filteredBookings);
+      setCurrentPage(1); // reset page when bookings change
     }
   }, [allBookings, currentManagerId]);
 
@@ -219,13 +220,13 @@ const ManagerBookingTab = () => {
         Promise.all(candidates.Nurse.map(async n => {
           const id = n.nursingID || n.NursingID;
           let mappings = [];
-          try { mappings = await nursingSpecialistServiceTypeService.getByNursing(id); } catch (_) {}
+          try { mappings = await nursingSpecialistServiceTypeService.getByNursing(id); } catch (_) { }
           return { candidate: n, mappings };
         })),
         Promise.all(candidates.Specialist.map(async s => {
           const id = s.nursingID || s.NursingID;
           let mappings = [];
-          try { mappings = await nursingSpecialistServiceTypeService.getByNursing(id); } catch (_) {}
+          try { mappings = await nursingSpecialistServiceTypeService.getByNursing(id); } catch (_) { }
           return { candidate: s, mappings };
         })),
       ]);
@@ -416,16 +417,20 @@ const ManagerBookingTab = () => {
           });
         }
         if (filterStatus) {
-          filtered = filtered.filter(b => String(b.status ?? b.Status).toLowerCase() === filterStatus);
+          if (filterStatus === 'isScheduled') {
+            filtered = filtered.filter(b => b.isSchedule === true || b.IsSchedule === true);
+          } else {
+            filtered = filtered.filter(b => String(b.status ?? b.Status).toLowerCase() === filterStatus);
+          }
         }
         // Sort: isScheduled=false lên đầu, sau đó theo trạng thái
         const statusOrder = ['paid', 'pending', 'completed', 'cancelled'];
         filtered = filtered.slice().sort((a, b) => {
           // isScheduled: false lên đầu
-          const aIsScheduled = a.isScheduled ?? a.IsScheduled;
-          const bIsScheduled = b.isScheduled ?? b.IsScheduled;
-          if (aIsScheduled === false && bIsScheduled !== false) return -1;
-          if (bIsScheduled === false && aIsScheduled !== false) return 1;
+          const aIsSchedule = a.isSchedule ?? a.IsSchedule;
+          const bIsSchedule = b.isSchedule ?? b.IsSchedule;
+          if (aIsSchedule === false && bIsSchedule !== false) return -1;
+          if (bIsSchedule === false && aIsSchedule !== false) return 1;
           // Tiếp tục sắp xếp theo trạng thái
           const sa = String(a.status ?? a.Status).toLowerCase();
           const sb = String(b.status ?? b.Status).toLowerCase();
@@ -486,20 +491,25 @@ const ManagerBookingTab = () => {
                           </td>
                           <td className="px-6 py-4">
                             <span className={` inline-block min-w-[80px] px-2 py-0.5 rounded-full text-xs font-semibold text-center shadow-sm 
-                          ${booking.status === 'paid' ? 'bg-pink-100 text-pink-800' :
-                                booking.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                  booking.status === 'completed' ? 'bg-green-100 text-green-800' :
-                                    booking.status === 'cancelled' ? 'bg-red-100 text-red-800' :
-                                      booking.status === 'isScheduled' ? 'bg-blue-100 text-blue-800' :
-                                        'bg-red-100 text-red-800'
-                              }`}>
+                            ${(() => {
+                                const s = String(booking.status ?? booking.Status).toLowerCase();
+                                if (s === 'cancelled' || s === 'canceled') return 'bg-red-100 text-red-800';
+                                if (booking.isSchedule === true || booking.IsSchedule === true) return 'bg-blue-100 text-blue-800';
+                                if (s === 'paid') return 'bg-pink-100 text-pink-800';
+                                if (s === 'pending') return 'bg-yellow-100 text-yellow-800';
+                                if (s === 'completed') return 'bg-green-100 text-green-800';
+                                if (s === 'isschedule') return 'bg-blue-100 text-blue-800';
+                                return 'bg-red-100 text-red-800';
+                              })()}`}
+                            >
                               {(() => {
                                 const s = String(booking.status ?? booking.Status).toLowerCase();
+                                if (s === 'cancelled' || s === 'canceled') return 'Đã hủy';
+                                if (booking.isSchedule === true || booking.IsSchedule === true) return 'Đã lên lịch';
                                 if (s === 'paid') return 'Đã thanh toán';
                                 if (s === 'pending' || s === 'unpaid') return 'Chờ thanh toán';
                                 if (s === 'completed') return 'Hoàn thành';
-                                if (s === 'isscheduled') return 'Đã lên lịch';
-                                if (s === 'cancelled' || s === 'canceled') return 'Đã hủy';
+                                if (s === 'isschedule') return 'Đã lên lịch';
                                 return 'Không xác định';
                               })()}
                             </span>
@@ -595,13 +605,12 @@ const ManagerBookingTab = () => {
                       </div>
                       <div>
                         <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Trạng thái</div>
-                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${
-                          localInvoice?.status ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
-                        }`}>
+                        <span className={`inline-block px-3 py-1 rounded-full text-xs font-semibold ${localInvoice?.status ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'
+                          }`}>
                           {localInvoice ? (localInvoice.status ? 'Đã thanh toán' : 'Chưa thanh toán') : 'Chưa có hóa đơn'}
                         </span>
                       </div>
-    
+
                     </div>
                   </div>
                 </div>
