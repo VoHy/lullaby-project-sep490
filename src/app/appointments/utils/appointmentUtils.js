@@ -13,17 +13,15 @@ export const getNurseNames = (nurseIds, nursingSpecialists) => {
 export const getStatusColor = (status) => {
   const normalized = String(status || '').toLowerCase();
   switch (normalized) {
-    case 'confirmed':
     case 'completed':
+      return 'bg-green-100 text-green-700';
     case 'paid':
       return 'bg-green-100 text-green-700';
     case 'pending':
-    case 'unpaid':
       return 'bg-yellow-100 text-yellow-700';
     case 'cancelled':
-    case 'canceled':
       return 'bg-red-100 text-red-700';
-    case 'isscheduled':
+    case 'isScheduled':
       return 'bg-blue-100 text-blue-700';
     default:
       return 'bg-gray-100 text-gray-700';
@@ -38,7 +36,6 @@ export const getStatusText = (status) => {
     case 'pending':
       return 'Chờ lên lịch';
     case 'cancelled':
-    case 'canceled':
       return 'Đã hủy';
     case 'paid':
       return 'Đã thanh toán';
@@ -46,8 +43,6 @@ export const getStatusText = (status) => {
       return 'Đã hoàn thành';
     case 'confirmed':
       return 'Đã xác nhận';
-    case 'unpaid':
-      return 'Chưa thanh toán';
     default:
       return 'Không xác định';
   }

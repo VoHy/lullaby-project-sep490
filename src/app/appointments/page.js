@@ -83,11 +83,11 @@ export default function AppointmentsPage() {
 
       const zones = await zoneDetailService.getZoneDetails();
 
-  const invoiceData = await invoiceService.getAllInvoices();
+      const invoiceData = await invoiceService.getAllInvoices();
 
       const packages = await customizePackageService.getAllCustomizePackages();
 
-  const customizeTasksRaw = await customizeTaskService.getAllCustomizeTasks();
+      const customizeTasksRaw = await customizeTaskService.getAllCustomizeTasks();
 
       // Lọc care profiles theo account hiện tại
       const currentAccountId = user.accountID || user.AccountID;
@@ -127,7 +127,7 @@ export default function AppointmentsPage() {
         .map(b => {
           const bCareId = b.careProfileID ?? b.CareProfileID;
           const bookingId = b.bookingID ?? b.BookingID ?? b.id;
-          
+
 
           const baseAmount = b.amount || b.totalAmount || b.total_Amount || 0;
           const extra = b.extra;
@@ -138,9 +138,9 @@ export default function AppointmentsPage() {
             const extraPercentage = extra > 1 ? extra / 100 : extra;
             return baseAmount + (baseAmount * extraPercentage);
           })();
-          
 
-          
+
+
           // Normalize/override status from invoice if needed
           const rawStatus = b.status || b.Status;
           const invoiceStatus = invoiceByBooking.get(bookingId);
@@ -160,7 +160,7 @@ export default function AppointmentsPage() {
       setNursingSpecialists(specialists);
       setZoneDetails(zones);
 
-      
+
       setInvoices(invoiceData);
       setCustomizePackages(packages);
       // Normalize customize tasks (ids + nursingID + status)
@@ -233,16 +233,16 @@ export default function AppointmentsPage() {
     try {
       // Call payment API
       await transactionHistoryService.invoicePayment(invoiceId);
-      
+
       // Show success message
       alert('Thanh toán thành công! Hóa đơn đã được thanh toán.');
-      
+
       // Refresh data to show updated payment status
       await fetchData(true);
-      
+
       // Refresh wallet context to show updated balance
       await refreshWalletData();
-      
+
     } catch (error) {
       console.error('Error processing payment:', error);
       alert(`Có lỗi xảy ra khi thanh toán: ${error.message}`);
@@ -253,33 +253,33 @@ export default function AppointmentsPage() {
   const handleBookingCancel = async (appointment) => {
     try {
       const bookingId = appointment.bookingID || appointment.BookingID;
-      
+
       // First, get the invoice for this booking
-      const invoice = invoices.find(inv => 
+      const invoice = invoices.find(inv =>
         (inv.bookingID === bookingId || inv.BookingID === bookingId)
       );
-      
+
       if (!invoice) {
         throw new Error('Không tìm thấy hóa đơn cho booking này');
       }
-      
+
       const invoiceId = invoice.invoiceID || invoice.invoice_ID;
-      
+
       // Call refund API
       await transactionHistoryService.refundMoneyToWallet(invoiceId);
-      
+
       // Update booking status to 'cancelled'
       // await bookingService.updateStatus(bookingId, 'cancelled');
-      
+
       // Show success message
       alert('Đã hủy booking thành công! Tiền đã được hoàn vào tài khoản của bạn.');
-      
+
       // Refresh data to show updated status
       await fetchData(true);
-      
+
       // Refresh wallet context to show updated balance
       await refreshWalletData();
-      
+
     } catch (error) {
       console.error('Error cancelling booking:', error);
       alert(`Có lỗi xảy ra khi hủy booking: ${error.message}`);
@@ -298,7 +298,7 @@ export default function AppointmentsPage() {
 
       // Case 1: If service has customizeTaskId, update that task directly
       if (service.customizeTaskId) {
-        
+
         await customizeTaskService.updateNursing(service.customizeTaskId, nurseId);
       }
       // Case 2: Package service with taskId (từ service task)

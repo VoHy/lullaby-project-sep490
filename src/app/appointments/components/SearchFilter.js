@@ -45,7 +45,7 @@ const SearchFilter = ({
             >
               <option value="all">Tất cả trạng thái</option>
               <option value="pending">Chưa thanh toán</option>
-              <option value="isScheduled">Đã lên lịch</option>
+              {/* <option value="isScheduled">Đã lên lịch</option> */}
               <option value="paid">Đã thanh toán</option>
               <option value="completed">Hoàn thành</option>
               <option value="cancelled">Đã hủy</option>

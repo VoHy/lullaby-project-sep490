@@ -135,12 +135,13 @@ const NurseBookingsTab = () => {
 
   return (
     <div>
-      <h3 className="font-semibold text-lg mb-4">Booking của tôi</h3>
+      <h3 className="font-semibold text-lg mb-4">Lịch hẹn của tôi</h3>
       <div className="w-full bg-white rounded shadow">
         <table className="w-full table-auto text-sm">
           <thead className="bg-gray-50 text-gray-600">
             <tr>
-              <th className="px-4 py-2 text-left">Booking</th>
+              <th className="px-4 py-2 text-left">STT</th>
+              <th className="px-4 py-2 text-left">Lịch hẹn</th>
               <th className="px-4 py-2 text-left">Bệnh nhân</th>
               <th className="px-4 py-2 text-left">Ngày làm việc</th>
               <th className="px-4 py-2 text-left">Trạng thái</th>
@@ -150,10 +151,10 @@ const NurseBookingsTab = () => {
           <tbody>
             {bookings.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-4 py-6 text-center text-gray-500">Không có booking nào.</td>
+                <td colSpan={6} className="px-4 py-6 text-center text-gray-500">Không có booking nào.</td>
               </tr>
             )}
-            {bookings.map(b => {
+            {bookings.map((b, index) => {
               const cpId = b.careProfileID || b.CareProfileID;
               const patient = (b.careProfile || b.CareProfile) || careProfiles.find(p => (p.careProfileID || p.CareProfileID) === cpId);
               const workdate = b.workdate || b.workDate || b.WorkDate;
@@ -161,7 +162,8 @@ const NurseBookingsTab = () => {
               const sv = getStatusView(status);
               return (
                 <tr key={b.bookingID || b.BookingID} className="border-t">
-                  <td className="px-4 py-2">#{b.bookingID || b.BookingID}</td>
+                  <td className="px-4 py-2">{index + 1}</td>
+                  <td className="px-4 py-2">{b.bookingID || b.BookingID}</td>
                   <td className="px-4 py-2">{patient?.profileName || patient?.ProfileName || '-'}</td>
                   <td className="px-4 py-2">{workdate ? new Date(workdate).toLocaleString('vi-VN') : '-'}</td>
                   <td className="px-4 py-2">
