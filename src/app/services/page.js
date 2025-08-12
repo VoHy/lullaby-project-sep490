@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext } from 'react';
 import { motion } from "framer-motion";
 // import customizePackageService from '@/services/api/customizePackageService';
 import serviceTypeService from '@/services/api/serviceTypeService';
@@ -12,6 +12,7 @@ import {
   MultiServiceBooking 
 } from './components';
 import { useRouter } from 'next/navigation';
+import { AuthContext } from '@/context/AuthContext';
 
 // Skeleton Loading Component
 const ServicesSkeleton = () => (
@@ -60,6 +61,7 @@ const clearServicesCache = () => {
 };
 
 export default function ServicesPage() {
+  const { user, token } = useContext(AuthContext);
   const [serviceTypes, setServiceTypes] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
   // const [feedbacks, setFeedbacks] = useState([]);
@@ -215,6 +217,12 @@ export default function ServicesPage() {
 
   // Handle booking
   const handleBook = (serviceId, type = 'service') => {
+    // Kiểm tra nếu chưa đăng nhập
+    if (!user || !token) {
+      router.push('/auth/login');
+      return;
+    }
+
     if (type === 'package') {
       // Tìm thông tin package
       const packageInfo = serviceTypes.find(s => s.serviceID === serviceId);

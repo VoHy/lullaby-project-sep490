@@ -3,13 +3,22 @@
 import { motion } from 'framer-motion';
 import { FaShoppingCart } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
+import { useContext } from 'react';
+import { AuthContext } from '@/context/AuthContext';
 
 const MultiServiceBooking = ({ selectedServices, serviceQuantities, serviceTypes }) => {
   const router = useRouter();
+  const { user, token } = useContext(AuthContext);
 
   if (selectedServices.length <= 1) return null;
 
   const handleBooking = () => {
+    // Kiểm tra nếu chưa đăng nhập
+    if (!user || !token) {
+      router.push('/auth/login');
+      return;
+    }
+
     // Tạo danh sách dịch vụ với thông tin chi tiết và số lượng
     const servicesData = selectedServices.map(serviceId => {
       const serviceInfo = serviceTypes.find(s => s.serviceID === serviceId);

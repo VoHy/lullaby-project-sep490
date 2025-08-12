@@ -27,6 +27,17 @@ export default function TransactionDetailModal({ open, onClose, transaction }) {
   const date = transaction.transactionDate || transaction.TransactionDate;
   const status = transaction.status || transaction.Status || '';
 
+  const getStatusText = (status) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'đã thanh toán';
+      case 'pending':
+        return 'chờ xử lý';
+      default:
+        return status;
+    }
+  };
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-black/50" onClick={onClose} />
@@ -37,8 +48,8 @@ export default function TransactionDetailModal({ open, onClose, transaction }) {
             <FaMoneyBillWave className="text-gray-700" />
             Chi tiết giao dịch
           </h3>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
           >
             <FaTimes className="text-gray-500 text-lg" />
@@ -76,14 +87,15 @@ export default function TransactionDetailModal({ open, onClose, transaction }) {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Trạng thái:</span>
-                    <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${
-                      status === 'completed' 
-                        ? 'bg-green-50 text-green-700 border-green-200' 
-                        : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                    }`}>
-                      {status === 'completed' ? <FaCheckCircle /> : <FaClock />}
-                      {status}
-                    </span>
+                    <td className="px-4 py-3">
+                      <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${status.toLowerCase() === 'completed'
+                          ? 'bg-green-50 text-green-700 border-green-200'
+                          : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                        }`}>
+                        {status.toLowerCase() === 'completed' ? <FaCheckCircle /> : <FaClock />}
+                        {getStatusText(status)}
+                      </span>
+                    </td>
                   </div>
                 </div>
               </div>
@@ -149,8 +161,8 @@ export default function TransactionDetailModal({ open, onClose, transaction }) {
 
         {/* Modal Footer */}
         <div className="flex justify-end p-6 border-t border-gray-200">
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="px-6 py-3 bg-gray-900 text-white rounded-lg hover:bg-black transition-colors font-medium"
           >
             Đóng

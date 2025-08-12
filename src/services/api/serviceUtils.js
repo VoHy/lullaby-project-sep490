@@ -41,11 +41,17 @@ export const getAuthHeaders = () => {
  */
 export const handleApiResponse = async (response, defaultMessage = 'API request failed') => {
   const text = await response.text();
-  const data = text ? (() => { try { return JSON.parse(text); } catch { return { raw: text }; } })() : null;
   if (!response.ok) {
-    const message = data?.error || data?.message || defaultMessage;
+    const data = text ? (() => { try { return JSON.parse(text); } catch { return { raw: text }; } })() : null;
+    const message = data?.error || data?.message || data?.raw || defaultMessage;
     throw new Error(message);
   }
+  // Nếu là string và bắt đầu bằng https://, trả về nguyên text, không parse JSON
+  if (text && typeof text === 'string' && text.trim().startsWith('https://')) {
+    return text.trim();
+  }
+  // Nếu không phải URL, thử parse JSON
+  const data = text ? (() => { try { return JSON.parse(text); } catch { return { raw: text }; } })() : null;
   return data;
 };
 
