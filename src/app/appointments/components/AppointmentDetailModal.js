@@ -7,6 +7,7 @@ import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMone
 import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
 import feedbackService from '@/services/api/feedbackService';
 import FeedbackForm from './FeedbackForm';
+import { getBookingStatusText, getBookingStatusColor } from '../utils/bookingStatus';
 
 
 const AppointmentDetailModal = ({
@@ -508,7 +509,7 @@ const AppointmentDetailModal = ({
               </div>
             )}
             <div className="text-xs text-gray-500">
-              Trạng thái: {getStatusText(String(service.status || '').toLowerCase())}
+              Trạng thái: {getBookingStatusText(service.status, service.isSchedule)}
             </div>
           </div>
           <div className="ml-4 flex-shrink-0">
@@ -516,8 +517,8 @@ const AppointmentDetailModal = ({
             {isDone && (
               <div className="text-sm text-gray-600 font-medium whitespace-nowrap">
                 {String(service.status || '').toLowerCase() === 'completed'
-                  ? '✓ ' + getStatusText('completed')
-                  : '✗ ' + getStatusText('cancelled')}
+                  ? '✓ ' + getBookingStatusText('completed')
+                  : '✗ ' + getBookingStatusText('cancelled')}
               </div>
             )}
           </div>
@@ -580,8 +581,8 @@ const AppointmentDetailModal = ({
                 </div>
                 Trạng thái
               </h3>
-              <span className={`px-3 py-2 rounded-full text-sm font-medium ${getStatusColor(appointment.status || appointment.Status)}`}>
-                {getStatusText(appointment.status || appointment.Status)}
+              <span className={`px-3 py-2 rounded-full text-sm font-medium ${getBookingStatusColor(appointment.status, appointment.isSchedule)}`}>
+                {getBookingStatusText(appointment.status || 'pending', appointment.isSchedule)}
               </span>
             </div>
 
