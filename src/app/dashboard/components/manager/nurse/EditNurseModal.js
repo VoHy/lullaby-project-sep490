@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { FaTimes, FaUser, FaGraduationCap, FaClipboardList, FaSave, FaHourglassHalf } from 'react-icons/fa';
 
-const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses }) => {
+const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, serviceTypes = [] }) => {
   const [formData, setFormData] = useState({
     accountID: nurse.accountID,
     nursingID: nurse.nursingID,
@@ -18,7 +18,8 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses }) => {
     slogan: nurse.slogan || '',
     zoneID: nurse.zoneID || '',
     major: nurse.major || 'Nurse',
-    status: nurse.status || 'active'
+    status: nurse.status || 'active',
+    serviceID: nurse.serviceID || ''
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -39,7 +40,8 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses }) => {
       slogan: nurse.slogan || '',
       zoneID: nurse.zoneID || '',
       major: nurse.major || 'Nurse',
-      status: nurse.status || 'active'
+      status: nurse.status || 'active',
+      serviceID: nurse.serviceID || ''
     });
   }, [nurse]);
 
@@ -198,6 +200,30 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses }) => {
                         {zone.zoneName}
                       </option>
                     ))}
+                  </select>
+                </div>
+
+                {/* Thêm trường chọn dịch vụ */}
+                <div className="bg-white rounded-lg p-0 md:col-span-2">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Dịch vụ
+                  </label>
+                  <select
+                    name="serviceID"
+                    value={formData.serviceID}
+                    onChange={handleChange}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
+                  >
+                    <option value="">-- Chọn dịch vụ --</option>
+                    {Array.isArray(serviceTypes) &&
+                      serviceTypes
+                        .filter(service => service.isPackage === false) // chỉ lấy dịch vụ không phải package
+                        .map(service => (
+                          <option key={service.serviceID} value={service.serviceID}>
+                            {service.serviceName}
+                          </option>
+                        ))
+                    }
                   </select>
                 </div>
               </div>
