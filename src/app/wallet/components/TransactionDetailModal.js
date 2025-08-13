@@ -87,7 +87,7 @@ export default function TransactionDetailModal({ open, onClose, transaction }) {
                   </div>
                   <div className="flex justify-between">
                     <span className="text-gray-600">Trạng thái:</span>
-                    <td className="px-4 py-3">
+                    <div className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${status.toLowerCase() === 'completed'
                         ? 'bg-green-50 text-green-700 border-green-200'
                         : 'bg-yellow-50 text-yellow-700 border-yellow-200'
@@ -95,7 +95,7 @@ export default function TransactionDetailModal({ open, onClose, transaction }) {
                         {status.toLowerCase() === 'completed' ? <FaCheckCircle /> : <FaClock />}
                         {getStatusText(status)}
                       </span>
-                    </td>
+                    </div>
                   </div>
                 </div>
               </div>

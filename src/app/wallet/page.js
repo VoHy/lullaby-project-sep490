@@ -250,7 +250,7 @@ export default function WalletPage() {
                               {note || 'Xem chi tiết'}
                             </button>
                           </td>
-                          <td className={`px-5 py-4 text-right font-bold ${isOut ? 'text-red-600' : 'text-green-600'}`}> 
+                          <td className={`px-5 py-4 text-right font-bold ${isOut ? 'text-red-600' : 'text-green-600'}`}>
                             {(isOut ? -amount : amount).toLocaleString('vi-VN')}₫
                           </td>
                           <td className="px-5 py-4 text-right text-gray-500">
@@ -260,12 +260,14 @@ export default function WalletPage() {
                             {after.toLocaleString('vi-VN')}₫
                           </td>
                           <td className="px-5 py-4">
-                            <span className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border ${status === 'completed'
-                                ? 'bg-green-50 text-green-700 border-green-200'
-                                : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                              }`}>
+                            <span
+                              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border ${status === 'completed'
+                                  ? 'bg-green-50 text-green-700 border-green-200'
+                                  : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                                }`}
+                            >
                               {status === 'completed' ? <FaCheckCircle /> : <FaClock />}
-                              {status}
+                              {status === 'completed' ? 'Đã thanh toán' : 'Chưa thanh toán'}
                             </span>
                           </td>
                           <td className="px-5 py-4">
