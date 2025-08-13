@@ -2,8 +2,6 @@
 
 import { useState, useEffect, useContext } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FaBell } from 'react-icons/fa';
-import NurseOverviewTab from './NurseOverviewTab';
 import NurseScheduleTab from './NurseScheduleTab';
 import NurseBookingsTab from './NurseBookingsTab';
 import NursePatientsTab from './NursePatientsTab';
@@ -17,7 +15,7 @@ import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 const NurseDashboard = ({ user, initialTab }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState(initialTab || 'overview');
+  const [activeTab, setActiveTab] = useState(initialTab || 'schedule');
 
   // State cho API data
   const [nurseBookings, setNurseBookings] = useState([]);
@@ -60,7 +58,6 @@ const NurseDashboard = ({ user, initialTab }) => {
           workScheduleService.getAllByNursing(nursingID)
         ]);
 
-        // Lọc data theo nursingID
         // const userCustomizeTasks = allCustomizeTasks.filter(task => task.nursingID === nursingID);
         // const bookingIDs = [...new Set(userCustomizeTasks.map(task => task.bookingID))]; // Comment vì bookingService chưa hoàn thiện
         // const filteredBookings = allBookings.filter(b => bookingIDs.includes(b.bookingID)); // Comment vì bookingService chưa hoàn thiện
@@ -72,10 +69,6 @@ const NurseDashboard = ({ user, initialTab }) => {
 
         // setNurseBookings(filteredBookings); // Comment vì bookingService chưa hoàn thiện
         setNurseWorkSchedules(Array.isArray(myWorkSchedules) ? myWorkSchedules : []);
-        // setPatients(filteredPatients); // Comment vì bookingService chưa hoàn thiện
-        // setNotifications(filteredNotifications);
-        // setMedicalNotes(filteredMedicalNotes);
-
         // Fetch unread notifications
         try {
           const unread = await notificationService.getUnreadByAccount(user.accountID);
@@ -97,7 +90,6 @@ const NurseDashboard = ({ user, initialTab }) => {
   }, [user]);
 
   const tabs = [
-    { id: 'overview', label: 'Tổng quan' },
     { id: 'schedule', label: 'Lịch của tôi' },
     { id: 'bookings', label: 'Lịch hẹn' },
     { id: 'patients', label: 'Hồ sơ bệnh nhân' },
@@ -137,7 +129,7 @@ const NurseDashboard = ({ user, initialTab }) => {
     return (
       <div className="min-h-screen bg-gray-50 p-4">
         <div className="text-center py-12">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <div className="text-red-500 text-6xl mb-4"></div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
           <p className="text-gray-600 mb-4">{error}</p>
           <button onClick={() => window.location.reload()} className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
@@ -172,9 +164,6 @@ const NurseDashboard = ({ user, initialTab }) => {
       </div>
       <div className="bg-white rounded-lg shadow p-6 w-full">
         <div>
-          {activeTab === 'overview' && (
-            <NurseOverviewTab nurseAccount={user} nurseBookings={nurseBookings} patients={patients} notifications={notifications} />
-          )}
           {activeTab === 'schedule' && (
             <NurseScheduleTab workSchedules={nurseWorkSchedules} nurseBookings={nurseBookings} />
           )}

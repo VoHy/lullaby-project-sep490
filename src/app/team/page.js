@@ -45,7 +45,7 @@ export default function TeamPage() {
       try {
         setLoading(true);
         setError("");
-        
+
         const [
           nursingSpecialistsData,
           zonesData,
@@ -100,7 +100,7 @@ export default function TeamPage() {
   // Lọc theo zone và search
   const filterMember = (member) => {
     if (!member) return false;
-    
+
     let memberZone = '';
     if (member.ZoneID || member.zoneID) {
       const zoneObj = zones.find(z => (z.ZoneID || z.zoneID) === (member.ZoneID || member.zoneID));
@@ -119,7 +119,7 @@ export default function TeamPage() {
 
   const filteredNurses = nurses.filter(filterMember);
   const filteredSpecialists = specialists.filter(filterMember);
-  
+
   // Lấy danh sách zone unique
   const allZoneNames = Array.from(new Set(zones.map(z => z.Zone_name || z.zoneName || z.City || z.city).filter(Boolean)));
 
@@ -132,7 +132,7 @@ export default function TeamPage() {
     //   const b = bookings.find(bk => (bk.BookingID || bk.bookingID) === bid);
     //   return b && (b.Status === 'completed' || b.status === 'completed');
     // }).length;
-    
+
     // Tạm thời return 0 vì customizeTaskService đã bị comment
     return 0;
   };
@@ -140,7 +140,7 @@ export default function TeamPage() {
   const handleViewDetail = async (member) => {
     setDetailData(member);
     setShowDetail(true);
-    
+
     // Lấy thông tin account nếu có accountID
     if (member.accountID || member.AccountID) {
       try {
@@ -185,8 +185,8 @@ export default function TeamPage() {
             <FaExclamationTriangle className="text-red-500 text-6xl mb-4 inline-block" />
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
             <p className="text-gray-600 mb-4">{error}</p>
-            <button 
-              onClick={() => window.location.reload()} 
+            <button
+              onClick={() => window.location.reload()}
               className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
             >
               Thử lại
@@ -213,7 +213,7 @@ export default function TeamPage() {
       />
       <h3 className="text-lg font-bold text-blue-700 mb-1 flex items-center gap-2">
         {member.FullName || member.Nurse_Name || member.fullName}
-          <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ml-2 ${(member.Major || member.major) && (member.Major || member.major).toLowerCase().includes('nurse') ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{member.Major || member.major}</span>
+        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ml-2 ${(member.Major || member.major) && (member.Major || member.major).toLowerCase().includes('nurse') ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{member.Major || member.major}</span>
       </h3>
       <div className="flex items-center gap-2 mb-2">
         <span className="text-gray-600 text-sm">{getZoneName(member.ZoneID || member.zoneID || member.Address || member.address)}</span>
@@ -236,7 +236,7 @@ export default function TeamPage() {
       <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
         <div className="text-center mb-12">
-          <h1 className="text-5xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 mb-4">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
             Đội ngũ chuyên nghiệp
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
@@ -298,13 +298,13 @@ export default function TeamPage() {
           <div>
             <h2 className="text-3xl font-bold text-blue-700 mb-8 text-center">Đội ngũ Y tá</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                          {filteredNurses.map((nurse) => (
-              <MemberCard key={nurse.NursingID || nurse.nursingID} member={nurse} onViewDetail={handleViewDetail} />
-            ))}
+              {filteredNurses.map((nurse) => (
+                <MemberCard key={nurse.NursingID || nurse.nursingID} member={nurse} onViewDetail={handleViewDetail} />
+              ))}
             </div>
-      {filteredNurses.length === 0 && (
+            {filteredNurses.length === 0 && (
               <div className="text-center py-12">
-        <FaUser className="text-gray-400 text-6xl mb-4 inline-block" />
+                <FaUser className="text-gray-400 text-6xl mb-4 inline-block" />
                 <p className="text-gray-600">Không tìm thấy y tá nào phù hợp</p>
               </div>
             )}
@@ -314,13 +314,13 @@ export default function TeamPage() {
           <div>
             <h2 className="text-3xl font-bold text-pink-700 mb-8 text-center">Đội ngũ Chuyên gia</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-                          {filteredSpecialists.map((specialist) => (
-              <MemberCard key={specialist.NursingID || specialist.nursingID} member={specialist} onViewDetail={handleViewDetail} />
-            ))}
+              {filteredSpecialists.map((specialist) => (
+                <MemberCard key={specialist.NursingID || specialist.nursingID} member={specialist} onViewDetail={handleViewDetail} />
+              ))}
             </div>
-      {filteredSpecialists.length === 0 && (
+            {filteredSpecialists.length === 0 && (
               <div className="text-center py-12">
-        <FaUserMd className="text-gray-400 text-6xl mb-4 inline-block" />
+                <FaUserMd className="text-gray-400 text-6xl mb-4 inline-block" />
                 <p className="text-gray-600">Không tìm thấy chuyên gia nào phù hợp</p>
               </div>
             )}
@@ -441,11 +441,10 @@ export default function TeamPage() {
                     </div>
                     <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600">Trạng thái:</span>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                        (detailData.Status || detailData.status) === 'Active'
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${(detailData.Status || detailData.status) === 'Active'
                           ? 'bg-green-100 text-green-700 border border-green-300'
                           : 'bg-red-100 text-red-700 border border-red-300'
-                      }`}>
+                        }`}>
                         {detailData.Status || detailData.status || 'N/A'}
                       </span>
                     </div>

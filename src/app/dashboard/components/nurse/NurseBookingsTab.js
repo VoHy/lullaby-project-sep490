@@ -10,6 +10,7 @@ import careProfileService from '@/services/api/careProfileService';
 import { AuthContext } from '@/context/AuthContext';
 
 const NurseBookingsTab = () => {
+  const [filterStatus, setFilterStatus] = useState('all');
   const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -91,8 +92,6 @@ const NurseBookingsTab = () => {
         return { label: 'Đã thanh toán', cls: 'bg-green-100 text-green-700' };
       case 'pending':
         return { label: 'Chờ xử lý', cls: 'bg-yellow-100 text-yellow-700' };
-      case 'confirmed':
-        return { label: 'Đã xác nhận', cls: 'bg-blue-100 text-blue-700' };
       case 'completed':
         return { label: 'Hoàn thành', cls: 'bg-emerald-100 text-emerald-700' };
       case 'cancelled':
@@ -130,53 +129,99 @@ const NurseBookingsTab = () => {
     return { patient, detailTasks, account: acc };
   };
 
-  if (loading) return <div>Đang tải...</div>;
-  if (error) return <div className="text-red-600">{error}</div>;
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="animate-spin rounded-full h-10 w-10 border-t-2 border-b-2 border-purple-500 mr-3"></div>
+      <span className="text-lg text-gray-700">Đang tải...</span>
+    </div>
+  );
+  if (error) return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-red-600 text-lg font-semibold">{error}</div>
+    </div>
+  );
+
+  // Filter and sort bookings
+  const filteredSortedBookings = (bookings || [])
+    .filter(b => {
+      if (filterStatus === 'all') return true;
+      const status = (b.status || b.Status || '').toLowerCase();
+      return status === filterStatus;
+    })
+    .sort((a, b) => {
+      const statusOrder = {
+        isscheduled: 1,
+        completed: 2,
+        cancelled: 3,
+        canceled: 3,
+      };
+      const aStatus = (a.status || a.Status || '').toLowerCase();
+      const bStatus = (b.status || b.Status || '').toLowerCase();
+      const aOrder = statusOrder[aStatus] || 99;
+      const bOrder = statusOrder[bStatus] || 99;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+      // Secondary sort: by workdate descending
+      const aDate = new Date(a.workdate || a.workDate || a.WorkDate || 0);
+      const bDate = new Date(b.workdate || b.workDate || b.WorkDate || 0);
+      return bDate - aDate;
+    });
 
   return (
-    <div>
-      <h3 className="font-semibold text-lg mb-4">Lịch hẹn của tôi</h3>
-      <div className="w-full bg-white rounded shadow">
-        <table className="w-full table-auto text-sm">
-          <thead className="bg-gray-50 text-gray-600">
-            <tr>
-              <th className="px-4 py-2 text-left">STT</th>
-              <th className="px-4 py-2 text-left">Lịch hẹn</th>
-              <th className="px-4 py-2 text-left">Bệnh nhân</th>
-              <th className="px-4 py-2 text-left">Ngày làm việc</th>
-              <th className="px-4 py-2 text-left">Trạng thái</th>
-              <th className="px-4 py-2 text-left">Chi tiết</th>
-            </tr>
-          </thead>
-          <tbody>
-            {bookings.length === 0 && (
-              <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-gray-500">Không có booking nào.</td>
-              </tr>
-            )}
-            {bookings.map((b, index) => {
-              const cpId = b.careProfileID || b.CareProfileID;
-              const patient = (b.careProfile || b.CareProfile) || careProfiles.find(p => (p.careProfileID || p.CareProfileID) === cpId);
-              const workdate = b.workdate || b.workDate || b.WorkDate;
-              const status = b.status || b.Status;
-              const sv = getStatusView(status);
-              return (
-                <tr key={b.bookingID || b.BookingID} className="border-t">
-                  <td className="px-4 py-2">{index + 1}</td>
-                  <td className="px-4 py-2">{b.bookingID || b.BookingID}</td>
-                  <td className="px-4 py-2">{patient?.profileName || patient?.ProfileName || '-'}</td>
-                  <td className="px-4 py-2">{workdate ? new Date(workdate).toLocaleString('vi-VN') : '-'}</td>
-                  <td className="px-4 py-2">
-                    <span className={`px-2 py-1 rounded-full text-xs ${sv.cls}`}>{sv.label}</span>
-                  </td>
-                  <td className="px-4 py-2">
-                    <button className="px-3 py-1.5 bg-purple-600 text-white rounded" onClick={() => setSelectedBooking(b)}>Xem</button>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
+    <div className="max-w-5xl mx-auto py-8">
+      <h3 className="font-bold text-2xl mb-6 text-purple-700 flex items-center gap-2">
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path stroke="#7c3aed" strokeWidth="2" d="M7 7h10M7 11h10M7 15h6" strokeLinecap="round" /></svg>
+        Lịch hẹn của tôi
+      </h3>
+      <div className="flex items-center gap-4 mb-6">
+        <label className="font-medium text-gray-700">Lọc trạng thái:</label>
+        <select
+          className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm"
+          value={filterStatus}
+          onChange={e => setFilterStatus(e.target.value)}
+        >
+          <option value="all">Tất cả</option>
+          <option value="isscheduled">Đã lên lịch</option>
+          <option value="completed">Hoàn thành</option>
+          <option value="cancelled">Đã hủy</option>
+          <option value="paid">Đã thanh toán</option>
+        </select>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {filteredSortedBookings.length === 0 && (
+          <div className="col-span-2 flex flex-col items-center justify-center py-12 bg-white rounded-xl shadow text-gray-500">
+            <svg width="48" height="48" fill="none" viewBox="0 0 24 24"><path stroke="#a3a3a3" strokeWidth="2" d="M12 6v6l4 2" strokeLinecap="round" /></svg>
+            Không có booking nào.
+          </div>
+        )}
+        {filteredSortedBookings.map((b, index) => {
+          const cpId = b.careProfileID || b.CareProfileID;
+          const patient = (b.careProfile || b.CareProfile) || careProfiles.find(p => (p.careProfileID || p.CareProfileID) === cpId);
+          const workdate = b.workdate || b.workDate || b.WorkDate;
+          const status = b.status || b.Status;
+          const sv = getStatusView(status);
+          return (
+            <div key={b.bookingID || b.BookingID} className="bg-white rounded-xl shadow-lg p-6 flex flex-col gap-3 hover:shadow-2xl transition-shadow duration-200">
+              <div className="flex items-center justify-between">
+                <div className="text-sm text-gray-400">#{b.bookingID || b.BookingID}</div>
+                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${sv.cls}`}>{sv.label}</span>
+              </div>
+              <div className="font-semibold text-lg text-gray-800 mb-1">Khách hàng: {patient?.profileName || patient?.ProfileName || '-'}</div>
+              <div className="text-sm text-gray-500 mb-2">SĐT: {patient?.phoneNumber || patient?.Phone || '-'}</div>
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path stroke="#7c3aed" strokeWidth="2" d="M8 7V3h8v4" /><rect x="4" y="7" width="16" height="13" rx="2" stroke="#7c3aed" strokeWidth="2" /></svg>
+                {workdate ? new Date(workdate).toLocaleString('vi-VN') : '-'}
+              </div>
+              <div className="flex justify-end mt-2">
+                <button
+                  className="flex items-center justify-center gap-2 px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold rounded-full shadow-md hover:shadow-xl hover:scale-105 transition-all duration-200"
+                  onClick={() => setSelectedBooking(b)}
+                >
+                  Xem chi tiết
+                </button>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {selectedBooking && (() => {
@@ -186,24 +231,38 @@ const NurseBookingsTab = () => {
         const sv = getStatusView(status);
         return (
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
-            <div className="bg-white rounded-xl p-6 w-full max-w-lg">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-lg font-semibold">Chi tiết Booking #{selectedBooking.bookingID || selectedBooking.BookingID}</h4>
-                <button className="text-gray-500" onClick={() => setSelectedBooking(null)}>✕</button>
-              </div>
-              <div className="space-y-2 text-sm">
-                <div className="pt-2">
-                  <div className="font-semibold mb-1">Dịch vụ chi tiết</div>
-                  <ul className="list-disc ml-5">
-                    {detailTasks.length === 0 && <li className="text-gray-500">Không có dịch vụ chi tiết.</li>}
-                    {detailTasks.map((t, idx) => (
-                      <li key={idx}>{t.serviceName} <span className="text-xs text-gray-500">({(t.price || 0).toLocaleString('vi-VN')}đ x {t.quantity || 1} = {(t.total || 0).toLocaleString('vi-VN')}đ)</span></li>
-                    ))}
-                  </ul>
+            <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-xl relative animate-fadeIn">
+              <button
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl"
+                onClick={() => setSelectedBooking(null)}
+                aria-label="Đóng"
+              >✕</button>
+              <div className="mb-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-purple-700 font-bold text-lg">Booking #{selectedBooking.bookingID || selectedBooking.BookingID}</span>
+                  <span className={`px-3 py-1 rounded-full text-xs font-semibold ${sv.cls}`}>{sv.label}</span>
                 </div>
+                <div className="text-gray-600 text-sm">Ngày làm việc: <span className="font-medium">{workdate ? new Date(workdate).toLocaleString('vi-VN') : '-'}</span></div>
               </div>
-              <div className="mt-4 text-right">
-                <button className="px-4 py-2 bg-gray-100 rounded" onClick={() => setSelectedBooking(null)}>Đóng</button>
+              <div className="mb-4">
+                {account && (
+                  <div className="text-xs text-gray-500 mt-1">SĐT: {account.phoneNumber || account.Phone || '-'}</div>
+                )}
+              </div>
+              <div className="mb-4">
+                <div className="font-semibold text-gray-800 mb-1">Dịch vụ chi tiết</div>
+                <ul className="list-none ml-0">
+                  {detailTasks.length === 0 && <li className="text-gray-500">Không có dịch vụ chi tiết.</li>}
+                  {detailTasks.map((t, idx) => (
+                    <li key={idx} className="flex justify-between items-center py-2 border-b last:border-b-0">
+                      <span className="text-gray-700 font-medium">{t.serviceName}</span>
+                      <span className="text-xs text-gray-500">{(t.price || 0).toLocaleString('vi-VN')}đ x {t.quantity || 1} = <span className="font-semibold text-purple-700">{(t.total || 0).toLocaleString('vi-VN')}đ</span></span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="mt-6 text-right">
+                <button className="px-5 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 rounded-lg font-semibold transition-colors duration-150" onClick={() => setSelectedBooking(null)}>Đóng</button>
               </div>
             </div>
           </div>

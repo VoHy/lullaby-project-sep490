@@ -5,11 +5,11 @@ import { motion } from "framer-motion";
 import serviceTypeService from '@/services/api/serviceTypeService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 // import feedbackService from '@/services/api/feedbackService';
-import { 
-  SearchFilter, 
-  ServiceSection, 
-  DetailModal, 
-  MultiServiceBooking 
+import {
+  SearchFilter,
+  ServiceSection,
+  DetailModal,
+  MultiServiceBooking
 } from './components';
 import { useRouter } from 'next/navigation';
 import { AuthContext } from '@/context/AuthContext';
@@ -83,12 +83,12 @@ export default function ServicesPage() {
       try {
         setLoading(true);
         setError("");
-        
+
         // Check cache first
         const cachedData = localStorage.getItem('services_data');
         const cacheTime = localStorage.getItem('services_cache_time');
         const now = Date.now();
-        
+
         // Use cache if it's less than 10 minutes old
         if (cachedData && cacheTime && (now - parseInt(cacheTime)) < 10 * 60 * 1000) {
           const parsedData = JSON.parse(cachedData);
@@ -97,23 +97,23 @@ export default function ServicesPage() {
           setLoading(false);
           return;
         }
-        
+
         // Fetch fresh data
         const [services, tasks] = await Promise.all([
           serviceTypeService.getServiceTypes(),
           serviceTaskService.getServiceTasks()
         ]);
-        
+
         setServiceTypes(services);
         setServiceTasks(tasks);
-        
+
         // Cache the data
         localStorage.setItem('services_data', JSON.stringify({
           services,
           tasks
         }));
         localStorage.setItem('services_cache_time', now.toString());
-        
+
       } catch (error) {
         console.error('Error loading services:', error);
         setError('Không thể tải dịch vụ. Vui lòng thử lại sau.');
@@ -196,7 +196,7 @@ export default function ServicesPage() {
     const text = searchText.toLowerCase();
     const categoryMatch = selectedCategory === 'all' || item.major === selectedCategory;
     const textMatch = item.serviceName?.toLowerCase().includes(text) ||
-                     (item.description || '').toLowerCase().includes(text);
+      (item.description || '').toLowerCase().includes(text);
     return categoryMatch && textMatch;
   };
 
@@ -210,7 +210,7 @@ export default function ServicesPage() {
     // if (!fb.length) return { rating: 5.0, count: 0 };
     // const rating = (fb.reduce((sum, f) => sum + (f.Rating || 5), 0) / fb.length).toFixed(1);
     // return { rating, count: fb.length };
-    
+
     // Tạm thời return rating mặc định vì feedbacks API đã bị comment
     return { rating: 5.0, count: 0 };
   };
@@ -288,7 +288,7 @@ export default function ServicesPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h1 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
             Dịch vụ của chúng tôi
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
@@ -353,8 +353,8 @@ export default function ServicesPage() {
         )}
 
         {/* Multi-Service Booking Button */}
-        <MultiServiceBooking 
-          selectedServices={selectedServices} 
+        <MultiServiceBooking
+          selectedServices={selectedServices}
           serviceQuantities={serviceQuantities}
           serviceTypes={serviceTypes}
         />

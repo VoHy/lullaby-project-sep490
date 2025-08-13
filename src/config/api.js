@@ -50,7 +50,7 @@ export const API_ENDPOINTS = {
   NOTIFICATIONS: '/Notification',
 
   // Payment / PayOS Web
-  PAYOS: '/PayOS_Web',
+  PAYOS: '/PayOS',
 
   // Relatives
   RELATIVES: '/relatives',
