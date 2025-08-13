@@ -1,16 +1,16 @@
 import { FaCalendarAlt, FaStickyNote, FaUser, FaPhone, FaMapMarkerAlt, FaBirthdayCake } from 'react-icons/fa';
 
-export default function AppointmentInfo({ 
-  datetime, 
-  note, 
-  selectedCareProfile 
+export default function AppointmentInfo({
+  datetime,
+  note,
+  selectedCareProfile
 }) {
 
 
   // Format datetime từ workdate
   const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return 'Chưa có thông tin';
-    
+
     try {
       const date = new Date(dateTimeString);
       return date.toLocaleString('vi-VN', {
@@ -48,7 +48,7 @@ export default function AppointmentInfo({
               <FaUser className="text-blue-600" />
               <h5 className="font-semibold text-gray-700">Thông tin người được chăm sóc</h5>
             </div>
-            
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {/* Tên */}
               <div className="flex items-center gap-2">
@@ -125,21 +125,10 @@ export default function AppointmentInfo({
                 <FaStickyNote className="text-blue-600 mt-1" />
                 <div>
                   <span className="text-sm text-gray-600">Ghi chú:</span>
-                  <div className="font-semibold text-gray-800">{note}</div>
+                  <div className="font-semibold text-gray-800"> Phí phát sinh: {note}%</div>
                 </div>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Ghi chú */}
-        {note && (
-          <div className="flex items-start gap-3">
-            <FaStickyNote className="text-blue-600 mt-1" />
-            <div>
-              <span className="text-sm text-gray-600">Ghi chú:</span>
-              <div className="font-semibold text-gray-800">{note}</div>
-            </div>
           </div>
         )}
       </div>

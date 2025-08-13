@@ -76,9 +76,9 @@ const NursePatientsTab = () => {
     const filtered = filterStatus === 'all'
       ? rows
       : rows.filter(({ booking }) => {
-          const status = (booking.status || booking.Status || '').toLowerCase();
-          return status === filterStatus;
-        });
+        const status = (booking.status || booking.Status || '').toLowerCase();
+        return status === filterStatus;
+      });
     // Sort
     const statusOrder = {
       isscheduled: 1,
@@ -116,7 +116,7 @@ const NursePatientsTab = () => {
   return (
     <div className="max-w-5xl mx-auto py-8">
       <h3 className="font-bold text-2xl mb-6 text-blue-700 flex items-center gap-2">
-        <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path stroke="#2563eb" strokeWidth="2" d="M12 6v6l4 2" strokeLinecap="round"/></svg>
+        <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path stroke="#2563eb" strokeWidth="2" d="M12 6v6l4 2" strokeLinecap="round" /></svg>
         Bệnh nhân tôi phụ trách
       </h3>
       <div className="flex items-center gap-4 mb-6">
@@ -136,7 +136,7 @@ const NursePatientsTab = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {patientRows.length === 0 && (
           <div className="col-span-2 flex flex-col items-center justify-center py-12 bg-white rounded-xl shadow text-gray-500">
-            <svg width="48" height="48" fill="none" viewBox="0 0 24 24"><path stroke="#a3a3a3" strokeWidth="2" d="M12 6v6l4 2" strokeLinecap="round"/></svg>
+            <svg width="48" height="48" fill="none" viewBox="0 0 24 24"><path stroke="#a3a3a3" strokeWidth="2" d="M12 6v6l4 2" strokeLinecap="round" /></svg>
             Không có bệnh nhân nào.
           </div>
         )}
@@ -160,7 +160,7 @@ const NursePatientsTab = () => {
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${v.cls}`}>{v.label}</span>
               </div>
               <div className="font-semibold text-lg text-gray-800 mb-1 flex items-center gap-2">
-                <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#2563eb" strokeWidth="2"/><path stroke="#2563eb" strokeWidth="2" d="M4 20c0-2.21 3.58-4 8-4s8 1.79 8 4"/></svg>
+                <svg width="22" height="22" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#2563eb" strokeWidth="2" /><path stroke="#2563eb" strokeWidth="2" d="M4 20c0-2.21 3.58-4 8-4s8 1.79 8 4" /></svg>
                 {patient?.profileName || patient?.ProfileName || '-'}
               </div>
               <div className="flex flex-col gap-1 text-sm text-gray-600">
@@ -170,10 +170,9 @@ const NursePatientsTab = () => {
               </div>
               <div className="flex justify-end mt-2">
                 <button
-                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow transition-colors duration-150"
+                  className="flex items-center justify-center gap-2 px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold rounded-full shadow-md hover:shadow-xl hover:scale-105 transition-all duration-200"
                   onClick={() => setSelectedPatient({ booking, patient })}
                 >
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path stroke="#fff" strokeWidth="2" d="M15 12l-6 6V6z"/></svg>
                   Xem chi tiết
                 </button>
               </div>
@@ -224,7 +223,7 @@ const NursePatientsTab = () => {
             <div className="mb-4">
               <div className="font-semibold text-gray-800 mb-1">Bệnh nhân</div>
               <div className="flex items-center gap-3">
-                <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#2563eb" strokeWidth="2"/><path stroke="#2563eb" strokeWidth="2" d="M4 20c0-2.21 3.58-4 8-4s8 1.79 8 4"/></svg>
+                <svg width="24" height="24" fill="none" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4" stroke="#2563eb" strokeWidth="2" /><path stroke="#2563eb" strokeWidth="2" d="M4 20c0-2.21 3.58-4 8-4s8 1.79 8 4" /></svg>
                 <span className="text-gray-700 text-base font-medium">{selectedPatient.patient?.profileName || selectedPatient.patient?.ProfileName}</span>
               </div>
               <div className="text-xs text-gray-500 mt-1">SĐT: {selectedPatient.patient?.phoneNumber || selectedPatient.patient?.PhoneNumber || '-'}</div>

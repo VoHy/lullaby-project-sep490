@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useContext } from 'react';
-import { FaExclamationTriangle, FaClipboardList } from 'react-icons/fa';
+import { FaExclamationTriangle, FaClipboardList, FaSearch, FaFilter } from 'react-icons/fa';
 import { AuthContext } from '@/context/AuthContext';
 import bookingService from '@/services/api/bookingService';
 import accountService from '@/services/api/accountService';
@@ -380,194 +380,169 @@ const ManagerBookingTab = () => {
 
   return (
     <div>
-      <h3 className="text-xl font-semibold mb-4">Danh sách Booking</h3>
-      {/* Filter/Search UI */}
-      <div className="flex flex-wrap gap-4 mb-4 items-center">
-        <input
-          type="text"
-          placeholder="Tìm kiếm theo tên khách, mã booking, dịch vụ..."
-          className="border px-3 py-2 rounded w-64"
-          value={searchText}
-          onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }}
-        />
-        <select
-          className="border px-3 py-2 rounded"
-          value={filterStatus}
-          onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
-        >
-          <option value="">Tất cả trạng thái</option>
-          {statusOptions.map(opt => (
-            <option key={opt.value} value={opt.value}>{opt.label}</option>
-          ))}
-        </select>
+      {/* Filter, sort, and paginate bookings */}
+      <div>
+        <h3 className="text-2xl font-bold mb-6 text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">
+          Danh sách đơn hàng
+        </h3>
+        {/* Filter/Search UI */}
+        <div className="flex flex-wrap gap-4 mb-6 items-center">
+          <div className="relative w-64">
+            <input
+              type="text"
+              placeholder="Tìm kiếm theo tên, mã booking, dịch vụ..."
+              className="border rounded-lg w-full px-10 py-2 focus:ring-2 focus:ring-purple-400 focus:outline-none"
+              value={searchText}
+              onChange={e => { setSearchText(e.target.value); setCurrentPage(1); }}
+            />
+            <span className="absolute left-3 top-2.5 text-gray-400">
+              <FaSearch />
+            </span>
+          </div>
+
+          <div className="relative w-48">
+            <select
+              className="border rounded-lg w-full px-3 py-2 appearance-none focus:ring-2 focus:ring-purple-400 focus:outline-none"
+              value={filterStatus}
+              onChange={e => { setFilterStatus(e.target.value); setCurrentPage(1); }}
+            >
+              <option value="">Tất cả trạng thái</option>
+              {statusOptions.map(opt => (
+                <option key={opt.value} value={opt.value}>{opt.label}</option>
+              ))}
+            </select>
+            <span className="absolute right-3 top-3 text-gray-400 pointer-events-none">
+              <FaFilter />
+            </span>
+          </div>
+        </div>
+
+        {/* Filter, sort, paginate */}
+        {(() => {
+          let filtered = bookings;
+          if (searchText) {
+            const lower = searchText.toLowerCase();
+            filtered = filtered.filter(b => {
+              const { careProfile, serviceTasksOfBooking } = getBookingDetail(b);
+              return (
+                String(b.bookingID).includes(lower) ||
+                careProfile?.profileName?.toLowerCase().includes(lower) ||
+                serviceTasksOfBooking?.some(t => t.description?.toLowerCase().includes(lower))
+              );
+            });
+          }
+
+          if (filterStatus) {
+            const isSchedule = b => b.isSchedule === true || b.IsSchedule === true;
+            if (filterStatus === 'paid') filtered = filtered.filter(b => String(b.status ?? b.Status).toLowerCase() === 'paid' && !isSchedule(b));
+            else if (filterStatus === 'isScheduled') filtered = filtered.filter(b => String(b.status ?? b.Status).toLowerCase() === 'paid' && isSchedule(b));
+            else if (filterStatus === 'pending') filtered = filtered.filter(b => ['pending', 'unpaid'].includes(String(b.status ?? b.Status).toLowerCase()));
+            else if (filterStatus === 'completed') filtered = filtered.filter(b => String(b.status ?? b.Status).toLowerCase() === 'completed' && isSchedule(b));
+            else if (filterStatus === 'cancelled') filtered = filtered.filter(b => ['cancelled', 'canceled'].includes(String(b.status ?? b.Status).toLowerCase()));
+            else filtered = filtered.filter(b => String(b.status ?? b.Status).toLowerCase() === filterStatus);
+          }
+
+          // Custom sort
+          const customOrder = ['paid-false', 'paid-true', 'pending', 'completed-true', 'cancelled-true', 'cancelled-false'];
+          filtered = filtered.slice().sort((a, b) => {
+            const getKey = booking => {
+              const s = String(booking.status ?? booking.Status).toLowerCase();
+              const isSchedule = booking.isSchedule === true || booking.IsSchedule === true;
+              if (s === 'paid' && !isSchedule) return 'paid-false';
+              if (s === 'paid' && isSchedule) return 'paid-true';
+              if (['pending', 'unpaid'].includes(s)) return 'pending';
+              if (s === 'completed' && isSchedule) return 'completed-true';
+              if ((s === 'cancelled' || s === 'canceled') && isSchedule) return 'cancelled-true';
+              if ((s === 'cancelled' || s === 'canceled') && !isSchedule) return 'cancelled-false';
+              return 'other';
+            }
+            return (customOrder.indexOf(getKey(a)) - customOrder.indexOf(getKey(b)));
+          });
+
+          const totalItems = filtered.length;
+          const totalPages = Math.ceil(totalItems / itemsPerPage);
+          const paged = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
+
+          return (
+            <>
+              {totalItems === 0 ? (
+                <div className="text-center py-12 text-gray-500">
+                  <FaClipboardList className="text-3xl mb-2 mx-auto" />
+                  <p className="text-lg font-medium">Không có booking nào</p>
+                  <p className="text-sm mt-1">Hiện tại chưa có booking nào thuộc khu vực quản lý của bạn</p>
+                </div>
+              ) : (
+                <>
+                  <table className="w-full bg-white rounded-lg overflow-hidden shadow-md">
+                    <thead className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
+                      <tr>
+                        <th className="px-6 py-3 text-left">Mã Booking</th>
+                        <th className="px-6 py-3 text-left">Khách hàng</th>
+                        <th className="px-6 py-3 text-left">Dịch vụ</th>
+                        <th className="px-6 py-3 text-left">Trạng thái</th>
+                        <th className="px-6 py-3 text-left">Thao tác</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-200">
+                      {paged.map(booking => {
+                        const { careProfile, account, serviceTasksOfBooking } = getBookingDetail(booking);
+                        const s = String(booking.status ?? booking.Status).toLowerCase();
+                        const isScheduled = booking.isSchedule || booking.IsSchedule;
+                        const statusClass = s === 'cancelled' || s === 'canceled' ? 'bg-red-100 text-red-800'
+                          : isScheduled ? 'bg-blue-100 text-blue-800'
+                            : s === 'paid' ? 'bg-pink-100 text-pink-800'
+                              : s === 'pending' || s === 'unpaid' ? 'bg-yellow-100 text-yellow-800'
+                                : s === 'completed' ? 'bg-green-100 text-green-800'
+                                  : 'bg-gray-100 text-gray-700';
+                        const statusText = s === 'cancelled' || s === 'canceled' ? 'Đã hủy'
+                          : isScheduled ? 'Đã lên lịch'
+                            : s === 'paid' ? 'Đã thanh toán'
+                              : s === 'pending' || s === 'unpaid' ? 'Chờ thanh toán'
+                                : s === 'completed' ? 'Hoàn thành'
+                                  : 'Không xác định';
+
+                        return (
+                          <tr key={booking.bookingID} className="hover:bg-gray-50">
+                            <td className="px-6 py-4">#{booking.bookingID}</td>
+                            <td className="px-6 py-4">
+                              <div className="font-semibold">{careProfile?.profileName || '-'}</div>
+                              <div className="text-xs text-gray-500">SĐT: {careProfile?.phoneNumber || '-'}</div>
+                              <div className="text-xs text-gray-500">Email: {account?.email || '-'}</div>
+                            </td>
+                            <td className="px-6 py-4">
+                              {serviceTasksOfBooking.length > 1
+                                ? <ul className="space-y-1">{serviceTasksOfBooking.map((t, i) => <li key={i} className="flex items-center text-sm text-gray-800"><span className="inline-block w-2 h-2 rounded-full bg-purple-400 mr-2"></span>{t.description}</li>)}</ul>
+                                : (serviceTasksOfBooking[0]?.description || '-')}
+                            </td>
+                            <td className="px-6 py-4">
+                              <span className={`inline-block min-w-[80px] px-2 py-0.5 rounded-full text-xs font-semibold text-center shadow-sm ${statusClass}`}>
+                                {statusText}
+                              </span>
+                            </td>
+                            <td className="px-6 py-4">
+                              <button onClick={() => handleViewDetail(booking)} className="min-w-[80px] px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded hover:shadow-sm">Xem chi tiết</button>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+
+                  {/* Pagination */}
+                  <div className="flex justify-center items-center gap-2 mt-6">
+                    <button className="px-3 py-1 rounded border bg-white hover:bg-gray-100" disabled={currentPage === 1} onClick={() => setCurrentPage(p => Math.max(1, p - 1))}>Trước</button>
+                    <span className="px-2">Trang {currentPage} / {totalPages}</span>
+                    <button className="px-3 py-1 rounded border bg-white hover:bg-gray-100" disabled={currentPage === totalPages || totalPages === 0} onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}>Sau</button>
+                  </div>
+                </>
+              )}
+            </>
+          );
+        })()}
+
+        {/* Chi tiết booking popup giữ nguyên (chỉ chỉnh style nếu muốn) */}
       </div>
 
-      {/* Filter, sort, and paginate bookings */}
-      {(() => {
-        let filtered = bookings;
-        if (searchText) {
-          const lower = searchText.toLowerCase();
-          filtered = filtered.filter(b => {
-            const { careProfile, serviceTasksOfBooking } = getBookingDetail(b);
-            return (
-              String(b.bookingID).includes(lower) ||
-              (careProfile?.profileName?.toLowerCase().includes(lower)) ||
-              (serviceTasksOfBooking?.some(t => t.description?.toLowerCase().includes(lower)))
-            );
-          });
-        }
-        // Custom filter theo trạng thái
-        if (filterStatus) {
-          const isSchedule = b => b.isSchedule === true || b.IsSchedule === true;
-          if (filterStatus === 'paid') {
-            filtered = filtered.filter(b => String(b.status ?? b.Status).toLowerCase() === 'paid' && !isSchedule(b));
-          } else if (filterStatus === 'isScheduled') {
-            filtered = filtered.filter(b => String(b.status ?? b.Status).toLowerCase() === 'paid' && isSchedule(b));
-          } else if (filterStatus === 'pending') {
-            filtered = filtered.filter(b => {
-              const s = String(b.status ?? b.Status).toLowerCase();
-              return s === 'pending' || s === 'unpaid';
-            });
-          } else if (filterStatus === 'completed') {
-            filtered = filtered.filter(b => String(b.status ?? b.Status).toLowerCase() === 'completed' && isSchedule(b));
-          } else if (filterStatus === 'cancelled') {
-            filtered = filtered.filter(b => {
-              const s = String(b.status ?? b.Status).toLowerCase();
-              return s === 'cancelled' || s === 'canceled';
-            });
-          } else {
-            filtered = filtered.filter(b => String(b.status ?? b.Status).toLowerCase() === filterStatus);
-          }
-        }
-        // Custom sort
-        const customOrder = [
-          'paid-false',    // isSchedule: false, paid
-          'paid-true',     // isSchedule: true, paid
-          'pending',       // pending (cả isSchedule true/false)
-          'completed-true',// isSchedule: true, completed
-          'cancelled-true',// isSchedule: true, cancelled/canceled
-          'cancelled-false'// isSchedule: false, cancelled/canceled
-        ];
-        filtered = filtered.slice().sort((a, b) => {
-          const getKey = booking => {
-            const s = String(booking.status ?? booking.Status).toLowerCase();
-            const isSchedule = booking.isSchedule === true || booking.IsSchedule === true;
-            if (s === 'paid' && !isSchedule) return 'paid-false';
-            if (s === 'paid' && isSchedule) return 'paid-true';
-            if (s === 'pending' || s === 'unpaid') return 'pending';
-            if (s === 'completed' && isSchedule) return 'completed-true';
-            if ((s === 'cancelled' || s === 'canceled') && isSchedule) return 'cancelled-true';
-            if ((s === 'cancelled' || s === 'canceled') && !isSchedule) return 'cancelled-false';
-            return 'other';
-          };
-          const aKey = getKey(a);
-          const bKey = getKey(b);
-          const aIdx = customOrder.indexOf(aKey);
-          const bIdx = customOrder.indexOf(bKey);
-          return (aIdx === -1 ? 99 : aIdx) - (bIdx === -1 ? 99 : bIdx);
-        });
-        // Pagination
-        const totalItems = filtered.length;
-        const totalPages = Math.ceil(totalItems / itemsPerPage);
-        const paged = filtered.slice((currentPage - 1) * itemsPerPage, currentPage * itemsPerPage);
-        return (
-          <>
-            {totalItems === 0 ? (
-              <div className="text-center py-8">
-                <FaClipboardList className="text-gray-500 text-2xl mb-2 mx-auto" />
-                <p className="text-gray-600 text-lg font-medium">Không có booking nào</p>
-                <p className="text-gray-400 text-sm mt-1">Hiện tại chưa có booking nào thuộc khu vực quản lý của bạn</p>
-              </div>
-            ) : (
-              <>
-                <table className="w-full bg-white rounded-lg overflow-hidden shadow-lg">
-                  <thead className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
-                    <tr>
-                      <th className="px-6 py-3 text-left">Mã Booking</th>
-                      <th className="px-6 py-3 text-left">Khách hàng</th>
-                      <th className="px-6 py-3 text-left">Dịch vụ</th>
-                      <th className="px-6 py-3 text-left">Trạng thái</th>
-                      <th className="px-6 py-3 text-left">Thao tác</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200">
-                    {paged.map(booking => {
-                      const { careProfile, account, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(booking);
-                      return (
-                        <tr key={booking.bookingID} className="hover:bg-gray-50">
-                          <td className="px-6 py-4">#{booking.bookingID}</td>
-                          <td className="px-6 py-4">
-                            <div className="font-semibold">{careProfile?.profileName || '-'}</div>
-                            <div className="text-xs text-gray-500">SĐT: {careProfile?.phoneNumber || '-'}</div>
-                            <div className="text-xs text-gray-500">Địa chỉ: {careProfile?.address || '-'}</div>
-                            <div className="text-xs text-gray-500">Email: {account?.email || '-'}</div>
-                          </td>
-                          <td className="px-6 py-4">
-                            {serviceTasksOfBooking && serviceTasksOfBooking.length > 1
-                              ? (
-                                <ul className="space-y-1">
-                                  {serviceTasksOfBooking.map((task, idx) => (
-                                    <li key={idx} className="flex items-center text-sm text-gray-800">
-                                      <span className="inline-block w-2 h-2 rounded-full bg-purple-400 mr-2"></span>
-                                      {task.description}
-                                    </li>
-                                  ))}
-                                </ul>
-                              )
-                              : (serviceTasksOfBooking[0]?.description || service?.ServiceName || '-')}
-                          </td>
-                          <td className="px-6 py-4">
-                            <span className={` inline-block min-w-[80px] px-2 py-0.5 rounded-full text-xs font-semibold text-center shadow-sm 
-                            ${(() => {
-                                const s = String(booking.status ?? booking.Status).toLowerCase();
-                                if (s === 'cancelled' || s === 'canceled') return 'bg-red-100 text-red-800';
-                                if (booking.isSchedule === true || booking.IsSchedule === true) return 'bg-blue-100 text-blue-800';
-                                if (s === 'paid') return 'bg-pink-100 text-pink-800';
-                                if (s === 'pending') return 'bg-yellow-100 text-yellow-800';
-                                if (s === 'completed') return 'bg-green-100 text-green-800';
-                                if (s === 'isschedule') return 'bg-blue-100 text-blue-800';
-                                return 'bg-red-100 text-red-800';
-                              })()}`}
-                            >
-                              {(() => {
-                                const s = String(booking.status ?? booking.Status).toLowerCase();
-                                if (s === 'cancelled' || s === 'canceled') return 'Đã hủy';
-                                if (booking.isSchedule === true || booking.IsSchedule === true) return 'Đã lên lịch';
-                                if (s === 'paid') return 'Đã thanh toán';
-                                if (s === 'pending' || s === 'unpaid') return 'Chờ thanh toán';
-                                if (s === 'completed') return 'Hoàn thành';
-                                if (s === 'isschedule') return 'Đã lên lịch';
-                                return 'Không xác định';
-                              })()}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4">
-                            <button onClick={() => handleViewDetail(booking)} className="min-w-[80px] px-2 py-0.5 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded hover:shadow-sm">Xem chi tiết</button>
-                          </td>
-                        </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
-                {/* Pagination UI */}
-                <div className="flex justify-center items-center gap-2 mt-4">
-                  <button
-                    className="px-3 py-1 rounded border bg-white hover:bg-gray-100"
-                    disabled={currentPage === 1}
-                    onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-                  >Trước</button>
-                  <span className="px-2">Trang {currentPage} / {totalPages}</span>
-                  <button
-                    className="px-3 py-1 rounded border bg-white hover:bg-gray-100"
-                    disabled={currentPage === totalPages || totalPages === 0}
-                    onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-                  >Sau</button>
-                </div>
-              </>
-            )}
-          </>
-        );
-      })()}
       {/* Popup chi tiết booking */}
       {showDetail && detailData && (() => {
         const { careProfile, account, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(detailData);

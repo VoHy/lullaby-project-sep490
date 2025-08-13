@@ -213,10 +213,9 @@ const NurseBookingsTab = () => {
               </div>
               <div className="flex justify-end mt-2">
                 <button
-                  className="flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg shadow transition-colors duration-150"
+                  className="flex items-center justify-center gap-2 px-5 py-2 bg-gradient-to-r from-purple-600 to-pink-500 text-white font-semibold rounded-full shadow-md hover:shadow-xl hover:scale-105 transition-all duration-200"
                   onClick={() => setSelectedBooking(b)}
                 >
-                  <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path stroke="#fff" strokeWidth="2" d="M15 12l-6 6V6z" /></svg>
                   Xem chi tiết
                 </button>
               </div>

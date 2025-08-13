@@ -23,7 +23,7 @@ const ManagerNurseTab = () => {
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedNurse, setSelectedNurse] = useState(null);
 
-    // Load data
+  // Load data
   useEffect(() => {
     const fetchData = async () => {
       try {
@@ -75,11 +75,11 @@ const ManagerNurseTab = () => {
   // Lọc và tìm kiếm
   const filteredNurses = nurses.filter(nurse => {
     const matchesSearch = nurse.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         nurse.phoneNumber?.includes(searchTerm) ||
-                         nurse.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    
+      nurse.phoneNumber?.includes(searchTerm) ||
+      nurse.email?.toLowerCase().includes(searchTerm.toLowerCase());
+
     const matchesStatus = filterStatus === 'all' || nurse.status === filterStatus;
-    
+
     return matchesSearch && matchesStatus;
   });
 
@@ -172,7 +172,7 @@ const ManagerNurseTab = () => {
     }
   };
 
-  
+
 
   // Loading state
   if (loading) {
@@ -188,7 +188,7 @@ const ManagerNurseTab = () => {
   if (error) {
     return (
       <div className="text-center py-12">
-  <FaExclamationTriangle className="text-red-500 text-6xl mb-4 inline-block" />
+        <FaExclamationTriangle className="text-red-500 text-6xl mb-4 inline-block" />
         <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
         <p className="text-gray-600 mb-4">{error}</p>
         <button onClick={() => window.location.reload()} className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
@@ -205,13 +205,13 @@ const ManagerNurseTab = () => {
         <div>
           <h3 className="text-2xl font-bold text-gray-900">Quản lý Y tá</h3>
           <p className="text-gray-600">
-            Khu vực: {managedZone?.zoneName || 'N/A'} | 
+            Khu vực: {managedZone?.zoneName || 'N/A'} |
             Tổng số: {nurses.length} y tá
           </p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors flex items-center gap-2"
+          className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
         >
           <FaPlus />
           <span>Thêm Y tá</span>
@@ -228,15 +228,15 @@ const ManagerNurseTab = () => {
         filteredCount={filteredNurses.length}
       />
 
-             {/* Nurses List */}
-       <NurseList
-         nurses={filteredNurses}
-         onEdit={(nurse) => {
-           setSelectedNurse(nurse);
-           setShowEditModal(true);
-         }}
-         onDelete={handleDeleteNurse}
-       />
+      {/* Nurses List */}
+      <NurseList
+        nurses={filteredNurses}
+        onEdit={(nurse) => {
+          setSelectedNurse(nurse);
+          setShowEditModal(true);
+        }}
+        onDelete={handleDeleteNurse}
+      />
 
       {/* Add Nurse Modal */}
       {showAddModal && (

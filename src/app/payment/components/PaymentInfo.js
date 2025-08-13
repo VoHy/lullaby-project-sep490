@@ -167,7 +167,7 @@ export default function PaymentInfo({
             className={`px-3 py-2 rounded-lg border text-sm font-medium ${selectionMode === 'user' ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'}`}
             onClick={() => setSelectionMode?.('user')}
           >
-            Người dùng chọn điều dưỡng viên
+            Người dùng chọn
           </button>
           <button
             type="button"
