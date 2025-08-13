@@ -11,6 +11,7 @@ import { AuthContext } from '@/context/AuthContext';
 
 const NurseBookingsTab = () => {
   const [filterStatus, setFilterStatus] = useState('all');
+  const [searchText, setSearchText] = useState('');
   const { user } = useContext(AuthContext);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -141,12 +142,27 @@ const NurseBookingsTab = () => {
     </div>
   );
 
-  // Filter and sort bookings
+  // Filter, search and sort bookings
   const filteredSortedBookings = (bookings || [])
     .filter(b => {
       if (filterStatus === 'all') return true;
       const status = (b.status || b.Status || '').toLowerCase();
       return status === filterStatus;
+    })
+    .filter(b => {
+      // Search filter
+      if (!searchText.trim()) return true;
+      const cpId = b.careProfileID || b.CareProfileID;
+      const patient = (b.careProfile || b.CareProfile) || careProfiles.find(p => (p.careProfileID || p.CareProfileID) === cpId);
+      const profileName = (patient?.profileName || patient?.ProfileName || '').toString().toLowerCase();
+      const phone = (patient?.phoneNumber || patient?.Phone || '').toString().toLowerCase();
+      const bookingID = (b.bookingID || b.BookingID || '').toString().toLowerCase();
+      const search = searchText.trim().toLowerCase();
+      return (
+        profileName.includes(search) ||
+        phone.includes(search) ||
+        bookingID.includes(search)
+      );
     })
     .sort((a, b) => {
       const statusOrder = {
@@ -172,19 +188,40 @@ const NurseBookingsTab = () => {
         <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path stroke="#7c3aed" strokeWidth="2" d="M7 7h10M7 11h10M7 15h6" strokeLinecap="round" /></svg>
         Lịch hẹn của tôi
       </h3>
-      <div className="flex items-center gap-4 mb-6">
-        <label className="font-medium text-gray-700">Lọc trạng thái:</label>
-        <select
-          className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm"
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value)}
-        >
-          <option value="all">Tất cả</option>
-          <option value="isscheduled">Đã lên lịch</option>
-          <option value="completed">Hoàn thành</option>
-          <option value="cancelled">Đã hủy</option>
-          <option value="paid">Đã thanh toán</option>
-        </select>
+      {/* Search left, filter right */}
+      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+        <div className="flex-1">
+          <div className="relative">
+            <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+              {/* Search icon */}
+              <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" />
+                <line x1="21" y1="21" x2="16.65" y2="16.65" strokeLinecap="round" />
+              </svg>
+            </span>
+            <input
+              type="text"
+              className="w-full pl-10 pr-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm"
+              placeholder="Tìm kiếm theo tên, số điện thoại hoặc mã booking..."
+              value={searchText}
+              onChange={e => setSearchText(e.target.value)}
+            />
+          </div>
+        </div>
+        <div className="flex items-center gap-4 md:justify-end w-full md:w-auto">
+          <label className="font-medium text-gray-700">Lọc trạng thái:</label>
+          <select
+            className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-purple-400 text-sm"
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+          >
+            <option value="all">Tất cả</option>
+            <option value="isscheduled">Đã lên lịch</option>
+            <option value="completed">Hoàn thành</option>
+            <option value="cancelled">Đã hủy</option>
+            <option value="paid">Đã thanh toán</option>
+          </select>
+        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {filteredSortedBookings.length === 0 && (

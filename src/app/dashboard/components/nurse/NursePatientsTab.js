@@ -14,6 +14,7 @@ const NursePatientsTab = () => {
   const [bookings, setBookings] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
   const [selectedPatient, setSelectedPatient] = useState(null);
+  const [search, setSearch] = useState('');
 
   useEffect(() => {
     const load = async () => {
@@ -65,20 +66,36 @@ const NursePatientsTab = () => {
     load();
   }, [user]);
 
-  // Filter and sort patientRows
+  // Filter, search, and sort patientRows
   const patientRows = useMemo(() => {
     const rows = bookings.map(b => {
       const cpId = b.careProfileID || b.CareProfileID;
       const cp = (b.careProfile || b.CareProfile) || careProfiles.find(p => (p.careProfileID || p.CareProfileID) === cpId);
       return { booking: b, patient: cp };
     });
-    // Filter
-    const filtered = filterStatus === 'all'
+    // Filter by status
+    let filtered = filterStatus === 'all'
       ? rows
       : rows.filter(({ booking }) => {
         const status = (booking.status || booking.Status || '').toLowerCase();
         return status === filterStatus;
       });
+
+    // Search filter
+    if (search.trim() !== '') {
+      const s = search.trim().toLowerCase();
+      filtered = filtered.filter(({ patient }) => {
+        const name = (patient?.profileName || patient?.ProfileName || '').toLowerCase();
+        const address = (patient?.address || patient?.Address || '').toLowerCase();
+        const phone = (patient?.phoneNumber || patient?.PhoneNumber || '').toLowerCase();
+        return (
+          name.includes(s) ||
+          address.includes(s) ||
+          phone.includes(s)
+        );
+      });
+    }
+
     // Sort
     const statusOrder = {
       isscheduled: 1,
@@ -99,7 +116,7 @@ const NursePatientsTab = () => {
       return bDate - aDate;
     });
     return filtered;
-  }, [bookings, careProfiles, filterStatus]);
+  }, [bookings, careProfiles, filterStatus, search]);
 
   if (loading) return (
     <div className="flex items-center justify-center h-64">
@@ -119,19 +136,39 @@ const NursePatientsTab = () => {
         <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path stroke="#2563eb" strokeWidth="2" d="M12 6v6l4 2" strokeLinecap="round" /></svg>
         Bệnh nhân tôi phụ trách
       </h3>
-      <div className="flex items-center gap-4 mb-6">
-        <label className="font-medium text-gray-700">Lọc trạng thái:</label>
-        <select
-          className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
-          value={filterStatus}
-          onChange={e => setFilterStatus(e.target.value)}
-        >
-          <option value="all">Tất cả</option>
-          <option value="isscheduled">Đã lên lịch</option>
-          <option value="paid">Đã thanh toán</option>
-          <option value="completed">Hoàn thành</option>
-          <option value="cancelled">Đã hủy</option>
-        </select>
+      <div className="flex flex-col md:flex-row md:items-center gap-4 mb-6">
+        <div className="flex-1">
+          <div className="relative">
+            <input
+              type="text"
+              className="w-full px-10 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+              placeholder="Tìm kiếm theo tên, địa chỉ, SĐT..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
+              {/* Search icon SVG */}
+              <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+                <circle cx="11" cy="11" r="7" stroke="#9ca3af" strokeWidth="2"/>
+                <path stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" d="M20 20l-3-3"/>
+              </svg>
+            </span>
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <label className="font-medium text-gray-700">Lọc trạng thái:</label>
+          <select
+            className="px-3 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-400 text-sm"
+            value={filterStatus}
+            onChange={e => setFilterStatus(e.target.value)}
+          >
+            <option value="all">Tất cả</option>
+            <option value="isscheduled">Đã lên lịch</option>
+            <option value="paid">Đã thanh toán</option>
+            <option value="completed">Hoàn thành</option>
+            <option value="cancelled">Đã hủy</option>
+          </select>
+        </div>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {patientRows.length === 0 && (
