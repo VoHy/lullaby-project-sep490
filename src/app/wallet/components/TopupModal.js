@@ -50,14 +50,14 @@ export default function TopupModal({ open, onClose, wallet, accountId, onAfterRe
         return;
       }
 
-      // Gọi API POST /api/TransactionHistory/AddMoneyToWalletWeb với returnUrl
+      // Gọi API POST /api/TransactionHistory/AddMoneyToWallet với returnUrl
       const payload = {
         walletID: wallet?.walletID || wallet?.WalletID,
         amount: value,
         returnUrl: `${window.location.origin}/wallet`, // URL quay về trang wallet
       };
 
-      const result = await transactionHistoryService.addMoneyToWalletWeb(payload);
+      const result = await transactionHistoryService.addMoneyToWallet(payload);
       // Xử lý trường hợp API trả về object hoặc string
       let paymentUrl = '';
       if (typeof result === 'string') {
