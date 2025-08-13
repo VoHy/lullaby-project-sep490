@@ -90,9 +90,9 @@ const AdminZoneTab = () => {
   const staffCountMap = useMemo(() => {
     const nurses = {}, specialists = {};
     nursingSpecialists.forEach(n => {
-      if (n.major === 'nurse' || n.major === 'Y tá') {
+      if (n.major === 'nurse' || n.major === 'Y tá' || n.major === 'Nurse') {
         nurses[n.zoneID] = (nurses[n.zoneID] || 0) + 1;
-      } else if (n.major === 'Chuyên gia' || n.major === 'specialist') {
+      } else if (n.major === 'Chuyên gia' || n.major === 'specialist' || n.major === 'Specialist') {
         specialists[n.zoneID] = (specialists[n.zoneID] || 0) + 1;
       }
     });
@@ -411,8 +411,8 @@ const AdminZoneTab = () => {
           showStaffModal={!!selectedZone}
           setShowStaffModal={() => setSelectedZone(null)}
           selectedZone={zones.find(z => z.zoneID === selectedZone)}
-          getNursesByZone={(id) => nursingSpecialists.filter(n => n.zoneID === id && (n.major === 'nurse' || n.major === 'Y tá'))}
-          getSpecialistsByZone={(id) => nursingSpecialists.filter(n => n.zoneID === id && (n.major === 'Chuyên gia' || n.major === 'specialist'))}
+          getNursesByZone={(id) => nursingSpecialists.filter(n => n.zoneID === id && (n.major === 'nurse' || n.major === 'Y tá' || n.major === 'Nurse'))}
+          getSpecialistsByZone={(id) => nursingSpecialists.filter(n => n.zoneID === id && (n.major === 'Chuyên gia' || n.major === 'specialist' || n.major === 'Specialist'))}
           getManagerByZone={getManagerByZone}
         />
       )}

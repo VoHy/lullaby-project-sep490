@@ -15,13 +15,13 @@ const FeaturesSection = () => {
     {
       title: 'Chăm sóc tại nhà',
       desc: 'Dịch vụ chăm sóc sức khỏe và hỗ trợ sinh hoạt ngay tại nhà bạn, giúp tiết kiệm thời gian và chi phí.',
-      icon: '/images/service-home.jpg',
+      icon: '/images/hero-bg.jpg',
       badge: 'Phổ biến',
     },
     {
       title: 'Theo dõi sức khỏe định kỳ',
       desc: 'Giám sát sức khỏe định kỳ để phát hiện và xử lý kịp thời các vấn đề tiềm ẩn.',
-      icon: '/images/health-check.jpg',
+      icon: '/images/hero-bg.jpg',
       badge: 'Mới',
     },
   ];
