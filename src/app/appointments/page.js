@@ -2,37 +2,34 @@
 import React, { useEffect, useState, useContext, useMemo, useCallback } from "react";
 import { useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { FaCalendar, FaPlus, FaSync } from 'react-icons/fa';
+import { FaPlus, FaSync } from 'react-icons/fa';
 import { AuthContext } from '@/context/AuthContext';
 import { useWalletContext } from '@/context/WalletContext';
-import bookingService from '@/services/api/bookingService';
-import serviceTypeService from '@/services/api/serviceTypeService';
-import nursingSpecialistService from '@/services/api/nursingSpecialistService';
-import serviceTaskService from '@/services/api/serviceTaskService';
-import invoiceService from '@/services/api/invoiceService';
-import transactionHistoryService from '@/services/api/transactionHistoryService';
-import zoneDetailService from '@/services/api/zoneDetailService';
-import customizePackageService from '@/services/api/customizePackageService';
-import customizeTaskService from '@/services/api/customizeTaskService';
 import {
-  AppointmentCard,
-  AppointmentDetailModal,
-  SearchFilter,
-  EmptyState
-
-} from './components';
+  bookingService,
+  serviceTypeService,
+  nursingSpecialistService,
+  serviceTaskService,
+  invoiceService,
+  transactionHistoryService,
+  zoneDetailService,
+  customizePackageService,
+  customizeTaskService,
+  careProfileService
+} from '@/services/api';
+import { AppointmentCard, AppointmentDetailModal, EmptyState } from './components';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import SearchFilter from './components/SearchFilter';
 import {
-  getServiceNames,
-  getNurseNames,
+  STATUS_MAP,
   getStatusColor,
   getStatusText,
   formatDate,
-  filterAppointments,
   normalizeStatus,
-  STATUS_MAP
+  filterAppointments,
+  normalizeCareProfile,
+  normalizeCustomizeTask
 } from './utils/appointmentUtils';
-import careProfileService from "@/services/api/careProfileService";
 
 export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState([]);
@@ -51,91 +48,53 @@ export default function AppointmentsPage() {
   const [statusFilter, setStatusFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
-  const [pageSize] = useState(8);
+  const pageSize = 8;
 
   const router = useRouter();
   const { user } = useContext(AuthContext);
   const { refreshWalletData } = useWalletContext();
 
   const fetchData = useCallback(async (isRefresh = false) => {
-    if (!user) {
-      router.push('/auth/login');
-      return;
-    }
-
+    if (!user) return router.push('/auth/login');
     try {
-      if (isRefresh) {
-        setRefreshing(true);
-      } else {
-        setLoading(true);
-      }
+      isRefresh ? setRefreshing(true) : setLoading(true);
       setError(null);
 
-      const bookings = await bookingService.getAllBookings();
-      const careProfiles = await careProfileService.getCareProfiles();
-      const services = await serviceTypeService.getServiceTypes();
-      const tasks = await serviceTaskService.getServiceTasks();
-      const specialists = await nursingSpecialistService.getAllNursingSpecialists();
-      const zones = await zoneDetailService.getZoneDetails();
-      const invoiceData = await invoiceService.getAllInvoices();
-      const packages = await customizePackageService.getAllCustomizePackages();
-      const customizeTasksRaw = await customizeTaskService.getAllCustomizeTasks();
+      const [
+        bookings, careProfiles, services, tasks,
+        specialists, zones, invoiceData,
+        packages, customizeTasksRaw
+      ] = await Promise.all([
+        bookingService.getAllBookings(),
+        careProfileService.getCareProfiles(),
+        serviceTypeService.getServiceTypes(),
+        serviceTaskService.getServiceTasks(),
+        nursingSpecialistService.getAllNursingSpecialists(),
+        zoneDetailService.getZoneDetails(),
+        invoiceService.getAllInvoices(),
+        customizePackageService.getAllCustomizePackages(),
+        customizeTaskService.getAllCustomizeTasks()
+      ]);
 
       const currentAccountId = user.accountID || user.AccountID;
-      const myCareProfiles = (Array.isArray(careProfiles) ? careProfiles : []).filter(cp => {
-        const accId = cp.accountID ?? cp.AccountID;
-        return accId === currentAccountId;
-      });
+      const myCareProfiles = careProfiles.filter(cp =>
+        (cp.accountID ?? cp.AccountID) === currentAccountId
+      );
 
       const myCareProfileIds = new Set(myCareProfiles.map(cp => cp.careProfileID ?? cp.CareProfileID));
+      const careProfileMap = new Map(careProfiles.map(cp => [cp.careProfileID ?? cp.CareProfileID, normalizeCareProfile(cp)]));
 
-      const careProfileMap = new Map((Array.isArray(careProfiles) ? careProfiles : []).map(cp => {
-        const id = cp.careProfileID ?? cp.CareProfileID;
-        const normalized = {
-          ...cp,
-          profileName: cp.profileName ?? cp.ProfileName ?? cp.fullName ?? cp.Full_Name ?? cp.name ?? 'Không xác định',
-          phoneNumber: cp.phoneNumber ?? cp.PhoneNumber ?? cp.phone_Number ?? cp.Phone ?? cp.phone,
-          address: cp.address ?? cp.Address,
-          zoneDetailID: cp.zoneDetailID ?? cp.zoneDetail_ID ?? cp.ZoneDetailID ?? cp.Zone_DetailID ?? cp.Zone_Detail_ID
-        };
-        return [id, normalized];
-      }));
+      const invoiceByBooking = new Map(invoiceData.map(inv => [
+        inv.bookingID ?? inv.BookingID, String(inv.status ?? inv.Status).toLowerCase()
+      ]));
 
-      const invoiceByBooking = new Map((Array.isArray(invoiceData) ? invoiceData : []).map(inv => {
-        const bid = inv.bookingID ?? inv.BookingID ?? inv.booking_Id;
-        const status = String(inv.status ?? inv.Status ?? '').toLowerCase();
-        return [bid, status];
-      }));
-
-      const userAppointments = (Array.isArray(bookings) ? bookings : [])
-        .filter(b => {
-          const bCareId = b.careProfileID ?? b.CareProfileID;
-          return myCareProfileIds.has(bCareId);
-        })
-        .map(b => {
-          const bCareId = b.careProfileID ?? b.CareProfileID;
-          const bookingId = b.bookingID ?? b.BookingID ?? b.id;
-
-          const baseAmount = b.amount || b.totalAmount || b.total_Amount || 0;
-          const extra = b.extra;
-          const finalAmount = (() => {
-            if (!extra || extra === null) {
-              return baseAmount;
-            }
-            const extraPercentage = extra > 1 ? extra / 100 : extra;
-            return baseAmount + (baseAmount * extraPercentage);
-          })();
-
-          const rawStatus = b.status || b.Status;
-          const invoiceStatus = invoiceByBooking.get(bookingId);
-          const normalizedStatus = invoiceStatus === 'paid' ? 'paid' : rawStatus;
-
-          return {
-            ...b,
-            careProfile: b.careProfile ?? careProfileMap.get(bCareId) ?? null,
-            status: normalizedStatus,
-          };
-        });
+      const userAppointments = bookings
+        .filter(b => myCareProfileIds.has(b.careProfileID ?? b.CareProfileID))
+        .map(b => ({
+          ...b,
+          careProfile: b.careProfile ?? careProfileMap.get(b.careProfileID ?? b.CareProfileID) ?? null,
+          status: invoiceByBooking.get(b.bookingID ?? b.BookingID) === 'paid' ? 'paid' : b.status
+        }));
 
       setAppointments(userAppointments);
       setServiceTypes(services);
@@ -144,270 +103,69 @@ export default function AppointmentsPage() {
       setZoneDetails(zones);
       setInvoices(invoiceData);
       setCustomizePackages(packages);
-      const normalizedTasks = (Array.isArray(customizeTasksRaw) ? customizeTasksRaw : []).map(t => ({
-        ...t,
-        customizeTaskID: t.customizeTaskID ?? t.CustomizeTaskID ?? t.id ?? t.ID,
-        serviceID: t.serviceID ?? t.ServiceID ?? t.service_ID,
-        bookingID: t.bookingID ?? t.BookingID ?? t.booking_ID,
-        nursingID: t.nursingID ?? t.NursingID ?? t.nursing_Id ?? t.nursingId ?? null,
-        status: t.status ?? t.Status ?? 'pending',
-      }));
-      setCustomizeTasks(normalizedTasks);
+      setCustomizeTasks(customizeTasksRaw.map(normalizeCustomizeTask));
 
-      if (!isRefresh) {
-        try {
-          await refreshWalletData();
-          console.log('Wallet context refreshed');
-        } catch (walletError) {
-          console.warn('Could not refresh wallet context:', walletError);
-        }
-      }
-
-    } catch (error) {
-      console.error('Error fetching appointments:', error);
-      setError(`Không thể tải dữ liệu: ${error.message}`);
+      if (!isRefresh) await refreshWalletData();
+    } catch (err) {
+      setError(`Không thể tải dữ liệu: ${err.message}`);
     } finally {
       setLoading(false);
       setRefreshing(false);
     }
   }, [user, router]);
 
-  useEffect(() => {
-    if (!user) return;
-    fetchData();
-  }, [fetchData]);
+  useEffect(() => { if (user) fetchData(); }, [fetchData, user]);
 
   const filteredAppointments = useMemo(() => {
-    if (!Array.isArray(appointments)) return [];
     const filtered = filterAppointments(appointments, searchText, statusFilter, dateFilter);
-    return filtered.slice().sort((a, b) => {
-      const statusA = normalizeStatus(a);
-      const statusB = normalizeStatus(b);
-      return (STATUS_MAP[statusA]?.sortOrder || 99) - (STATUS_MAP[statusB]?.sortOrder || 99);
-    });
+    return filtered.sort((a, b) =>
+      (STATUS_MAP[normalizeStatus(a)]?.sortOrder || 99) -
+      (STATUS_MAP[normalizeStatus(b)]?.sortOrder || 99)
+    );
   }, [appointments, searchText, statusFilter, dateFilter]);
 
   const totalPages = Math.ceil(filteredAppointments.length / pageSize);
   const paginatedAppointments = filteredAppointments.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
-  const handleRefresh = () => {
-    fetchData(true);
-  };
-
-  const handleNewAppointment = () => {
-    router.push('/services');
-  };
-
-  const handleInvoicePayment = async (invoiceId) => {
-    try {
-      await transactionHistoryService.invoicePayment(invoiceId);
-      alert('Thanh toán thành công! Hóa đơn đã được thanh toán.');
-      await fetchData(true);
-      await refreshWalletData();
-    } catch (error) {
-      console.error('Error processing payment:', error);
-      alert(`Có lỗi xảy ra khi thanh toán: ${error.message}`);
-    }
-  };
-
-  const handleBookingCancel = async (appointment) => {
-    try {
-      const bookingId = appointment.bookingID || appointment.BookingID;
-      const invoice = invoices.find(inv =>
-        (inv.bookingID === bookingId || inv.BookingID === bookingId)
-      );
-
-      if (!invoice) {
-        throw new Error('Không tìm thấy hóa đơn cho booking này');
-      }
-
-      const invoiceId = invoice.invoiceID || invoice.invoice_ID;
-      await transactionHistoryService.refundMoneyToWallet(invoiceId);
-      alert('Đã hủy booking thành công! Tiền đã được hoàn vào tài khoản của bạn.');
-      await fetchData(true);
-      await refreshWalletData();
-    } catch (error) {
-      console.error('Error cancelling booking:', error);
-      alert(`Có lỗi xảy ra khi hủy booking: ${error.message}`);
-    }
-  };
-
-  const handleNurseAssignment = async (service, nurseId) => {
-    try {
-      const bookingId = selectedAppointment?.bookingID || selectedAppointment?.BookingID;
-      if (!bookingId) {
-        throw new Error('Không tìm thấy booking ID');
-      }
-
-      if (service.customizeTaskId) {
-        await customizeTaskService.updateNursing(service.customizeTaskId, nurseId);
-      } else if (service.taskId) {
-        const customizeTaskId = service.taskId;
-        await customizeTaskService.updateNursing(customizeTaskId, nurseId);
-      } else {
-        const customizePackagesData = await customizePackageService.getAllByBooking(bookingId);
-        const serviceId = service.serviceID || service.serviceTypeID || service.ServiceID;
-        const matchingPackage = customizePackagesData.find(pkg =>
-          (pkg.serviceID === serviceId) ||
-          (pkg.service_ID === serviceId) ||
-          (pkg.Service_ID === serviceId)
-        );
-
-        if (!matchingPackage) {
-          throw new Error('Không tìm thấy customize package tương ứng');
-        }
-
-        const customizePackageId = matchingPackage.customizePackageID || matchingPackage.customize_PackageID;
-        const customizeTasksData = await customizeTaskService.getTasksByPackage(customizePackageId);
-
-        if (customizeTasksData.length === 0) {
-          throw new Error('Không tìm thấy customize task nào');
-        }
-
-        const taskToUpdate = customizeTasksData[0];
-        const customizeTaskId = taskToUpdate.customizeTaskID || taskToUpdate.customize_TaskID;
-        await customizeTaskService.updateNursing(customizeTaskId, nurseId);
-      }
-
-      alert('Đã phân công nurse thành công!');
-      await fetchData(true);
-    } catch (error) {
-      console.error('Error assigning nurse:', error);
-      alert(`Có lỗi xảy ra khi phân công nurse: ${error.message}`);
-    }
-  };
-
-  if (loading) {
-    return <LoadingSpinner message="Đang tải lịch hẹn..." fullScreen={true} />;
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50 flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-red-600 mb-4">Có lỗi xảy ra</h1>
-          <p className="text-gray-600 mb-4">{error}</p>
-          <button
-            onClick={() => fetchData()}
-            className="px-4 py-2 bg-purple-500 text-white rounded-lg hover:bg-purple-600 transition-colors"
-          >
-            Thử lại
-          </button>
-        </div>
-      </div>
-    );
-  }
+  if (loading) return <LoadingSpinner message="Đang tải lịch hẹn..." fullScreen />;
+  if (error) return <div>{error}</div>;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
       <div className="container mx-auto px-4 py-8">
-        <motion.div
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: -30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8 }}
-        >
-          <div className="flex items-center justify-center gap-4 mb-6">
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
-              Lịch hẹn của bạn
-            </h1>
-
-            <button
-              onClick={handleRefresh}
-              disabled={refreshing}
-              className="p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition-colors disabled:opacity-50"
-              title="Làm mới dữ liệu"
-            >
-              {refreshing ? '🔄' : <FaSync />}
-            </button>
-          </div>
-          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-            Quản lý và theo dõi tất cả lịch hẹn chăm sóc sức khỏe của bạn
-          </p>
+        <motion.div className="text-center mb-12">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">Lịch hẹn của bạn</h1>
+          <button onClick={() => fetchData(true)} disabled={refreshing}><FaSync /></button>
         </motion.div>
 
-        <SearchFilter
-          searchText={searchText}
-          setSearchText={setSearchText}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          dateFilter={dateFilter}
-          setDateFilter={setDateFilter}
-        />
+        <SearchFilter {...{ searchText, setSearchText, statusFilter, setStatusFilter, dateFilter, setDateFilter }} />
 
-        <motion.div
-          className="mb-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-        >
-          <p className="text-gray-600">
-            Tìm thấy <span className="font-semibold text-purple-600">{filteredAppointments.length}</span> lịch hẹn
-            {searchText && ` cho "${searchText}"`}
-            {statusFilter !== 'all' && ` với trạng thái "${getStatusText(statusFilter)}"`}
-          </p>
-        </motion.div>
-
-        {!Array.isArray(filteredAppointments) || filteredAppointments.length === 0 ? (
-          <EmptyState onNewAppointment={handleNewAppointment} />
+        {paginatedAppointments.length === 0 ? (
+          <EmptyState onNewAppointment={() => router.push('/services')} />
         ) : (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {paginatedAppointments.map((appointment, idx) => {
-                if (!appointment) return null;
-                const bookingKey = appointment.bookingID || appointment.BookingID || `appointment-${idx}`;
-                return (
-                  <AppointmentCard
-                    key={bookingKey}
-                    appointment={appointment}
-                    index={idx + (currentPage - 1) * pageSize}
-                    serviceTypes={serviceTypes || []}
-                    onSelect={setSelectedAppointment}
-                    onCancel={handleBookingCancel}
-                    getStatusColor={getStatusColor}
-                    getStatusText={getStatusText}
-                    formatDate={formatDate}
-                  />
-                );
-              })}
+              {paginatedAppointments.map((appointment, idx) => (
+                <AppointmentCard
+                  key={appointment.bookingID || idx}
+                  appointment={appointment}
+                  index={idx}
+                  serviceTypes={serviceTypes}
+                  onSelect={setSelectedAppointment}
+                  getStatusColor={getStatusColor}
+                  getStatusText={getStatusText}
+                  formatDate={formatDate}
+                />
+              ))}
             </div>
             {totalPages > 1 && (
-              <div className="flex justify-center items-center gap-2 mt-8">
-                <button
-                  className="px-3 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
-                  onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage === 1}
-                >
-                  Trang trước
-                </button>
-                <span className="mx-2 text-gray-600">Trang {currentPage} / {totalPages}</span>
-                <button
-                  className="px-3 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 disabled:opacity-50"
-                  onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage === totalPages}
-                >
-                  Trang sau
-                </button>
+              <div>
+                <button onClick={() => setCurrentPage(p => p - 1)} disabled={currentPage === 1}>Trang trước</button>
+                <span>Trang {currentPage}/{totalPages}</span>
+                <button onClick={() => setCurrentPage(p => p + 1)} disabled={currentPage === totalPages}>Trang sau</button>
               </div>
             )}
           </>
-        )}
-
-        {filteredAppointments.length > 0 && (
-          <motion.div
-            className="text-center mt-12"
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-          >
-            <button
-              onClick={handleNewAppointment}
-              className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
-            >
-              <FaPlus className="inline mr-2" />
-              Đặt lịch hẹn mới
-            </button>
-          </motion.div>
         )}
 
         {selectedAppointment && (
@@ -424,8 +182,6 @@ export default function AppointmentsPage() {
             getStatusColor={getStatusColor}
             getStatusText={getStatusText}
             formatDate={formatDate}
-            onAssignNursing={handleNurseAssignment}
-            onPayment={handleInvoicePayment}
           />
         )}
       </div>

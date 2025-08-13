@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import { FaUser, FaCheck, FaEye, FaUserCircle, FaBox, FaStethoscope, FaTimes, FaCreditCard } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
-import { calculateFinalAmountWithExtra } from '../../booking/utils/paymentCalculation';
 
 const AppointmentCard = ({
   appointment,

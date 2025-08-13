@@ -1,118 +1,101 @@
-export const getServiceNames = (serviceIds, serviceTypes) => {
-  if (!serviceIds) return [];
-  const ids = serviceIds.split(",").map(Number);
-  return serviceTypes.filter(s => ids.includes(s.ServiceID)).map(s => s.ServiceName);
-};
-
-export const getNurseNames = (nurseIds, nursingSpecialists) => {
-  if (!nurseIds) return [];
-  const ids = nurseIds.split(",").map(Number);
-  return nursingSpecialists.filter(n => ids.includes(n.NursingID)).map(n => n.FullName);
-};
-
-// Định nghĩa các trạng thái hợp lệ
+// appointmentUtils.js
 export const STATUS_MAP = {
-  pending: { uiText: 'Chờ thanh toán', sortOrder: 2 },
-  paid: { uiText: 'Đã thanh toán', sortOrder: 3 },
-  scheduled: { uiText: 'Đã lên lịch', sortOrder: 1 },
-  completed: { uiText: 'Hoàn thành', sortOrder: 6 },
-  cancelled: { uiText: 'Đã hủy', sortOrder: 4 },
+  pending: { color: 'yellow', text: 'Chờ thanh toán', sortOrder: 1 },
+  scheduled: { color: 'purple', text: 'Đã lên lịch', sortOrder: 2 },
+  paid: { color: 'blue', text: 'Đã thanh toán', sortOrder: 3 },
+  completed: { color: 'green', text: 'Hoàn thành', sortOrder: 4 },
+  cancelled: { color: 'red', text: 'Đã hủy', sortOrder: 5 },
+  all: { color: 'gray', text: 'Tất cả', sortOrder: 99 }
 };
 
-// Chuẩn hóa trạng thái
-export const normalizeStatus = (appointment) => {
-  const status = String(appointment?.status ?? appointment?.Status ?? '').toLowerCase();
-  const isSchedule = appointment?.isSchedule === true || appointment?.isSchedule === 'true';
+export const getStatusColor = (status) =>
+  STATUS_MAP[normalizeStatus({ status })]?.color || 'gray';
 
-  if (status === 'paid' && isSchedule) return 'scheduled';
-  if (status === 'paid' && !isSchedule) return 'paid';
-  if (status === 'pending') return 'pending';
-  if (status === 'completed' && isSchedule) return 'completed';
-  if (status === 'cancelled') return 'cancelled';
-  return 'unknown';
-};
+export const getStatusText = (status) =>
+  STATUS_MAP[status]?.text || status;
 
-// Lấy văn bản hiển thị cho trạng thái
-export const getStatusText = (status) => {
-  return STATUS_MAP[status]?.uiText || 'Không xác định';
-};
-
-// Lấy màu sắc cho trạng thái
-export const getStatusColor = (status) => {
-  switch (status) {
-    case 'completed':
-    case 'paid':
-      return 'bg-green-100 text-green-700';
-    case 'pending':
-      return 'bg-yellow-100 text-yellow-700';
-    case 'cancelled':
-      return 'bg-red-100 text-red-700';
-    case 'scheduled':
-      return 'bg-blue-100 text-blue-700';
-    default:
-      return 'bg-gray-100 text-gray-700';
-  }
-};
-
-export const formatDate = (dateString) => {
-  if (!dateString) return 'Chưa có';
-  const date = new Date(dateString);
-  return date.toLocaleDateString('vi-VN', {
+export const formatDate = (dateStr) => {
+  if (!dateStr) return '';
+  return new Date(dateStr).toLocaleDateString('vi-VN', {
     year: 'numeric',
-    month: 'long',
-    day: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
     hour: '2-digit',
-    minute: '2-digit'
+    minute: '2-digit',
+    hour12: false
   });
 };
 
-export const formatPrice = (price) => {
-  return new Intl.NumberFormat('vi-VN', {
-    style: 'currency',
-    currency: 'VND'
-  }).format(price);
+export const normalizeStatus = (appointment) => {
+  const rawStatus = String(appointment?.status ?? appointment?.Status ?? '').toLowerCase().trim();
+
+  // Ưu tiên trạng thái 'completed' nếu có cờ isSchedule
+  const scheduleFlags = [
+    'isSchedule', 'isScheduled', 'isscheduled', 'is_scheduled', 'isshedule'
+  ];
+  const hasScheduleFlag = scheduleFlags.some(
+    key => appointment?.[key] === true || String(appointment?.[key]).toLowerCase() === 'true'
+  );
+
+  if (rawStatus === 'completed' && hasScheduleFlag) return 'completed';
+  if (rawStatus === 'paid' && hasScheduleFlag) return 'scheduled';
+  if (rawStatus === 'paid') return 'paid';
+  if (rawStatus === 'cancelled' || rawStatus === 'canceled') return 'cancelled';
+  if (rawStatus === 'pending' || rawStatus === 'unpaid') return 'pending';
+
+  return 'pending';
 };
 
 export const filterAppointments = (appointments, searchText, statusFilter, dateFilter) => {
-  if (!Array.isArray(appointments)) return [];
+  return appointments.filter(app => {
+    const lowerSearch = searchText?.toLowerCase() || '';
+    const matchesSearch =
+      !searchText ||
+      [
+        app.careProfile?.profileName,
+        app.careProfile?.phoneNumber,
+        app.careProfile?.address,
+        String(app.bookingID ?? '')
+      ].some(field => (field || '').toLowerCase().includes(lowerSearch));
 
-  return appointments.filter(appointment => {
-    if (!appointment) return false;
+    const matchesStatus = statusFilter === 'all' || normalizeStatus(app) === statusFilter;
 
-    // Tìm kiếm
-    const bookingId = appointment.bookingID || appointment.BookingID || '';
-    const matchesSearch = searchText === '' ||
-      bookingId.toString().includes(searchText) ||
-      appointment.Note?.toLowerCase().includes(searchText.toLowerCase()) ||
-      appointment.note?.toLowerCase().includes(searchText.toLowerCase());
-
-    // Chuẩn hóa trạng thái
-    const normalizedStatus = normalizeStatus(appointment);
-
-    // Lọc theo trạng thái
-    const matchesStatus = statusFilter === 'all' || normalizedStatus === statusFilter;
-
-    // Lọc theo ngày
     let matchesDate = true;
-    if (dateFilter !== 'all' && (appointment.BookingDate || appointment.workdate)) {
-      const appointmentDate = new Date(appointment.BookingDate || appointment.workdate);
-      const today = new Date();
-
-      switch (dateFilter) {
-        case 'today':
-          matchesDate = appointmentDate.toDateString() === today.toDateString();
-          break;
-        case 'week':
-          const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-          matchesDate = appointmentDate >= weekAgo;
-          break;
-        case 'month':
-          const monthAgo = new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000);
-          matchesDate = appointmentDate >= monthAgo;
-          break;
+    if (dateFilter !== 'all') {
+      const now = new Date();
+      const appDate = new Date(app.bookingDate || app.date || app.createdAt);
+      if (dateFilter === 'today') {
+        matchesDate = appDate.toDateString() === now.toDateString();
+      } else if (dateFilter === 'week') {
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - now.getDay());
+        const weekEnd = new Date(weekStart);
+        weekEnd.setDate(weekStart.getDate() + 6);
+        matchesDate = appDate >= weekStart && appDate <= weekEnd;
+      } else if (dateFilter === 'month') {
+        matchesDate =
+          appDate.getMonth() === now.getMonth() &&
+          appDate.getFullYear() === now.getFullYear();
       }
     }
 
     return matchesSearch && matchesStatus && matchesDate;
   });
 };
+
+export const normalizeCareProfile = (cp) => ({
+  ...cp,
+  profileName: cp.profileName ?? cp.ProfileName ?? cp.fullName ?? cp.name ?? 'Không xác định',
+  phoneNumber: cp.phoneNumber ?? cp.PhoneNumber ?? cp.Phone ?? '',
+  address: cp.address ?? cp.Address ?? '',
+  zoneDetailID: cp.zoneDetailID ?? cp.ZoneDetailID ?? cp.Zone_DetailID
+});
+
+export const normalizeCustomizeTask = (t) => ({
+  ...t,
+  customizeTaskID: t.customizeTaskID ?? t.CustomizeTaskID ?? t.id,
+  serviceID: t.serviceID ?? t.ServiceID,
+  bookingID: t.bookingID ?? t.BookingID,
+  nursingID: t.nursingID ?? t.NursingID ?? null,
+  status: t.status ?? t.Status ?? 'pending'
+});

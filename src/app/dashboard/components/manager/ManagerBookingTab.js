@@ -22,6 +22,20 @@ const statusOptions = [
   { value: 'completed', label: 'Hoàn thành' },
   { value: 'cancelled', label: 'Đã hủy' },
 ];
+const statusLabels = {
+  completed: 'Hoàn thành',
+  pending: 'Đang chờ',
+  cancelled: 'Đã hủy',
+  isScheduled: 'Đã lên lịch',
+};
+
+const nurseRoleLabels = {
+  nurse: 'Y tá',
+  specialist: 'Chuyên gia',
+  Nurse: 'Y tá',
+  Specialist: 'Chuyên gia'
+
+};
 
 const ManagerBookingTab = () => {
   // Filter, sort, and pagination state
@@ -56,6 +70,10 @@ const ManagerBookingTab = () => {
   const [eligibleByService, setEligibleByService] = useState({}); // { [serviceId]: { nurses: [], specialists: [] } }
   const [loadingEligible, setLoadingEligible] = useState(false);
   const [localInvoice, setLocalInvoice] = useState(null);
+  // State cho popup chọn nhân sự
+  const [showStaffModal, setShowStaffModal] = useState(false);
+  const [modalTaskId, setModalTaskId] = useState(null);
+  const [modalServiceId, setModalServiceId] = useState(null);
 
   // Load data từ API
   useEffect(() => {
@@ -281,7 +299,7 @@ const ManagerBookingTab = () => {
 
   const handleTaskAssign = (taskId, type, value) => {
     setTaskAssignments(prev => {
-      // Nếu chọn nurse thì clear specialist, chọn specialist thì clear nurse
+      // Chỉ lưu lại nhân sự đã chọn
       if (type === 'nurse') {
         return {
           ...prev,
@@ -295,28 +313,7 @@ const ManagerBookingTab = () => {
       }
       return prev;
     });
-  };
-
-  const handleUpdateStatus = async (bookingId, newStatus) => {
-    try {
-      await bookingService.updateStatus(bookingId, newStatus);
-
-      // Cập nhật local state
-      setBookings(prev => prev.map(booking =>
-        booking.bookingID === bookingId
-          ? { ...booking, Status: newStatus }
-          : booking
-      ));
-
-      if (detailData && detailData.bookingID === bookingId) {
-        setDetailData(prev => ({ ...prev, Status: newStatus }));
-      }
-
-      alert(`Đã cập nhật trạng thái booking thành: ${statusOptions.find(opt => opt.value === newStatus)?.label}`);
-    } catch (error) {
-      console.error('Error updating booking status:', error);
-      alert('Có lỗi xảy ra khi cập nhật trạng thái booking');
-    }
+    setShowStaffModal(false);
   };
 
   const handleAccept = async () => {
@@ -539,8 +536,6 @@ const ManagerBookingTab = () => {
             </>
           );
         })()}
-
-        {/* Chi tiết booking popup giữ nguyên (chỉ chỉnh style nếu muốn) */}
       </div>
 
       {/* Popup chi tiết booking */}
@@ -625,14 +620,24 @@ const ManagerBookingTab = () => {
                     <li key={idx} className="text-sm">
                       {task?.description}
                       {task.assignedNurseName && (
-                        <span className="ml-2 text-xs text-blue-700">- {task.assignedNurseName} ({task.assignedNurseRole})</span>
+                        <span className="ml-2 text-xs text-blue-700">- {task.assignedNurseName} ({nurseRoleLabels[task.assignedNurseRole] || task.assignedNurseRole})</span>
                       )}
                       {!task.assignedNurseName && (
                         <span className="ml-2 text-xs text-red-600">- Chưa có nhân sự</span>
                       )}
                       {task.status && (
-                        <span className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${task.status === 'active' ? 'bg-blue-100 text-blue-700' : task.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}`}>{task.status}</span>
+                        <span
+                          className={`ml-2 px-2 py-1 rounded-full text-xs font-semibold ${task.status === 'active'
+                            ? 'bg-blue-100 text-blue-700'
+                            : task.status === 'completed'
+                              ? 'bg-green-100 text-green-700'
+                              : 'bg-gray-100 text-gray-700'
+                            }`}
+                        >
+                          {statusLabels[task.status] || task.status}
+                        </span>
                       )}
+
                     </li>
                   ))}
                 </ul>
@@ -656,40 +661,34 @@ const ManagerBookingTab = () => {
                         <td className="p-2">{/* giá nếu có */}</td>
                         <td className="p-2">
                           {task.assignedNurseName ? (
-                            <span className="text-green-600 font-medium">{task.assignedNurseName} ({task.assignedNurseRole})</span>
+                            <span className="text-green-600 font-medium">{task.assignedNurseName} ({nurseRoleLabels[task.assignedNurseRole] || task.assignedNurseRole}) </span>
+                          ) : taskAssignments[task.customizeTaskId]?.nurse || taskAssignments[task.customizeTaskId]?.specialist ? (
+                            <span className="text-blue-600 font-medium">
+                              {(() => {
+                                const nurseId = taskAssignments[task.customizeTaskId]?.nurse;
+                                const specialistId = taskAssignments[task.customizeTaskId]?.specialist;
+                                const nurse = eligibleByService[task.serviceId]?.nurses?.find(n => (n.NursingID || n.nursingID) === nurseId);
+                                const specialist = eligibleByService[task.serviceId]?.specialists?.find(s => (s.NursingID || s.nursingID) === specialistId);
+                                if (nurse) return `${nurse.Full_Name || nurse.fullName} (Y tá)`;
+                                if (specialist) return `${specialist.Full_Name || specialist.fullName} (Chuyên gia)`;
+                                return 'Đã chọn nhân sự';
+                              })()}
+                            </span>
                           ) : (
                             <span className="text-red-500 text-sm">Chưa có nhân sự</span>
                           )}
                         </td>
                         <td className="p-2">
                           {!task.assignedNurseName ? (
-                            <div className="space-y-1">
-                              <select
-                                value={taskAssignments[task.customizeTaskId]?.nurse || ''}
-                                onChange={e => handleTaskAssign(task.customizeTaskId, 'nurse', e.target.value)}
-                                className="w-full px-2 py-1 rounded border text-xs"
-                              >
-                                <option value="">Chọn Y tá</option>
-                                {(loadingEligible ? [] : (eligibleByService[task.serviceId]?.nurses || [])).map(n => (
-                                  <option key={n.NursingID || n.nursingID} value={n.NursingID || n.nursingID}>{n.Full_Name || n.fullName}</option>
-                                ))}
-                              </select>
-                              <select
-                                value={taskAssignments[task.customizeTaskId]?.specialist || ''}
-                                onChange={e => handleTaskAssign(task.customizeTaskId, 'specialist', e.target.value)}
-                                className="w-full px-2 py-1 rounded border text-xs"
-                              >
-                                <option value="">Chọn Chuyên gia</option>
-                                {(loadingEligible ? [] : (eligibleByService[task.serviceId]?.specialists || [])).map(s => (
-                                  <option key={s.NursingID || s.nursingID} value={s.NursingID || s.nursingID}>{s.Full_Name || s.fullName}</option>
-                                ))}
-                              </select>
-                            </div>
+                            <button
+                              className="px-3 py-1 rounded bg-purple-100 text-purple-700 hover:bg-purple-200 text-xs"
+                              onClick={() => { setShowStaffModal(true); setModalTaskId(task.customizeTaskId); setModalServiceId(task.serviceId); }}
+                            >Chọn nhân sự</button>
                           ) : (
                             <span className="text-gray-400 text-xs">Đã có nhân sự</span>
                           )}
                         </td>
-                        <td className="p-2">{task.status}</td>
+                        <td className="p-2">{statusLabels[task.status] || task.status}</td>
                       </tr>
                     ))}
                   </tbody>
@@ -703,6 +702,43 @@ const ManagerBookingTab = () => {
                   Accept
                 </button>
               </div>
+              {/* Popup chọn nhân sự */}
+              {showStaffModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+                  <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
+                    <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl" onClick={() => setShowStaffModal(false)}>&times;</button>
+                    <h4 className="text-lg font-bold mb-4 text-purple-700">Chọn nhân sự cho dịch vụ</h4>
+                    <div className="mb-3">
+                      <div className="font-semibold mb-2">Y tá</div>
+                      <ul className="space-y-2">
+                        {(loadingEligible ? [] : (eligibleByService[modalServiceId]?.nurses || [])).length === 0 && <li className="text-gray-400 text-xs">Không có Y tá phù hợp</li>}
+                        {(loadingEligible ? [] : (eligibleByService[modalServiceId]?.nurses || [])).map(n => (
+                          <li key={n.NursingID || n.nursingID}>
+                            <button
+                              className="w-full text-left px-3 py-2 rounded border hover:bg-purple-100"
+                              onClick={() => handleTaskAssign(modalTaskId, 'nurse', n.NursingID || n.nursingID)}
+                            >{n.Full_Name || n.fullName}</button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                    <div className="mb-3">
+                      <div className="font-semibold mb-2">Chuyên gia</div>
+                      <ul className="space-y-2">
+                        {(loadingEligible ? [] : (eligibleByService[modalServiceId]?.specialists || [])).length === 0 && <li className="text-gray-400 text-xs">Không có Chuyên gia phù hợp</li>}
+                        {(loadingEligible ? [] : (eligibleByService[modalServiceId]?.specialists || [])).map(s => (
+                          <li key={s.NursingID || s.nursingID}>
+                            <button
+                              className="w-full text-left px-3 py-2 rounded border hover:bg-pink-100"
+                              onClick={() => handleTaskAssign(modalTaskId, 'specialist', s.NursingID || s.nursingID)}
+                            >{s.Full_Name || s.fullName}</button>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         );

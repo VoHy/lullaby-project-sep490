@@ -230,6 +230,8 @@ const AppointmentDetailModal = ({
 
   const serviceDetails = getServiceDetails();
 
+
+
   // Get nurses for a service using per-nurse mapping and zone filter
   const getServiceSpecificNurses = async (serviceId) => {
     try {
@@ -292,7 +294,7 @@ const AppointmentDetailModal = ({
       experience: nurse.experience
     } : {
       id: nursingId,
-      name: 'Nurse không xác định',
+      name: 'Y tá không xác định',
       phone: null,
       experience: null
     };
@@ -506,14 +508,16 @@ const AppointmentDetailModal = ({
               </div>
             )}
             <div className="text-xs text-gray-500">
-              Trạng thái: {service.status || 'Chờ xử lý'}
+              Trạng thái: {getStatusText(String(service.status || '').toLowerCase())}
             </div>
           </div>
           <div className="ml-4 flex-shrink-0">
             {/* Hidden nurse selection button for customer view */}
             {isDone && (
               <div className="text-sm text-gray-600 font-medium whitespace-nowrap">
-                {String(service.status || '').toLowerCase() === 'completed' ? '✓ Hoàn thành' : '✗ Đã hủy'}
+                {String(service.status || '').toLowerCase() === 'completed'
+                  ? '✓ ' + getStatusText('completed')
+                  : '✗ ' + getStatusText('cancelled')}
               </div>
             )}
           </div>

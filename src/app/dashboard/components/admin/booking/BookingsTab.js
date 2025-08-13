@@ -39,6 +39,28 @@ const BookingsTab = ({ bookings }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10); // Số booking mỗi trang
 
+  const statusLabels = {
+    completed: 'Hoàn thành',
+    pending: 'Đang chờ',
+    cancelled: 'Đã hủy',
+    waiting: 'Đang chờ',
+    isscheduled: 'Đã lên lịch',
+    isScheduled: 'Đã lên lịch'
+  };
+  const statusClasses = {
+    completed: 'bg-green-100 text-green-700',
+    isscheduled: 'bg-blue-100 text-blue-700',
+    isScheduled: 'bg-blue-100 text-blue-700',
+    pending: 'bg-yellow-100 text-yellow-700',
+    cancelled: 'bg-red-100 text-red-700',
+  };
+
+  const nurseRoleLabels = {
+    nurse: 'Y tá',
+    specialist: 'Chuyên gia',
+    Nurse: 'Y tá',
+    Specialist: 'Chuyên gia'
+  };
   // Load data từ API
   useEffect(() => {
     const fetchData = async () => {
@@ -390,7 +412,19 @@ const BookingsTab = ({ bookings }) => {
                                     <div className="text-gray-600 text-sm mt-1">{pkgService?.serviceName ?? pkgService?.ServiceName}</div>
                                     <div className="flex items-center gap-4 mt-2 text-sm">
                                       <span className="text-gray-600">Số lượng: <span className="font-medium">{pkg.quantity}</span></span>
-                                      <span className="text-gray-600">Trạng thái: <span className={`px-2 py-1 rounded-full text-xs font-semibold ${pkg.status === 'completed' ? 'bg-green-100 text-green-700' : pkg.status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'}`}>{pkg.status}</span></span>
+                                      <span className="text-gray-600">
+                                        Trạng thái:{" "}
+                                        <span
+                                          className={`px-2 py-1 rounded-full text-xs font-semibold ${pkg.status === 'completed'
+                                            ? 'bg-green-100 text-green-700'
+                                            : pkg.status === 'pending'
+                                              ? 'bg-yellow-100 text-yellow-700'
+                                              : 'bg-gray-100 text-gray-700'
+                                            }`}
+                                        >
+                                          {statusLabels[pkg.status] || pkg.status}
+                                        </span>
+                                      </span>
                                     </div>
                                   </div>
                                   <div className="text-right ml-4">
@@ -409,7 +443,7 @@ const BookingsTab = ({ bookings }) => {
                     <div>
                       <h5 className="font-medium text-gray-900 mb-4 flex items-center">
                         <div className="w-4 h-4 bg-blue-600 rounded mr-2"></div>
-                        Danh sách công việc ({serviceTasksOfBooking.length} task)
+                        Danh sách công việc ({serviceTasksOfBooking.length} nhiệm vụ)
                       </h5>
                       <div className="space-y-4">
                         {serviceTasksOfBooking.map((task, index) => {
@@ -426,18 +460,15 @@ const BookingsTab = ({ bookings }) => {
                                       <h6 className="font-semibold text-gray-900 text-lg">{task.description}</h6>
                                     </div>
                                     <div className="flex items-center gap-4 text-sm text-gray-600">
-                                      <span>Số lượng: <span className="font-medium">{task.quantity}</span></span>
-                                      <span>Đơn giá: <span className="font-medium text-green-600">{task.price?.toLocaleString()} VNĐ</span></span>
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-3 ml-4">
-                                    <span className={`px-3 py-1 rounded-full text-sm font-semibold ${status === 'completed' ? 'bg-green-100 text-green-700' :
-                                      status === 'isscheduled' ? 'bg-blue-100 text-blue-700' :
-                                        status === 'pending' ? 'bg-yellow-100 text-yellow-700' : 'bg-gray-100 text-gray-700'
-                                      }`}>
-                                      {status === 'completed' ? 'Hoàn thành' : status === 'isscheduled' ? 'Đã lên lịch' : status === 'pending' ? 'Chờ thực hiện' : status}
+                                    <span
+                                      className={`px-3 py-1 rounded-full text-sm font-semibold ${statusClasses[status] || 'bg-gray-100 text-gray-700'
+                                        }`}
+                                    >
+                                      {statusLabels[status] || status}
                                     </span>
-                                    <div className="text-right font-bold text-green-600 text-xl">{task.total?.toLocaleString()} VNĐ</div>
                                   </div>
                                 </div>
                               </div>
@@ -454,7 +485,11 @@ const BookingsTab = ({ bookings }) => {
                                         <div className="font-semibold text-green-800">Đã phân công</div>
                                         <div className="text-green-700">
                                           <span className="font-medium">{task.nurseName}</span>
-                                          {task.nurseRole && <span className="text-sm ml-2">({task.nurseRole})</span>}
+                                          {task.nurseRole && (
+                                            <span className="text-sm ml-2">
+                                              ({nurseRoleLabels[task.nurseRole] || task.nurseRole})
+                                            </span>
+                                          )}
                                         </div>
                                       </div>
                                     </div>
@@ -532,7 +567,7 @@ const BookingsTab = ({ bookings }) => {
   if (error) {
     return (
       <div className="text-center py-12">
-        <div className="text-red-500 text-6xl mb-4">⚠️</div>
+        <div className="text-red-500 text-6xl mb-4"></div>
         <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
         <p className="text-gray-600 mb-4">{error}</p>
         <button
