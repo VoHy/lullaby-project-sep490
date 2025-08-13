@@ -7,6 +7,7 @@ import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMone
 import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
 import feedbackService from '@/services/api/feedbackService';
 import FeedbackForm from './FeedbackForm';
+import { getBookingStatusText, getBookingStatusColor } from '../utils/bookingStatus';
 
 
 const AppointmentDetailModal = ({
@@ -230,6 +231,8 @@ const AppointmentDetailModal = ({
 
   const serviceDetails = getServiceDetails();
 
+
+
   // Get nurses for a service using per-nurse mapping and zone filter
   const getServiceSpecificNurses = async (serviceId) => {
     try {
@@ -292,7 +295,7 @@ const AppointmentDetailModal = ({
       experience: nurse.experience
     } : {
       id: nursingId,
-      name: 'Nurse không xác định',
+      name: 'Y tá không xác định',
       phone: null,
       experience: null
     };
@@ -506,14 +509,20 @@ const AppointmentDetailModal = ({
               </div>
             )}
             <div className="text-xs text-gray-500">
-              Trạng thái: {service.status || 'Chờ xử lý'}
+              Trạng thái: {
+                ['pending','isSchedule','completed','cancelled','waiting'].includes(String(service.status ?? appointment.status))
+                  ? getBookingStatusText(service.status ?? appointment.status, service.isSchedule ?? appointment.isSchedule)
+                  : getBookingStatusText('pending', service.isSchedule ?? appointment.isSchedule)
+              }
             </div>
           </div>
           <div className="ml-4 flex-shrink-0">
             {/* Hidden nurse selection button for customer view */}
             {isDone && (
               <div className="text-sm text-gray-600 font-medium whitespace-nowrap">
-                {String(service.status || '').toLowerCase() === 'completed' ? '✓ Hoàn thành' : '✗ Đã hủy'}
+                {String(service.status || '').toLowerCase() === 'completed'
+                  ? '✓ ' + getBookingStatusText('completed')
+                  : '✗ ' + getBookingStatusText('cancelled')}
               </div>
             )}
           </div>
@@ -576,8 +585,13 @@ const AppointmentDetailModal = ({
                 </div>
                 Trạng thái
               </h3>
-              <span className={`px-3 py-2 rounded-full text-sm font-medium ${getStatusColor(appointment.status || appointment.Status)}`}>
-                {getStatusText(appointment.status || appointment.Status)}
+              <span className={`px-3 py-2 rounded-full text-sm font-medium ${getBookingStatusColor(appointment.status, appointment.isSchedule)}`}>
+                {getBookingStatusText(
+                  ['pending','completed','cancelled','canceled','paid','isScheduled','unpaid'].includes(String(appointment.status).toLowerCase())
+                    ? appointment.status
+                    : 'isScheduled',
+                  appointment.isSchedule
+                )}
               </span>
             </div>
 

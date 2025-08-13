@@ -12,7 +12,7 @@ const EmptyState = ({ onNewAppointment }) => {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6 }}
     >
-      <div className="text-6xl mb-4">📅</div>
+      <div className="text-6xl mb-4"></div>
       <h3 className="text-xl font-semibold text-gray-800 mb-2">Chưa có lịch hẹn nào</h3>
       <p className="text-gray-600 mb-6">Bạn chưa có lịch hẹn nào hoặc không tìm thấy lịch hẹn phù hợp.</p>
       <button

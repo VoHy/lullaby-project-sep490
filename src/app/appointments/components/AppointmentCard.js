@@ -3,7 +3,6 @@
 import { motion } from 'framer-motion';
 import { FaUser, FaCheck, FaEye, FaUserCircle, FaBox, FaStethoscope, FaTimes, FaCreditCard } from 'react-icons/fa';
 import { useRouter } from 'next/navigation';
-import { calculateFinalAmountWithExtra } from '../../booking/utils/paymentCalculation';
 
 const AppointmentCard = ({
   appointment,
@@ -11,8 +10,6 @@ const AppointmentCard = ({
   serviceTypes = [],
   onSelect,
   onCancel,
-  getStatusColor,
-  getStatusText,
   formatDate
 }) => {
   const router = useRouter();
@@ -124,6 +121,30 @@ const AppointmentCard = ({
     }
   };
 
+  const getStatusColor = (status, isSchedule) => {
+    if (status === 'paid' && isSchedule === false) return 'bg-yellow-100 text-yellow-700'; // Chưa lên lịch
+    if (status === 'paid' && isSchedule === true) return 'bg-blue-100 text-blue-700'; // Đã lên lịch
+    switch (status) {
+      case 'pending': return 'bg-yellow-100 text-yellow-700';
+      case 'completed': return 'bg-green-100 text-green-700';
+      case 'cancelled': return 'bg-red-100 text-red-700';
+      case 'isScheduled': return 'bg-blue-100 text-blue-700';
+      default: return 'bg-gray-100 text-gray-700';
+    }
+  };
+
+  const getStatusText = (status, isSchedule) => {
+    if (isSchedule === false && status === 'paid') return 'Chưa lên lịch';
+    switch (status) {
+      case 'pending': return 'Đang chờ';
+      case 'completed': return 'Hoàn thành';
+      case 'cancelled': return 'Đã hủy';
+      case 'isScheduled': return 'Đã lên lịch';
+      case 'paid': return isSchedule ? 'Đã lên lịch' : 'Chưa lên lịch';
+      default: return 'Không xác định';
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 40 }}
@@ -140,8 +161,8 @@ const AppointmentCard = ({
             <h3 className="text-xl font-bold text-gray-900">
               Lịch hẹn #{bookingId}
             </h3>
-            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor?.(appointment.status || appointment.Status) || 'bg-gray-100 text-gray-700'}`}>
-              {getStatusText?.(appointment.status || appointment.Status) || 'Không xác định'}
+            <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(appointment.status || appointment.Status, appointment.isSchedule)}`}>
+              {getStatusText(appointment.status || appointment.Status, appointment.isSchedule)}
             </span>
           </div>
 
