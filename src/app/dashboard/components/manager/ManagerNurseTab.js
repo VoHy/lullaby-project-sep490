@@ -10,67 +10,12 @@ import NurseFilters from './nurse/NurseFilters';
 import AddNurseModal from './nurse/AddNurseModal';
 import EditNurseModal from './nurse/EditNurseModal';
 
-const ManagerNurseTab = () => {
-  const { user } = useContext(AuthContext);
-  const [nurses, setNurses] = useState([]);
-  const [zones, setZones] = useState([]);
-  const [managedZone, setManagedZone] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, error }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [selectedNurse, setSelectedNurse] = useState(null);
-
-  // Load data
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError('');
-
-        const [nursesData, zonesData, accountsData] = await Promise.all([
-          nursingSpecialistService.getAllNursingSpecialists(),
-          zoneService.getZones(),
-          accountService.getAllAccounts()
-        ]);
-
-        // Lọc y tá (major = 'nurse') trong khu vực quản lý
-        const managedZone = zonesData.find(zone => zone.managerID === user.accountID);
-        setManagedZone(managedZone);
-
-        if (managedZone) {
-          const zoneNurses = nursesData.filter(nurse =>
-            nurse.zoneID === managedZone.zoneID && nurse.major === 'Nurse' || nurse.major === 'Y tá'
-          );
-
-          // Gắn thông tin liên hệ từ account (phone/email) 
-          const nursesWithContact = zoneNurses.map(n => {
-            const acc = accountsData.find(a => (a.accountID) === (n.accountID));
-            return {
-              ...n,
-              phoneNumber: acc?.phoneNumber || n.phoneNumber,
-              email: acc?.email || n.email
-            };
-          });
-
-          setNurses(nursesWithContact);
-        } else {
-          setNurses([]);
-        }
-
-        setZones(zonesData);
-      } catch (error) {
-        console.error('Error fetching nurse data:', error);
-        setError('Không thể tải dữ liệu y tá. Vui lòng thử lại sau.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [user.accountID]);
 
   // Lọc và tìm kiếm
   const filteredNurses = nurses.filter(nurse => {
@@ -86,8 +31,7 @@ const ManagerNurseTab = () => {
   // Xử lý thêm y tá mới
   const handleAddNurse = async (nurseData) => {
     try {
-      // Sử dụng API register nursing specialist trực tiếp
-      const response = await accountService.registerNursingSpecialist({
+      await accountService.registerNursingSpecialist({
         fullName: nurseData.fullName,
         phoneNumber: nurseData.phoneNumber,
         email: nurseData.email,
@@ -101,9 +45,9 @@ const ManagerNurseTab = () => {
         slogan: nurseData.slogan,
         zoneID: managedZone.zoneID
       });
-
-      // Cập nhật local state
-      setNurses(prev => [...prev, response]);
+      if (typeof refetchNurses === 'function') {
+        await refetchNurses();
+      }
       setShowAddModal(false);
     } catch (error) {
       console.error('Error adding nurse:', error);
@@ -114,7 +58,7 @@ const ManagerNurseTab = () => {
   // Xử lý cập nhật y tá
   const handleUpdateNurse = async (nurseId, nurseData) => {
     try {
-      // Chỉ gọi 1 API update theo swagger cho hồ sơ y tá
+      // Chỉ gọi 1 API update
       await nursingSpecialistService.updateNursingSpecialist(nurseId, {
         zoneID: nurseData.zoneID,
         gender: nurseData.gender,
@@ -127,29 +71,11 @@ const ManagerNurseTab = () => {
         status: nurseData.status
       });
 
-      // Refresh data để lấy thông tin mới nhất
-      const [nursesData, accountsData] = await Promise.all([
-        nursingSpecialistService.getAllNursingSpecialists(),
-        accountService.getAllAccounts()
-      ]);
-
-      const managedZone = zones.find(zone => zone.managerID === user.accountID);
-      if (managedZone) {
-        const zoneNurses = nursesData.filter(nurse =>
-          nurse.zoneID === managedZone.zoneID && nurse.major === 'nurse'
-        );
-
-        const nursesWithContact = zoneNurses.map(n => {
-          const acc = accountsData.find(a => (a.accountID) === (n.accountID));
-          return {
-            ...n,
-            phoneNumber: acc?.phoneNumber || n.phoneNumber,
-            email: acc?.email || n.email
-          };
-        });
-
-        setNurses(nursesWithContact);
+      // Gọi callback từ cha để reload lại danh sách y tá toàn hệ thống
+      if (typeof refetchNurses === 'function') {
+        await refetchNurses();
       }
+
       setShowEditModal(false);
       setSelectedNurse(null);
     } catch (error) {
@@ -161,11 +87,10 @@ const ManagerNurseTab = () => {
   // Xử lý xóa y tá
   const handleDeleteNurse = async (nurseId, accountId) => {
     try {
-      // Chỉ xóa hồ sơ nursing specialist
       await nursingSpecialistService.deleteNursingSpecialist(nurseId);
-
-      // Cập nhật local state
-      setNurses(prev => prev.filter(nurse => nurse.nursingID !== nurseId));
+      if (typeof refetchNurses === 'function') {
+        await refetchNurses();
+      }
     } catch (error) {
       console.error('Error deleting nurse:', error);
       throw new Error('Không thể xóa y tá. Vui lòng thử lại.');
@@ -174,6 +99,7 @@ const ManagerNurseTab = () => {
 
 
 
+  // Loading state
   // Loading state
   if (loading) {
     return (
@@ -257,6 +183,7 @@ const ManagerNurseTab = () => {
           }}
           onUpdate={handleUpdateNurse}
           zones={zones}
+          refetchNurses={refetchNurses}
         />
       )}
     </div>

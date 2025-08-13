@@ -40,27 +40,27 @@ const ManagerDashboard = ({ user }) => {
   const [unreadNotifications, setUnreadNotifications] = useState(0);
 
   // Load data từ API
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      setError("");
+
+      const [zonesData, nursingSpecialistsData] = await Promise.all([
+        zoneService.getZones(),
+        nursingSpecialistService.getAllNursingSpecialists()
+      ]);
+
+      setZones(zonesData);
+      setNursingSpecialists(nursingSpecialistsData);
+    } catch (error) {
+      console.error('Error fetching manager dashboard data:', error);
+      setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const [zonesData, nursingSpecialistsData] = await Promise.all([
-          zoneService.getZones(),
-          nursingSpecialistService.getAllNursingSpecialists()
-        ]);
-
-        setZones(zonesData);
-        setNursingSpecialists(nursingSpecialistsData);
-      } catch (error) {
-        console.error('Error fetching manager dashboard data:', error);
-        setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchData();
   }, []);
 
@@ -71,7 +71,7 @@ const ManagerDashboard = ({ user }) => {
         if (!authUser) return;
         const accountId = authUser.accountID || authUser.AccountID;
         if (!accountId) return;
-        
+
         const unread = await notificationService.getUnreadByAccount(accountId);
         setUnreadNotifications(Array.isArray(unread) ? unread.length : 0);
       } catch (error) {
@@ -142,10 +142,10 @@ const ManagerDashboard = ({ user }) => {
     if (!managedZone) return { nurses: 0, specialists: 0, total: 0 };
 
     const zoneNurses = nursingSpecialists.filter(ns =>
-      ns.zoneID === managedZone.zoneID && ns.major === 'Nurse'
+      ns.zoneID === managedZone.zoneID && (ns.major === 'nurse' || ns.major === 'Nurse')
     );
     const zoneSpecialists = nursingSpecialists.filter(ns =>
-      ns.zoneID === managedZone.zoneID && ns.major === 'Specialist'
+      ns.zoneID === managedZone.zoneID && (ns.major === 'specialist' || ns.major === 'Specialist')
     );
 
     return {
@@ -169,7 +169,7 @@ const ManagerDashboard = ({ user }) => {
   if (error) {
     return (
       <div className="text-center py-12">
-  <FaExclamationTriangle className="text-red-500 text-6xl mb-4 inline-block" />
+        <FaExclamationTriangle className="text-red-500 text-6xl mb-4 inline-block" />
         <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
         <p className="text-gray-600 mb-4">{error}</p>
         <button onClick={() => window.location.reload()} className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors">
@@ -271,8 +271,8 @@ const ManagerDashboard = ({ user }) => {
                 onClick={() => handleTabChange(tab.id)}
                 disabled={tabLoading}
                 className={`flex items-center gap-2 px-4 py-3 rounded-lg font-semibold transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed ${activeTab === tab.id
-                    ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
-                    : 'bg-gray-100 text-gray-700 hover:bg-purple-100 hover:text-purple-700'
+                  ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg'
+                  : 'bg-gray-100 text-gray-700 hover:bg-purple-100 hover:text-purple-700'
                   }`}
               >
                 <span className="text-lg">{tab.icon && (() => { const Icon = tab.icon; return <Icon />; })()}</span>
@@ -297,11 +297,29 @@ const ManagerDashboard = ({ user }) => {
           )}
 
           <div className={`transition-all duration-300 ${activeTab === 'nurse' ? 'opacity-100' : 'opacity-0 hidden'}`}>
-            {activeTab === 'nurse' && <ManagerNurseTab />}
+            {activeTab === 'nurse' && (
+              <ManagerNurseTab
+                refetchNurses={fetchData}
+                nurses={nursingSpecialists.filter(ns => ns.zoneID === (managedZone?.zoneID) && (ns.major === 'nurse' || ns.major === 'Nurse'))}
+                zones={zones}
+                managedZone={managedZone}
+                loading={loading}
+                error={error}
+              />
+            )}
           </div>
 
           <div className={`transition-all duration-300 ${activeTab === 'specialist' ? 'opacity-100' : 'opacity-0 hidden'}`}>
-            {activeTab === 'specialist' && <ManagerSpecialistTab />}
+            {activeTab === 'specialist' && (
+              <ManagerSpecialistTab
+                refetchSpecialists={fetchData}
+                specialists={nursingSpecialists.filter(ns => ns.zoneID === (managedZone?.zoneID) && (ns.major === 'specialist' || ns.major === 'Specialist'))}
+                zones={zones}
+                managedZone={managedZone}
+                loading={loading}
+                error={error}
+              />
+            )}
           </div>
 
           <div className={`transition-all duration-300 ${activeTab === 'booking' ? 'opacity-100' : 'opacity-0 hidden'}`}>
