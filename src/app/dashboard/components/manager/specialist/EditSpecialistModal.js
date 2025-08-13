@@ -2,13 +2,11 @@
 import { useState, useEffect } from 'react';
 import { FaTimes, FaUser, FaGraduationCap, FaClipboardList, FaSave, FaHourglassHalf } from 'react-icons/fa';
 
-const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones }) => {
+const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpecialists }) => {
   const [formData, setFormData] = useState({
     accountID: specialist.accountID,
     nursingID: specialist.nursingID,
     fullName: specialist.fullName || '',
-    phoneNumber: specialist.phoneNumber || '',
-    email: specialist.email || '',
     password: specialist.password || 'string',
     avatarUrl: specialist.avatarUrl || 'string',
     createAt: specialist.createAt || new Date().toISOString(),
@@ -30,8 +28,6 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones }) => {
       accountID: specialist.accountID,
       nursingID: specialist.nursingID,
       fullName: specialist.fullName || '',
-      phoneNumber: specialist.phoneNumber || '',
-      email: specialist.email || '',
       password: specialist.password || 'string',
       avatarUrl: specialist.avatarUrl || 'string',
       createAt: specialist.createAt || new Date().toISOString(),
@@ -62,11 +58,15 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones }) => {
 
     try {
       // Validate required fields
-      if (!formData.fullName || !formData.phoneNumber || !formData.email) {
+      if (!formData.fullName) {
         throw new Error('Vui lòng điền đầy đủ thông tin bắt buộc');
       }
 
       await onUpdate(specialist.nursingID, formData);
+      // Gọi callback reload danh sách chuyên gia nếu có
+      if (typeof refetchSpecialists === 'function') {
+        await refetchSpecialists();
+      }
       onClose();
     } catch (error) {
       setError(error.message);
@@ -77,7 +77,7 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-  <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[80vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[80vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-100 px-8 py-6">
           <div className="flex justify-between items-center">
             <h3 className="text-2xl font-bold text-gray-900">Sửa thông tin Chuyên gia</h3>
@@ -111,34 +111,6 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones }) => {
                     type="text"
                     name="fullName"
                     value={formData.fullName}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
-                    required
-                  />
-                </div>
-
-                <div className="bg-white rounded-lg p-0">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Số điện thoại <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
-                    required
-                  />
-                </div>
-
-                <div className="bg-white rounded-lg p-0">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
                     required

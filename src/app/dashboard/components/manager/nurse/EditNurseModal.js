@@ -2,13 +2,11 @@
 import { useState, useEffect } from 'react';
 import { FaTimes, FaUser, FaGraduationCap, FaClipboardList, FaSave, FaHourglassHalf } from 'react-icons/fa';
 
-const EditNurseModal = ({ nurse, onClose, onUpdate, zones }) => {
+const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses }) => {
   const [formData, setFormData] = useState({
     accountID: nurse.accountID,
     nursingID: nurse.nursingID,
     fullName: nurse.fullName || '',
-    phoneNumber: nurse.phoneNumber || '',
-    email: nurse.email || '',
     password: nurse.password || 'string',
     avatarUrl: nurse.avatarUrl || 'string',
     createAt: nurse.createAt || new Date().toISOString(),
@@ -19,7 +17,7 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones }) => {
     experience: nurse.experience || '',
     slogan: nurse.slogan || '',
     zoneID: nurse.zoneID || '',
-    major: nurse.major || 'nurse',
+    major: nurse.major || 'Nurse',
     status: nurse.status || 'active'
   });
   const [loading, setLoading] = useState(false);
@@ -30,8 +28,6 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones }) => {
       accountID: nurse.accountID,
       nursingID: nurse.nursingID,
       fullName: nurse.fullName || '',
-      phoneNumber: nurse.phoneNumber || '',
-      email: nurse.email || '',
       password: nurse.password || 'string',
       avatarUrl: nurse.avatarUrl || 'string',
       createAt: nurse.createAt || new Date().toISOString(),
@@ -42,7 +38,7 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones }) => {
       experience: nurse.experience || '',
       slogan: nurse.slogan || '',
       zoneID: nurse.zoneID || '',
-      major: nurse.major || 'nurse',
+      major: nurse.major || 'Nurse',
       status: nurse.status || 'active'
     });
   }, [nurse]);
@@ -62,11 +58,15 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones }) => {
 
     try {
       // Validate required fields
-      if (!formData.fullName || !formData.phoneNumber || !formData.email) {
+      if (!formData.fullName) {
         throw new Error('Vui lòng điền đầy đủ thông tin bắt buộc');
       }
 
       await onUpdate(nurse.nursingID, formData);
+      // Gọi callback reload danh sách y tá nếu có
+      if (typeof refetchNurses === 'function') {
+        await refetchNurses();
+      }
       onClose();
     } catch (error) {
       setError(error.message);
@@ -77,7 +77,7 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones }) => {
 
   return (
     <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-  <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[80vh] overflow-y-auto">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[80vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-100 px-8 py-6">
           <div className="flex justify-between items-center">
             <h3 className="text-2xl font-bold text-gray-900">Sửa thông tin Y tá</h3>
@@ -116,35 +116,6 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones }) => {
                     required
                   />
                 </div>
-
-                <div className="bg-white rounded-lg p-0">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Số điện thoại <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="tel"
-                    name="phoneNumber"
-                    value={formData.phoneNumber}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
-                    required
-                  />
-                </div>
-
-                <div className="bg-white rounded-lg p-0">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email <span className="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="email"
-                    name="email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
-                    required
-                  />
-                </div>
-
                 <div className="bg-white rounded-lg p-0">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Trạng thái
