@@ -509,7 +509,11 @@ const AppointmentDetailModal = ({
               </div>
             )}
             <div className="text-xs text-gray-500">
-              Trạng thái: {getBookingStatusText(service.status, service.isSchedule)}
+              Trạng thái: {
+                ['pending','isSchedule','completed','cancelled','waiting'].includes(String(service.status ?? appointment.status))
+                  ? getBookingStatusText(service.status ?? appointment.status, service.isSchedule ?? appointment.isSchedule)
+                  : getBookingStatusText('pending', service.isSchedule ?? appointment.isSchedule)
+              }
             </div>
           </div>
           <div className="ml-4 flex-shrink-0">
@@ -582,7 +586,12 @@ const AppointmentDetailModal = ({
                 Trạng thái
               </h3>
               <span className={`px-3 py-2 rounded-full text-sm font-medium ${getBookingStatusColor(appointment.status, appointment.isSchedule)}`}>
-                {getBookingStatusText(appointment.status || 'pending', appointment.isSchedule)}
+                {getBookingStatusText(
+                  ['pending','completed','cancelled','canceled','paid','isScheduled','unpaid'].includes(String(appointment.status).toLowerCase())
+                    ? appointment.status
+                    : 'isScheduled',
+                  appointment.isSchedule
+                )}
               </span>
             </div>
 

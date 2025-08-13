@@ -54,19 +54,19 @@ export default function AppointmentsPage() {
     }
   };
   const getStatusText = (status) => {
-        // Handle boolean isSchedule
-        if (typeof status === 'object' && status !== null) {
-          if ('isSchedule' in status) {
-            return status.isSchedule ? 'Đã lên lịch' : 'Chưa lên lịch';
-          }
-        }
-        switch (status) {
-          case 'pending': return 'Đang chờ';
-          case 'completed': return 'Hoàn thành';
-          case 'cancelled': return 'Đã hủy';
-          case 'isScheduled': return 'Đã lên lịch';
-          default: return 'Không xác định';
-        }
+    // Handle boolean isSchedule
+    if (typeof status === 'object' && status !== null) {
+      if ('isSchedule' in status) {
+        return status.isSchedule ? 'Đã lên lịch' : 'Chưa lên lịch';
+      }
+    }
+    switch (status) {
+      case 'pending': return 'Đang chờ';
+      case 'completed': return 'Hoàn thành';
+      case 'cancelled': return 'Đã hủy';
+      case 'isScheduled': return 'Đã lên lịch';
+      default: return 'Không xác định';
+    }
   };
   const formatDate = (dateStr) => {
     const d = new Date(dateStr);
@@ -153,7 +153,17 @@ export default function AppointmentsPage() {
         customizeTaskService.getAllCustomizeTasks()
       ]);
 
-      setAppointments(bookings);
+      // Map careProfile vào từng booking
+      // Map careProfile vào từng booking, hỗ trợ nhiều kiểu tên trường
+      const bookingsWithCareProfile = bookings.map(b => {
+        const profileId = b.careProfileId || b.careProfileID;
+        if (!b.careProfile && profileId) {
+          const foundProfile = careProfiles.find(p => p.careProfileID === profileId);
+          return { ...b, careProfile: foundProfile };
+        }
+        return b;
+      });
+      setAppointments(bookingsWithCareProfile);
       setServiceTypes(services);
       setServiceTasks(tasks);
       setNursingSpecialists(specialists);
@@ -177,10 +187,10 @@ export default function AppointmentsPage() {
   if (error) return <div>{error}</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-indigo-50">
+    <div className="min-h-screen">
       <div className="container mx-auto px-4 py-8">
         <motion.div className="text-center mb-12">
-          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">Lịch hẹn của bạn</h1>
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent leading-tight">Lịch hẹn của bạn</h1>
           <button onClick={() => fetchData(true)} disabled={refreshing}><FaSync /></button>
         </motion.div>
 
