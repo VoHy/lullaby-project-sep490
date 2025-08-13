@@ -9,8 +9,33 @@ import NurseList from './nurse/NurseList';
 import NurseFilters from './nurse/NurseFilters';
 import AddNurseModal from './nurse/AddNurseModal';
 import EditNurseModal from './nurse/EditNurseModal';
+import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
+import serviceTypeService from '@/services/api/serviceTypeService';
+
 
 const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, error }) => {
+  const [serviceTypes, setServiceTypes] = useState([]);
+
+  // Lấy danh sách dịch vụ khi component mount
+  useEffect(() => {
+    const fetchServiceTypes = async () => {
+      try {
+        const res = await serviceTypeService.getAllServiceTypes();
+        // Nếu API trả về mảng trực tiếp
+        if (Array.isArray(res)) {
+          setServiceTypes(res);
+        } else if (Array.isArray(res?.serviceTypes)) {
+          setServiceTypes(res.serviceTypes);
+        } else {
+          setServiceTypes([]);
+        }
+      } catch (err) {
+        setServiceTypes([]);
+      }
+    };
+    fetchServiceTypes();
+  }, []);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -40,7 +65,7 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
         dateOfBirth: nurseData.dateOfBirth,
         address: nurseData.address,
         gender: nurseData.gender,
-        major: "nurse",
+        major: "Nurse",
         experience: nurseData.experience,
         slogan: nurseData.slogan,
         zoneID: managedZone.zoneID
@@ -67,8 +92,14 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
         address: nurseData.address,
         experience: nurseData.experience,
         slogan: nurseData.slogan,
-        major: nurseData.major,
+        major: nurseData.major.charAt(0).toUpperCase() + nurseData.major.slice(1).toLowerCase(),
         status: nurseData.status
+      });
+
+      // Step 3: assign service type
+      await nursingSpecialistServiceTypeService.create({
+        nursingID: nurseId,
+        serviceID: nurseData.serviceID
       });
 
       // Gọi callback từ cha để reload lại danh sách y tá toàn hệ thống
@@ -184,6 +215,7 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
           onUpdate={handleUpdateNurse}
           zones={zones}
           refetchNurses={refetchNurses}
+          serviceTypes={serviceTypes}
         />
       )}
     </div>

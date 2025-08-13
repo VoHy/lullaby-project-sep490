@@ -9,8 +9,32 @@ import SpecialistList from './specialist/SpecialistList';
 import SpecialistFilters from './specialist/SpecialistFilters';
 import AddSpecialistModal from './specialist/AddSpecialistModal';
 import EditSpecialistModal from './specialist/EditSpecialistModal';
+import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
+import serviceTypeService from '@/services/api/serviceTypeService';
+
 
 const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZone, loading, error }) => {
+  const [serviceTypes, setServiceTypes] = useState([]);
+
+  // Lấy danh sách dịch vụ khi component mount
+  useEffect(() => {
+    const fetchServiceTypes = async () => {
+      try {
+        const res = await serviceTypeService.getAllServiceTypes();
+        // Nếu API trả về mảng trực tiếp
+        if (Array.isArray(res)) {
+          setServiceTypes(res);
+        } else if (Array.isArray(res?.serviceTypes)) {
+          setServiceTypes(res.serviceTypes);
+        } else {
+          setServiceTypes([]);
+        }
+      } catch (err) {
+        setServiceTypes([]);
+      }
+    };
+    fetchServiceTypes();
+  }, []);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -40,7 +64,7 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
         dateOfBirth: specialistData.dateOfBirth,
         address: specialistData.address,
         gender: specialistData.gender,
-        major: "specialist",
+        major: "Specialist",
         experience: specialistData.experience,
         slogan: specialistData.slogan,
         zoneID: managedZone.zoneID
@@ -66,8 +90,13 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
         address: specialistData.address,
         experience: specialistData.experience,
         slogan: specialistData.slogan,
-        major: specialistData.major,
+        major: specialistData.major.charAt(0).toUpperCase() + specialistData.major.slice(1).toLowerCase(),
         status: specialistData.status
+      });
+
+      await nursingSpecialistServiceTypeService.create({
+        nursingID: specialistId,
+        serviceID: specialistData.serviceID
       });
       if (typeof refetchSpecialists === 'function') {
         await refetchSpecialists();
@@ -177,6 +206,7 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
           onUpdate={handleUpdateSpecialist}
           zones={zones}
           refetchSpecialists={refetchSpecialists}
+          serviceTypes={serviceTypes}
         />
       )}
     </div>
