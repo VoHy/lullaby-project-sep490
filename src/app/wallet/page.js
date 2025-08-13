@@ -267,7 +267,7 @@ export default function WalletPage() {
                                 }`}
                             >
                               {status === 'completed' ? <FaCheckCircle /> : <FaClock />}
-                              {status === 'completed' ? 'Đã thanh toán' : 'Chưa thanh toán'}
+                              {status === 'completed' ? 'Đã thanh toán' : 'Đang xử lý'}
                             </span>
                           </td>
                           <td className="px-5 py-4">

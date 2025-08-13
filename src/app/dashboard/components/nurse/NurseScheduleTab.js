@@ -354,43 +354,88 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
 
   // submit medical note
   const submitMedicalNote = async () => {
-
     if (!currentCustomizeTask) return;
-    // Kiểm tra đúng nurse và status completed
-    const nurseId = user?.nursingID;
-    const taskNurseId = currentCustomizeTask.nursingID || currentCustomizeTask.NursingID;
-    const taskStatus = (currentCustomizeTask.status || currentCustomizeTask.Status || '').toString().toLowerCase();
-    console.log('Nurse ID:', nurseId, 'Task Nurse ID:', taskNurseId, 'Task Status:', taskStatus);
-    if (taskNurseId !== nurseId) {
+
+    // use the logged-in user's nursingID as authoritative
+    const nurseId = user?.nursingID ?? user?.NursingID ?? user?.nursingId ?? selectedEvent?.workObj?.nursingID ?? selectedEvent?.workObj?.NursingID ?? selectedEvent?.workObj?.nursingId ?? null;
+    const taskNurseId = currentCustomizeTask.nursingID ?? currentCustomizeTask.NursingID ?? currentCustomizeTask.nursingId ?? null;
+    const taskStatusRaw = (currentCustomizeTask.status ?? currentCustomizeTask.Status ?? '').toString();
+
+    console.log('DEBUG submitMedicalNote -> Nurse ID:', nurseId, 'Task Nurse ID:', taskNurseId, 'Task Status raw:', taskStatusRaw);
+
+    if (String(taskNurseId) !== String(nurseId)) {
       alert('Chỉ nurse được phân công mới có thể ghi chú.');
       return;
     }
+
+    const taskStatus = taskStatusRaw.trim().toLowerCase();
     if (taskStatus !== 'completed') {
       alert('Chỉ ghi chú khi task đã hoàn thành (completed).');
       return;
     }
+
     if (!notePayload.note || notePayload.note.trim() === '') {
       alert('Ghi chú (note) là bắt buộc.');
       return;
     }
+
+    if (selectedEvent && selectedEvent.isAttended === false) {
+      alert('Không thể ghi chú trước khi ca được điểm danh (attended).');
+      return;
+    }
+
     setNoteSubmitting(true);
     try {
-      const base64Image = notePayload.imageFile ? await fileToBase64(notePayload.imageFile) : null;
+      let base64Image = null;
+      if (notePayload.imageFile) {
+        try {
+          base64Image = await fileToBase64(notePayload.imageFile);
+        } catch (readErr) {
+          console.error('fileToBase64 error', readErr);
+          alert('Không thể đọc file hình. Bỏ qua hình và tiếp tục lưu ghi chú.');
+          base64Image = null;
+        }
+      }
+
+      const bookingIdCandidate =
+        selectedEvent?.bookingId ?? selectedEvent?.bookingID ?? selectedEvent?.workObj?.bookingID ?? currentCustomizeTask.bookingID ?? currentCustomizeTask.BookingID ?? null;
+
       const payload = {
-        customizeTaskID: currentCustomizeTask.customizeTaskID || currentCustomizeTask.CustomizeTaskID || currentCustomizeTask.customizeTaskId,
-        note: notePayload.note,
-        image: base64Image ? `data:${notePayload.imageFile.type};base64,${base64Image}` : null, // keep data URI style or null
+        customizeTaskID: currentCustomizeTask.customizeTaskID ?? currentCustomizeTask.CustomizeTaskID ?? currentCustomizeTask.customizeTaskId,
+        note: notePayload.note.trim(),
+        image: base64Image ? `data:${(notePayload.imageFile?.type || 'image/*')};base64,${base64Image}` : null,
         advice: notePayload.advice || null,
-        relativeID: notePayload.relativeID ?? null
+        relativeID: notePayload.relativeID ?? null,
+        nursingID: nurseId ?? null, // thêm trường nursingID phòng trường hợp BE cần
+        bookingID: bookingIdCandidate ?? null // thêm bookingID nếu backend cần
       };
+
       await medicalNoteService.createMedicalNote(payload);
+
       alert('Tạo ghi chú y tế thành công.');
 
-      // clear cache for this booking so that fetching details will include the new note (if BE returns it)
-      const bookingId = selectedEvent?.bookingId || selectedEvent?.bookingId || selectedEvent?.workObj?.bookingID;
+      // Nếu có cache medicalNotes, cập nhật luôn để UI phản ánh nhanh
+      try {
+        if (Array.isArray(cacheRef.current.medicalNotes)) {
+          cacheRef.current.medicalNotes.push({
+            customizeTaskID: payload.customizeTaskID,
+            nursingID: payload.nursingID,
+            note: payload.note,
+            advice: payload.advice,
+            image: payload.image,
+            relativeID: payload.relativeID
+            // có thể bổ sung các trường khác nếu BE trả về
+          });
+        }
+      } catch (cErr) {
+        console.warn('Could not update local medicalNotes cache', cErr);
+      }
+
+      // clear booking cache so details refetch (giống logic cũ)
+      const bookingId = bookingIdCandidate;
       if (bookingId && cacheRef.current.bookings.has(bookingId)) {
         cacheRef.current.bookings.delete(bookingId);
-        // reload booking detail into modal
+        // reload booking detail into modal (nếu có selectedEvent)
         const newBundle = await fetchBookingBundle(bookingId, selectedEvent?.serviceId, selectedEvent?.workObj);
         setSelectedEvent(prev => ({ ...prev, bookingDetail: newBundle }));
       }
@@ -399,12 +444,14 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
       setCurrentCustomizeTask(null);
     } catch (e) {
       console.error('Create medical note failed', e);
-      alert(e?.message || 'Không thể tạo ghi chú');
+      // Hiển thị lỗi chi tiết hơn nếu backend trả về lỗi có body
+      const backendMsg = e?.response?.data?.message ?? e?.message ?? 'Không thể tạo ghi chú';
+      alert(`Lỗi khi tạo ghi chú: ${backendMsg}`);
     } finally {
       setNoteSubmitting(false);
-
     }
   };
+
 
   const days = getDaysInMonthGrid(currentMonth);
   const workDates = Array.isArray(localSchedules) ? localSchedules.map(ws => (ws.workDate || ws.WorkDate || '').split('T')[0]).filter(Boolean) : [];
@@ -457,6 +504,9 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
       </div>
     );
   }
+
+  // normalize logged-in user's nursingID for consistent checks in render
+  const userNursingID = user?.nursingID ?? user?.NursingID ?? user?.nursingId ?? null;
 
   return (
     <div className="space-y-6 p-6 bg-gray-50 min-h-[300px]">
@@ -689,7 +739,8 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
                             const taskStatus = (t.status || t.Status || '').toString().toLowerCase();
                             const medicalNote = t.medicalNote || t.medicalNotes?.[0];
                             // Only the nurse assigned to the task can add/view/edit notes
-                            const isTaskOwner = user && (t.nursingID === user.nursingID || t.NursingID === user.nursingID);
+                            const tNursingId = t.nursingID ?? t.NursingID ?? t.nursingId ?? null;
+                            const isTaskOwner = userNursingID && String(tNursingId) === String(userNursingID);
                             const canAddNote = isTaskOwner && selectedEvent.isAttended && taskStatus === 'completed' && !medicalNote;
                             const canEditNote = isTaskOwner && medicalNote;
                             return (
@@ -831,7 +882,6 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
                 >
                   {noteSubmitting ? 'Đang gửi...' : 'Lưu ghi chú'}
                 </button>
-
               </div>
             </div>
           </div>
@@ -847,6 +897,14 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
             onSubmit={async (e) => {
               e.preventDefault();
               if (!editNotePayload.medicalNoteID) return;
+
+              // Authorization backstop: ensure logged-in nurse is the task owner
+              const editTaskNursingID = editNoteMeta?.task?.nursingID ?? editNoteMeta?.task?.NursingID ?? editNoteMeta?.task?.nursingId ?? null;
+              if (String(editTaskNursingID) !== String(userNursingID)) {
+                alert('Chỉ nurse được phân công mới có thể sửa ghi chú.');
+                return;
+              }
+
               setEditNoteLoading(true);
               try {
                 await medicalNoteService.updateMedicalNote(

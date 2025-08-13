@@ -27,6 +27,7 @@ const BookingsTab = ({ bookings }) => {
   const [customizeTasks, setCustomizeTasks] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
+  const [invoices, setInvoices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   // UI states (must be declared before any conditional returns to keep hook order stable)
@@ -52,7 +53,8 @@ const BookingsTab = ({ bookings }) => {
           customizePackagesData,
           customizeTasksData,
           serviceTasksData,
-          nursingSpecialistsData
+          nursingSpecialistsData,
+          invoicesData
         ] = await Promise.all([
           careProfileService.getCareProfiles(),
           accountService.getAllAccounts(),
@@ -60,7 +62,8 @@ const BookingsTab = ({ bookings }) => {
           customizePackageService.getAllCustomizePackages(),
           customizeTaskService.getAllCustomizeTasks(),
           serviceTaskService.getServiceTasks(),
-          nursingSpecialistService.getNursingSpecialists()
+          nursingSpecialistService.getNursingSpecialists(),
+          invoiceService.getAllInvoices()
         ]);
 
         setCareProfiles(careProfilesData);
@@ -70,6 +73,7 @@ const BookingsTab = ({ bookings }) => {
         setCustomizeTasks(customizeTasksData);
         setServiceTasks(serviceTasksData);
         setNursingSpecialists(nursingSpecialistsData);
+        setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
       } catch (error) {
         console.error('Error fetching admin bookings data:', error);
         setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
@@ -569,8 +573,10 @@ const BookingsTab = ({ bookings }) => {
   const pendingBookings = Array.isArray(bookings)
     ? bookings.filter((b) => (b.Status ?? b.status) === 'pending' || (b.Status ?? b.status) === 'confirmed').length
     : 0;
-  const totalRevenue = Array.isArray(bookings)
-    ? bookings.reduce((sum, b) => sum + (b.TotalPrice ?? b.totalPrice ?? b.Amount ?? b.amount ?? 0), 0)
+  const totalRevenue = Array.isArray(invoices)
+    ? invoices
+      .filter(inv => String(inv.status ?? inv.Status).toLowerCase() === 'paid')
+      .reduce((sum, inv) => sum + Number(inv.totalAmount ?? inv.TotalAmount ?? 0), 0)
     : 0;
 
   // Sắp xếp trạng thái theo thứ tự yêu cầu
@@ -751,16 +757,16 @@ const BookingsTab = ({ bookings }) => {
                         <td className="px-6 py-4 whitespace-nowrap">
                           <span className={`px-2 py-1 rounded-full text-xs font-semibold 
                           ${(() => {
-                            const s = String(status).toLowerCase();
-                            const isSchedule = booking.isSchedule === true || booking.isSchedule === 'true' || booking.IsSchedule === true || booking.IsSchedule === 'true';
-                            if (s === 'paid' && !isSchedule) return 'bg-pink-100 text-pink-700';
-                            if (s === 'paid' && isSchedule) return 'bg-blue-100 text-blue-700';
-                            if (s === 'pending' || s === 'unpaid') return 'bg-yellow-100 text-yellow-700';
-                            if (s === 'completed' && isSchedule) return 'bg-emerald-100 text-emerald-700';
-                            if ((s === 'cancelled' || s === 'canceled') && isSchedule) return 'bg-red-100 text-red-700';
-                            if ((s === 'cancelled' || s === 'canceled') && !isSchedule) return 'bg-red-100 text-red-700';
-                            return 'bg-gray-100 text-gray-700';
-                          })()}`}
+                              const s = String(status).toLowerCase();
+                              const isSchedule = booking.isSchedule === true || booking.isSchedule === 'true' || booking.IsSchedule === true || booking.IsSchedule === 'true';
+                              if (s === 'paid' && !isSchedule) return 'bg-pink-100 text-pink-700';
+                              if (s === 'paid' && isSchedule) return 'bg-blue-100 text-blue-700';
+                              if (s === 'pending' || s === 'unpaid') return 'bg-yellow-100 text-yellow-700';
+                              if (s === 'completed' && isSchedule) return 'bg-emerald-100 text-emerald-700';
+                              if ((s === 'cancelled' || s === 'canceled') && isSchedule) return 'bg-red-100 text-red-700';
+                              if ((s === 'cancelled' || s === 'canceled') && !isSchedule) return 'bg-red-100 text-red-700';
+                              return 'bg-gray-100 text-gray-700';
+                            })()}`}
                           >
                             {(() => {
                               const s = String(status).toLowerCase();

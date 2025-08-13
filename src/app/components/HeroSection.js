@@ -104,7 +104,7 @@ const HeroSection = () => {
                   </p>
                   <div className="flex flex-col sm:flex-row gap-4 justify-center">
                     <Link
-                      href="/booking/new"
+                      href="/services"
                       className={`group inline-flex items-center gap-3 bg-gradient-to-r ${slide.buttonColor} text-white font-semibold px-8 py-4 rounded-full shadow-xl transition-all duration-300 transform hover:scale-105`}
                     >
                       Đặt lịch ngay
