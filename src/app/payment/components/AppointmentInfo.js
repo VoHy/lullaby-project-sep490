@@ -1,16 +1,15 @@
-import { FaCalendarAlt, FaStickyNote, FaUser, FaPhone, FaMapMarkerAlt, FaBirthdayCake } from 'react-icons/fa';
+import {
+  FaCalendarAlt, FaStickyNote, FaUser, FaPhone,
+  FaMapMarkerAlt, FaBirthdayCake
+} from 'react-icons/fa';
 
 export default function AppointmentInfo({
   datetime,
   note,
   selectedCareProfile
 }) {
-
-
-  // Format datetime từ workdate
   const formatDateTime = (dateTimeString) => {
     if (!dateTimeString) return 'Chưa có thông tin';
-
     try {
       const date = new Date(dateTimeString);
       return date.toLocaleString('vi-VN', {
@@ -21,7 +20,7 @@ export default function AppointmentInfo({
         minute: '2-digit',
         hour12: false
       });
-    } catch (error) {
+    } catch {
       return 'Chưa có thông tin';
     }
   };
@@ -29,109 +28,77 @@ export default function AppointmentInfo({
   const formattedDateTime = formatDateTime(datetime);
 
   return (
-    <div className="bg-white rounded-2xl shadow-xl p-6">
-      <h4 className="font-semibold text-gray-700 mb-3">Thông tin lịch hẹn</h4>
-      <div className="space-y-4">
-        {/* Thời gian */}
-        <div className="flex items-center gap-3">
-          <FaCalendarAlt className="text-blue-600" />
-          <div>
-            <span className="text-sm text-gray-600">Thời gian:</span>
-            <div className="font-semibold text-gray-800">{formattedDateTime}</div>
-          </div>
+    <div className="bg-white rounded-2xl shadow-lg p-6 space-y-5">
+      {/* Tiêu đề */}
+      <h4 className="text-lg font-bold text-gray-800 border-b pb-2">
+        Thông tin lịch hẹn
+      </h4>
+
+      {/* Thời gian */}
+      <div className="flex items-center gap-3 text-gray-700">
+        <FaCalendarAlt className="text-blue-600 text-lg" />
+        <div>
+          <p className="text-sm text-gray-500">Thời gian</p>
+          <p className="font-medium">{formattedDateTime}</p>
         </div>
+      </div>
 
-        {/* Thông tin người được chăm sóc */}
-        {selectedCareProfile && (
-          <div className="bg-blue-50 rounded-xl p-4">
-            <div className="flex items-center gap-3 mb-3">
-              <FaUser className="text-blue-600" />
-              <h5 className="font-semibold text-gray-700">Thông tin người được chăm sóc</h5>
-            </div>
+      {/* Thông tin người được chăm sóc */}
+      {selectedCareProfile && (
+        <div className="bg-blue-50 rounded-xl p-4 space-y-4">
+          <div className="flex items-center gap-2">
+            <FaUser className="text-blue-600" />
+            <h5 className="font-semibold text-gray-800">
+              Người được chăm sóc
+            </h5>
+          </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {/* Tên */}
-              <div className="flex items-center gap-2">
-                <FaUser className="text-blue-500 text-sm" />
-                <div>
-                  <span className="text-xs text-gray-500">Tên:</span>
-                  <div className="font-medium text-gray-800">
-                    {selectedCareProfile.profileName || 'Chưa có thông tin'}
-                  </div>
-                </div>
-              </div>
-
-              {/* Ngày sinh */}
-              {selectedCareProfile.dateOfBirth && (
-                <div className="flex items-center gap-2">
-                  <FaBirthdayCake className="text-blue-500 text-sm" />
-                  <div>
-                    <span className="text-xs text-gray-500">Ngày sinh:</span>
-                    <div className="font-medium text-gray-800">
-                      {new Date(selectedCareProfile.dateOfBirth).toLocaleDateString('vi-VN')}
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Số điện thoại */}
-              {selectedCareProfile.phoneNumber && (
-                <div className="flex items-center gap-2">
-                  <FaPhone className="text-blue-500 text-sm" />
-                  <div>
-                    <span className="text-xs text-gray-500">Số điện thoại:</span>
-                    <div className="font-medium text-gray-800">{selectedCareProfile.phoneNumber}</div>
-                  </div>
-                </div>
-              )}
-
-              {/* Địa chỉ */}
-              {selectedCareProfile.address && (
-                <div className="flex items-start gap-2 md:col-span-2">
-                  <FaMapMarkerAlt className="text-blue-500 text-sm mt-1" />
-                  <div>
-                    <span className="text-xs text-gray-500">Địa chỉ:</span>
-                    <div className="font-medium text-gray-800">{selectedCareProfile.address}</div>
-                  </div>
-                </div>
-              )}
-
-              {/* Trạng thái */}
-              {selectedCareProfile.status && (
-                <div className="flex items-center gap-2">
-                  <FaUser className="text-green-500 text-sm" />
-                  <div>
-                    <span className="text-xs text-gray-500">Trạng thái:</span>
-                    <div className="font-medium text-gray-800">{selectedCareProfile.status}</div>
-                  </div>
-                </div>
-              )}
-
-              {/* Ghi chú */}
-              {selectedCareProfile.note && (
-                <div className="flex items-start gap-2 md:col-span-2">
-                  <FaStickyNote className="text-blue-500 text-sm mt-1" />
-                  <div>
-                    <span className="text-xs text-gray-500">Ghi chú:</span>
-                    <div className="font-medium text-gray-800">{selectedCareProfile.note}</div>
-                  </div>
-                </div>
-              )}
-            </div>
-
-            {/* Ghi chú */}
-            {note && (
-              <div className="flex items-start gap-3">
-                <FaStickyNote className="text-blue-600 mt-1" />
-                <div>
-                  <span className="text-sm text-gray-600">Ghi chú:</span>
-                  <div className="font-semibold text-gray-800"> Phí phát sinh: {note}%</div>
-                </div>
-              </div>
+          <div className="grid sm:grid-cols-2 gap-4 text-gray-700">
+            <InfoItem icon={<FaUser />} label="Tên" value={selectedCareProfile.profileName} />
+            {selectedCareProfile.dateOfBirth && (
+              <InfoItem icon={<FaBirthdayCake />} label="Ngày sinh" value={new Date(selectedCareProfile.dateOfBirth).toLocaleDateString('vi-VN')} />
+            )}
+            {selectedCareProfile.phoneNumber && (
+              <InfoItem icon={<FaPhone />} label="Số điện thoại" value={selectedCareProfile.phoneNumber} />
+            )}
+            <InfoItem
+              icon={<FaUser />}
+              label="Trạng thái"
+              value={selectedCareProfile.status?.toLowerCase() === 'active' ? 'Hoạt động' : 'Không hoạt động'}
+            />
+            {selectedCareProfile.address && (
+              <InfoItem icon={<FaMapMarkerAlt />} label="Địa chỉ" value={selectedCareProfile.address} full />
+            )}
+            {selectedCareProfile.note && (
+              <InfoItem icon={<FaStickyNote />} label="Ghi chú" value={selectedCareProfile.note} full />
             )}
           </div>
-        )}
+        </div>
+      )}
+
+      {/* Ghi chú phí phát sinh */}
+      {note && (
+        <div className="flex items-start gap-3 p-3 bg-yellow-50 rounded-xl">
+          <FaStickyNote className="text-yellow-600 mt-1" />
+          <div>
+            <p className="text-sm text-gray-600">Ghi chú</p>
+            <p className="font-semibold text-gray-800">Phí phát sinh: {note}%</p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Component nhỏ cho gọn code
+function InfoItem({ icon, label, value, full }) {
+  return (
+    <div className={`flex items-start gap-2 ${full ? 'sm:col-span-2' : ''}`}>
+      <span className="text-blue-500 mt-1">{icon}</span>
+      <div>
+        <p className="text-xs text-gray-500">{label}:</p>
+        <p className="font-medium text-gray-800">{value || 'Chưa có thông tin'}</p>
       </div>
     </div>
   );
-} 
+}

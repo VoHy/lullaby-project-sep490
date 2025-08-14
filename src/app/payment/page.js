@@ -1,7 +1,7 @@
 "use client";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useMemo, useEffect, useState, useContext, Suspense } from "react";
-// import customizePackageService from '@/services/api/customizePackageService';
+import customizePackageService from '@/services/api/customizePackageService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 
 
@@ -52,6 +52,7 @@ function PaymentContent() {
   const [selectionMode, setSelectionMode] = useState(null); // 'user' | 'auto'
   const [selectedStaffByTask, setSelectedStaffByTask] = useState({}); // { [customizeTaskId]: nursingId }
   const [canConfirm, setCanConfirm] = useState(true);
+  const [customizePackages, setCustomizePackages] = useState([]);
 
   // Load data từ API
   useEffect(() => {
@@ -136,6 +137,16 @@ function PaymentContent() {
               }
             } catch (taskErr) {
               console.warn('Could not load customize tasks for booking', taskErr);
+            }
+
+            // Fetch danh sách dịch vụ đã đặt cho booking này
+            try {
+              const packagesData = await customizePackageService.getAllByBooking(bookingId);
+              if (Array.isArray(packagesData)) {
+                setCustomizePackages(packagesData);
+              }
+            } catch (packageErr) {
+              console.error('Lỗi khi lấy danh sách dịch vụ đã đặt:', packageErr);
             }
           } catch (error) {
             console.error(' Error fetching booking:', {
@@ -382,7 +393,7 @@ function PaymentContent() {
           const tid = t.customizeTaskID;
           const nid = selectedStaffByTask[tid];
           if (!nid) continue; // canConfirm ensures all selected
-          try { await customizeTaskService.updateNursing(tid, nid); } catch {}
+          try { await customizeTaskService.updateNursing(tid, nid); } catch { }
         }
       }
 
@@ -584,20 +595,47 @@ function PaymentContent() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column */}
           <div className="space-y-6">
-            <ServiceInfo
-              packageId={booking?.serviceId}
-              packageDetail={bookingData?.selectedPackage}
-              selectedServices={bookingData?.selectedServices}
-              childServices={bookingData?.childServices}
-              total={bookingData?.total}
-              bookingData={bookingData}
-              getStaffInfo={getStaffInfo}
-              selectionMode={selectionMode}
-              selectedStaffByTask={selectedStaffByTask}
-              setSelectedStaffByTask={setSelectedStaffByTask}
-              fetchCandidatesForService={(service) => getCandidatesForService(service.serviceID || service.serviceTypeID)}
-            />
+            {/* Tổng tiền */}
+            <div className="bg-white rounded-2xl shadow-xl p-6">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <span className="text-blue-600 text-xl font-bold">₫</span>
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800">Thông tin dịch vụ</h2>
+              </div>
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-lg font-bold text-gray-700">Tổng tiền:</span>
+                <span className="text-2xl font-bold text-pink-600">{bookingData?.total?.toLocaleString()}đ</span>
+              </div>
+              {customizePackages.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-bold text-gray-800 mb-2">Dịch vụ đã đặt</h3>
+                  <ul className="divide-y divide-gray-200">
+                    {customizePackages.map((pkg, idx) => {
+                      const serviceType = serviceTypes.find(s => s.serviceID === pkg.serviceID);
+                      return (
+                        <li key={idx} className="py-4 flex flex-col md:flex-row md:items-center md:justify-between">
+                          <div>
+                            <span className="font-semibold text-blue-700">{serviceType?.serviceName || pkg.name}</span>
+                            <div className="text-sm text-gray-500">{serviceType?.description || 'Mô tả dịch vụ'}</div>
+                          </div>
+                          <div className="mt-2 md:mt-0 text-pink-600 font-bold text-lg">{pkg.price.toLocaleString()}đ</div>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </div>
+              )}
+            </div>
 
+            {/* Thông tin lịch hẹn và người được chăm sóc */}
+            <AppointmentInfo
+              datetime={bookingData?.datetime}
+              note={bookingData?.note}
+              selectedCareProfile={bookingData?.selectedCareProfile}
+              selectedStaff={bookingData?.selectedStaff}
+              getStaffInfo={getStaffInfo}
+            />
             {selectionMode === 'user' && (
               <StaffSelection
                 tasks={bookingCustomizeTasks}
@@ -620,14 +658,6 @@ function PaymentContent() {
                 getCandidatesForService={getCandidatesForService}
               />
             )}
-
-            <AppointmentInfo
-              datetime={bookingData?.datetime}
-              note={bookingData?.note}
-              selectedCareProfile={bookingData?.selectedCareProfile}
-              selectedStaff={bookingData?.selectedStaff}
-              getStaffInfo={getStaffInfo}
-            />
           </div>
 
           {/* Right Column */}
@@ -703,4 +733,4 @@ export default function PaymentPage() {
       <PaymentContent />
     </Suspense>
   );
-} 
+}

@@ -67,7 +67,7 @@ export default function ServicesPage() {
   // const [feedbacks, setFeedbacks] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedServices, setSelectedServices] = useState([]);
-  const [serviceQuantities, setServiceQuantities] = useState({}); // Thêm state để quản lý số lượng
+  const [serviceQuantities, setServiceQuantities] = useState({});
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [serviceDetail, setServiceDetail] = useState(null);
@@ -170,8 +170,13 @@ export default function ServicesPage() {
   };
 
   // Tách dịch vụ lẻ và package
-  const singleServices = serviceTypes.filter(s => !s.isPackage && s.status === 'active');
-  const servicePackages = serviceTypes.filter(s => s.isPackage && s.status === 'active');
+  // const singleServices = serviceTypes.filter(s => !s.isPackage && s.status === 'active');
+  // const servicePackages = serviceTypes.filter(s => s.isPackage && s.status === 'active');
+  const packagesForBaby = serviceTypes.filter(s => s.isPackage && !s.forMom && s.status === 'active');
+  const packagesForMomAndBaby = serviceTypes.filter(s => s.isPackage && s.forMom && s.status === 'active');
+  const servicesForMom = serviceTypes.filter(s => !s.isPackage && s.forMom && s.status === 'active');
+  const servicesForBaby = serviceTypes.filter(s => !s.isPackage && !s.forMom && s.status === 'active');
+
 
   // Lấy dịch vụ lẻ thuộc về 1 package từ API
   async function getServicesOfPackage(packageId) {
@@ -192,16 +197,20 @@ export default function ServicesPage() {
   };
 
   // Search/filter logic with category
-  const filterService = (item) => {
-    const text = searchText.toLowerCase();
-    const categoryMatch = selectedCategory === 'all' || item.major === selectedCategory;
-    const textMatch = item.serviceName?.toLowerCase().includes(text) ||
-      (item.description || '').toLowerCase().includes(text);
-    return categoryMatch && textMatch;
+  const filterService = (service) => {
+    const matchesSearch = service.serviceName.toLowerCase().includes(searchText.toLowerCase()) ||
+      service.description.toLowerCase().includes(searchText.toLowerCase());
+    const matchesCategory = selectedCategory === 'all' || service.major === selectedCategory;
+    return matchesSearch && matchesCategory;
   };
 
-  const filteredServicePackages = servicePackages.filter(filterService);
-  const filteredSingleServices = singleServices.filter(filterService);
+  // const filteredServicePackages = servicePackages.filter(filterService);
+  // const filteredSingleServices = singleServices.filter(filterService);
+
+  const filteredPackagesForBaby = packagesForBaby.filter(filterService);
+  const filteredPackagesForMomAndBaby = packagesForMomAndBaby.filter(filterService);
+  const filteredServicesForMom = servicesForMom.filter(filterService);
+  const filteredServicesForBaby = servicesForBaby.filter(filterService);
 
   // Tính rating từ feedbacks API
   const getRating = (serviceId) => {
@@ -305,10 +314,10 @@ export default function ServicesPage() {
         />
 
         {/* Service Packages Section */}
-        {filteredServicePackages.length > 0 && (
+        {filteredPackagesForBaby.length > 0 && (
           <ServiceSection
-            title="Gói dịch vụ"
-            services={filteredServicePackages}
+            title="Gói cho bé"
+            services={filteredPackagesForBaby}
             type="package"
             selectedItems={selectedPackage ? [selectedPackage] : []}
             onSelect={handleSelectPackage}
@@ -322,11 +331,43 @@ export default function ServicesPage() {
           />
         )}
 
-        {/* Single Services Section */}
-        {filteredSingleServices.length > 0 && (
+        {filteredPackagesForMomAndBaby.length > 0 && (
           <ServiceSection
-            title="Dịch vụ lẻ"
-            services={filteredSingleServices}
+            title="Gói cho mẹ và bé"
+            services={filteredPackagesForMomAndBaby}
+            type="package"
+            selectedItems={selectedPackage ? [selectedPackage] : []}
+            onSelect={handleSelectPackage}
+            onDetail={setPackageDetail}
+            onBook={handleBook}
+            isDisabled={selectedServices.length > 0}
+            expandedPackage={expandedPackage}
+            onToggleExpand={handleToggleExpand}
+            getServicesOfPackage={getServicesOfPackage}
+            getRating={getRating}
+          />
+        )}
+
+        {filteredServicesForMom.length > 0 && (
+          <ServiceSection
+            title="Dịch vụ cho mẹ"
+            services={filteredServicesForMom}
+            type="service"
+            selectedItems={selectedServices}
+            onSelect={handleToggleService}
+            onDetail={setServiceDetail}
+            onBook={handleBook}
+            isDisabled={!!selectedPackage}
+            getRating={getRating}
+            serviceQuantities={serviceQuantities}
+            onQuantityChange={handleQuantityChange}
+          />
+        )}
+
+        {filteredServicesForBaby.length > 0 && (
+          <ServiceSection
+            title="Dịch vụ cho bé"
+            services={filteredServicesForBaby}
             type="service"
             selectedItems={selectedServices}
             onSelect={handleToggleService}
@@ -340,17 +381,18 @@ export default function ServicesPage() {
         )}
 
         {/* Empty State */}
-        {filteredServicePackages.length === 0 && filteredSingleServices.length === 0 && (
-          <div className="text-center py-16">
-            <div className="text-gray-400 text-6xl mb-4">🏥</div>
-            <h3 className="text-xl font-semibold text-gray-600 mb-2">
-              Không tìm thấy dịch vụ nào
-            </h3>
-            <p className="text-gray-500">
-              Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc
-            </p>
-          </div>
-        )}
+        {filteredPackagesForBaby.length === 0 && filteredPackagesForMomAndBaby.length === 0 &&
+          filteredServicesForMom.length === 0 && filteredServicesForBaby.length === 0 && (
+            <div className="text-center py-16">
+              <div className="text-gray-400 text-6xl mb-4">🏥</div>
+              <h3 className="text-xl font-semibold text-gray-600 mb-2">
+                Không tìm thấy dịch vụ nào
+              </h3>
+              <p className="text-gray-500">
+                Thử thay đổi từ khóa tìm kiếm hoặc bộ lọc
+              </p>
+            </div>
+          )}
 
         {/* Multi-Service Booking Button */}
         <MultiServiceBooking
