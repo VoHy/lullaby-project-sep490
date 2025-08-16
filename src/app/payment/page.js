@@ -3,8 +3,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import { useMemo, useEffect, useState, useContext, Suspense } from "react";
 import customizePackageService from '@/services/api/customizePackageService';
 import serviceTypeService from '@/services/api/serviceTypeService';
-
-
+import accountService from '@/services/api/accountService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
 import bookingService from '@/services/api/bookingService';
@@ -21,12 +20,12 @@ import careProfileService from '@/services/api/careProfileService';
 import { calculateCompletePayment, formatCurrency } from '../booking/utils/paymentCalculation';
 import {
   PaymentHeader,
-  ServiceInfo,
   AppointmentInfo,
   PaymentInfo,
   PaymentSuccessModal,
   StaffSelection,
 } from './components';
+import workScheduleService from '@/services/api/workScheduleService';
 
 function PaymentContent() {
   const searchParams = useSearchParams();
@@ -34,12 +33,14 @@ function PaymentContent() {
   const bookingId = searchParams.get("bookingId");
 
   const [booking, setBooking] = useState(null);
+  const [accounts, setAccounts] = useState([]); // Thêm accounts state
   const [packages, setPackages] = useState([]);
   const [serviceTypes, setServiceTypes] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
   const [customizeTasks, setCustomizeTasks] = useState([]); // tasks of this booking
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
+
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -52,6 +53,7 @@ function PaymentContent() {
   const [selectionMode, setSelectionMode] = useState(null); // 'user' | 'auto'
   const [selectedStaffByTask, setSelectedStaffByTask] = useState({}); // { [customizeTaskId]: nursingId }
   const [canConfirm, setCanConfirm] = useState(true);
+  const [assignError, setAssignError] = useState("");
   const [customizePackages, setCustomizePackages] = useState([]);
 
   // Load data từ API
@@ -72,17 +74,20 @@ function PaymentContent() {
         const [
           serviceTypesData,
           serviceTasksData,
-          nursingSpecialistsData
+          nursingSpecialistsData,
+          accountsData
         ] = await Promise.all([
           serviceTypeService.getServiceTypes(),
           serviceTaskService.getServiceTasks(),
-          nursingSpecialistService.getNursingSpecialists()
+          nursingSpecialistService.getNursingSpecialists(),
+          accountService.getAllAccounts()
         ]);
 
         setPackages([]); // Không cần packages trong payment page
         setServiceTypes(serviceTypesData);
         setServiceTasks(serviceTasksData);
         setNursingSpecialists(nursingSpecialistsData);
+        setAccounts(Array.isArray(accountsData) ? accountsData : []);
         setCareProfiles([]); // Không cần care profiles từ API nữa
         setWallets(walletsData);
 
@@ -98,14 +103,12 @@ function PaymentContent() {
 
           try {
             const bookingData = await bookingService.getBookingByIdWithCareProfile(parseInt(bookingId));
-            console.log('Booking data loaded:', bookingData);
 
             // Nếu booking không có careProfile data, fetch riêng
             if (bookingData && !bookingData.careProfile && bookingData.careProfileID) {
               try {
 
                 const careProfileData = await careProfileService.getCareProfileById(bookingData.careProfileID);
-                console.log('Care profile data loaded:', careProfileData);
                 // Gắn care profile vào booking data
                 bookingData.careProfile = careProfileData;
               } catch (careProfileError) {
@@ -613,13 +616,55 @@ function PaymentContent() {
                   <ul className="divide-y divide-gray-200">
                     {customizePackages.map((pkg, idx) => {
                       const serviceType = serviceTypes.find(s => s.serviceID === pkg.serviceID);
+
+                      // Tìm các task con
+                      const childTasks = serviceTasks.filter(t =>
+                        t.package_ServiceID === serviceType?.serviceID ||
+                        t.packageServiceID === serviceType?.serviceID ||
+                        t.Package_ServiceID === serviceType?.serviceID
+                      );
+
+                      // Tìm dịch vụ con
+                      const childServices = childTasks
+                        .map(t => {
+                          const childServiceId = t.child_ServiceID || t.childServiceID || t.Child_ServiceID;
+                          return serviceTypes.find(s =>
+                            s.serviceID === childServiceId ||
+                            s.serviceTypeID === childServiceId ||
+                            s.ServiceID === childServiceId
+                          );
+                        })
+                        .filter(Boolean);
+
+                      const isPackage = childServices.length > 0;
+
                       return (
-                        <li key={idx} className="py-4 flex flex-col md:flex-row md:items-center md:justify-between">
-                          <div>
-                            <span className="font-semibold text-blue-700">{serviceType?.serviceName || pkg.name}</span>
-                            <div className="text-sm text-gray-500">{serviceType?.description || 'Mô tả dịch vụ'}</div>
+                        <li
+                          key={pkg.packageID || pkg.id || idx}
+                          className="py-4 flex flex-col md:flex-row md:items-start md:justify-between gap-3"
+                        >
+                          <div className="flex-1">
+                            {/* Tên dịch vụ cha */}
+                            <span className="font-semibold text-blue-700">
+                              {serviceType?.serviceName || pkg.name}
+                            </span>
+
+                            {/* Chỉ hiện danh sách dịch vụ con nếu là gói */}
+                            {isPackage && (
+                              <div className="mt-2 ml-4">
+                                <h4 className="text-sm font-semibold text-gray-700 mb-1">
+                                  Các dịch vụ trong gói:
+                                </h4>
+                                <ul className="list-disc ml-5 space-y-1">
+                                  {childServices.map((child, cidx) => (
+                                    <li key={child.serviceID || child.serviceTypeID || cidx}>
+                                      <span className="text-blue-600 font-medium">{child?.serviceName}</span>
+                                    </li>
+                                  ))}
+                                </ul>
+                              </div>
+                            )}
                           </div>
-                          <div className="mt-2 md:mt-0 text-pink-600 font-bold text-lg">{pkg.price.toLocaleString()}đ</div>
                         </li>
                       );
                     })}
@@ -638,25 +683,44 @@ function PaymentContent() {
             />
             {selectionMode === 'user' && (
               <StaffSelection
+                accounts={accounts}
                 tasks={bookingCustomizeTasks}
                 serviceTypes={serviceTypes}
                 careProfile={booking?.careProfile}
                 nursingSpecialists={nursingSpecialists}
                 selectedStaffByTask={selectedStaffByTask}
-                setSelectedStaffByTask={(updater) => {
-                  setSelectedStaffByTask(prev => {
-                    const next = typeof updater === 'function' ? updater(prev) : updater;
-                    // Try to detect the last changed key to persist immediately
+                setSelectedStaffByTask={async (updater) => {
+                  setAssignError("");
+                  setSelectedStaffByTask(async prev => {
+                    const next = typeof updater === 'function' ? await updater(prev) : updater;
+                    // Detect last changed key
                     const changedKey = Object.keys(next).find(k => prev[k] !== next[k]);
                     if (changedKey) {
                       const nid = next[changedKey];
-                      if (nid) handleAssignNursing(changedKey, nid);
+                      if (nid) {
+                        // Kiểm tra trùng lịch
+                        try {
+                          const nurseSchedules = await workScheduleService.getAllByNursing(nid);
+                          // Giả sử bookingData.datetime là thời gian cần kiểm tra
+                          const conflict = nurseSchedules.some(sch => sch.workDate === bookingData?.datetime);
+                          if (conflict) {
+                            setAssignError("Nhân viên này đã có lịch vào thời điểm này!");
+                            return prev; // Không cập nhật nếu trùng lịch
+                          }
+                        } catch (err) {
+                          setAssignError("Không kiểm tra được lịch của nhân viên!");
+                          return prev;
+                        }
+                      }
                     }
                     return next;
                   });
                 }}
                 getCandidatesForService={getCandidatesForService}
               />
+            )}
+            {assignError && (
+              <div className="text-red-500 text-center mt-2 font-semibold">{assignError}</div>
             )}
           </div>
 

@@ -7,9 +7,9 @@ import { filterItems, getCareProfileId, getRelativeId } from '../utils/displayUt
 export default function PatientCareProfileCard({ care, relativesList, relFilter, setRelFilter, handleOpenForm, onViewDetailCareProfile, onViewDetailRelative, handleOpenEditCareProfile, handleOpenEditRelative, handleDeleteCareProfile, handleDeleteRelative }) {
   const normalizedCare = normalizeFieldNames(care);
   const careId = getCareProfileId(care);
-  
+
   // Filter relatives using utility function
-  const careRelatives = relativesList.filter(r => 
+  const careRelatives = relativesList.filter(r =>
     getCareProfileId({ careProfileID: r.careProfileID }) === careId
   );
   const filteredRelatives = filterItems(careRelatives, relFilter);
@@ -48,7 +48,7 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
           </div>
         </div>
       </div>
-      
+
       <div className="space-y-3">
         <div className="flex items-center gap-3">
           <FaPhone className="text-gray-400" />
@@ -65,7 +65,7 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
           </div>
         )}
       </div>
-      
+
       {/* Relatives Section */}
       <div className="mt-6 pt-4 border-t border-gray-100">
         <div className="flex justify-between items-center mb-3">
@@ -93,19 +93,19 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
             </button>
           </div>
         </div>
-        
+
         {filteredRelatives.length === 0 ? (
           <p className="text-sm text-gray-500 italic">Chưa có người thân nào.</p>
         ) : (
           <div className="space-y-2">
-            {filteredRelatives.map(relative => {
+            {filteredRelatives.map((relative, idx) => {
               const normalizedRelative = normalizeFieldNames(relative);
               const relativeId = getRelativeId(relative);
-              
+
               return (
-                <div 
-                  key={relativeId} 
-                  className="bg-gray-50 rounded-lg p-3 flex items-center justify-between cursor-pointer group" 
+                <div
+                  key={relativeId || idx}
+                  className="bg-gray-50 rounded-lg p-3 flex items-center justify-between cursor-pointer group"
                   onClick={() => onViewDetailRelative && onViewDetailRelative(relative)}
                 >
                   <div>

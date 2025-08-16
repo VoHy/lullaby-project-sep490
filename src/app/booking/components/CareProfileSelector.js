@@ -19,7 +19,7 @@ export default function CareProfileSelector({
           <p className="text-gray-600 mb-4">Bạn chưa có hồ sơ người thân nào</p>
           <button
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
-            onClick={() => window.open('/profile/patient', '_blank')}
+            onClick={() => window.location.href = '/profile/patient'}
           >
             Tạo hồ sơ người thân
           </button>
@@ -42,8 +42,8 @@ export default function CareProfileSelector({
             <div
               key={profile.careProfileID}
               className={`border rounded-xl p-4 cursor-pointer transition-all ${selectedCareProfile?.careProfileID === profile.careProfileID
-                  ? "border-blue-500 bg-blue-50"
-                  : "border-gray-200 hover:border-blue-300"
+                ? "border-blue-500 bg-blue-50"
+                : "border-gray-200 hover:border-blue-300"
                 }`}
               onClick={() => setSelectedCareProfile(profile)}
             >
@@ -58,8 +58,8 @@ export default function CareProfileSelector({
                     <h3 className="font-bold text-gray-800">{profile.profileName}</h3>
                     <span
                       className={`px-2 py-1 rounded-full text-xs font-semibold ${profile.status === "active" || profile.status === "Active"
-                          ? "bg-green-100 text-green-700"
-                          : "bg-red-100 text-red-700"
+                        ? "bg-green-100 text-green-700"
+                        : "bg-red-100 text-red-700"
                         }`}
                     >
                       {profile.status === "active" || profile.status === "Active" ? "Hoạt động" : "Ngừng hoạt động"}
