@@ -17,8 +17,9 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
     experience: specialist.experience || '',
     slogan: specialist.slogan || '',
     zoneID: specialist.zoneID || '',
-    major: specialist.major || 'specialist',
-    status: specialist.status || 'active'
+    major: specialist.major || 'Specialist',
+    status: specialist.status || 'active',
+    serviceID: Array.isArray(specialist.serviceIDs) ? specialist.serviceIDs.map(String) : []
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -38,17 +39,28 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
       experience: specialist.experience || '',
       slogan: specialist.slogan || '',
       zoneID: specialist.zoneID || '',
-      major: specialist.major || 'specialist',
-      status: specialist.status || 'active'
+      major: specialist.major || 'Specialist',
+      status: specialist.status || 'active',
+      serviceID: Array.isArray(specialist.serviceIDs) ? specialist.serviceIDs.map(String) : []
     });
   }, [specialist]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    const { name, value, multiple, options } = e.target;
+    if (multiple) {
+      const values = Array.from(options)
+        .filter(option => option.selected)
+        .map(option => option.value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: values
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -63,6 +75,14 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
       }
 
       await onUpdate(specialist.nursingID, formData);
+
+      // Gọi API mapping dịch vụ nếu có chọn dịch vụ
+      if (formData.serviceID && formData.serviceID.length > 0) {
+        await nursingSpecialistServiceTypeService.create({
+          nursingID: specialist.nursingID,
+          serviceIDs: formData.serviceID
+        });
+      }
       // Gọi callback reload danh sách chuyên gia nếu có
       if (typeof refetchSpecialists === 'function') {
         await refetchSpecialists();
@@ -115,21 +135,6 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
                     required
                   />
-                </div>
-
-                <div className="bg-white rounded-lg p-0">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Trạng thái
-                  </label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
-                  >
-                    <option value="active">Đang hoạt động</option>
-                    <option value="inactive">Không hoạt động</option>
-                  </select>
                 </div>
               </div>
             </section>
@@ -205,23 +210,41 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Dịch vụ
                   </label>
-                  <select
-                    name="serviceID"
-                    value={formData.serviceID}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
-                  >
-                    <option value="">-- Chọn dịch vụ --</option>
+                  <div className="flex flex-col gap-2">
                     {Array.isArray(serviceTypes) &&
                       serviceTypes
-                        .filter(service => service.isPackage === false) // chỉ lấy dịch vụ không phải package
-                        .map(service => (
-                          <option key={service.serviceID} value={service.serviceID}>
-                            {service.serviceName}
-                          </option>
-                        ))
+                        .filter(service => service.isPackage === false)
+                        .map(service => {
+                          const isChecked = Array.isArray(formData.serviceID) && formData.serviceID.includes(String(service.serviceID));
+                          return (
+                            <label key={service.serviceID} className="inline-flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                name="serviceID"
+                                value={service.serviceID}
+                                checked={isChecked}
+                                onChange={e => {
+                                  const value = e.target.value;
+                                  setFormData(prev => {
+                                    const current = Array.isArray(prev.serviceID) ? prev.serviceID.map(String) : [];
+                                    if (e.target.checked) {
+                                      if (!current.includes(value)) {
+                                        return { ...prev, serviceID: [...current, value] };
+                                      }
+                                      return prev;
+                                    } else {
+                                      return { ...prev, serviceID: current.filter(id => id !== value) };
+                                    }
+                                  });
+                                }}
+                                className="form-checkbox h-4 w-4 text-purple-600"
+                              />
+                              <span>{service.serviceName}</span>
+                            </label>
+                          );
+                        })
                     }
-                  </select>
+                  </div>
                 </div>
               </div>
             </section>
@@ -329,4 +352,4 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
   );
 };
 
-export default EditSpecialistModal; 
+export default EditSpecialistModal;

@@ -65,7 +65,7 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
         dateOfBirth: nurseData.dateOfBirth,
         address: nurseData.address,
         gender: nurseData.gender,
-        major: "Nurse",
+        major: nurseData.major || 'Nurse' || 'Nursing',
         experience: nurseData.experience,
         slogan: nurseData.slogan,
         zoneID: managedZone.zoneID
@@ -97,9 +97,12 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
       });
 
       // Step 3: assign service type
+      const serviceIDs = Array.isArray(nurseData.serviceID)
+        ? nurseData.serviceID.filter(id => id && id !== "").map(id => Number(id))
+        : nurseData.serviceID ? [Number(nurseData.serviceID)] : [];
       await nursingSpecialistServiceTypeService.create({
         nursingID: nurseId,
-        serviceID: nurseData.serviceID
+        serviceIDs: serviceIDs
       });
 
       // Gọi callback từ cha để reload lại danh sách y tá toàn hệ thống

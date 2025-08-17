@@ -56,13 +56,33 @@ function PaymentContent() {
   const [assignError, setAssignError] = useState("");
   const [customizePackages, setCustomizePackages] = useState([]);
 
+  // Helper format lỗi gán nurse
+  const formatNurseError = (items, type = "conflict") => {
+    return items.map(i => {
+      const nurse = nursingSpecialists.find(
+        n => String(n.nursingID || n.NursingID) === String(i.nurseId || i.nid)
+      );
+      const nurseName = nurse?.FullName || nurse?.fullName || `Y tá ID ${i.nurseId || i.nid}`;
+
+      const task = (bookingCustomizeTasks || []).find(t => t.customizeTaskID === (i.taskId || i.tid));
+      const service = serviceTypes.find(s => s.serviceID === task?.serviceID);
+      const serviceName = service?.serviceName || "dịch vụ";
+
+      let errMsg = "đã có lịch trùng";
+      if (type === "assign" && i.err) {
+        errMsg = i.err;
+      }
+
+      return `- ${nurseName} (${serviceName}): ${errMsg}`;
+    }).join("\n");
+  };
+
   // Load data từ API
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError("");
-
 
         let walletsData = [];
         try {
@@ -83,52 +103,36 @@ function PaymentContent() {
           accountService.getAllAccounts()
         ]);
 
-        setPackages([]); // Không cần packages trong payment page
+        setPackages([]);
         setServiceTypes(serviceTypesData);
         setServiceTasks(serviceTasksData);
         setNursingSpecialists(nursingSpecialistsData);
         setAccounts(Array.isArray(accountsData) ? accountsData : []);
-        setCareProfiles([]); // Không cần care profiles từ API nữa
+        setCareProfiles([]);
         setWallets(walletsData);
 
-        console.log('Payment data loaded:', {
-          serviceTypes: serviceTypesData.length,
-          serviceTasks: serviceTasksData.length,
-          nursingSpecialists: nursingSpecialistsData.length,
-          wallets: walletsData.length
-        });
-
-        // Nếu có bookingId, fetch booking data với careProfile
         if (bookingId) {
-
           try {
             const bookingData = await bookingService.getBookingByIdWithCareProfile(parseInt(bookingId));
 
-            // Nếu booking không có careProfile data, fetch riêng
             if (bookingData && !bookingData.careProfile && bookingData.careProfileID) {
               try {
-
                 const careProfileData = await careProfileService.getCareProfileById(bookingData.careProfileID);
-                // Gắn care profile vào booking data
                 bookingData.careProfile = careProfileData;
               } catch (careProfileError) {
                 console.warn('Could not fetch care profile:', careProfileError);
-                // Không fail nếu không fetch được care profile
               }
             }
 
             setBooking(bookingData);
-            // Load customize tasks for this booking for manual assignment flow
             try {
               const tasks = await customizeTaskService.getAllByBooking(parseInt(bookingId));
-              // Normalize and keep minimal needed fields
               const mapped = Array.isArray(tasks) ? tasks.map(t => ({
                 customizeTaskID: t.customizeTaskID || t.CustomizeTaskID || t.id,
                 serviceID: t.serviceID || t.ServiceID || t.serviceTypeID,
                 nursingID: t.nursingID || t.NursingID || null,
               })).filter(x => x.customizeTaskID && x.serviceID) : [];
               setCustomizeTasks(mapped);
-              // Pre-fill selection state if server already assigned
               if (mapped.some(m => m.nursingID)) {
                 setSelectedStaffByTask(prev => ({
                   ...prev,
@@ -142,7 +146,6 @@ function PaymentContent() {
               console.warn('Could not load customize tasks for booking', taskErr);
             }
 
-            // Fetch danh sách dịch vụ đã đặt cho booking này
             try {
               const packagesData = await customizePackageService.getAllByBooking(bookingId);
               if (Array.isArray(packagesData)) {
@@ -152,23 +155,13 @@ function PaymentContent() {
               console.error('Lỗi khi lấy danh sách dịch vụ đã đặt:', packageErr);
             }
           } catch (error) {
-            console.error(' Error fetching booking:', {
-              bookingId,
-              error,
-              errorMessage: error.message
-            });
+            console.error(' Error fetching booking:', error);
             setError(`Không thể tải thông tin đặt lịch (ID: ${bookingId}). ${error.message || 'Vui lòng thử lại sau.'}`);
           }
         } else {
-          console.warn('No bookingId provided in URL parameters');
           setError('Không tìm thấy thông tin booking ID trong URL.');
         }
       } catch (error) {
-        console.error('Error loading payment data:', {
-          error,
-          errorMessage: error.message,
-          bookingId
-        });
         setError(`Không thể tải dữ liệu trang thanh toán: ${error.message || 'Vui lòng thử lại sau.'}`);
       } finally {
         setLoading(false);
@@ -179,8 +172,6 @@ function PaymentContent() {
       fetchData();
     }
   }, [user, bookingId]);
-
-
 
   // Tính toán dữ liệu từ booking
   const bookingData = useMemo(() => {
@@ -352,14 +343,12 @@ function PaymentContent() {
   // Get candidate nurses per service using mapping + zone
   const getCandidatesForService = async (serviceId) => {
     try {
-      // Prefer mapping API to fetch nurses that can do this service
-      const mappings = await nursingSpecialistServiceTypeService.getByService(serviceId);
-      const eligibleIds = Array.isArray(mappings) ? mappings.map(m => m.nursingID || m.NursingID).filter(Boolean) : [];
-      const candidates = Array.isArray(nursingSpecialists) ? nursingSpecialists.filter(n => eligibleIds.includes(n.nursingID || n.NursingID)) : [];
-      return candidates;
+      // Chỉ gọi API mới để lấy danh sách nurse rảnh cho dịch vụ này
+      const freeNurses = await nursingSpecialistService.getAllFreeNursingSpecialists(serviceId);
+      return Array.isArray(freeNurses) ? freeNurses : [];
     } catch (e) {
-      console.warn('Fallback to all specialists due to mapping error', e);
-      return Array.isArray(nursingSpecialists) ? nursingSpecialists : [];
+      console.warn('Không thể lấy danh sách nurse rảnh:', e);
+      return [];
     }
   };
 
@@ -370,6 +359,27 @@ function PaymentContent() {
     } catch (err) {
       console.warn('Không thể lưu gán điều dưỡng, sẽ thử lại khi thanh toán.', err);
     }
+  };
+
+  // Helper: kiểm tra trùng lịch cho tất cả nurse đã chọn
+  const checkAllNurseScheduleConflict = async () => {
+    if (!bookingCustomizeTasks || !bookingData?.datetime) return { conflict: false };
+    const conflicts = [];
+    for (const t of bookingCustomizeTasks) {
+      const nid = selectedStaffByTask[t.customizeTaskID];
+      if (!nid) continue;
+      try {
+        const nurseSchedules = await workScheduleService.getAllByNursing(nid);
+        console.log('Checking nurse', nid, 'schedules:', nurseSchedules); // Added console.log for debugging
+        const conflict = nurseSchedules.some(sch => sch.workDate === bookingData?.datetime);
+        if (conflict) {
+          conflicts.push({ taskId: t.customizeTaskID, nurseId: nid });
+        }
+      } catch {
+        conflicts.push({ taskId: t.customizeTaskID, nurseId: nid, error: true });
+      }
+    }
+    return { conflict: conflicts.length > 0, conflicts };
   };
 
   // Handle payment confirmation
@@ -383,23 +393,64 @@ function PaymentContent() {
       setIsProcessingPayment(true);
       setError('');
 
-      // If user mode, ensure selected for all tasks
-      if (selectionMode === 'user' && !canConfirm) {
-        setError('Vui lòng chọn đủ điều dưỡng cho tất cả dịch vụ trước khi thanh toán.');
-        return;
+      // Nếu user mode, kiểm tra đủ điều dưỡng và kiểm tra trùng lịch trước khi thanh toán
+      if (selectionMode === 'user') {
+        if (!canConfirm) {
+          setError('Vui lòng chọn đủ điều dưỡng cho tất cả dịch vụ trước khi thanh toán.');
+          setIsProcessingPayment(false);
+          return;
+        }
+        // Kiểm tra trùng lịch cho tất cả nurse đã chọn
+        const conflictResult = await checkAllNurseScheduleConflict();
+        if (conflictResult.conflict) {
+          // Hiển thị lỗi cụ thể cho từng dịch vụ bị trùng lịch
+          const conflictMsg = conflictResult.conflicts.map(c => {
+            const nurse = nursingSpecialists.find(n => String(n.nursingID || n.NursingID) === String(c.nurseId));
+            const nurseName = nurse?.FullName || nurse?.fullName || `Nurse ID ${c.nurseId}`;
+            const service = serviceTypes.find(s => s.serviceID === (bookingCustomizeTasks.find(t => t.customizeTaskID === c.taskId)?.serviceID));
+            const serviceName = service?.serviceName || 'dịch vụ';
+            return `- ${nurseName} đã bị trùng lịch với ${serviceName}`;
+          }).join('\n');
+          console.log('Conflict detected:', conflictMsg); // Added console.log for debugging
+          setError(`Nhân viên bạn chọn đã có lịch vào thời điểm này:\n${conflictMsg}\nVui lòng chọn lại hoặc để hệ thống tự chọn!`);
+          setIsProcessingPayment(false);
+          return;
+        }
       }
 
       // 1.a Nếu người dùng chọn phân công, lưu gán điều dưỡng cho từng task trước khi tạo hóa đơn
       if (selectionMode === 'user') {
         const tasks = bookingCustomizeTasks || [];
+        let assignErrors = [];
         for (const t of tasks) {
           const tid = t.customizeTaskID;
           const nid = selectedStaffByTask[tid];
           if (!nid) continue; // canConfirm ensures all selected
-          try { await customizeTaskService.updateNursing(tid, nid); } catch { }
+          try {
+            await customizeTaskService.updateNursing(tid, Number(nid)); // Parse nid thành number để tránh lỗi API
+            console.log('Assigned nurse', nid, 'to task', tid); // Added console.log for debugging
+          } catch (err) {
+            console.error('Error assigning nurse to task:', tid, err); // Added console.log for debugging
+            assignErrors.push({ tid, nid, err: err.message || 'Unknown error' });
+          }
+        }
+        if (assignErrors.length > 0) {
+          const errorMsg = assignErrors.map(e => {
+            const nurseName = (nursingSpecialists.find(n => String(n.nursingID || n.NursingID) === String(e.nid))?.FullName
+              || nursingSpecialists.find(n => String(n.nursingID || n.NursingID) === String(e.nid))?.fullName
+              || `Y tá ID ${e.nid}`);
+            const serviceName = (serviceTypes.find(s => s.serviceID === (bookingCustomizeTasks.find(t => t.customizeTaskID === e.tid)?.serviceID))?.serviceName
+              || "dịch vụ");
+            const errMsg = (/conflict schedule/i.test(e.err)
+              ? "đã có lịch, bạn vui lòng chọn lại nhân viên hoặc chọn tự động."
+              : e.err);
+            return `- ${nurseName} (${serviceName}): ${errMsg}`;
+          }).join('\n');
+          setError(`Không thể gán nhân viên do lỗi:\n${errorMsg}`);
+          setIsProcessingPayment(false);
+          return;
         }
       }
-
       // 1.b Kiểm tra ví từ context trước
       let userWallet = contextWallet;
 
@@ -569,31 +620,29 @@ function PaymentContent() {
     );
   }
 
-  // Error state
-  if (error) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-        <div className="max-w-6xl mx-auto px-4 py-8">
-          <div className="text-center py-12">
-            <div className="text-red-500 text-6xl mb-4"></div>
-            <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
-            <p className="text-gray-600 mb-4">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-6 py-2 rounded-lg transition-colors"
-            >
-              Thử lại
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
       <div className="max-w-6xl mx-auto px-4 py-8">
         <PaymentHeader />
+
+        {/* Modal Alert for Error */}
+        {error && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-2xl p-6 max-w-lg w-full relative">
+              <div className="flex items-center mb-4">
+                <span className="text-red-600 text-2xl mr-2">&#9888;</span>
+                <span className="text-xl font-bold text-red-700">Không thể chọn nhân viên</span>
+              </div>
+              <div className="text-gray-800 whitespace-pre-line mb-6">{error}</div>
+              <button
+                onClick={() => setError("")}
+                className="bg-red-500 hover:bg-red-600 text-white font-bold py-2 px-4 rounded w-full"
+              >
+                Đóng
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Left Column */}
@@ -689,32 +738,36 @@ function PaymentContent() {
                 careProfile={booking?.careProfile}
                 nursingSpecialists={nursingSpecialists}
                 selectedStaffByTask={selectedStaffByTask}
-                setSelectedStaffByTask={async (updater) => {
+                setSelectedStaffByTask={(updater) => {
                   setAssignError("");
-                  setSelectedStaffByTask(async prev => {
-                    const next = typeof updater === 'function' ? await updater(prev) : updater;
-                    // Detect last changed key
-                    const changedKey = Object.keys(next).find(k => prev[k] !== next[k]);
-                    if (changedKey) {
-                      const nid = next[changedKey];
-                      if (nid) {
-                        // Kiểm tra trùng lịch
-                        try {
-                          const nurseSchedules = await workScheduleService.getAllByNursing(nid);
-                          // Giả sử bookingData.datetime là thời gian cần kiểm tra
-                          const conflict = nurseSchedules.some(sch => sch.workDate === bookingData?.datetime);
-                          if (conflict) {
-                            setAssignError("Nhân viên này đã có lịch vào thời điểm này!");
-                            return prev; // Không cập nhật nếu trùng lịch
-                          }
-                        } catch (err) {
-                          setAssignError("Không kiểm tra được lịch của nhân viên!");
-                          return prev;
+                  // updater có thể là function hoặc object
+                  const next = typeof updater === 'function' ? updater(selectedStaffByTask) : updater;
+                  // Detect last changed key
+                  const changedKey = Object.keys(next).find(k => selectedStaffByTask[k] !== next[k]);
+                  if (changedKey) {
+                    const nid = next[changedKey];
+                    if (nid) {
+                      // Kiểm tra trùng lịch
+                      workScheduleService.getAllByNursing(nid).then(nurseSchedules => {
+                        const conflict = nurseSchedules.some(sch => sch.workDate === bookingData?.datetime);
+                        if (conflict) {
+                          setAssignError("Nhân viên này đã có lịch vào thời điểm này!");
+                        } else {
+                          setSelectedStaffByTask(next);
                         }
-                      }
+                      }).catch(() => {
+                        // Hiển thị thông báo chi tiết cho người dùng
+                        const nurse = nursingSpecialists.find(n => String(n.nursingID || n.NursingID) === String(nid));
+                        const nurseName = nurse?.FullName || nurse?.fullName || `Y tá ID ${nid}`;
+                        const task = (bookingCustomizeTasks || []).find(t => t.customizeTaskID === changedKey);
+                        const service = serviceTypes.find(s => s.serviceID === task?.serviceID);
+                        const serviceName = service?.serviceName || "dịch vụ";
+                        setAssignError(`- ${nurseName} (${serviceName}): Không kiểm tra được lịch của nhân viên!`);
+                      });
+                      return;
                     }
-                    return next;
-                  });
+                  }
+                  setSelectedStaffByTask(next);
                 }}
                 getCandidatesForService={getCandidatesForService}
               />
