@@ -62,7 +62,6 @@ export default function NewsPage() {
           (blog.title || '').toLowerCase().includes(searchText.toLowerCase()) ||
           (blog.content || '').toLowerCase().includes(searchText.toLowerCase()) ||
           (blog.BlogCategory?.categoryName || '').toLowerCase().includes(searchText.toLowerCase());
-        console.log(`Blog ${blog.blogID} matches search "${searchText}":`, matches);
         return matches;
       });
     }
@@ -70,12 +69,10 @@ export default function NewsPage() {
     if (selectedCategory !== 'all') {
       filtered = filtered.filter(blog => {
         const matches = (blog.BlogCategory?.categoryName || '') === selectedCategory;
-        console.log(`Blog ${blog.blogID} matches category "${selectedCategory}":`, matches);
         return matches;
       });
     }
 
-    console.log('Filtered Blogs:', filtered);
     setFilteredBlogs(filtered);
   }, [blogs, searchText, selectedCategory]);
 

@@ -29,8 +29,6 @@ export const usePaymentData = (bookingId, user) => {
       setLoading(true);
       setError("");
 
-      console.log('Fetching payment data for bookingId:', bookingId);
-
       let walletsData = [];
       try {
         walletsData = await walletService.getAllWallets();
@@ -50,13 +48,6 @@ export const usePaymentData = (bookingId, user) => {
         accountService.getAllAccounts()
       ]);
 
-      console.log('Loaded base data:', {
-        serviceTypes: serviceTypesData?.length,
-        serviceTasks: serviceTasksData?.length,
-        nursingSpecialists: nursingSpecialistsData?.length,
-        accounts: accountsData?.length
-      });
-
       setPackages([]);
       setServiceTypes(serviceTypesData);
       setServiceTasks(serviceTasksData);
@@ -68,7 +59,6 @@ export const usePaymentData = (bookingId, user) => {
       if (bookingId) {
         try {
           const bookingData = await bookingService.getBookingByIdWithCareProfile(parseInt(bookingId));
-          console.log('Loaded booking data:', bookingData);
 
           if (bookingData && !bookingData.careProfile && bookingData.careProfileID) {
             try {
@@ -83,9 +73,7 @@ export const usePaymentData = (bookingId, user) => {
           
           // Load customize tasks
           try {
-            console.log('Loading customize tasks for booking:', bookingId);
             const tasks = await customizeTaskService.getAllByBooking(parseInt(bookingId));
-            console.log('Raw customize tasks:', tasks);
             
             const mapped = Array.isArray(tasks) ? tasks.map(t => ({
               customizeTaskID: t.customizeTaskID || t.CustomizeTaskID || t.id,
@@ -98,7 +86,6 @@ export const usePaymentData = (bookingId, user) => {
               status: t.status || t.Status
             })) : [];
             
-            console.log('Mapped customize tasks:', mapped);
             setCustomizeTasks(mapped);
           } catch (taskErr) {
             console.error('Could not load customize tasks for booking', taskErr);
@@ -108,7 +95,6 @@ export const usePaymentData = (bookingId, user) => {
           // Load customize packages
           try {
             const packagesData = await customizePackageService.getAllByBooking(bookingId);
-            console.log('Loaded customize packages:', packagesData);
             if (Array.isArray(packagesData)) {
               bookingData.customizePackages = packagesData;
             }
@@ -139,7 +125,6 @@ export const usePaymentData = (bookingId, user) => {
   const bookingData = useMemo(() => {
     if (!booking) return null;
 
-    console.log('Calculating booking data from:', booking);
 
     let selectedPackage = null;
     let selectedServices = [];
@@ -247,7 +232,6 @@ export const usePaymentData = (bookingId, user) => {
       paymentCalculation
     };
 
-    console.log('Calculated booking data:', result);
     return result;
   }, [booking, serviceTypes, serviceTasks, careProfiles]);
 
@@ -266,14 +250,5 @@ export const usePaymentData = (bookingId, user) => {
     error,
     refreshData: fetchData
   };
-
-  console.log('usePaymentData result:', {
-    hasBooking: !!booking,
-    hasBookingData: !!bookingData,
-    customizeTasksCount: customizeTasks.length,
-    serviceTypesCount: serviceTypes.length,
-    nursingSpecialistsCount: nursingSpecialists.length
-  });
-
   return result;
 };

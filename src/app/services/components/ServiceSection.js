@@ -16,6 +16,7 @@ const ServiceSection = ({
   onToggleExpand,
   getServicesOfPackage,
   getRating,
+  customizeTasks = [],
   serviceQuantities = {},
   onQuantityChange
 }) => {
@@ -54,6 +55,7 @@ const ServiceSection = ({
             onToggleExpand={onToggleExpand}
             getServicesOfPackage={getServicesOfPackage}
             getRating={getRating}
+            customizeTasks={customizeTasks}
             quantity={serviceQuantities[service.serviceID] || 1}
             onQuantityChange={onQuantityChange}
           />

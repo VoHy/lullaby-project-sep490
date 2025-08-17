@@ -3,4 +3,7 @@ export { default as ServiceCard } from './ServiceCard';
 export { default as ServiceSection } from './ServiceSection';
 export { default as DetailModal } from './DetailModal';
 export { default as MultiServiceBooking } from './MultiServiceBooking';
-export { default as QuantitySelector } from './QuantitySelector'; 
+export { default as QuantitySelector } from './QuantitySelector';
+export { default as ServiceRatingDisplay } from './ServiceRatingDisplay';
+export { default as ServicesRatingStats } from './ServicesRatingStats';
+export { default as ServiceStatusBadge } from './ServiceStatusBadge'; 

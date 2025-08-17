@@ -3,6 +3,9 @@
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
+import { FaStar } from 'react-icons/fa';
+import feedbackService from '@/services/api/feedbackService';
+import customizeTaskService from '@/services/api/customizeTaskService';
 
 // Component để hiển thị danh sách dịch vụ con trong gói
 const PackageServicesList = ({ packageId, getServicesOfPackage }) => {
@@ -60,12 +63,187 @@ const PackageServicesList = ({ packageId, getServicesOfPackage }) => {
   );
 };
 
+// Component đánh giá dịch vụ
+const ServiceRating = ({ serviceId, customizeTasks = [], feedbacks = [], onRefreshData }) => {
+  const [rate, setRate] = useState(0);
+  const [content, setContent] = useState('');
+  const [saving, setSaving] = useState(false);
+  const [existing, setExisting] = useState(null);
+  const [saved, setSaved] = useState(false);
+
+  // Tìm customizeTaskID cho service này
+  const getCustomizeTaskId = () => {
+    const task = customizeTasks.find(task => 
+      task.serviceID === serviceId || 
+      task.ServiceID === serviceId ||
+      task.serviceTypeID === serviceId
+    );
+    return task?.customizeTaskID || task?.CustomizeTaskID || task?.id;
+  };
+
+  const customizeTaskId = getCustomizeTaskId();
+
+  // Kiểm tra xem dịch vụ đã hoàn thành chưa
+  const isServiceCompleted = () => {
+    if (!customizeTaskId) return false;
+    
+    const task = customizeTasks.find(task => 
+      (task.customizeTaskID || task.CustomizeTaskID || task.id) === customizeTaskId
+    );
+    
+    // Kiểm tra status của task
+    const status = task?.status || task?.Status;
+    return status === 'completed' || status === 'done' || status === 'finished';
+  };
+
+  // Load existing feedback
+  useEffect(() => {
+    if (!customizeTaskId) return;
+    
+    const existingFeedback = feedbacks.find(feedback => 
+      feedback.customizeTaskID === customizeTaskId || 
+      feedback.CustomizeTaskID === customizeTaskId
+    );
+    
+    if (existingFeedback) {
+      setExisting(existingFeedback);
+      setRate(Number(existingFeedback.rate || existingFeedback.Rate || 0));
+      setContent(existingFeedback.content || existingFeedback.Content || '');
+    }
+  }, [customizeTaskId, feedbacks]);
+
+  const handleSave = async () => {
+    if (!customizeTaskId) {
+      alert('Dịch vụ này chưa được thực hiện. Vui lòng đợi dịch vụ hoàn thành để đánh giá.');
+      return;
+    }
+
+    if (!isServiceCompleted()) {
+      alert('Dịch vụ này chưa hoàn thành. Vui lòng đợi dịch vụ hoàn thành để đánh giá.');
+      return;
+    }
+
+    if (!rate && !content) {
+      alert('Vui lòng chọn sao hoặc nhập nội dung đánh giá.');
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const payload = {
+        customizeTaskID: customizeTaskId,
+        rate: Number(rate || 0),
+        content: content || ''
+      };
+
+      if (existing) {
+        const fid = existing.feedbackID || existing.FeedbackID || existing.id || existing.ID;
+        await feedbackService.updateFeedback(fid, payload);
+      } else {
+        await feedbackService.createFeedback(payload);
+      }
+      
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2000);
+      
+      // Refresh data to update ratings
+      if (onRefreshData) {
+        onRefreshData();
+      }
+    } catch (error) {
+      console.error('Lưu feedback thất bại:', error);
+      if (error.message?.includes('customizeTaskID')) {
+        alert('Dịch vụ này chưa được thực hiện hoặc chưa hoàn thành. Vui lòng đợi dịch vụ hoàn thành để đánh giá.');
+      } else {
+        alert('Lưu feedback thất bại. Vui lòng thử lại.');
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  // Nếu không có customizeTaskID, hiển thị thông báo
+  if (!customizeTaskId) {
+    return (
+      <div className="mt-4 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+        <h4 className="font-semibold text-yellow-800 mb-2">Đánh giá dịch vụ</h4>
+        <p className="text-yellow-700 text-sm">
+          Dịch vụ này chưa được thực hiện. Bạn chỉ có thể đánh giá sau khi dịch vụ đã hoàn thành.
+        </p>
+      </div>
+    );
+  }
+
+  // Nếu dịch vụ chưa hoàn thành
+  if (!isServiceCompleted()) {
+    return (
+      <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <h4 className="font-semibold text-blue-800 mb-2">Đánh giá dịch vụ</h4>
+        <p className="text-blue-700 text-sm">
+          Dịch vụ này đang được thực hiện. Bạn có thể đánh giá sau khi dịch vụ hoàn thành.
+        </p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+      <h4 className="font-semibold text-gray-700 mb-3">Đánh giá dịch vụ</h4>
+      
+      {/* Rating stars */}
+      <div className="flex items-center gap-1 mb-3">
+        {[1, 2, 3, 4, 5].map((star) => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => setRate(star)}
+            className="focus:outline-none"
+            disabled={saving}
+          >
+            <FaStar className={`text-xl ${(rate || 0) >= star ? 'text-yellow-400' : 'text-gray-300'}`} />
+          </button>
+        ))}
+        <span className="ml-2 text-sm text-gray-600">
+          {rate > 0 ? `${rate}/5` : 'Chọn sao'}
+        </span>
+      </div>
+
+      {/* Feedback content */}
+      <textarea
+        rows={3}
+        placeholder="Nhập nội dung đánh giá (không bắt buộc)"
+        value={content}
+        onChange={(e) => setContent(e.target.value)}
+        className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+        disabled={saving}
+      />
+
+      {/* Save button */}
+      <div className="flex items-center gap-3 mt-3">
+        <button
+          onClick={handleSave}
+          disabled={saving}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-60 transition-colors"
+        >
+          {saving ? 'Đang lưu...' : (existing ? 'Cập nhật đánh giá' : 'Gửi đánh giá')}
+        </button>
+        {saved && (
+          <span className="text-green-600 text-sm font-medium">✓ Đã lưu đánh giá</span>
+        )}
+      </div>
+    </div>
+  );
+};
+
 const DetailModal = ({ 
   isOpen, 
   onClose, 
   item, 
   type = 'service', // 'service' or 'package'
-  getServicesOfPackage 
+  getServicesOfPackage,
+  customizeTasks = [],
+  feedbacks = [],
+  onRefreshData
 }) => {
   const router = useRouter();
 
@@ -86,7 +264,7 @@ const DetailModal = ({
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         exit={{ opacity: 0, scale: 0.9 }}
-        className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full relative"
+        className="bg-white rounded-2xl shadow-2xl p-8 max-w-lg w-full relative max-h-[90vh] overflow-y-auto"
       >
         <button 
           className="absolute top-4 right-4 text-2xl text-gray-400 hover:text-gray-600 transition-colors"
@@ -128,14 +306,22 @@ const DetailModal = ({
             <p className="text-gray-600 mt-2 leading-relaxed">{item.description}</p>
           </div>
           
-                     {type === 'package' && getServicesOfPackage && (
-             <div>
-               <span className="font-semibold text-gray-700">Dịch vụ trong gói:</span>
-               <div className="mt-3 space-y-2">
-                 <PackageServicesList packageId={item.serviceID} getServicesOfPackage={getServicesOfPackage} />
-               </div>
-             </div>
-           )}
+          {type === 'package' && getServicesOfPackage && (
+            <div>
+              <span className="font-semibold text-gray-700">Dịch vụ trong gói:</span>
+              <div className="mt-3 space-y-2">
+                <PackageServicesList packageId={item.serviceID} getServicesOfPackage={getServicesOfPackage} />
+              </div>
+            </div>
+          )}
+
+          {/* Rating section */}
+          <ServiceRating 
+            serviceId={item.serviceID}
+            customizeTasks={customizeTasks}
+            feedbacks={feedbacks}
+            onRefreshData={onRefreshData}
+          />
         </div>
         
         <div className="mt-6 flex justify-end">

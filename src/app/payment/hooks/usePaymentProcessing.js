@@ -19,23 +19,18 @@ export const usePaymentProcessing = ({
 
   // Helper function xử lý thành công
   const handlePaymentSuccess = useCallback(async (invoiceId) => {
-    console.log('Payment successful for invoice:', invoiceId);
 
     // Gán nurse cho các customizeTask sau khi thanh toán thành công
     if (selectionMode === 'user' && selectedStaffByTask && Object.keys(selectedStaffByTask).length > 0) {
       try {
-        console.log('Assigning nurses to tasks after successful payment:', selectedStaffByTask);
         
         const assignmentPromises = Object.entries(selectedStaffByTask).map(async ([customizeTaskId, nursingId]) => {
           if (customizeTaskId && nursingId) {
-            console.log(`Assigning nurse ${nursingId} to task ${customizeTaskId}`);
             await customizeTaskService.updateNursing(parseInt(customizeTaskId), parseInt(nursingId));
-            console.log(`Successfully assigned nurse ${nursingId} to task ${customizeTaskId}`);
           }
         });
 
         await Promise.all(assignmentPromises);
-        console.log('All nurse assignments completed successfully');
       } catch (assignmentError) {
         console.error('Error assigning nurses after payment:', assignmentError);
         // Không throw error vì thanh toán đã thành công, chỉ log lỗi
@@ -45,7 +40,6 @@ export const usePaymentProcessing = ({
     // Refresh wallet data thông qua WalletContext
     try {
       await refreshWalletData();
-      console.log('Wallet data refreshed via context');
     } catch (refreshError) {
       console.warn('Could not refresh wallet via context:', refreshError);
     }
@@ -108,7 +102,6 @@ export const usePaymentProcessing = ({
       let invoiceResponse;
       try {
         invoiceResponse = await invoiceService.createInvoice(invoiceData);
-        console.log('Invoice created successfully:', invoiceResponse);
       } catch (createErr) {
         const msg = createErr?.message || '';
         if (/already paid/i.test(msg)) {
@@ -133,7 +126,6 @@ export const usePaymentProcessing = ({
           try {
             const existingInvoice = await invoiceService.getInvoiceByBooking(bookingID);
             if (existingInvoice && existingInvoice.invoiceID) {
-              console.log('Invoice already paid, using existing invoiceID:', existingInvoice.invoiceID);
               await handlePaymentSuccess(existingInvoice.invoiceID);
               return;
             }

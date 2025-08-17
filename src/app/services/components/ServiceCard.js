@@ -4,6 +4,8 @@ import { motion } from 'framer-motion';
 import { FaStar, FaClock, FaEye, FaShoppingCart, FaCheck, FaTimes, FaTag } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 import QuantitySelector from './QuantitySelector';
+import ServiceRatingDisplay from './ServiceRatingDisplay';
+import ServiceStatusBadge from './ServiceStatusBadge';
 
 // Component để hiển thị danh sách dịch vụ con trong gói
 const PackageServicesList = ({ packageId, getServicesOfPackage }) => {
@@ -73,15 +75,12 @@ const ServiceCard = ({
   expandedPackage,
   onToggleExpand,
   getServicesOfPackage,
+  getRating,
+  customizeTasks = [],
   quantity = 1,
   onQuantityChange
 }) => {
-  const getRating = (serviceId) => {
-    // This should be passed from parent or calculated here
-    return { rating: 5.0, count: 0 };
-  };
-
-  const rating = getRating(service.serviceID);
+  const rating = getRating ? getRating(service.serviceID) : { rating: 5.0, count: 0 };
 
   return (
     <motion.div
@@ -108,10 +107,16 @@ const ServiceCard = ({
       <div className="p-6">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-xl font-bold text-gray-900">{service.serviceName}</h3>
-          <div className="flex items-center gap-1">
-            <FaStar className="text-yellow-400 text-sm" />
-            <span className="text-sm font-semibold text-gray-700">{rating.rating}</span>
-            <span className="text-xs text-gray-400">({rating.count})</span>
+            <div className="flex flex-col items-end gap-1">
+            <ServiceRatingDisplay 
+              rating={rating.rating} 
+              count={rating.count} 
+              size="sm" 
+            />
+            <ServiceStatusBadge 
+              serviceId={service.serviceID}
+              customizeTasks={customizeTasks}
+            />
           </div>
         </div>
 

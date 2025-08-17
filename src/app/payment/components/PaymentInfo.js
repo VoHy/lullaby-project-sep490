@@ -111,41 +111,7 @@ const ErrorDisplay = ({ error }) => {
   );
 };
 
-// Staff Selection Mode Component
-const StaffSelectionMode = ({ selectionMode, setSelectionMode }) => (
-  <div className="bg-purple-50 border border-purple-200 rounded-lg p-4 mb-4">
-    <div className="text-sm font-semibold text-purple-800 mb-2">Chọn cách phân công điều dưỡng</div>
-    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-      <button
-        type="button"
-        className={`px-3 py-2 rounded-lg border text-sm font-medium ${
-          selectionMode === 'user' 
-            ? 'bg-purple-600 text-white border-purple-600' 
-            : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
-        }`}
-        onClick={() => setSelectionMode?.('user')}
-      >
-        Người dùng chọn
-      </button>
-      <button
-        type="button"
-        className={`px-3 py-2 rounded-lg border text-sm font-medium ${
-          selectionMode === 'auto' 
-            ? 'bg-purple-600 text-white border-purple-600' 
-            : 'bg-white text-purple-700 border-purple-300 hover:bg-purple-50'
-        }`}
-        onClick={() => setSelectionMode?.('auto')}
-      >
-        Hệ thống tự chọn
-      </button>
-    </div>
-    {selectionMode === 'user' && (
-      <div className="text-xs text-purple-700 mt-2">
-        Bạn cần chọn đủ điều dưỡng cho tất cả dịch vụ trước khi thanh toán.
-      </div>
-    )}
-  </div>
-);
+
 
 // Payment Button Component
 const PaymentButton = ({ 
@@ -153,14 +119,13 @@ const PaymentButton = ({
   myWallet, 
   loading, 
   isProcessingPayment, 
-  selectionMode, 
   canConfirm, 
   handleConfirm 
 }) => {
   const walletAmount = myWallet?.amount || myWallet?.Amount || 0;
   const isSufficient = walletAmount >= total;
-  const canProceed = isSufficient && (selectionMode !== 'user' || canConfirm);
-  const isDisabled = loading || isProcessingPayment || (selectionMode === 'user' && !canConfirm);
+  const canProceed = isSufficient && canConfirm;
+  const isDisabled = loading || isProcessingPayment || !canConfirm;
 
   return (
     <div className="space-y-3">
@@ -210,8 +175,6 @@ export default function PaymentInfo({
   handleConfirm,
   isProcessingPayment,
   paymentBreakdown,
-  selectionMode,
-  setSelectionMode,
   canConfirm,
 }) {
   return (
@@ -253,11 +216,7 @@ export default function PaymentInfo({
         </div>
       </div>
 
-      {/* Staff Selection Mode */}
-      <StaffSelectionMode 
-        selectionMode={selectionMode} 
-        setSelectionMode={setSelectionMode} 
-      />
+
 
       {/* Payment Button */}
       <PaymentButton
@@ -265,7 +224,6 @@ export default function PaymentInfo({
         myWallet={myWallet}
         loading={loading}
         isProcessingPayment={isProcessingPayment}
-        selectionMode={selectionMode}
         canConfirm={canConfirm}
         handleConfirm={handleConfirm}
       />
