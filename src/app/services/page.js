@@ -6,6 +6,8 @@ import serviceTypeService from '@/services/api/serviceTypeService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import feedbackService from '@/services/api/feedbackService';
 import customizeTaskService from '@/services/api/customizeTaskService';
+import careProfileService from '@/services/api/careProfileService';
+import relativesService from '@/services/api/relativesService';
 import {
   SearchFilter,
   ServiceSection,
@@ -60,19 +62,27 @@ const ServicesSkeleton = () => (
 const clearServicesCache = () => {
   localStorage.removeItem('services_data');
   localStorage.removeItem('services_cache_time');
+  localStorage.removeItem('careProfiles_data');
+  localStorage.removeItem('careProfiles_cache_time');
+  localStorage.removeItem('relatives_data');
+  localStorage.removeItem('relatives_cache_time');
 };
 
 // Function to refresh data after new feedback
 const refreshData = async () => {
   try {
     setLoading(true);
-    const [feedbacksData, customizeTasksData] = await Promise.all([
+    const [feedbacksData, customizeTasksData, careProfilesData, relativesData] = await Promise.all([
       feedbackService.getAllFeedbacks(),
-      customizeTaskService.getAllCustomizeTasks()
+      customizeTaskService.getAllCustomizeTasks(),
+      careProfileService.getCareProfiles(),
+      relativesService.getRelatives()
     ]);
 
     setFeedbacks(feedbacksData);
     setCustomizeTasks(customizeTasksData);
+    setCareProfiles(careProfilesData);
+    setRelatives(relativesData);
 
     // Update cache with new data
     const cachedData = localStorage.getItem('services_data');
@@ -81,7 +91,9 @@ const refreshData = async () => {
       const updatedData = {
         ...parsedData,
         feedbacks: feedbacksData,
-        customizeTasks: customizeTasksData
+        customizeTasks: customizeTasksData,
+        careProfiles: careProfilesData,
+        relatives: relativesData
       };
       localStorage.setItem('services_data', JSON.stringify(updatedData));
     }
@@ -98,6 +110,8 @@ export default function ServicesPage() {
   const [serviceTasks, setServiceTasks] = useState([]);
   const [feedbacks, setFeedbacks] = useState([]);
   const [customizeTasks, setCustomizeTasks] = useState([]);
+  const [careProfiles, setCareProfiles] = useState([]);
+  const [relatives, setRelatives] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedServices, setSelectedServices] = useState([]);
   const [serviceQuantities, setServiceQuantities] = useState({});
@@ -129,29 +143,37 @@ export default function ServicesPage() {
           setServiceTasks(parsedData.tasks);
           setFeedbacks(parsedData.feedbacks || []);
           setCustomizeTasks(parsedData.customizeTasks || []);
+          setCareProfiles(parsedData.careProfiles || []);
+          setRelatives(parsedData.relatives || []);
           setLoading(false);
           return;
         }
 
         // Fetch fresh data
-        const [services, tasks, feedbacksData, customizeTasksData] = await Promise.all([
+        const [services, tasks, feedbacksData, customizeTasksData, careProfilesData, relativesData] = await Promise.all([
           serviceTypeService.getServiceTypes(),
           serviceTaskService.getServiceTasks(),
           feedbackService.getAllFeedbacks(),
-          customizeTaskService.getAllCustomizeTasks()
+          customizeTaskService.getAllCustomizeTasks(),
+          careProfileService.getCareProfiles(),
+          relativesService.getRelatives()
         ]);
 
         setServiceTypes(services);
         setServiceTasks(tasks);
         setFeedbacks(feedbacksData);
         setCustomizeTasks(customizeTasksData);
+        setCareProfiles(careProfilesData);
+        setRelatives(relativesData);
 
         // Cache the data
         localStorage.setItem('services_data', JSON.stringify({
           services,
           tasks,
           feedbacks: feedbacksData,
-          customizeTasks: customizeTasksData
+          customizeTasks: customizeTasksData,
+          careProfiles: careProfilesData,
+          relatives: relativesData
         }));
         localStorage.setItem('services_cache_time', now.toString());
 
@@ -192,10 +214,13 @@ export default function ServicesPage() {
         });
         return prev.filter((id) => id !== serviceId);
       } else {
-        // Nếu chọn dịch vụ mới, set số lượng mặc định là 1
+        // Nếu chọn dịch vụ mới, set số lượng mặc định
+        const selectedService = serviceTypes.find(s => s.serviceID === serviceId);
+        const defaultQuantity = selectedService?.forMom ? 1 : 1; // Dịch vụ mẹ luôn là 1
+        
         setServiceQuantities(prevQuantities => ({
           ...prevQuantities,
-          [serviceId]: 1
+          [serviceId]: defaultQuantity
         }));
         return [...prev, serviceId];
       }
@@ -204,10 +229,53 @@ export default function ServicesPage() {
 
   // Hàm cập nhật số lượng cho dịch vụ
   const handleQuantityChange = (serviceId, quantity) => {
+    const selectedService = serviceTypes.find(s => s.serviceID === serviceId);
+    
+    // Nếu là dịch vụ mẹ, luôn giữ số lượng là 1
+    if (selectedService?.forMom) {
+      setServiceQuantities(prevQuantities => ({
+        ...prevQuantities,
+        [serviceId]: 1
+      }));
+      return;
+    }
+
+    // Kiểm tra giới hạn số lượng cho dịch vụ bé
+    const maxQuantity = getMaxQuantityForService(serviceId);
+    const validQuantity = Math.min(Math.max(quantity, 1), maxQuantity);
+
     setServiceQuantities(prevQuantities => ({
       ...prevQuantities,
-      [serviceId]: quantity
+      [serviceId]: validQuantity
     }));
+  };
+
+  // Hàm tính số lượng tối đa cho dịch vụ dựa trên số relative trong careProfile
+  const getMaxQuantityForService = (serviceId) => {
+    console.log('DEBUG relatives:', relatives);
+    console.log('DEBUG careProfiles:', careProfiles);
+    if (!user || !careProfiles.length || !relatives.length) return 10; // Default max
+
+    // Lấy careProfile của user hiện tại
+    const currentAccountId = user.accountID || user.AccountID;
+    const userCareProfiles = careProfiles.filter(cp => 
+      (cp.accountID || cp.AccountID) === currentAccountId
+    );
+
+    if (userCareProfiles.length === 0) return 1; // Không có careProfile thì chỉ được đặt 1
+
+    // Tính tổng số relative trong tất cả careProfile của user
+    const totalRelatives = relatives.filter(relative => {
+      const relativeCareProfileId = relative.careProfileID || relative.CareProfileID;
+      return userCareProfiles.some(cp => 
+        (cp.careProfileID || cp.CareProfileID) === relativeCareProfileId
+      );
+    }).length;
+
+    console.log('DEBUG totalRelatives:', totalRelatives);
+
+    // Trả về số lượng tối đa là số relative, nhưng không quá 10
+    return Math.min(totalRelatives, 10);
   };
 
   // Tách dịch vụ lẻ và package
@@ -452,6 +520,10 @@ export default function ServicesPage() {
             customizeTasks={customizeTasks}
             serviceQuantities={serviceQuantities}
             onQuantityChange={handleQuantityChange}
+            getMaxQuantityForService={getMaxQuantityForService}
+            user={user}
+            careProfiles={careProfiles}
+            relatives={relatives}
           />
         )}
 
@@ -469,6 +541,10 @@ export default function ServicesPage() {
             customizeTasks={customizeTasks}
             serviceQuantities={serviceQuantities}
             onQuantityChange={handleQuantityChange}
+            getMaxQuantityForService={getMaxQuantityForService}
+            user={user}
+            careProfiles={careProfiles}
+            relatives={relatives}
           />
         )}
 
@@ -491,6 +567,10 @@ export default function ServicesPage() {
           selectedServices={selectedServices}
           serviceQuantities={serviceQuantities}
           serviceTypes={serviceTypes}
+          getMaxQuantityForService={getMaxQuantityForService}
+          user={user}
+          careProfiles={careProfiles}
+          relatives={relatives}
         />
 
         {/* Service Detail Modal */}

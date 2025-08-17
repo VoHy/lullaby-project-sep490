@@ -66,13 +66,13 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
   const handleRoleChange = (e) => {
     const value = e.target.value;
     setRole(value);
-    if (value === 'nurse') setMajor('Y tá');
-    else if (value === 'specialist') setMajor('Chuyên gia');
+    if (value === 'Nurse') setMajor('Nurse');
+    else if (value === 'Specialist') setMajor('Specialist');
     else setMajor('');
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (role === 'nurse' || role === 'specialist') {
+    if (role === 'Nurse' || role === 'Specialist') {
       // Chuẩn hóa dữ liệu gửi lên API
       const data = {
         fullName: fullName,
@@ -102,8 +102,8 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
         email,
         phone_number: phone,
         avatar_url: avatarUrl || avatarPreview,
-        role_id: role === 'nurse' ? 2 : 2,
-        role_name: role === 'nurse' ? 'Y tá' : 'Chuyên gia',
+        role_id: role === 'Nurse' ? 2 : 2,
+        role_name: role === 'Nurse' ? 'Nurse' : 'Specialist',
         status: 'active',
         password,
       };
@@ -186,8 +186,8 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
                   onChange={handleRoleChange}
                 >
                   <option value="" hidden>Chọn vai trò</option>
-                  <option value="nurse">Y tá</option>
-                  <option value="specialist">Chuyên gia</option>
+                  <option value="Nurse">Y tá</option>
+                  <option value="Specialist">Chuyên gia</option>
                 </select>
               </div>
             </div>
@@ -213,7 +213,7 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
             </div>
           </div>
           {/* Card chuyên môn full width */}
-          {(role === 'nurse' || role === 'specialist') && (
+          {(role === 'Nurse' || role === 'Specialist') && (
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-2 mt-2 space-y-2 shadow-sm">
               <div className="font-semibold text-purple-700 mb-1 text-base">Thông tin chuyên môn</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-1">

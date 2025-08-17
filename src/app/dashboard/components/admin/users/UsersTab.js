@@ -473,7 +473,7 @@ const EditUserModal = ({ show, account, onClose, onSave }) => {
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-100 px-8 py-6">
           <div className="flex justify-between items-center">
@@ -592,7 +592,7 @@ const EditUserModal = ({ show, account, onClose, onSave }) => {
                 type="submit"
                 className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:from-purple-600 hover:to-pink-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
               >
-                💾 Cập nhật
+                Cập nhật
               </button>
             </div>
           </div>
