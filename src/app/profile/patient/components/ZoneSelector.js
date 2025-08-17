@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
 
-export default function ZoneSelector({ 
-  zones = [], 
-  zoneDetails = [], 
-  selectedZoneDetailID, 
-  onChange, 
+export default function ZoneSelector({
+  zones = [],
+  zoneDetails = [],
+  selectedZoneDetailID,
+  onChange,
   required = false,
   label = "Khu vực",
   placeholder = "Chọn khu vực"
@@ -15,7 +15,7 @@ export default function ZoneSelector({
   // Initialize selected zone based on selected zone detail
   useEffect(() => {
     if (selectedZoneDetailID && zoneDetails.length > 0) {
-      const zoneDetail = zoneDetails.find(zd => 
+      const zoneDetail = zoneDetails.find(zd =>
         (zd.zonedetailid || zd.ZonedetailID || zd.zoneDetailID) == selectedZoneDetailID
       );
       if (zoneDetail) {
@@ -41,7 +41,7 @@ export default function ZoneSelector({
   const handleZoneChange = (e) => {
     const newZoneID = e.target.value;
     setSelectedZoneID(newZoneID);
-    
+
     // Reset zone detail selection when zone changes
     if (onChange) {
       onChange({ target: { name: 'zoneDetailID', value: '' } });
@@ -58,7 +58,7 @@ export default function ZoneSelector({
   // Prepare zone options
   const zoneOptions = zones?.map(zone => ({
     value: zone.zoneID || zone.ZoneID || zone.zoneId,
-    label: zone.zoneName || zone.ZoneName || 'N/A'
+    label: `${zone.zoneName || zone.ZoneName || 'N/A'}${zone.cityName ? ' - ' + zone.cityName : zone.city ? ' - ' + zone.city : ''}`
   })) || [];
 
   // Prepare zone detail options

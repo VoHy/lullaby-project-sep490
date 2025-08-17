@@ -218,17 +218,6 @@ export default function RegisterPage() {
               />
               {fieldErrors.confirmPassword && <p className="text-red-500 text-xs mt-1">{fieldErrors.confirmPassword}</p>}
             </div>
-            <div>
-              <label className="mb-2 block text-xs font-semibold">Avatar URL (tuỳ chọn)</label>
-              <input
-                type="text"
-                name="avatarUrl"
-                placeholder="Nhập link avatar (nếu có)"
-                className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
-                value={formData.avatarUrl}
-                onChange={handleChange}
-              />
-            </div>
             {error && <div className="text-red-500 text-sm text-center">{error}</div>}
             <button
               type="submit"

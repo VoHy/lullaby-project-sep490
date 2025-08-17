@@ -142,7 +142,7 @@ const ManagerDashboard = ({ user }) => {
     if (!managedZone) return { nurses: 0, specialists: 0, total: 0 };
 
     const zoneNurses = nursingSpecialists.filter(ns =>
-      ns.zoneID === managedZone.zoneID && (ns.major === 'nurse' || ns.major === 'Nurse')
+      ns.zoneID === managedZone.zoneID && (ns.major === 'nurse' || ns.major === 'Nurse' || ns.major === 'Nursing')
     );
     const zoneSpecialists = nursingSpecialists.filter(ns =>
       ns.zoneID === managedZone.zoneID && (ns.major === 'specialist' || ns.major === 'Specialist')
@@ -300,7 +300,7 @@ const ManagerDashboard = ({ user }) => {
             {activeTab === 'nurse' && (
               <ManagerNurseTab
                 refetchNurses={fetchData}
-                nurses={nursingSpecialists.filter(ns => ns.zoneID === (managedZone?.zoneID) && (ns.major === 'nurse' || ns.major === 'Nurse'))}
+                nurses={nursingSpecialists.filter(ns => ns.zoneID === (managedZone?.zoneID) && (ns.major === 'nurse' || ns.major === 'Nurse' || ns.major === 'Nursing'))}
                 zones={zones}
                 managedZone={managedZone}
                 loading={loading}

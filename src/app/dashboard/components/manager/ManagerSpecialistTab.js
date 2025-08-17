@@ -69,6 +69,14 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
         slogan: specialistData.slogan,
         zoneID: managedZone.zoneID
       });
+      // Gán dịch vụ cho chuyên gia nếu có
+      if (Array.isArray(specialistData.serviceID) && specialistData.serviceID.length > 0) {
+        // Lấy specialist vừa tạo (cần lấy lại danh sách hoặc từ API trả về)
+        await nursingSpecialistServiceTypeService.create({
+          nursingID: specialistData.nursingID, // hoặc lấy từ response nếu có
+          serviceIDs: specialistData.serviceID.map(id => Number(id))
+        });
+      }
       if (typeof refetchSpecialists === 'function') {
         await refetchSpecialists();
       }
@@ -93,10 +101,13 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
         major: specialistData.major.charAt(0).toUpperCase() + specialistData.major.slice(1).toLowerCase(),
         status: specialistData.status
       });
-
+      // Gán lại dịch vụ cho chuyên gia
+      const serviceIDs = Array.isArray(specialistData.serviceID)
+        ? specialistData.serviceID.filter(id => id && id !== "").map(id => Number(id))
+        : specialistData.serviceID ? [Number(specialistData.serviceID)] : [];
       await nursingSpecialistServiceTypeService.create({
         nursingID: specialistId,
-        serviceID: specialistData.serviceID
+        serviceIDs: serviceIDs
       });
       if (typeof refetchSpecialists === 'function') {
         await refetchSpecialists();
@@ -213,4 +224,4 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
   );
 };
 
-export default ManagerSpecialistTab; 
+export default ManagerSpecialistTab;
