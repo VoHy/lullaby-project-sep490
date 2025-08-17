@@ -6,9 +6,17 @@ import { useRouter } from 'next/navigation';
 import { useContext } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 
-const MultiServiceBooking = ({ selectedServices, serviceQuantities, serviceTypes }) => {
+const MultiServiceBooking = ({ 
+  selectedServices, 
+  serviceQuantities, 
+  serviceTypes,
+  getMaxQuantityForService,
+  user,
+  careProfiles,
+  relatives
+}) => {
   const router = useRouter();
-  const { user, token } = useContext(AuthContext);
+  const { token } = useContext(AuthContext);
 
   if (selectedServices.length <= 1) return null;
 
@@ -19,17 +27,19 @@ const MultiServiceBooking = ({ selectedServices, serviceQuantities, serviceTypes
       return;
     }
 
-    // Tạo danh sách dịch vụ với thông tin chi tiết và số lượng
-    const servicesData = selectedServices.map(serviceId => {
+    // Tạo danh sách dịch vụ với thông tin chi tiết và số lượng (mỗi suất là 1 object)
+    let servicesData = [];
+    selectedServices.forEach(serviceId => {
       const serviceInfo = serviceTypes.find(s => s.serviceID === serviceId);
       const quantity = serviceQuantities[serviceId] || 1;
-      
-      return {
-        ...serviceInfo,
-        quantity: quantity
-      };
+      for (let i = 0; i < quantity; i++) {
+        servicesData.push({
+          ...serviceInfo,
+          quantity: 1
+        });
+      }
     });
-    
+
     // Tạo URL với tất cả thông tin dịch vụ
     const servicesParam = encodeURIComponent(JSON.stringify(servicesData));
     router.push(`/booking?services=${selectedServices.join(',')}&servicesData=${servicesParam}`);

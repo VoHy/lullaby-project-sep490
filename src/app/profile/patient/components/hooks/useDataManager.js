@@ -6,6 +6,7 @@ import zoneDetailService from '@/services/api/zoneDetailService';
 import careProfileService from '@/services/api/careProfileService';
 import bookingService from '@/services/api/bookingService';
 import { validateCareProfile, validateRelative, prepareCareProfileData, prepareRelativeData } from '../../utils/formUtils';
+import clearServicesCache from '@/app/services/page.js'; // Import hàm clearServicesCache
 
 export const useDataManager = (user, router) => {
   // Data states
@@ -155,6 +156,7 @@ export const useDataManager = (user, router) => {
         })
       );
 
+      clearServicesCache(); // Clear cache sau khi cập nhật
       return { success: true, message: 'Cập nhật người thân thành công!' };
     } else {
   const result = await relativesService.createRelative(submitData);
@@ -165,6 +167,7 @@ export const useDataManager = (user, router) => {
         { ...submitData, ...(result || {}) }
       ]);
 
+      clearServicesCache(); // Clear cache sau khi thêm
       return { success: true, message: 'Thêm người thân thành công!' };
     }
   };
@@ -177,6 +180,7 @@ export const useDataManager = (user, router) => {
         (relative.relativeID || relative.RelativeID || relative.relativeid) !== id
       )
     );
+    clearServicesCache(); // Clear cache sau khi xóa
     return { success: true, message: 'Xóa người thân thành công!' };
   };
 

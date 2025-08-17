@@ -288,44 +288,28 @@ const ServiceInfoCard = ({
   const [candidatesByTask, setCandidatesByTask] = useState({});
   const [openTaskId, setOpenTaskId] = useState(null);
 
-  // Tính toán thông tin dịch vụ chi tiết
+  // Tính toán thông tin dịch vụ chi tiết (KHÔNG group, mỗi customizeTask là 1 suất)
   const serviceDetails = useMemo(() => {
-    if (!customizePackages || customizePackages.length === 0) return [];
-
-    return customizePackages.map((pkg) => {
-      // Tìm thông tin dịch vụ từ serviceTypes
+    if (!customizeTasks || customizeTasks.length === 0) return [];
+    return customizeTasks.map((task, idx) => {
       const serviceType = serviceTypes.find(s =>
-        s.serviceID === pkg.serviceID ||
-        s.serviceTypeID === pkg.serviceID ||
-        s.ServiceID === pkg.serviceID
+        s.serviceID === task.serviceID ||
+        s.serviceTypeID === task.serviceID ||
+        s.ServiceID === task.serviceID
       );
-
-      // Tìm customizeTask tương ứng với package này
-      const relatedTask = customizeTasks.find(task =>
-        task.customizePackageID === pkg.packageID ||
-        task.customizePackageID === pkg.id ||
-        task.customizePackageID === pkg.customizePackageID
-      );
-
-      console.log(`Package ${pkg.packageID || pkg.id}:`, {
-        package: pkg,
-        relatedTask: relatedTask,
-        allTasks: customizeTasks
-      });
-
       return {
-        id: pkg.packageID || pkg.id,
-        name: serviceType?.serviceName || pkg.serviceName || pkg.name || `Dịch vụ #${pkg.serviceID}`,
-        price: serviceType?.price || pkg.price || pkg.amount || 0,
-        quantity: pkg.quantity || 1,
-        total: (serviceType?.price || pkg.price || pkg.amount || 0) * (pkg.quantity || 1),
-        startTime: relatedTask?.startTime,
-        endTime: relatedTask?.endTime,
-        taskOrder: relatedTask?.taskOrder,
-        customizeTaskId: relatedTask?.customizeTaskID || relatedTask?.customize_TaskID
+        id: task.customizeTaskID || task.id || idx,
+        name: serviceType?.serviceName || `Dịch vụ #${task.serviceID}`,
+        price: serviceType?.price || 0,
+        total: serviceType?.price || 0,
+        startTime: task.startTime,
+        endTime: task.endTime,
+        taskOrder: task.taskOrder,
+        customizeTaskId: task.customizeTaskID || task.id,
+        // ... các trường khác nếu cần
       };
     });
-  }, [customizePackages, serviceTypes, customizeTasks]);
+  }, [customizeTasks, serviceTypes]);
 
   // Load candidates cho các task
   useEffect(() => {

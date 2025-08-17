@@ -78,7 +78,11 @@ const ServiceCard = ({
   getRating,
   customizeTasks = [],
   quantity = 1,
-  onQuantityChange
+  onQuantityChange,
+  getMaxQuantityForService,
+  user,
+  careProfiles,
+  relatives
 }) => {
   const rating = getRating ? getRating(service.serviceID) : { rating: 5.0, count: 0 };
 
@@ -135,13 +139,33 @@ const ServiceCard = ({
         </div>
 
         {/* Quantity Selector for selected individual services */}
-        {type === 'service' && isSelected && onQuantityChange && (
-          <QuantitySelector
-            quantity={quantity}
-            onQuantityChange={(newQuantity) => onQuantityChange(service.serviceID, newQuantity)}
-            min={1}
-            max={10}
-          />
+        {type === 'service' && isSelected && onQuantityChange && !service.forMom && (
+          <div className="space-y-2">
+            <QuantitySelector
+              quantity={quantity}
+              onQuantityChange={(newQuantity) => onQuantityChange(service.serviceID, newQuantity)}
+              min={1}
+              max={getMaxQuantityForService ? getMaxQuantityForService(service.serviceID) : 10}
+            />
+            {/* Hiển thị thông tin về giới hạn số lượng */}
+            {getMaxQuantityForService && (
+              <div className="text-xs text-gray-500 text-center">
+                Giới hạn: Tối đa {getMaxQuantityForService(service.serviceID)} suất 
+                (theo số người thân trong hồ sơ)
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Show fixed quantity for mom services */}
+        {type === 'service' && isSelected && service.forMom && (
+          <div className="flex items-center justify-between bg-gray-50 rounded-lg p-2 mb-3">
+            <span className="text-sm font-medium text-gray-700">Suất:</span>
+            <div className="text-right">
+              <span className="text-sm font-bold text-blue-600">1 (cố định)</span>
+              <p className="text-xs text-gray-500">Dịch vụ cho mẹ</p>
+            </div>
+          </div>
         )}
 
         {/* Action Buttons */}
