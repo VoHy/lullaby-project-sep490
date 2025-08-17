@@ -21,6 +21,27 @@ export const usePaymentProcessing = ({
   const handlePaymentSuccess = useCallback(async (invoiceId) => {
     console.log('Payment successful for invoice:', invoiceId);
 
+    // Gán nurse cho các customizeTask sau khi thanh toán thành công
+    if (selectionMode === 'user' && selectedStaffByTask && Object.keys(selectedStaffByTask).length > 0) {
+      try {
+        console.log('Assigning nurses to tasks after successful payment:', selectedStaffByTask);
+        
+        const assignmentPromises = Object.entries(selectedStaffByTask).map(async ([customizeTaskId, nursingId]) => {
+          if (customizeTaskId && nursingId) {
+            console.log(`Assigning nurse ${nursingId} to task ${customizeTaskId}`);
+            await customizeTaskService.updateNursing(parseInt(customizeTaskId), parseInt(nursingId));
+            console.log(`Successfully assigned nurse ${nursingId} to task ${customizeTaskId}`);
+          }
+        });
+
+        await Promise.all(assignmentPromises);
+        console.log('All nurse assignments completed successfully');
+      } catch (assignmentError) {
+        console.error('Error assigning nurses after payment:', assignmentError);
+        // Không throw error vì thanh toán đã thành công, chỉ log lỗi
+      }
+    }
+
     // Refresh wallet data thông qua WalletContext
     try {
       await refreshWalletData();
@@ -37,7 +58,7 @@ export const usePaymentProcessing = ({
     setTimeout(() => {
       router.push('/appointments');
     }, 3000);
-  }, [refreshWalletData, router]);
+  }, [refreshWalletData, router, selectionMode, selectedStaffByTask]);
 
   // Handle payment confirmation
   const handleConfirm = useCallback(async () => {

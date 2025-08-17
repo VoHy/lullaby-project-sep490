@@ -19,6 +19,9 @@ import { usePaymentProcessing } from './hooks/usePaymentProcessing';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import customizeTaskService from '@/services/api/customizeTaskService';
 
+// Icons
+import { Clock, Calendar } from 'lucide-react';
+
 function PaymentContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -132,6 +135,7 @@ function PaymentContent() {
               bookingData={bookingData}
               customizePackages={booking?.customizePackages || []}
               serviceTypes={booking?.serviceTypes || []}
+              customizeTasks={booking?.customizeTasks || []}
             />
 
             {/* Appointment Information */}
@@ -232,26 +236,27 @@ const getCandidatesForService = async (customizeTaskId) => {
   }
 };
 
-// Function để gán nurse cho task và lên lịch
+// Function để gán nurse cho task (chỉ lưu vào state, không gọi API)
 const handleAssignNurseToTask = async (customizeTaskId, nursingId) => {
   try {
-    console.log(`Assigning nurse ${nursingId} to task ${customizeTaskId}`);
+    console.log(`Selecting nurse ${nursingId} for task ${customizeTaskId} (saved to state only)`);
     
-    // Gọi API để cập nhật nursing assignment và lên lịch
-    await customizeTaskService.updateNursing(customizeTaskId, nursingId);
+    // Chỉ lưu vào state, KHÔNG gọi API ngay
+    // API sẽ được gọi khi user xác nhận thanh toán
     
-    console.log(`Successfully assigned nurse ${nursingId} to task ${customizeTaskId}`);
-    
-    // Có thể thêm thông báo thành công ở đây
     return true;
   } catch (error) {
-    console.error(`Error assigning nurse ${nursingId} to task ${customizeTaskId}:`, error);
-    throw new Error(`Không thể gán điều dưỡng: ${error.message || 'Lỗi không xác định'}`);
+    console.error(`Error selecting nurse ${nursingId} for task ${customizeTaskId}:`, error);
+    throw new Error(`Không thể chọn điều dưỡng: ${error.message || 'Lỗi không xác định'}`);
   }
 };
 
 // Service Info Card Component
-const ServiceInfoCard = ({ bookingData, customizePackages, serviceTypes }) => {
+const ServiceInfoCard = ({ bookingData, customizePackages, serviceTypes, customizeTasks = [] }) => {
+  // Debug log
+  console.log('ServiceInfoCard - customizeTasks:', customizeTasks);
+  console.log('ServiceInfoCard - customizePackages:', customizePackages);
+  
   // Tính toán thông tin dịch vụ chi tiết
   const serviceDetails = useMemo(() => {
     if (!customizePackages || customizePackages.length === 0) return [];
@@ -264,15 +269,48 @@ const ServiceInfoCard = ({ bookingData, customizePackages, serviceTypes }) => {
         s.ServiceID === pkg.serviceID
       );
 
+      // Tìm customizeTask tương ứng với package này
+      const relatedTask = customizeTasks.find(task => 
+        task.customizePackageID === pkg.packageID || 
+        task.customizePackageID === pkg.id ||
+        task.customizePackageID === pkg.customizePackageID
+      );
+
+      console.log(`Package ${pkg.packageID || pkg.id}:`, {
+        package: pkg,
+        relatedTask: relatedTask,
+        allTasks: customizeTasks
+      });
+
       return {
         id: pkg.packageID || pkg.id,
         name: serviceType?.serviceName || pkg.serviceName || pkg.name || `Dịch vụ #${pkg.serviceID}`,
         price: serviceType?.price || pkg.price || pkg.amount || 0,
         quantity: pkg.quantity || 1,
-        total: (serviceType?.price || pkg.price || pkg.amount || 0) * (pkg.quantity || 1)
+        total: (serviceType?.price || pkg.price || pkg.amount || 0) * (pkg.quantity || 1),
+        startTime: relatedTask?.startTime,
+        endTime: relatedTask?.endTime,
+        taskOrder: relatedTask?.taskOrder
       };
     });
-  }, [customizePackages, serviceTypes]);
+  }, [customizePackages, serviceTypes, customizeTasks]);
+
+  // Format thời gian
+  const formatTime = (timeString) => {
+    if (!timeString) return '';
+    try {
+      const date = new Date(timeString);
+      return date.toLocaleString('vi-VN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    } catch (error) {
+      return timeString;
+    }
+  };
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6">
@@ -283,24 +321,39 @@ const ServiceInfoCard = ({ bookingData, customizePackages, serviceTypes }) => {
         <h2 className="text-2xl font-bold text-gray-800">Thông tin dịch vụ</h2>
       </div>
       
-      <div className="flex justify-between items-center mb-4">
-        <span className="text-lg font-bold text-gray-700">Tổng tiền:</span>
-        <span className="text-2xl font-bold text-pink-600">
-          {bookingData?.total?.toLocaleString()}đ
-        </span>
-      </div>
-      
       {serviceDetails.length > 0 && (
         <div>
-          <h3 className="text-lg font-bold text-gray-800 mb-2">Dịch vụ đã đặt</h3>
-          <ul className="divide-y divide-gray-200">
+          <h3 className="text-lg font-bold text-gray-800 mb-4">Dịch vụ đã đặt</h3>
+          <ul className="divide-y divide-gray-200 mb-6">
             {serviceDetails.map((service, idx) => (
               <li key={service.id || idx} className="py-4">
                 <div className="flex justify-between items-start">
                   <div className="flex-1">
-                    <span className="font-semibold text-blue-700 block">
-                      {service.name}
-                    </span>
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="font-semibold text-blue-700 text-lg">
+                        {service.name}
+                      </span>
+                      {service.taskOrder && (
+                        <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                          Thứ tự: {service.taskOrder}
+                        </span>
+                      )}
+                    </div>
+                    
+                    {/* Thông tin thời gian */}
+                    {(service.startTime || service.endTime) && (
+                      <div className="text-sm text-gray-600 mb-2 space-y-1">
+                        <div className="flex items-center gap-2">
+                          <Clock className="w-4 h-4 text-green-600" />
+                          <span>Bắt đầu: {formatTime(service.startTime)}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Calendar className="w-4 h-4 text-red-600" />
+                          <span>Kết thúc: {formatTime(service.endTime)}</span>
+                        </div>
+                      </div>
+                    )}
+                    
                     {service.quantity > 1 && (
                       <span className="text-sm text-gray-600">
                         Số lượng: {service.quantity}
@@ -308,7 +361,7 @@ const ServiceInfoCard = ({ bookingData, customizePackages, serviceTypes }) => {
                     )}
                   </div>
                   <div className="text-right">
-                    <span className="font-semibold text-green-600">
+                    <span className="font-semibold text-red-600 text-lg">
                       {service.total.toLocaleString()}đ
                     </span>
                     {service.quantity > 1 && (
@@ -321,6 +374,16 @@ const ServiceInfoCard = ({ bookingData, customizePackages, serviceTypes }) => {
               </li>
             ))}
           </ul>
+          
+          {/* Tổng tiền ở cuối */}
+          <div className="border-t border-gray-200 pt-4">
+            <div className="flex justify-between items-center">
+              <span className="text-xl font-bold text-gray-700">Tổng tiền:</span>
+              <span className="text-2xl font-bold text-red-600">
+                {bookingData?.total?.toLocaleString()}đ
+              </span>
+            </div>
+          </div>
         </div>
       )}
     </div>

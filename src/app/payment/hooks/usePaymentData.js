@@ -89,14 +89,20 @@ export const usePaymentData = (bookingId, user) => {
             
             const mapped = Array.isArray(tasks) ? tasks.map(t => ({
               customizeTaskID: t.customizeTaskID || t.CustomizeTaskID || t.id,
+              customizePackageID: t.customizePackageID || t.CustomizePackageID,
               serviceID: t.serviceID || t.ServiceID || t.serviceTypeID,
               nursingID: t.nursingID || t.NursingID || null,
-            })).filter(x => x.customizeTaskID && x.serviceID) : [];
+              taskOrder: t.taskOrder || t.TaskOrder,
+              startTime: t.startTime || t.StartTime,
+              endTime: t.endTime || t.EndTime,
+              status: t.status || t.Status
+            })) : [];
             
             console.log('Mapped customize tasks:', mapped);
             setCustomizeTasks(mapped);
           } catch (taskErr) {
             console.error('Could not load customize tasks for booking', taskErr);
+            setCustomizeTasks([]);
           }
 
           // Load customize packages
