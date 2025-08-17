@@ -138,7 +138,6 @@ export default function StaffSelection({
                             {!isLoading && candidates.length === 0 && (
                               <div className="text-center text-gray-500 p-4">
                                 <div className="text-lg font-semibold mb-2">Không có điều dưỡng phù hợp</div>
-                                <div className="text-sm">Vui lòng thử lại sau hoặc liên hệ admin</div>
                               </div>
                             )}
                             

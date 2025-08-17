@@ -17,6 +17,7 @@ import { usePaymentData } from './hooks/usePaymentData';
 import { useStaffSelection } from './hooks/useStaffSelection';
 import { usePaymentProcessing } from './hooks/usePaymentProcessing';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
+import customizeTaskService from '@/services/api/customizeTaskService';
 
 function PaymentContent() {
   const searchParams = useSearchParams();
@@ -48,6 +49,7 @@ function PaymentContent() {
   const {
     isProcessingPayment,
     showSuccessModal,
+    setShowSuccessModal,
     lastInvoiceId,
     handleConfirm,
     handlePaymentSuccess
@@ -151,6 +153,7 @@ function PaymentContent() {
                 selectedStaffByTask={selectedStaffByTask}
                 setSelectedStaffByTask={setSelectedStaffByTask}
                 getCandidatesForService={getCandidatesForService}
+                onAssign={handleAssignNurseToTask}
                 accounts={booking?.accounts || []}
               />
             )}
@@ -226,6 +229,24 @@ const getCandidatesForService = async (customizeTaskId) => {
   } catch (e) {
     console.error('Không thể lấy danh sách nurse rảnh:', e);
     return [];
+  }
+};
+
+// Function để gán nurse cho task và lên lịch
+const handleAssignNurseToTask = async (customizeTaskId, nursingId) => {
+  try {
+    console.log(`Assigning nurse ${nursingId} to task ${customizeTaskId}`);
+    
+    // Gọi API để cập nhật nursing assignment và lên lịch
+    await customizeTaskService.updateNursing(customizeTaskId, nursingId);
+    
+    console.log(`Successfully assigned nurse ${nursingId} to task ${customizeTaskId}`);
+    
+    // Có thể thêm thông báo thành công ở đây
+    return true;
+  } catch (error) {
+    console.error(`Error assigning nurse ${nursingId} to task ${customizeTaskId}:`, error);
+    throw new Error(`Không thể gán điều dưỡng: ${error.message || 'Lỗi không xác định'}`);
   }
 };
 
