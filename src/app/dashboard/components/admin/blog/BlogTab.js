@@ -13,12 +13,11 @@ const BlogTab = () => {
   const [editingBlog, setEditingBlog] = useState(null);
   const [editingCategory, setEditingCategory] = useState(null);
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [deleteType, setDeleteType] = useState(''); // 'blog' hoặc 'category'
-  const [refreshTrigger, setRefreshTrigger] = useState(0); // Trigger để refresh data
-  const [loading, setLoading] = useState(false); // Loading state cho các thao tác
-  const [stats, setStats] = useState({ blogs: 0, categories: 0 }); // Stats cho hiển thị số lượng
+  const [deleteType, setDeleteType] = useState(''); 
+  const [refreshTrigger, setRefreshTrigger] = useState(0); 
+  const [loading, setLoading] = useState(false); 
+  const [stats, setStats] = useState({ blogs: 0, categories: 0 }); 
   
-  // ✅ Cache data để tránh gọi API lại khi switch tab
   const [cachedData, setCachedData] = useState({
     blogs: null,
     categories: null,
@@ -113,7 +112,6 @@ const BlogTab = () => {
     }
   };
 
-  // ✅ Centralized data fetching với cache
   const fetchAllData = async (forceRefresh = false) => {
     // Kiểm tra cache (5 phút)
     const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
@@ -122,13 +120,12 @@ const BlogTab = () => {
     if (!forceRefresh && cachedData.lastFetch && 
         (now - cachedData.lastFetch) < CACHE_DURATION && 
         cachedData.blogs && cachedData.categories) {
-      console.log('📦 Using cached data');
+  
       return cachedData;
     }
 
     try {
       setLoading(true);
-      console.log('🌐 Fetching fresh data from API');
       
       const [blogsData, categoriesData] = await Promise.all([
         blogService.getAllBlogs(),
@@ -157,12 +154,10 @@ const BlogTab = () => {
     }
   };
 
-  // Fetch stats khi component mount và khi refreshTrigger thay đổi
   useEffect(() => {
-    fetchAllData(refreshTrigger > 0); // Force refresh khi có action
+    fetchAllData(refreshTrigger > 0); 
   }, [refreshTrigger]);
 
-  // Initial load
   useEffect(() => {
     if (isInitialLoad) {
       fetchAllData();

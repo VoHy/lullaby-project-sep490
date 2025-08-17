@@ -13,7 +13,7 @@ const AppointmentCard = ({
   formatDate
 }) => {
   const router = useRouter();
-  
+
   // Safety checks
   if (!appointment) return null;
 
@@ -188,10 +188,31 @@ const AppointmentCard = ({
 
           {/* Date and Time */}
           <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <span className="font-medium">Ngày hẹn:</span>
-              <span>{formatDate?.(appointment.workdate || appointment.Workdate || appointment.BookingDate) || 'Chưa xác định'}</span>
+            <div className="flex flex-col gap-2 text-sm text-gray-600">
+              <div className="flex items-center gap-2">
+                <span className="font-medium">Ngày hẹn:</span>
+                <span>
+                  {formatDate?.(
+                    appointment.workdate || appointment.Workdate || appointment.BookingDate
+                  ) || 'Chưa xác định'}
+                </span>
+              </div>
+
+              {(appointment.workdate || appointment.Workdate || appointment.BookingDate) && (
+                <div className="flex items-center gap-2">
+                  <span className="font-medium">Giờ hẹn:</span>
+                  <span>
+                    {new Date(
+                      appointment.workdate || appointment.Workdate || appointment.BookingDate
+                    ).toLocaleTimeString('vi-VN', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </span>
+                </div>
+              )}
             </div>
+
             <div className="flex items-center gap-2">
               {isCancelAllowed() && (
                 <div className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">

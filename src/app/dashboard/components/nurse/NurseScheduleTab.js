@@ -361,7 +361,6 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
     const taskNurseId = currentCustomizeTask.nursingID ?? currentCustomizeTask.NursingID ?? currentCustomizeTask.nursingId ?? null;
     const taskStatusRaw = (currentCustomizeTask.status ?? currentCustomizeTask.Status ?? '').toString();
 
-    console.log('DEBUG submitMedicalNote -> Nurse ID:', nurseId, 'Task Nurse ID:', taskNurseId, 'Task Status raw:', taskStatusRaw);
 
     if (String(taskNurseId) !== String(nurseId)) {
       alert('Chỉ nurse được phân công mới có thể ghi chú.');

@@ -4,12 +4,14 @@ import { motion } from "framer-motion";
 // import customizePackageService from '@/services/api/customizePackageService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 import serviceTaskService from '@/services/api/serviceTaskService';
-// import feedbackService from '@/services/api/feedbackService';
+import feedbackService from '@/services/api/feedbackService';
+import customizeTaskService from '@/services/api/customizeTaskService';
 import {
   SearchFilter,
   ServiceSection,
   DetailModal,
-  MultiServiceBooking
+  MultiServiceBooking,
+  ServicesRatingStats
 } from './components';
 import { useRouter } from 'next/navigation';
 import { AuthContext } from '@/context/AuthContext';
@@ -60,11 +62,42 @@ const clearServicesCache = () => {
   localStorage.removeItem('services_cache_time');
 };
 
+// Function to refresh data after new feedback
+const refreshData = async () => {
+  try {
+    setLoading(true);
+    const [feedbacksData, customizeTasksData] = await Promise.all([
+      feedbackService.getAllFeedbacks(),
+      customizeTaskService.getAllCustomizeTasks()
+    ]);
+
+    setFeedbacks(feedbacksData);
+    setCustomizeTasks(customizeTasksData);
+
+    // Update cache with new data
+    const cachedData = localStorage.getItem('services_data');
+    if (cachedData) {
+      const parsedData = JSON.parse(cachedData);
+      const updatedData = {
+        ...parsedData,
+        feedbacks: feedbacksData,
+        customizeTasks: customizeTasksData
+      };
+      localStorage.setItem('services_data', JSON.stringify(updatedData));
+    }
+  } catch (error) {
+    console.error('Error refreshing data:', error);
+  } finally {
+    setLoading(false);
+  }
+};
+
 export default function ServicesPage() {
   const { user, token } = useContext(AuthContext);
   const [serviceTypes, setServiceTypes] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
-  // const [feedbacks, setFeedbacks] = useState([]);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [customizeTasks, setCustomizeTasks] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedServices, setSelectedServices] = useState([]);
   const [serviceQuantities, setServiceQuantities] = useState({});
@@ -94,23 +127,31 @@ export default function ServicesPage() {
           const parsedData = JSON.parse(cachedData);
           setServiceTypes(parsedData.services);
           setServiceTasks(parsedData.tasks);
+          setFeedbacks(parsedData.feedbacks || []);
+          setCustomizeTasks(parsedData.customizeTasks || []);
           setLoading(false);
           return;
         }
 
         // Fetch fresh data
-        const [services, tasks] = await Promise.all([
+        const [services, tasks, feedbacksData, customizeTasksData] = await Promise.all([
           serviceTypeService.getServiceTypes(),
-          serviceTaskService.getServiceTasks()
+          serviceTaskService.getServiceTasks(),
+          feedbackService.getAllFeedbacks(),
+          customizeTaskService.getAllCustomizeTasks()
         ]);
 
         setServiceTypes(services);
         setServiceTasks(tasks);
+        setFeedbacks(feedbacksData);
+        setCustomizeTasks(customizeTasksData);
 
         // Cache the data
         localStorage.setItem('services_data', JSON.stringify({
           services,
-          tasks
+          tasks,
+          feedbacks: feedbacksData,
+          customizeTasks: customizeTasksData
         }));
         localStorage.setItem('services_cache_time', now.toString());
 
@@ -212,16 +253,56 @@ export default function ServicesPage() {
   const filteredServicesForMom = servicesForMom.filter(filterService);
   const filteredServicesForBaby = servicesForBaby.filter(filterService);
 
-  // Tính rating từ feedbacks API
+  // Tính rating từ feedbacks API dựa vào customizeTaskID
   const getRating = (serviceId) => {
-    // Comment lại vì feedbacks API chưa hoàn thiện
-    // const fb = feedbacks.filter(f => f.ServiceID === serviceId);
-    // if (!fb.length) return { rating: 5.0, count: 0 };
-    // const rating = (fb.reduce((sum, f) => sum + (f.Rating || 5), 0) / fb.length).toFixed(1);
-    // return { rating, count: fb.length };
+    // Tìm tất cả customize tasks liên quan đến service này
+    const relatedTasks = customizeTasks.filter(task => 
+      task.serviceID === serviceId || 
+      task.ServiceID === serviceId ||
+      task.serviceTypeID === serviceId
+    );
+    
+    if (relatedTasks.length === 0) {
+      return { rating: 5.0, count: 0 };
+    }
 
-    // Tạm thời return rating mặc định vì feedbacks API đã bị comment
-    return { rating: 5.0, count: 0 };
+    // Lọc chỉ các tasks đã hoàn thành
+    const completedTasks = relatedTasks.filter(task => {
+      const status = task.status || task.Status;
+      return status === 'completed' || status === 'done' || status === 'finished';
+    });
+
+    if (completedTasks.length === 0) {
+      return { rating: 5.0, count: 0 };
+    }
+
+    // Lấy tất cả customizeTaskID từ các tasks đã hoàn thành
+    const taskIds = completedTasks.map(task => 
+      task.customizeTaskID || task.CustomizeTaskID || task.id
+    );
+
+    // Tìm feedbacks cho các tasks này
+    const relatedFeedbacks = feedbacks.filter(feedback => {
+      const feedbackTaskId = feedback.customizeTaskID || feedback.CustomizeTaskID;
+      return taskIds.includes(feedbackTaskId);
+    });
+
+    if (relatedFeedbacks.length === 0) {
+      return { rating: 5.0, count: 0 };
+    }
+
+    // Tính rating trung bình
+    const totalRating = relatedFeedbacks.reduce((sum, feedback) => {
+      const rate = feedback.rate || feedback.Rate || 5;
+      return sum + rate;
+    }, 0);
+    
+    const averageRating = (totalRating / relatedFeedbacks.length).toFixed(1);
+    
+    return { 
+      rating: parseFloat(averageRating), 
+      count: relatedFeedbacks.length 
+    };
   };
 
   // Handle booking
@@ -313,6 +394,13 @@ export default function ServicesPage() {
           setSelectedCategory={setSelectedCategory}
         />
 
+        {/* Rating Statistics */}
+        <ServicesRatingStats
+          serviceTypes={serviceTypes}
+          customizeTasks={customizeTasks}
+          feedbacks={feedbacks}
+        />
+
         {/* Service Packages Section */}
         {filteredPackagesForBaby.length > 0 && (
           <ServiceSection
@@ -328,6 +416,7 @@ export default function ServicesPage() {
             onToggleExpand={handleToggleExpand}
             getServicesOfPackage={getServicesOfPackage}
             getRating={getRating}
+            customizeTasks={customizeTasks}
           />
         )}
 
@@ -345,6 +434,7 @@ export default function ServicesPage() {
             onToggleExpand={handleToggleExpand}
             getServicesOfPackage={getServicesOfPackage}
             getRating={getRating}
+            customizeTasks={customizeTasks}
           />
         )}
 
@@ -359,6 +449,7 @@ export default function ServicesPage() {
             onBook={handleBook}
             isDisabled={!!selectedPackage}
             getRating={getRating}
+            customizeTasks={customizeTasks}
             serviceQuantities={serviceQuantities}
             onQuantityChange={handleQuantityChange}
           />
@@ -375,6 +466,7 @@ export default function ServicesPage() {
             onBook={handleBook}
             isDisabled={!!selectedPackage}
             getRating={getRating}
+            customizeTasks={customizeTasks}
             serviceQuantities={serviceQuantities}
             onQuantityChange={handleQuantityChange}
           />
@@ -407,6 +499,9 @@ export default function ServicesPage() {
           onClose={() => setServiceDetail(null)}
           item={serviceDetail}
           type="service"
+          customizeTasks={customizeTasks}
+          feedbacks={feedbacks}
+          onRefreshData={refreshData}
         />
 
         {/* Package Detail Modal */}
@@ -416,6 +511,9 @@ export default function ServicesPage() {
           item={packageDetail}
           type="package"
           getServicesOfPackage={getServicesOfPackage}
+          customizeTasks={customizeTasks}
+          feedbacks={feedbacks}
+          onRefreshData={refreshData}
         />
       </div>
     </div>
