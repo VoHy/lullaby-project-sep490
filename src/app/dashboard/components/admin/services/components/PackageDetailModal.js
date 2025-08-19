@@ -191,7 +191,6 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
                           </div>
                         </div>
                         <div className="ml-4 text-gray-300">
-                          {/* read-only: no actions */}
                         </div>
                       </div>
                     </div>
@@ -200,27 +199,8 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
               </div>
             )}
           </div>
-
-          {/* Summary */}
-          {packageTasks.length > 0 && (
-            <div className="bg-gray-50 rounded-lg p-4">
-              <h5 className="font-semibold text-gray-800 mb-2">Tổng kết</h5>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-                <div>
-                  <span className="text-gray-600">Tổng giá dịch vụ con: </span>
-                  <span className="font-semibold">{calculateTotalPrice().toLocaleString()} VNĐ</span>
-                </div>
-                <div>
-                  <span className="text-gray-600">Tổng thời gian: </span>
-                  <span className="font-semibold">{calculateTotalDuration()} phút</span>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </div>
-
-  {/* Read-only: remove add modal */}
     </div>
   );
 };

@@ -48,8 +48,8 @@ const ServiceDetailModal = ({ isOpen, onClose, service }) => {
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Chuyên môn</label>
                 <p className="text-gray-800">
-                  {service.major === 'nurse' ? 'Y tá' : 
-                   service.major === 'specialist' ? 'Chuyên gia' : service.major}
+                  {service.major === 'Nurse' ? 'Y tá' : 
+                   service.major === 'Specialist' ? 'Chuyên gia' : service.major}
                 </p>
               </div>
               <div>

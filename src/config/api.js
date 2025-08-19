@@ -1,5 +1,5 @@
 // API Configuration
-export const API_BASE_URL = 'https://cool-dhawan.103-28-36-58.plesk.page/api';
+export const API_BASE_URL = 'https://phamlequyanh.name.vn/api';
 
 // API Endpoints mapping, aligned to Swagger paths (controller bases only).
 // Service modules will append concrete actions such as /getall, /update/{id}, ...

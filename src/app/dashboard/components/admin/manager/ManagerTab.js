@@ -287,7 +287,7 @@ const ManagerTab = () => {
             className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl hover:shadow-lg transition-all duration-300 flex items-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <FontAwesomeIcon icon={faPlus} className="mr-2" />
-            {saving ? 'Đang xử lý...' : 'Thêm Manager'}
+            {saving ? 'Đang xử lý...' : 'Thêm quản lý'}
           </button>
         </div>
       </div>
