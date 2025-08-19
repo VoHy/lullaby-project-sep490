@@ -72,8 +72,8 @@ const NurseList = ({ nurses, onEdit, onDelete }) => {
                     </div>
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{nurse.phoneNumber || 'N/A'}</div>
-                    <div className="text-sm text-gray-500">{nurse.email || 'N/A'}</div>
+                    <div className="text-sm font-medium text-gray-900">{nurse.account?.phoneNumber || nurse.phoneNumber || 'N/A'}</div>
+                    <div className="text-sm text-gray-500">{nurse.account?.email || nurse.email || 'N/A'}</div>
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{nurse.experience || 'N/A'}</div>

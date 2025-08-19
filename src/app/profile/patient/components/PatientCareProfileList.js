@@ -37,7 +37,7 @@ export default function PatientCareProfileList({ careProfiles, relativesList, zo
       
       {filteredCareProfiles.length === 0 ? (
         <div className="bg-white rounded-2xl shadow-lg p-8 text-center">
-          <div className="text-6xl mb-4">📋</div>
+          <div className="text-6xl mb-4"></div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Chưa có hồ sơ chăm sóc</h3>
           <p className="text-gray-600 mb-4">Bạn chưa có hồ sơ chăm sóc nào. Hãy tạo hồ sơ đầu tiên!</p>
           <button 

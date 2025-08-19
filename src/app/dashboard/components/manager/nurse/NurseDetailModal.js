@@ -58,11 +58,11 @@ const NurseDetailModal = ({ nurse, onClose }) => {
                 </div>
                 <div className="bg-white rounded-lg p-0">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Số điện thoại</label>
-                  <p className="text-base font-medium text-gray-900">{nurse.phoneNumber || 'N/A'}</p>
+                  <p className="text-base font-medium text-gray-900">{nurse.account?.phoneNumber || nurse.phoneNumber || 'N/A'}</p>
                 </div>
                 <div className="bg-white rounded-lg p-0">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                  <p className="text-base font-medium text-gray-900">{nurse.email || 'N/A'}</p>
+                  <p className="text-base font-medium text-gray-900">{nurse.account?.email || nurse.email || 'N/A'}</p>
                 </div>
                 <div className="bg-white rounded-lg p-0">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>

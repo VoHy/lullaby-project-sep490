@@ -19,13 +19,20 @@ const UserDetailModal = ({ show, account, onClose, onSave }) => {
     if (onClose) onClose();
   };
 
+  const formatDateTime = (date) => {
+    if (!date) return '-';
+    const d = new Date(date);
+    if (isNaN(d)) return '-';
+    return `${d.toLocaleDateString('vi-VN')} ${d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`;
+  };
+
   // Hiển thị toàn bộ thông tin tài khoản (chuẩn hóa field)
   const infoList = [
     { label: "ID tài khoản", value: account.AccountID || account.accountID || '-' },
     { label: "Họ và tên", value: account.full_name || account.fullName || '-' },
     { label: "Email", value: account.email || '-' },
     { label: "Số điện thoại", value: account.phone_number || account.phoneNumber || '-' },
-    { label: "Ngày tạo", value: account.createAt || account.createAt || '-' },
+    { label: "Ngày tạo", value: formatDateTime(account.createAt || account.createAt || '-') },
     { label: "Trạng thái", value: status === 'active' ? 'Hoạt động' : 'Tạm khóa' },
   ];
 
@@ -42,7 +49,7 @@ const UserDetailModal = ({ show, account, onClose, onSave }) => {
         </button>
         <h3 className="text-xl font-bold mb-4 text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500">Chi tiết tài khoản</h3>
         <div className="flex flex-col items-center mb-4">
-                          <img src={(account.avatar_url || account.avatarUrl) && (account.avatar_url || account.avatarUrl) !== 'string' ? (account.avatar_url || account.avatarUrl) : '/images/logo-eldora.png'} alt="avatar" className="w-24 h-24 rounded-full object-cover border-2 border-pink-200 mb-2" />
+          <img src={(account.avatar_url || account.avatarUrl) && (account.avatar_url || account.avatarUrl) !== 'string' ? (account.avatar_url || account.avatarUrl) : '/images/logo-eldora.png'} alt="avatar" className="w-24 h-24 rounded-full object-cover border-2 border-pink-200 mb-2" />
           <div className="font-semibold text-lg text-gray-800 mb-1">{account.full_name || account.fullName || '-'}</div>
           <div className="text-xs text-gray-500 mb-1">{account.email || '-'}</div>
         </div>
@@ -60,11 +67,10 @@ const UserDetailModal = ({ show, account, onClose, onSave }) => {
         <div className="flex justify-end mt-6">
           <button
             onClick={handleToggle}
-            className={`px-6 py-2 rounded-lg font-semibold hover:shadow-lg ${
-              status === 'active'
+            className={`px-6 py-2 rounded-lg font-semibold hover:shadow-lg ${status === 'active'
                 ? 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
                 : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white'
-            }`}
+              }`}
           >
             {status === 'active' ? 'Khóa tài khoản' : 'Mở khóa tài khoản'}
           </button>

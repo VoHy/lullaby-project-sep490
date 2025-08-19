@@ -58,11 +58,11 @@ const SpecialistDetailModal = ({ specialist, onClose }) => {
                 </div>
                 <div className="bg-white rounded-lg p-0">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Số điện thoại</label>
-                  <p className="text-base font-medium text-gray-900">{specialist.phoneNumber || 'N/A'}</p>
+                  <p className="text-base font-medium text-gray-900">{specialist.account?.phoneNumber || specialist.phoneNumber || 'N/A'}</p>
                 </div>
                 <div className="bg-white rounded-lg p-0">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-                  <p className="text-base font-medium text-gray-900">{specialist.email || 'N/A'}</p>
+                  <p className="text-base font-medium text-gray-900">{specialist.account?.email || specialist.email || 'N/A'}</p>
                 </div>
                 <div className="bg-white rounded-lg p-0">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Trạng thái</label>
