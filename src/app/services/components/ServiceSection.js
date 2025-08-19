@@ -16,8 +16,13 @@ const ServiceSection = ({
   onToggleExpand,
   getServicesOfPackage,
   getRating,
+  customizeTasks = [],
   serviceQuantities = {},
-  onQuantityChange
+  onQuantityChange,
+  getMaxQuantityForService,
+  user,
+  careProfiles,
+  relatives
 }) => {
   return (
     <motion.div
@@ -54,8 +59,13 @@ const ServiceSection = ({
             onToggleExpand={onToggleExpand}
             getServicesOfPackage={getServicesOfPackage}
             getRating={getRating}
+            customizeTasks={customizeTasks}
             quantity={serviceQuantities[service.serviceID] || 1}
             onQuantityChange={onQuantityChange}
+            getMaxQuantityForService={getMaxQuantityForService}
+            user={user}
+            careProfiles={careProfiles}
+            relatives={relatives}
           />
         ))}
       </div>

@@ -7,9 +7,9 @@ import { filterItems, getCareProfileId, getRelativeId } from '../utils/displayUt
 export default function PatientCareProfileCard({ care, relativesList, relFilter, setRelFilter, handleOpenForm, onViewDetailCareProfile, onViewDetailRelative, handleOpenEditCareProfile, handleOpenEditRelative, handleDeleteCareProfile, handleDeleteRelative }) {
   const normalizedCare = normalizeFieldNames(care);
   const careId = getCareProfileId(care);
-  
+
   // Filter relatives using utility function
-  const careRelatives = relativesList.filter(r => 
+  const careRelatives = relativesList.filter(r =>
     getCareProfileId({ careProfileID: r.careProfileID }) === careId
   );
   const filteredRelatives = filterItems(careRelatives, relFilter);
@@ -48,7 +48,7 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
           </div>
         </div>
       </div>
-      
+
       <div className="space-y-3">
         <div className="flex items-center gap-3">
           <FaPhone className="text-gray-400" />
@@ -65,7 +65,7 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
           </div>
         )}
       </div>
-      
+
       {/* Relatives Section */}
       <div className="mt-6 pt-4 border-t border-gray-100">
         <div className="flex justify-between items-center mb-3">
@@ -93,49 +93,51 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
             </button>
           </div>
         </div>
-        
-        {filteredRelatives.length === 0 ? (
-          <p className="text-sm text-gray-500 italic">Chưa có người thân nào.</p>
-        ) : (
-          <div className="space-y-2">
-            {filteredRelatives.map(relative => {
-              const normalizedRelative = normalizeFieldNames(relative);
-              const relativeId = getRelativeId(relative);
-              
-              return (
-                <div 
-                  key={relativeId} 
-                  className="bg-gray-50 rounded-lg p-3 flex items-center justify-between cursor-pointer group" 
-                  onClick={() => onViewDetailRelative && onViewDetailRelative(relative)}
-                >
-                  <div>
-                    <p className="font-medium text-purple-600 hover:underline">{normalizedRelative.relativeName}</p>
-                    <p className="text-xs text-gray-500">{formatDateToDDMMYYYY(normalizedRelative.dateOfBirth) || 'N/A'}</p>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <StatusBadge status={normalizedRelative.status} />
-                    <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100">
-                      <button
-                        className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-purple-600 transition"
-                        title="Sửa người thân"
-                        onClick={e => { e.stopPropagation(); handleOpenEditRelative && handleOpenEditRelative(relative, careId); }}
-                      >
-                        <FaEdit />
-                      </button>
-                      <button
-                        className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-red-600 transition"
-                        title="Xóa người thân"
-                        onClick={e => { e.stopPropagation(); handleDeleteRelative && handleDeleteRelative(relativeId); }}
-                      >
-                        <FaTrash />
-                      </button>
+
+        <div className="max-h-60 overflow-y-auto pr-1"> {/* 👈 thêm container có scroll */}
+          {filteredRelatives.length === 0 ? (
+            <p className="text-sm text-gray-500 italic">Chưa có người thân nào.</p>
+          ) : (
+            <div className="space-y-2">
+              {filteredRelatives.map((relative, idx) => {
+                const normalizedRelative = normalizeFieldNames(relative);
+                const relativeId = getRelativeId(relative);
+
+                return (
+                  <div
+                    key={relativeId || idx}
+                    className="bg-gray-50 rounded-lg p-3 flex items-center justify-between cursor-pointer group"
+                    onClick={() => onViewDetailRelative && onViewDetailRelative(relative)}
+                  >
+                    <div>
+                      <p className="font-medium text-purple-600 hover:underline">{normalizedRelative.relativeName}</p>
+                      <p className="text-xs text-gray-500">{formatDateToDDMMYYYY(normalizedRelative.dateOfBirth) || 'N/A'}</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={normalizedRelative.status} />
+                      <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100">
+                        <button
+                          className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-purple-600 transition"
+                          title="Sửa người thân"
+                          onClick={e => { e.stopPropagation(); handleOpenEditRelative && handleOpenEditRelative(relative, careId); }}
+                        >
+                          <FaEdit />
+                        </button>
+                        <button
+                          className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-red-600 transition"
+                          title="Xóa người thân"
+                          onClick={e => { e.stopPropagation(); handleDeleteRelative && handleDeleteRelative(relativeId); }}
+                        >
+                          <FaTrash />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
+                );
+              })}
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

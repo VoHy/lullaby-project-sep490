@@ -161,35 +161,6 @@ const AdminDashboard = ({ user, initialTab }) => {
                 <p className="text-gray-600 text-sm">Chào mừng {user?.full_name} - Quản trị viên hệ thống</p>
               </div>
             </div>
-            
-            <div className="flex items-center space-x-4">
-              {/* Search */}
-              <div className="relative">
-                <FontAwesomeIcon icon={faSearch} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Tìm kiếm..."
-                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent w-64"
-                />
-              </div>
-              
-              {/* Notifications */}
-              <div className="relative">
-                <button className="relative p-2 text-gray-600 hover:text-purple-600 transition-colors">
-                  <FontAwesomeIcon icon={faBell} className="text-xl" />
-                  {notifications.length > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                      {notifications.length}
-                    </span>
-                  )}
-                </button>
-              </div>
-              
-              {/* User Avatar */}
-              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
-                {user?.full_name?.charAt(0) || 'A'}
-              </div>
-            </div>
           </div>
         </div>
       </div>

@@ -6,7 +6,6 @@ import {
   faMoneyBill, faUser, faClock, faCheckCircle, faTimesCircle, faExclamationTriangle
 } from '@fortawesome/free-solid-svg-icons';
 import { useState, useEffect } from 'react';
-// Thay thế import mock data bằng services
 import careProfileService from '@/services/api/careProfileService';
 import accountService from '@/services/api/accountService';
 import serviceTypeService from '@/services/api/serviceTypeService';
@@ -15,7 +14,7 @@ import customizePackageService from '@/services/api/customizePackageService';
 import customizeTaskService from '@/services/api/customizeTaskService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
-import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
+
 import invoiceService from '@/services/api/invoiceService';
 
 const BookingsTab = ({ bookings }) => {
@@ -34,7 +33,6 @@ const BookingsTab = ({ bookings }) => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedNurseByTask, setSelectedNurseByTask] = useState({});
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10); // Số booking mỗi trang
@@ -171,69 +169,95 @@ const BookingsTab = ({ bookings }) => {
     return { careProfile, account, service, packageInfo, serviceTasksOfBooking, packagesOfBooking, invoiceID };
   }
 
-  // Assign nurse to a task
-  const handleAssignNurse = async (booking, task) => {
-    try {
-      const nurseId = selectedNurseByTask[task.customizeTaskID];
-      if (!nurseId) return;
-      // Validate nurse has mapping with the service of the task before assigning
-      try {
-        const mappings = await nursingSpecialistServiceTypeService.getByNursing(nurseId);
-        const serviceId = task.serviceID;
-        const allowed = Array.isArray(mappings) ? mappings.some(m => (m?.serviceID ?? m?.ServiceID) === serviceId) : false;
-        if (!allowed) {
-          alert('Y tá/chuyên gia được chọn không có chuyên môn phù hợp với dịch vụ của khách hàng.');
-          return;
-        }
-      } catch (e) {
-        // Fall back if API fails: prevent assignment to avoid wrong mapping
-        alert('Không thể lấy mapping của y tá/chuyên gia. Vui lòng thử lại.');
-        return;
-      }
-      await customizeTaskService.updateNursing(
-        task.customizeTaskID,
-        nurseId
-      );
-      // Update local customizeTasks cache
-      setCustomizeTasks((prev) => prev.map((t) => {
-        const id = t?.customizeTaskID ?? t?.CustomizeTaskID;
-        if (id === task.customizeTaskID) return { ...t, nursingID: nurseId };
-        return t;
-      }));
-    } catch (e) {
-      console.error('Assign nurse failed:', e);
-      alert('Phân công thất bại: ' + (e?.message || 'Unknown error'));
-    }
-  };
+
 
   const BookingDetailModal = ({ booking, onClose }) => {
     if (!booking) return null;
     const { careProfile, account, service, packageInfo, serviceTasksOfBooking, packagesOfBooking, invoiceID } = getBookingDetail(booking);
 
     // Local caches to avoid re-rendering entire tab and repeated fetches
-    const [localNursesByServiceId, setLocalNursesByServiceId] = useState({});
+    const [localNursesByTaskId, setLocalNursesByTaskId] = useState({});
     const [localInvoice, setLocalInvoice] = useState(null);
+    const [selectedNurseByTask, setSelectedNurseByTask] = useState({});
 
-    // Prefetch allowed nurses per service for this booking (only missing ones)
+    // Assign nurse to a task function
+    const handleAssignNurse = async (task) => {
+      try {
+        const nurseId = selectedNurseByTask[task.customizeTaskID];
+        if (!nurseId) return;
+
+        // Gọi API UpdateNursing để phân công nurse và tạo lịch
+        await customizeTaskService.updateNursing(
+          task.customizeTaskID,
+          nurseId
+        );
+
+        // Clear selection for this task
+        setSelectedNurseByTask((prev) => {
+          const newState = { ...prev };
+          delete newState[task.customizeTaskID];
+          return newState;
+        });
+
+        // Refresh nurses list for this task to reflect the change
+        setLocalNursesByTaskId((prev) => {
+          const newState = { ...prev };
+          delete newState[task.customizeTaskID];
+          return newState;
+        });
+
+        // Force re-render of the modal to show updated status
+        onClose();
+        setTimeout(() => setSelectedBooking(booking), 100);
+
+        // Hiển thị thông báo thành công
+        const successMessage = document.createElement('div');
+        successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+        successMessage.textContent = '✓ Phân công điều dưỡng thành công!';
+        document.body.appendChild(successMessage);
+
+        setTimeout(() => {
+          if (successMessage.parentNode) {
+            successMessage.parentNode.removeChild(successMessage);
+          }
+        }, 3000);
+      } catch (e) {
+        console.error('Assign nurse failed:', e);
+        // Hiển thị thông báo lỗi
+        const errorMessage = document.createElement('div');
+        errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
+        errorMessage.textContent = '✗ Phân công thất bại: ' + (e?.message || 'Lỗi không xác định. Vui lòng thử lại.');
+        document.body.appendChild(errorMessage);
+
+        setTimeout(() => {
+          if (errorMessage.parentNode) {
+            errorMessage.parentNode.removeChild(errorMessage);
+          }
+        }, 5000);
+      }
+    };
+
+    // Prefetch free nurses for each task in this booking (only missing ones)
     useEffect(() => {
       const bookingId = booking?.BookingID ?? booking?.bookingID;
-      const uniqueServiceIds = Array.from(new Set((serviceTasksOfBooking || []).map(t => t.serviceID).filter(Boolean)));
-      const missing = uniqueServiceIds.filter((sid) => !localNursesByServiceId[sid]);
+      const uniqueTaskIds = Array.from(new Set((serviceTasksOfBooking || []).map(t => t.customizeTaskID).filter(Boolean)));
+      const missing = uniqueTaskIds.filter((tid) => !localNursesByTaskId[tid]);
 
       let isMounted = true;
       const load = async () => {
         try {
           if (missing.length > 0) {
-            const entries = await Promise.all(missing.map(async (sid) => {
+            const entries = await Promise.all(missing.map(async (tid) => {
               try {
-                const data = await nursingSpecialistServiceTypeService.getByService(sid);
-                return [sid, data];
+                // Sử dụng API mới để lấy nurses rảnh cho từng task
+                const data = await nursingSpecialistService.getAllFreeNursingSpecialists(tid);
+                return [tid, data];
               } catch (e) {
-                console.error('Failed to load nurses for service', sid, e);
-                return [sid, []];
+                console.error('Failed to load free nurses for task', tid, e);
+                return [tid, []];
               }
             }));
-            if (isMounted) setLocalNursesByServiceId(prev => ({ ...prev, ...Object.fromEntries(entries) }));
+            if (isMounted) setLocalNursesByTaskId(prev => ({ ...prev, ...Object.fromEntries(entries) }));
           }
 
           if (!localInvoice && bookingId) {
@@ -251,7 +275,7 @@ const BookingsTab = ({ bookings }) => {
       load();
 
       return () => { isMounted = false; };
-    }, [booking?.BookingID, booking?.bookingID, serviceTasksOfBooking, localNursesByServiceId, localInvoice]);
+    }, [booking?.BookingID, booking?.bookingID, serviceTasksOfBooking, localNursesByTaskId, localInvoice]);
 
     return (
       <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 backdrop-blur-sm p-4">
@@ -265,7 +289,6 @@ const BookingsTab = ({ bookings }) => {
           {/* Header */}
           <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-lg p-6">
             <h3 className="text-2xl font-bold mb-2">Chi tiết Booking #{booking?.BookingID ?? booking?.bookingID}</h3>
-            <p className="text-blue-100">Ngày đặt: {new Date(booking?.workdate ?? booking?.Workdate ?? booking?.bookingDate ?? booking?.BookingDate).toLocaleDateString('vi-VN')}</p>
           </div>
 
           {/* Content */}
@@ -312,7 +335,11 @@ const BookingsTab = ({ bookings }) => {
                     )}
                     <div className="flex justify-between py-2 border-b border-gray-100">
                       <span className="font-medium text-gray-600">Ngày đặt:</span>
-                      <span className="text-gray-900">{new Date(booking?.workdate ?? booking?.Workdate ?? booking?.bookingDate ?? booking?.BookingDate).toLocaleDateString('vi-VN')}</span>
+                      <p className="text-blue-500">
+                        Ngày đặt: {new Date(booking?.workdate).toLocaleDateString('vi-VN')}
+                        {" "} {" "}
+                        {new Date(booking?.workdate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
                     </div>
                     <div className="flex justify-between py-2">
                       <span className="font-medium text-gray-600">Trạng thái:</span>
@@ -477,20 +504,25 @@ const BookingsTab = ({ bookings }) => {
                               <div className="p-4">
                                 {hasNurse ? (
                                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                                    <div className="flex items-center gap-3">
-                                      <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                        <FontAwesomeIcon icon={faUser} className="text-green-600" />
-                                      </div>
-                                      <div>
-                                        <div className="font-semibold text-green-800">Đã phân công</div>
-                                        <div className="text-green-700">
-                                          <span className="font-medium">{task.nurseName}</span>
-                                          {task.nurseRole && (
-                                            <span className="text-sm ml-2">
-                                              ({nurseRoleLabels[task.nurseRole] || task.nurseRole})
-                                            </span>
-                                          )}
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                          <FontAwesomeIcon icon={faUser} className="text-green-600" />
                                         </div>
+                                        <div>
+                                          <div className="font-semibold text-green-800">Đã phân công</div>
+                                          <div className="text-green-700">
+                                            <span className="font-medium">{task.nurseName}</span>
+                                            {task.nurseRole && (
+                                              <span className="text-sm ml-2">
+                                                ({nurseRoleLabels[task.nurseRole] || task.nurseRole})
+                                              </span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                                        ✓ Hoàn tất
                                       </div>
                                     </div>
                                   </div>
@@ -503,7 +535,28 @@ const BookingsTab = ({ bookings }) => {
                                         </div>
                                         <div>
                                           <div className="font-semibold text-yellow-800">Chưa phân công điều dưỡng</div>
-                                          <div className="text-yellow-700 text-sm">Vui lòng chọn điều dưỡng phù hợp</div>
+                                          <div className="text-yellow-700 text-sm">
+                                            Vui lòng chọn điều dưỡng phù hợp
+                                            {(() => {
+                                              const taskId = task.customizeTaskID;
+                                              const pool = localNursesByTaskId[taskId] || [];
+                                              const zoneId = careProfile?.zoneDetailID ?? careProfile?.zoneDetail_ID;
+                                              const filtered = Array.isArray(pool) ? pool.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
+                                              return (
+                                                <span className="block mt-1 text-xs text-blue-600">
+                                                  {localNursesByTaskId[taskId]
+                                                    ? (filtered.length > 0 ? `${filtered.length} điều dưỡng có sẵn` : 'Không có điều dưỡng phù hợp')
+                                                    : (
+                                                      <span className="flex items-center gap-1">
+                                                        <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                                        Đang tải danh sách điều dưỡng...
+                                                      </span>
+                                                    )
+                                                  }
+                                                </span>
+                                              );
+                                            })()}
+                                          </div>
                                         </div>
                                       </div>
                                       <div className="flex items-center gap-3">
@@ -511,13 +564,20 @@ const BookingsTab = ({ bookings }) => {
                                           className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-48"
                                           value={selectedNurseByTask[task.customizeTaskID] ?? ''}
                                           onChange={(e) => setSelectedNurseByTask((prev) => ({ ...prev, [task.customizeTaskID]: Number(e.target.value) }))}
+                                          disabled={!localNursesByTaskId[task.customizeTaskID]}
                                         >
-                                          <option value="">Chọn điều dưỡng...</option>
+                                          <option value="">
+                                            {localNursesByTaskId[task.customizeTaskID]
+                                              ? "Chọn điều dưỡng..."
+                                              : "Đang tải..."
+                                            }
+                                          </option>
                                           {(() => {
-                                            const serviceId = task.serviceID;
-                                            // Combine two filters: (1) zone matched, (2) mapping nurse-service type
+                                            const taskId = task.customizeTaskID;
+                                            // Lấy nurses rảnh cho task cụ thể này
                                             const zoneId = careProfile?.zoneDetailID ?? careProfile?.zoneDetail_ID;
-                                            const pool = localNursesByServiceId[serviceId] || [];
+                                            const pool = localNursesByTaskId[taskId] || [];
+                                            // Lọc theo zone nếu có
                                             const filtered = Array.isArray(pool) ? pool.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
                                             return filtered.map((n) => (
                                               <option key={n.nursingID ?? n.NursingID} value={n.nursingID ?? n.NursingID}>
@@ -527,9 +587,25 @@ const BookingsTab = ({ bookings }) => {
                                           })()}
                                         </select>
                                         <button
-                                          onClick={() => handleAssignNurse(booking, task)}
+                                          onClick={() => handleAssignNurse(task)}
                                           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                                          disabled={!selectedNurseByTask[task.customizeTaskID]}
+                                          disabled={!selectedNurseByTask[task.customizeTaskID] || (() => {
+                                            const taskId = task.customizeTaskID;
+                                            const pool = localNursesByTaskId[taskId] || [];
+                                            const zoneId = careProfile?.zoneDetailID ?? careProfile?.zoneDetail_ID;
+                                            const filtered = Array.isArray(pool) ? pool.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
+                                            return filtered.length === 0;
+                                          })()}
+                                          title={(() => {
+                                            const taskId = task.customizeTaskID;
+                                            const pool = localNursesByTaskId[taskId] || [];
+                                            const zoneId = careProfile?.zoneDetailID ?? careProfile?.zoneDetail_ID;
+                                            const filtered = Array.isArray(pool) ? pool.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
+                                            if (filtered.length === 0 && localNursesByTaskId[taskId]) {
+                                              return 'Không có điều dưỡng phù hợp cho task này';
+                                            }
+                                            return '';
+                                          })()}
                                         >
                                           Phân công
                                         </button>
@@ -784,7 +860,9 @@ const BookingsTab = ({ bookings }) => {
                           <div className="text-sm text-gray-500">{account?.phone_number || account?.phoneNumber || careProfile?.PhoneNumber || careProfile?.phoneNumber || 'N/A'}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {workDate ? new Date(workDate).toLocaleDateString('vi-VN') : '-'}
+                          {workDate
+                            ? `${new Date(workDate).toLocaleDateString('vi-VN')} ${new Date(workDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+                            : '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
                           {price?.toLocaleString()} VNĐ

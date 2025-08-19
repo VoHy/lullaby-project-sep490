@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { 
+import {
   faPlus, faSearch, faEye, faUserPlus, faEdit, faTrash,
   faUsers, faUserCheck, faUserTimes, faClock
 } from '@fortawesome/free-solid-svg-icons';
@@ -21,10 +21,10 @@ const ACCOUNT_STATUSES = [
 // Định nghĩa các loại tài khoản theo role
 const ACCOUNT_ROLES = [
   { value: 'all', label: 'Tất cả vai trò' },
-  { value: '1', label: 'Admin' },
-  { value: '2', label: 'Nursing Specialist' },
-  { value: '3', label: 'Manager' },
-  { value: '4', label: 'Customer' }
+  { value: '1', label: 'Quản trị viên' },
+  { value: '2', label: 'Chuyên viên' },
+  { value: '3', label: 'Quản lý' },
+  { value: '4', label: 'Khách hàng' }
 ];
 
 const STATUS_LABELS = {
@@ -40,10 +40,10 @@ const STATUS_STYLES = {
 };
 
 const ROLE_LABELS = {
-  '1': 'Admin',
-  '2': 'Nursing Specialist',
-  '3': 'Manager', 
-  '4': 'Customer'
+  '1': 'Quản trị viên',
+  '2': 'Chuyên viên',
+  '3': 'Quản lý',
+  '4': 'Khách hàng'
 };
 
 const ROLE_STYLES = {
@@ -83,6 +83,9 @@ const UsersTab = () => {
   const [detailAccount, setDetailAccount] = useState(null);
   const [editAccount, setEditAccount] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     fetchAccounts();
@@ -114,12 +117,24 @@ const UsersTab = () => {
       (account.email || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (account.phoneNumber || account.phone_number || '').includes(searchTerm)
     );
-    
+
     const matchesStatus = statusFilter === 'all' || account.status === statusFilter;
     const matchesRole = roleFilter === 'all' || String(account.roleID) === roleFilter;
-    
+
     return matchesSearch && matchesStatus && matchesRole;
   });
+
+  // Reset trang khi điều kiện lọc thay đổi hoặc dữ liệu cập nhật
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, roleFilter, accounts]);
+
+  // Pagination calculations
+  const totalItems = filteredAccounts.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  const paginatedAccounts = filteredAccounts.slice(startIndex, endIndex);
 
   // Tính toán stats
   const stats = [
@@ -155,7 +170,7 @@ const UsersTab = () => {
 
   const handleCreateAccountClick = () => setShowCreateModal(true);
   const handleCloseModal = () => setShowCreateModal(false);
-  
+
   const handleViewDetail = (account) => {
     setDetailAccount(account);
     setShowDetailModal(true);
@@ -219,7 +234,7 @@ const UsersTab = () => {
             onClick={handleCreateAccountClick}
           >
             <FontAwesomeIcon icon={faPlus} />
-            <span>Tạo tài khoản mới</span>
+            <span>Tạo tài khoản chuyên viên</span>
           </button>
         </div>
       </div>
@@ -277,11 +292,11 @@ const UsersTab = () => {
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr><td colSpan="6" className="text-center py-12 text-gray-500">Đang tải dữ liệu...</td></tr>
-              ) : filteredAccounts.length > 0 ? filteredAccounts.map((account, index) => {
+              ) : paginatedAccounts.length > 0 ? paginatedAccounts.map((account, index) => {
                 const isDeleted = isAccountDeleted(account);
                 return (
-                  <tr key={account.accountID || account.AccountID || index} 
-                      className={`transition-colors duration-200 ${isDeleted ? 'opacity-50 bg-gray-50' : 'hover:bg-gray-50'}`}>
+                  <tr key={account.accountID || account.AccountID || index}
+                    className={`transition-colors duration-200 ${isDeleted ? 'opacity-50 bg-gray-50' : 'hover:bg-gray-50'}`}>
                     <td className="px-6 py-4">
                       <div className="flex items-center space-x-3">
                         <div className={`w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold overflow-hidden ${isDeleted ? 'opacity-60' : ''}`}>
@@ -308,16 +323,14 @@ const UsersTab = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          isDeleted ? 'bg-gray-100 text-gray-500' : ROLE_STYLES[String(account.roleID)] || 'bg-red-100 text-red-700'
-                      }`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isDeleted ? 'bg-gray-100 text-gray-500' : ROLE_STYLES[String(account.roleID)] || 'bg-red-100 text-red-700'
+                        }`}>
                         {ROLE_LABELS[String(account.roleID)] || 'Không xác định'}
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
-                          isDeleted ? 'bg-gray-100 text-gray-500' : STATUS_STYLES[account.status] || 'bg-red-100 text-red-700'
-                      }`}>
+                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isDeleted ? 'bg-gray-100 text-gray-500' : STATUS_STYLES[account.status] || 'bg-red-100 text-red-700'
+                        }`}>
                         {isDeleted ? 'Đã xóa' : STATUS_LABELS[account.status] || 'Không xác định'}
                       </span>
                     </td>
@@ -331,14 +344,14 @@ const UsersTab = () => {
                     </td>
                     <td className="px-6 py-4 text-gray-600">
                       <div className="text-sm">
-                        {account.deletedAt ? 
-                          new Date(account.deletedAt).toLocaleDateString('vi-VN') : 
+                        {account.deletedAt ?
+                          new Date(account.deletedAt).toLocaleDateString('vi-VN') :
                           '-'
                         }
                       </div>
                       <div className="text-xs text-gray-500">
-                        {account.deletedAt ? 
-                          new Date(account.deletedAt).toLocaleTimeString('vi-VN') : 
+                        {account.deletedAt ?
+                          new Date(account.deletedAt).toLocaleTimeString('vi-VN') :
                           ''
                         }
                       </div>
@@ -346,22 +359,20 @@ const UsersTab = () => {
                     <td className="px-6 py-4 text-center">
                       <div className="flex justify-center space-x-2">
                         <button
-                          className={`p-2 rounded-lg transition-all duration-200 ${
-                            isDeleted ? 
-                              'text-gray-400 cursor-not-allowed' : 
+                          className={`p-2 rounded-lg transition-all duration-200 ${isDeleted ?
+                              'text-gray-400 cursor-not-allowed' :
                               'text-blue-600 hover:text-blue-800 hover:bg-blue-50'
-                          }`}
+                            }`}
                           onClick={() => handleViewDetail(account)}
                           title="Xem chi tiết"
                         >
                           <FontAwesomeIcon icon={faEye} />
                         </button>
                         <button
-                          className={`p-2 rounded-lg transition-all duration-200 ${
-                            isDeleted ? 
-                              'text-gray-400 cursor-not-allowed' : 
+                          className={`p-2 rounded-lg transition-all duration-200 ${isDeleted ?
+                              'text-gray-400 cursor-not-allowed' :
                               'text-green-600 hover:text-green-800 hover:bg-green-50'
-                          }`}
+                            }`}
                           onClick={() => handleEditAccount(account)}
                           disabled={isDeleted}
                           title={isDeleted ? "Không thể sửa tài khoản đã xóa" : "Sửa"}
@@ -369,11 +380,10 @@ const UsersTab = () => {
                           <FontAwesomeIcon icon={faEdit} />
                         </button>
                         <button
-                          className={`p-2 rounded-lg transition-all duration-200 ${
-                            isDeleted ? 
-                              'text-gray-400 cursor-not-allowed' : 
+                          className={`p-2 rounded-lg transition-all duration-200 ${isDeleted ?
+                              'text-gray-400 cursor-not-allowed' :
                               'text-red-600 hover:text-red-800 hover:bg-red-50'
-                          }`}
+                            }`}
                           onClick={() => handleDeleteAccount(account)}
                           disabled={isDeleted}
                           title={isDeleted ? "Tài khoản đã được xóa" : "Xóa"}
@@ -395,6 +405,35 @@ const UsersTab = () => {
               )}
             </tbody>
           </table>
+        </div>
+        {/* Pagination Controls */}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-3 p-4">
+          <div className="flex items-center gap-2">
+            <button
+              className="px-3 py-1 rounded border text-sm disabled:opacity-50"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+            >
+              Trước
+            </button>
+            <div className="text-sm">Trang {currentPage} / {totalPages}</div>
+            <button
+              className="px-3 py-1 rounded border text-sm disabled:opacity-50"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+            >
+              Sau
+            </button>
+            <select
+              className="ml-2 px-2 py-1 border rounded text-sm"
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+            >
+              {[10, 20, 50, 100].map(n => (
+                <option key={n} value={n}>{n}/trang</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
       {/* Create User Modal */}
@@ -460,20 +499,20 @@ const EditUserModal = ({ show, account, onClose, onSave }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
     // Kiểm tra tài khoản đã xóa
     if (account.deletedAt) {
       alert('Không thể cập nhật tài khoản đã xóa!');
       return;
     }
-    
+
     onSave(formData);
   };
 
   if (!show) return null;
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl mx-4 max-h-[90vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-100 px-8 py-6">
           <div className="flex justify-between items-center">
@@ -539,12 +578,12 @@ const EditUserModal = ({ show, account, onClose, onSave }) => {
                 value={formData.roleID}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors duration-200 bg-gray-50 focus:bg-white"
-                required
+                disabled
               >
-                <option value={1}>Admin</option>
-                <option value={2}>Nursing Specialist</option>
-                <option value={3}>Manager</option>
-                <option value={4}>Customer</option>
+                <option value={1}>Quản trị viên</option>
+                <option value={2}>Chuyên viên</option>
+                <option value={3}>Quản lý</option>
+                <option value={4}>Khách hàng</option>
               </select>
             </div>
 
@@ -592,7 +631,7 @@ const EditUserModal = ({ show, account, onClose, onSave }) => {
                 type="submit"
                 className="px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-lg hover:from-purple-600 hover:to-pink-700 transition-all duration-200 font-semibold shadow-lg hover:shadow-xl"
               >
-                💾 Cập nhật
+                Cập nhật
               </button>
             </div>
           </div>

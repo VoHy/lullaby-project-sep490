@@ -4,12 +4,16 @@ import { motion } from "framer-motion";
 // import customizePackageService from '@/services/api/customizePackageService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 import serviceTaskService from '@/services/api/serviceTaskService';
-// import feedbackService from '@/services/api/feedbackService';
+import feedbackService from '@/services/api/feedbackService';
+import customizeTaskService from '@/services/api/customizeTaskService';
+import careProfileService from '@/services/api/careProfileService';
+import relativesService from '@/services/api/relativesService';
 import {
   SearchFilter,
   ServiceSection,
   DetailModal,
-  MultiServiceBooking
+  MultiServiceBooking,
+  ServicesRatingStats
 } from './components';
 import { useRouter } from 'next/navigation';
 import { AuthContext } from '@/context/AuthContext';
@@ -58,13 +62,56 @@ const ServicesSkeleton = () => (
 const clearServicesCache = () => {
   localStorage.removeItem('services_data');
   localStorage.removeItem('services_cache_time');
+  localStorage.removeItem('careProfiles_data');
+  localStorage.removeItem('careProfiles_cache_time');
+  localStorage.removeItem('relatives_data');
+  localStorage.removeItem('relatives_cache_time');
+};
+
+// Function to refresh data after new feedback
+const refreshData = async () => {
+  try {
+    setLoading(true);
+    const [feedbacksData, customizeTasksData, careProfilesData, relativesData] = await Promise.all([
+      feedbackService.getAllFeedbacks(),
+      customizeTaskService.getAllCustomizeTasks(),
+      careProfileService.getCareProfiles(),
+      relativesService.getRelatives()
+    ]);
+
+    setFeedbacks(feedbacksData);
+    setCustomizeTasks(customizeTasksData);
+    setCareProfiles(careProfilesData);
+    setRelatives(relativesData);
+
+    // Update cache with new data
+    const cachedData = localStorage.getItem('services_data');
+    if (cachedData) {
+      const parsedData = JSON.parse(cachedData);
+      const updatedData = {
+        ...parsedData,
+        feedbacks: feedbacksData,
+        customizeTasks: customizeTasksData,
+        careProfiles: careProfilesData,
+        relatives: relativesData
+      };
+      localStorage.setItem('services_data', JSON.stringify(updatedData));
+    }
+  } catch (error) {
+    console.error('Error refreshing data:', error);
+  } finally {
+    setLoading(false);
+  }
 };
 
 export default function ServicesPage() {
   const { user, token } = useContext(AuthContext);
   const [serviceTypes, setServiceTypes] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
-  // const [feedbacks, setFeedbacks] = useState([]);
+  const [feedbacks, setFeedbacks] = useState([]);
+  const [customizeTasks, setCustomizeTasks] = useState([]);
+  const [careProfiles, setCareProfiles] = useState([]);
+  const [relatives, setRelatives] = useState([]);
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedServices, setSelectedServices] = useState([]);
   const [serviceQuantities, setServiceQuantities] = useState({});
@@ -94,23 +141,39 @@ export default function ServicesPage() {
           const parsedData = JSON.parse(cachedData);
           setServiceTypes(parsedData.services);
           setServiceTasks(parsedData.tasks);
+          setFeedbacks(parsedData.feedbacks || []);
+          setCustomizeTasks(parsedData.customizeTasks || []);
+          setCareProfiles(parsedData.careProfiles || []);
+          setRelatives(parsedData.relatives || []);
           setLoading(false);
           return;
         }
 
         // Fetch fresh data
-        const [services, tasks] = await Promise.all([
+        const [services, tasks, feedbacksData, customizeTasksData, careProfilesData, relativesData] = await Promise.all([
           serviceTypeService.getServiceTypes(),
-          serviceTaskService.getServiceTasks()
+          serviceTaskService.getServiceTasks(),
+          feedbackService.getAllFeedbacks(),
+          customizeTaskService.getAllCustomizeTasks(),
+          careProfileService.getCareProfiles(),
+          relativesService.getRelatives()
         ]);
 
         setServiceTypes(services);
         setServiceTasks(tasks);
+        setFeedbacks(feedbacksData);
+        setCustomizeTasks(customizeTasksData);
+        setCareProfiles(careProfilesData);
+        setRelatives(relativesData);
 
         // Cache the data
         localStorage.setItem('services_data', JSON.stringify({
           services,
-          tasks
+          tasks,
+          feedbacks: feedbacksData,
+          customizeTasks: customizeTasksData,
+          careProfiles: careProfilesData,
+          relatives: relativesData
         }));
         localStorage.setItem('services_cache_time', now.toString());
 
@@ -151,10 +214,13 @@ export default function ServicesPage() {
         });
         return prev.filter((id) => id !== serviceId);
       } else {
-        // Nếu chọn dịch vụ mới, set số lượng mặc định là 1
+        // Nếu chọn dịch vụ mới, set số lượng mặc định
+        const selectedService = serviceTypes.find(s => s.serviceID === serviceId);
+        const defaultQuantity = selectedService?.forMom ? 1 : 1; // Dịch vụ mẹ luôn là 1
+        
         setServiceQuantities(prevQuantities => ({
           ...prevQuantities,
-          [serviceId]: 1
+          [serviceId]: defaultQuantity
         }));
         return [...prev, serviceId];
       }
@@ -163,10 +229,53 @@ export default function ServicesPage() {
 
   // Hàm cập nhật số lượng cho dịch vụ
   const handleQuantityChange = (serviceId, quantity) => {
+    const selectedService = serviceTypes.find(s => s.serviceID === serviceId);
+    
+    // Nếu là dịch vụ mẹ, luôn giữ số lượng là 1
+    if (selectedService?.forMom) {
+      setServiceQuantities(prevQuantities => ({
+        ...prevQuantities,
+        [serviceId]: 1
+      }));
+      return;
+    }
+
+    // Kiểm tra giới hạn số lượng cho dịch vụ bé
+    const maxQuantity = getMaxQuantityForService(serviceId);
+    const validQuantity = Math.min(Math.max(quantity, 1), maxQuantity);
+
     setServiceQuantities(prevQuantities => ({
       ...prevQuantities,
-      [serviceId]: quantity
+      [serviceId]: validQuantity
     }));
+  };
+
+  // Hàm tính số lượng tối đa cho dịch vụ dựa trên số relative trong careProfile
+  const getMaxQuantityForService = (serviceId) => {
+    console.log('DEBUG relatives:', relatives);
+    console.log('DEBUG careProfiles:', careProfiles);
+    if (!user || !careProfiles.length || !relatives.length) return 10; // Default max
+
+    // Lấy careProfile của user hiện tại
+    const currentAccountId = user.accountID || user.AccountID;
+    const userCareProfiles = careProfiles.filter(cp => 
+      (cp.accountID || cp.AccountID) === currentAccountId
+    );
+
+    if (userCareProfiles.length === 0) return 1; // Không có careProfile thì chỉ được đặt 1
+
+    // Tính tổng số relative trong tất cả careProfile của user
+    const totalRelatives = relatives.filter(relative => {
+      const relativeCareProfileId = relative.careProfileID || relative.CareProfileID;
+      return userCareProfiles.some(cp => 
+        (cp.careProfileID || cp.CareProfileID) === relativeCareProfileId
+      );
+    }).length;
+
+    console.log('DEBUG totalRelatives:', totalRelatives);
+
+    // Trả về số lượng tối đa là số relative, nhưng không quá 10
+    return Math.min(totalRelatives, 10);
   };
 
   // Tách dịch vụ lẻ và package
@@ -212,16 +321,56 @@ export default function ServicesPage() {
   const filteredServicesForMom = servicesForMom.filter(filterService);
   const filteredServicesForBaby = servicesForBaby.filter(filterService);
 
-  // Tính rating từ feedbacks API
+  // Tính rating từ feedbacks API dựa vào customizeTaskID
   const getRating = (serviceId) => {
-    // Comment lại vì feedbacks API chưa hoàn thiện
-    // const fb = feedbacks.filter(f => f.ServiceID === serviceId);
-    // if (!fb.length) return { rating: 5.0, count: 0 };
-    // const rating = (fb.reduce((sum, f) => sum + (f.Rating || 5), 0) / fb.length).toFixed(1);
-    // return { rating, count: fb.length };
+    // Tìm tất cả customize tasks liên quan đến service này
+    const relatedTasks = customizeTasks.filter(task => 
+      task.serviceID === serviceId || 
+      task.ServiceID === serviceId ||
+      task.serviceTypeID === serviceId
+    );
+    
+    if (relatedTasks.length === 0) {
+      return { rating: 5.0, count: 0 };
+    }
 
-    // Tạm thời return rating mặc định vì feedbacks API đã bị comment
-    return { rating: 5.0, count: 0 };
+    // Lọc chỉ các tasks đã hoàn thành
+    const completedTasks = relatedTasks.filter(task => {
+      const status = task.status || task.Status;
+      return status === 'completed' || status === 'done' || status === 'finished';
+    });
+
+    if (completedTasks.length === 0) {
+      return { rating: 5.0, count: 0 };
+    }
+
+    // Lấy tất cả customizeTaskID từ các tasks đã hoàn thành
+    const taskIds = completedTasks.map(task => 
+      task.customizeTaskID || task.CustomizeTaskID || task.id
+    );
+
+    // Tìm feedbacks cho các tasks này
+    const relatedFeedbacks = feedbacks.filter(feedback => {
+      const feedbackTaskId = feedback.customizeTaskID || feedback.CustomizeTaskID;
+      return taskIds.includes(feedbackTaskId);
+    });
+
+    if (relatedFeedbacks.length === 0) {
+      return { rating: 5.0, count: 0 };
+    }
+
+    // Tính rating trung bình
+    const totalRating = relatedFeedbacks.reduce((sum, feedback) => {
+      const rate = feedback.rate || feedback.Rate || 5;
+      return sum + rate;
+    }, 0);
+    
+    const averageRating = (totalRating / relatedFeedbacks.length).toFixed(1);
+    
+    return { 
+      rating: parseFloat(averageRating), 
+      count: relatedFeedbacks.length 
+    };
   };
 
   // Handle booking
@@ -277,7 +426,7 @@ export default function ServicesPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <div className="text-red-500 text-6xl mb-4"></div>
           <h3 className="text-xl font-semibold text-gray-600 mb-2">{error}</h3>
           <p className="text-gray-500">
             Vui lòng thử lại sau hoặc liên hệ hỗ trợ nếu vấn đề vẫn tiếp diễn.
@@ -313,6 +462,13 @@ export default function ServicesPage() {
           setSelectedCategory={setSelectedCategory}
         />
 
+        {/* Rating Statistics */}
+        <ServicesRatingStats
+          serviceTypes={serviceTypes}
+          customizeTasks={customizeTasks}
+          feedbacks={feedbacks}
+        />
+
         {/* Service Packages Section */}
         {filteredPackagesForBaby.length > 0 && (
           <ServiceSection
@@ -328,6 +484,7 @@ export default function ServicesPage() {
             onToggleExpand={handleToggleExpand}
             getServicesOfPackage={getServicesOfPackage}
             getRating={getRating}
+            customizeTasks={customizeTasks}
           />
         )}
 
@@ -345,6 +502,7 @@ export default function ServicesPage() {
             onToggleExpand={handleToggleExpand}
             getServicesOfPackage={getServicesOfPackage}
             getRating={getRating}
+            customizeTasks={customizeTasks}
           />
         )}
 
@@ -359,8 +517,13 @@ export default function ServicesPage() {
             onBook={handleBook}
             isDisabled={!!selectedPackage}
             getRating={getRating}
+            customizeTasks={customizeTasks}
             serviceQuantities={serviceQuantities}
             onQuantityChange={handleQuantityChange}
+            getMaxQuantityForService={getMaxQuantityForService}
+            user={user}
+            careProfiles={careProfiles}
+            relatives={relatives}
           />
         )}
 
@@ -375,8 +538,13 @@ export default function ServicesPage() {
             onBook={handleBook}
             isDisabled={!!selectedPackage}
             getRating={getRating}
+            customizeTasks={customizeTasks}
             serviceQuantities={serviceQuantities}
             onQuantityChange={handleQuantityChange}
+            getMaxQuantityForService={getMaxQuantityForService}
+            user={user}
+            careProfiles={careProfiles}
+            relatives={relatives}
           />
         )}
 
@@ -384,7 +552,7 @@ export default function ServicesPage() {
         {filteredPackagesForBaby.length === 0 && filteredPackagesForMomAndBaby.length === 0 &&
           filteredServicesForMom.length === 0 && filteredServicesForBaby.length === 0 && (
             <div className="text-center py-16">
-              <div className="text-gray-400 text-6xl mb-4">🏥</div>
+              <div className="text-gray-400 text-6xl mb-4"></div>
               <h3 className="text-xl font-semibold text-gray-600 mb-2">
                 Không tìm thấy dịch vụ nào
               </h3>
@@ -399,6 +567,10 @@ export default function ServicesPage() {
           selectedServices={selectedServices}
           serviceQuantities={serviceQuantities}
           serviceTypes={serviceTypes}
+          getMaxQuantityForService={getMaxQuantityForService}
+          user={user}
+          careProfiles={careProfiles}
+          relatives={relatives}
         />
 
         {/* Service Detail Modal */}
@@ -407,6 +579,9 @@ export default function ServicesPage() {
           onClose={() => setServiceDetail(null)}
           item={serviceDetail}
           type="service"
+          customizeTasks={customizeTasks}
+          feedbacks={feedbacks}
+          onRefreshData={refreshData}
         />
 
         {/* Package Detail Modal */}
@@ -416,6 +591,9 @@ export default function ServicesPage() {
           item={packageDetail}
           type="package"
           getServicesOfPackage={getServicesOfPackage}
+          customizeTasks={customizeTasks}
+          feedbacks={feedbacks}
+          onRefreshData={refreshData}
         />
       </div>
     </div>

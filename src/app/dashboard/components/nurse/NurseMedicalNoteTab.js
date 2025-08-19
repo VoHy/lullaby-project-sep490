@@ -47,39 +47,66 @@ const NurseMedicalNoteTab = () => {
     );
   };
 
-  // fetch all relevant data once (notes, bookings, customizeTasks, careProfiles, nursingSpecialists)
+  // fetch all relevant data once (notes via new API by careProfile, bookings, customizeTasks, careProfiles, nursingSpecialists)
   useEffect(() => {
     let mounted = true;
     const loadAll = async () => {
       setLoading(true);
       setError(null);
       try {
-        const [notesRes, bookingsRes, careProfilesRes, customizeTasksRes, nursingSpecialistsRes] = await Promise.all([
-          medicalNoteService.getAllMedicalNotes(),
+        // Step 1: fetch care profiles first to know which IDs to query notes for
+        const careProfilesRes = await careProfileService.getCareProfiles();
+        if (!mounted) return;
+        const careProfilesArr = normalizeArray(careProfilesRes);
+
+        // Helper to extract careProfileId from object
+        const getCpId = (cp) => cp?.careProfileID ?? cp?.CareProfileID ?? cp?.careProfileId ?? cp?.CareProfileId ?? cp?.id ?? cp?.Id ?? null;
+
+        // Step 2: in parallel, fetch bookings, customize tasks, nursing specialists, and notes for each care profile
+        const [bookingsRes, customizeTasksRes, nursingSpecialistsRes, notesLists] = await Promise.all([
           bookingService.getAllBookings(),
-          careProfileService.getCareProfiles(),
           customizeTaskService.getAllCustomizeTasks(),
           nursingSpecialistService.getAllNursingSpecialists(),
+          Promise.all(
+            careProfilesArr
+              .map(cp => getCpId(cp))
+              .filter(id => id != null)
+              .map(async (id) => {
+                try {
+                  const res = await medicalNoteService.getMedicalNotesByCareProfile(id);
+                  return res;
+                } catch (err) {
+                  // API có thể trả 404 khi không có dữ liệu → coi như []
+                  const msg = String(err?.message || '').toLowerCase();
+                  if (msg.includes('not found') || msg.includes('404')) return [];
+                  return [];
+                }
+              })
+          )
         ]);
 
         if (!mounted) return;
 
-        const notesArr = normalizeArray(notesRes);
         const bookingsArr = normalizeArray(bookingsRes);
-        const careProfilesArr = normalizeArray(careProfilesRes);
         const customizeTasksArr = normalizeArray(customizeTasksRes);
         const nursingSpecialistsArr = normalizeArray(nursingSpecialistsRes);
 
-        // if we can resolve current nurse's nursingID from nursingSpecialists, filter notes to theirs
-        let myNursingID = null;
-        if (user && user.accountID && nursingSpecialistsArr.length > 0) {
-          const me = nursingSpecialistsArr.find(s => String(s.accountID ?? s.AccountID) === String(user.accountID));
-          myNursingID = me?.nursingID ?? me?.NursingID ?? me?.nursingId ?? null;
+        // Flatten and normalize each notes response
+        const notesCombined = Array.isArray(notesLists)
+          ? notesLists.flatMap(n => normalizeArray(n))
+          : [];
+
+        // Deduplicate notes by medicalNoteID/MedicalNoteID if any duplicates across care profiles
+        const uniqueNotesMap = new Map();
+        for (const n of notesCombined) {
+          const nid = n?.medicalNoteID ?? n?.MedicalNoteID ?? n?.id ?? n?.Id;
+          if (nid != null && !uniqueNotesMap.has(String(nid))) {
+            uniqueNotesMap.set(String(nid), n);
+          }
         }
+        const uniqueNotes = Array.from(uniqueNotesMap.values());
 
-        const filteredNotes = myNursingID ? notesArr.filter(n => String(n.nursingID ?? n.NursingID ?? '') === String(myNursingID)) : notesArr;
-
-        setNotes(filteredNotes);
+        setNotes(uniqueNotes);
         setBookings(bookingsArr);
         setCareProfiles(careProfilesArr);
         setCustomizeTasks(customizeTasksArr);
@@ -276,7 +303,7 @@ const NurseMedicalNoteTab = () => {
 
       return searchFields.includes(lower);
     });
-  // eslint-disable-next-line
+    // eslint-disable-next-line
   }, [search, notes, bookings, careProfiles, customizeTasks, nursingSpecialists]);
 
   if (loading) {
@@ -309,7 +336,7 @@ const NurseMedicalNoteTab = () => {
           <input
             type="text"
             className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-purple-400"
-            placeholder="Tìm kiếm theo tên, số điện thoại, địa chỉ, mã đơn hàng..."
+            placeholder="Tìm kiếm theo tên, số điện thoại, địa chỉ, mã lịch hẹn..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -344,7 +371,7 @@ const NurseMedicalNoteTab = () => {
                 <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mt-2">
                   <div className="flex items-center gap-1">
                     <FaClipboardList />
-                    Đơn hàng: {booking ? `#${bookingDisplayId}` : 'Không có'}
+                    Mã lịch hẹn: {booking ? `#${bookingDisplayId}` : 'Không có'}
                   </div>
                   <div className="flex items-center gap-1">
                     <FaUser />
@@ -381,8 +408,8 @@ const NurseMedicalNoteTab = () => {
                   >
                     Xem chi tiết
                   </button>
-                  {canEdit ? null : <div className="ml-3 text-xs text-gray-400 self-center">Chỉ owner có thể sửa</div>}
                 </div>
+                {canEdit ? null : <div className="ml-3 text-xs text-gray-400 self-center">Chỉ chuyên gia phụ trách có thể sửa</div>}
               </div>
             );
           })}

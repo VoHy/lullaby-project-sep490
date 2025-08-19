@@ -73,8 +73,8 @@ const SpecialistList = ({ specialists, onEdit, onDelete }) => {
                     </div>
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{specialist.phoneNumber || 'N/A'}</div>
-                    <div className="text-sm text-gray-500">{specialist.email || 'N/A'}</div>
+                    <div className="text-sm font-medium text-gray-900">{specialist.account?.phoneNumber || specialist.phoneNumber || 'N/A'}</div>
+                    <div className="text-sm text-gray-500">{specialist.account?.email || specialist.email || 'N/A'}</div>
                   </td>
                   <td className="px-8 py-6 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{specialist.experience || 'N/A'}</div>

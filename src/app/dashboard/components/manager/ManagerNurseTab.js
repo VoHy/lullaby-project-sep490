@@ -15,6 +15,7 @@ import serviceTypeService from '@/services/api/serviceTypeService';
 
 const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, error }) => {
   const [serviceTypes, setServiceTypes] = useState([]);
+  const [nursesWithAccount, setNursesWithAccount] = useState([]);
 
   // Lấy danh sách dịch vụ khi component mount
   useEffect(() => {
@@ -36,6 +37,31 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
     fetchServiceTypes();
   }, []);
 
+  // Khi nurses thay đổi, fetch account cho từng nurse
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      if (!nurses || nurses.length === 0) {
+        setNursesWithAccount([]);
+        return;
+      }
+      const nursesWithAcc = await Promise.all(
+        nurses.map(async (nurse) => {
+          if (nurse.accountID) {
+            try {
+              const acc = await accountService.getAccountById(nurse.accountID);
+              return { ...nurse, account: acc };
+            } catch {
+              return { ...nurse };
+            }
+          }
+          return { ...nurse };
+        })
+      );
+      setNursesWithAccount(nursesWithAcc);
+    };
+    fetchAccounts();
+  }, [nurses]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -45,8 +71,8 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
   // Lọc và tìm kiếm
   const filteredNurses = nurses.filter(nurse => {
     const matchesSearch = nurse.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      nurse.phoneNumber?.includes(searchTerm) ||
-      nurse.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      nursesWithAccount.find(x => x.nursingID === nurse.nursingID)?.account?.phoneNumber?.includes(searchTerm) ||
+      nursesWithAccount.find(x => x.nursingID === nurse.nursingID)?.account?.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = filterStatus === 'all' || nurse.status === filterStatus;
 
@@ -65,7 +91,7 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
         dateOfBirth: nurseData.dateOfBirth,
         address: nurseData.address,
         gender: nurseData.gender,
-        major: "Nurse",
+        major: nurseData.major || 'Nurse' || 'Nursing',
         experience: nurseData.experience,
         slogan: nurseData.slogan,
         zoneID: managedZone.zoneID
@@ -97,9 +123,12 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
       });
 
       // Step 3: assign service type
+      const serviceIDs = Array.isArray(nurseData.serviceID)
+        ? nurseData.serviceID.filter(id => id && id !== "").map(id => Number(id))
+        : nurseData.serviceID ? [Number(nurseData.serviceID)] : [];
       await nursingSpecialistServiceTypeService.create({
         nursingID: nurseId,
-        serviceID: nurseData.serviceID
+        serviceIDs: serviceIDs
       });
 
       // Gọi callback từ cha để reload lại danh sách y tá toàn hệ thống
@@ -155,6 +184,7 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
     );
   }
 
+  // Thay nurses thành nursesWithAccount khi truyền vào NurseList
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -187,7 +217,7 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
 
       {/* Nurses List */}
       <NurseList
-        nurses={filteredNurses}
+        nurses={filteredNurses.map(n => nursesWithAccount.find(x => x.nursingID === n.nursingID) || n)}
         onEdit={(nurse) => {
           setSelectedNurse(nurse);
           setShowEditModal(true);

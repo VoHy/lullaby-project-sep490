@@ -24,7 +24,7 @@ const QuantitySelector = ({ quantity = 1, onQuantityChange, min = 1, max = 10 })
 
   return (
     <div className="flex items-center justify-between bg-gray-50 rounded-lg p-2 mb-3">
-      <span className="text-sm font-medium text-gray-700">Số lượng:</span>
+      <span className="text-sm font-medium text-gray-700">Suất:</span>
       <div className="flex items-center gap-2">
         <button
           onClick={handleDecrease}

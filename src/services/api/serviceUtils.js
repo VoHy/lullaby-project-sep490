@@ -25,13 +25,13 @@ export const getAuthToken = () => {
  * Utility function để tạo headers với token
  * @returns {object} Headers object với Content-Type và Authorization
  */
-export const getAuthHeaders = () => {
-  const token = getAuthToken();
-  return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` })
+  export const getAuthHeaders = () => {
+    const token = getAuthToken();
+    return {
+      'Content-Type': 'application/json',
+      ...(token && { 'Authorization': `Bearer ${token}` })
+    };
   };
-};
 
 /**
  * Generic error handler cho API responses

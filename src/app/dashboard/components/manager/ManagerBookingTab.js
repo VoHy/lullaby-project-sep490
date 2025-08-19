@@ -12,7 +12,6 @@ import zoneDetailService from '@/services/api/zoneDetailService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import zoneService from '@/services/api/zoneService';
 import notificationService from '@/services/api/notificationService';
-import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
 import invoiceService from '@/services/api/invoiceService';
 
 const statusOptions = [
@@ -67,13 +66,13 @@ const ManagerBookingTab = () => {
   const [detailData, setDetailData] = useState(null);
   const [selectedStatus, setSelectedStatus] = useState('');
   const [taskAssignments, setTaskAssignments] = useState({});
-  const [eligibleByService, setEligibleByService] = useState({}); // { [serviceId]: { nurses: [], specialists: [] } }
+  const [eligibleByTask, setEligibleByTask] = useState({}); // { [customizeTaskId]: { nurses: [], specialists: [] } }
   const [loadingEligible, setLoadingEligible] = useState(false);
   const [localInvoice, setLocalInvoice] = useState(null);
   // State cho popup chọn nhân sự
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [modalTaskId, setModalTaskId] = useState(null);
-  const [modalServiceId, setModalServiceId] = useState(null);
+  
 
   // Load data từ API
   useEffect(() => {
@@ -209,58 +208,18 @@ const ManagerBookingTab = () => {
     }
   }, [allBookings, currentManagerId]);
 
-  // Tính danh sách nhân sự đủ điều kiện theo từng dịch vụ: cùng zone với customer và có mapping dịch vụ theo API mới
-  async function computeEligibleByService(careProfile, serviceTasksOfBooking) {
-    if (!careProfile || !Array.isArray(serviceTasksOfBooking)) {
-      setEligibleByService({});
-      return;
-    }
-    const zoneDetail = zoneDetails.find(z => (z.zoneDetailID) === (careProfile.zoneDetailID));
-    if (!zoneDetail) {
-      setEligibleByService({});
-      return;
-    }
-    const zoneId = zoneDetail.zoneID;
-
-    // Candidates within the same zone by major
-    const candidates = {
-      Nurse: nursingSpecialists.filter(n => (n.zoneID === zoneId) && (n.major === 'Nurse')),
-      Specialist: nursingSpecialists.filter(s => (s.zoneID === zoneId) && (s.major === 'Specialist')),
-    };
-
-    // Build required service ids set
-    const uniqueServiceIds = Array.from(new Set(serviceTasksOfBooking.map(t => t.serviceId).filter(Boolean)));
-
+  // Lấy danh sách nhân sự phù hợp theo API mới cho 1 customizeTask
+  async function fetchEligibleForTask(customizeTaskId) {
+    if (!customizeTaskId) return;
     setLoadingEligible(true);
     try {
-      // Fetch mappings per candidate
-      const [nurseMaps, specialistMaps] = await Promise.all([
-        Promise.all(candidates.Nurse.map(async n => {
-          const id = n.nursingID || n.NursingID;
-          let mappings = [];
-          try { mappings = await nursingSpecialistServiceTypeService.getByNursing(id); } catch (_) { }
-          return { candidate: n, mappings };
-        })),
-        Promise.all(candidates.Specialist.map(async s => {
-          const id = s.nursingID || s.NursingID;
-          let mappings = [];
-          try { mappings = await nursingSpecialistServiceTypeService.getByNursing(id); } catch (_) { }
-          return { candidate: s, mappings };
-        })),
-      ]);
-
-      const result = {};
-      for (const sid of uniqueServiceIds) {
-        const nursesEligible = nurseMaps
-          .filter(({ mappings }) => Array.isArray(mappings) && mappings.some(m => (m.zoneID === zoneId) && ((m.serviceID || m.ServiceTypeID) === sid)))
-          .map(({ candidate }) => candidate);
-        const specialistsEligible = specialistMaps
-          .filter(({ mappings }) => Array.isArray(mappings) && mappings.some(m => (m.zoneID === zoneId) && ((m.serviceID || m.ServiceTypeID) === sid)))
-          .map(({ candidate }) => candidate);
-        result[sid] = { nurses: nursesEligible, specialists: specialistsEligible };
-      }
-
-      setEligibleByService(result);
+      const list = await nursingSpecialistService.getAllFreeNursingSpecialists(customizeTaskId);
+      const nurses = (list || []).filter(p => String(p.major).toLowerCase() === 'nurse');
+      const specialists = (list || []).filter(p => String(p.major).toLowerCase() === 'specialist');
+      setEligibleByTask(prev => ({ ...prev, [customizeTaskId]: { nurses, specialists } }));
+    } catch (e) {
+      // keep empty on error
+      setEligibleByTask(prev => ({ ...prev, [customizeTaskId]: { nurses: [], specialists: [] } }));
     } finally {
       setLoadingEligible(false);
     }
@@ -284,8 +243,8 @@ const ManagerBookingTab = () => {
             setLocalInvoice(null);
           }
         }
-        const { careProfile, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(booking);
-        await computeEligibleByService(careProfile, serviceTasksOfBooking);
+        // Reset eligible cache when opening detail
+        setEligibleByTask({});
       } catch (_) {
         // ignore
       }
@@ -424,6 +383,8 @@ const ManagerBookingTab = () => {
               return (
                 String(b.bookingID).includes(lower) ||
                 careProfile?.profileName?.toLowerCase().includes(lower) ||
+                careProfile?.phoneNumber?.toLowerCase().includes(lower) ||
+                careProfile?.email?.toLowerCase().includes(lower) ||
                 serviceTasksOfBooking?.some(t => t.description?.toLowerCase().includes(lower))
               );
             });
@@ -667,8 +628,8 @@ const ManagerBookingTab = () => {
                               {(() => {
                                 const nurseId = taskAssignments[task.customizeTaskId]?.nurse;
                                 const specialistId = taskAssignments[task.customizeTaskId]?.specialist;
-                                const nurse = eligibleByService[task.serviceId]?.nurses?.find(n => (n.NursingID || n.nursingID) === nurseId);
-                                const specialist = eligibleByService[task.serviceId]?.specialists?.find(s => (s.NursingID || s.nursingID) === specialistId);
+                                const nurse = eligibleByTask[task.customizeTaskId]?.nurses?.find(n => (n.NursingID || n.nursingID) === nurseId);
+                                const specialist = eligibleByTask[task.customizeTaskId]?.specialists?.find(s => (s.NursingID || s.nursingID) === specialistId);
                                 if (nurse) return `${nurse.Full_Name || nurse.fullName} (Y tá)`;
                                 if (specialist) return `${specialist.Full_Name || specialist.fullName} (Chuyên gia)`;
                                 return 'Đã chọn nhân sự';
@@ -682,7 +643,7 @@ const ManagerBookingTab = () => {
                           {!task.assignedNurseName ? (
                             <button
                               className="px-3 py-1 rounded bg-purple-100 text-purple-700 hover:bg-purple-200 text-xs"
-                              onClick={() => { setShowStaffModal(true); setModalTaskId(task.customizeTaskId); setModalServiceId(task.serviceId); }}
+                              onClick={() => { setShowStaffModal(true); setModalTaskId(task.customizeTaskId); fetchEligibleForTask(task.customizeTaskId); }}
                             >Chọn nhân sự</button>
                           ) : (
                             <span className="text-gray-400 text-xs">Đã có nhân sự</span>
@@ -711,8 +672,8 @@ const ManagerBookingTab = () => {
                     <div className="mb-3">
                       <div className="font-semibold mb-2">Y tá</div>
                       <ul className="space-y-2">
-                        {(loadingEligible ? [] : (eligibleByService[modalServiceId]?.nurses || [])).length === 0 && <li className="text-gray-400 text-xs">Không có Y tá phù hợp</li>}
-                        {(loadingEligible ? [] : (eligibleByService[modalServiceId]?.nurses || [])).map(n => (
+                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.nurses || [])).length === 0 && <li className="text-gray-400 text-xs">Không có Y tá phù hợp</li>}
+                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.nurses || [])).map(n => (
                           <li key={n.NursingID || n.nursingID}>
                             <button
                               className="w-full text-left px-3 py-2 rounded border hover:bg-purple-100"
@@ -725,8 +686,8 @@ const ManagerBookingTab = () => {
                     <div className="mb-3">
                       <div className="font-semibold mb-2">Chuyên gia</div>
                       <ul className="space-y-2">
-                        {(loadingEligible ? [] : (eligibleByService[modalServiceId]?.specialists || [])).length === 0 && <li className="text-gray-400 text-xs">Không có Chuyên gia phù hợp</li>}
-                        {(loadingEligible ? [] : (eligibleByService[modalServiceId]?.specialists || [])).map(s => (
+                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.specialists || [])).length === 0 && <li className="text-gray-400 text-xs">Không có Chuyên gia phù hợp</li>}
+                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.specialists || [])).map(s => (
                           <li key={s.NursingID || s.nursingID}>
                             <button
                               className="w-full text-left px-3 py-2 rounded border hover:bg-pink-100"

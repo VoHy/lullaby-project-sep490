@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { FaTimes, FaUser, FaGraduationCap, FaClipboardList, FaSave, FaHourglassHalf } from 'react-icons/fa';
+import { nursingSpecialistServiceTypeService } from '@/services/api';
 
 const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, serviceTypes = [] }) => {
   const [formData, setFormData] = useState({
@@ -19,10 +20,15 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
     zoneID: nurse.zoneID || '',
     major: nurse.major || 'Nurse',
     status: nurse.status || 'active',
-    serviceID: nurse.serviceID || ''
+    serviceID: Array.isArray(nurse.serviceID)
+      ? nurse.serviceID.map(String)
+      : nurse.serviceID
+        ? [String(nurse.serviceID)]
+        : [],
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [registeredServiceIDs, setRegisteredServiceIDs] = useState([]);
 
   useEffect(() => {
     setFormData({
@@ -41,16 +47,45 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
       zoneID: nurse.zoneID || '',
       major: nurse.major || 'Nurse',
       status: nurse.status || 'active',
-      serviceID: nurse.serviceID || ''
+      serviceID: Array.isArray(nurse.serviceID)
+        ? nurse.serviceID.map(String)
+        : nurse.serviceID
+          ? [String(nurse.serviceID)]
+          : [],
     });
   }, [nurse]);
 
+  // Fetch các dịch vụ đã được thêm (đã đăng) theo nursingID để highlight
+  useEffect(() => {
+    const fetchRegisteredServices = async () => {
+      try {
+        if (!nurse?.nursingID) return;
+        const result = await nursingSpecialistServiceTypeService.getByNursing(nurse.nursingID);
+        const ids = Array.isArray(result) ? result.map(item => String(item.serviceID)) : [];
+        setRegisteredServiceIDs(ids);
+      } catch (err) {
+        // Bỏ qua lỗi highlight, không chặn UI
+      }
+    };
+    fetchRegisteredServices();
+  }, [nurse?.nursingID]);
+
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    const { name, value, multiple, options } = e.target;
+    if (multiple) {
+      const values = Array.from(options)
+        .filter(option => option.selected)
+        .map(option => option.value);
+      setFormData(prev => ({
+        ...prev,
+        [name]: values
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -64,7 +99,15 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
         throw new Error('Vui lòng điền đầy đủ thông tin bắt buộc');
       }
 
-      await onUpdate(nurse.nursingID, formData);
+      // Đảm bảo serviceID luôn là mảng string, không undefined/null
+      const cleanServiceID = Array.isArray(formData.serviceID)
+        ? formData.serviceID.filter(id => id && id !== "")
+        : formData.serviceID ? [String(formData.serviceID)] : [];
+
+      await onUpdate(nurse.nursingID, {
+        ...formData,
+        serviceID: cleanServiceID
+      });
       // Gọi callback reload danh sách y tá nếu có
       if (typeof refetchNurses === 'function') {
         await refetchNurses();
@@ -118,25 +161,7 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
                     required
                   />
                 </div>
-                <div className="bg-white rounded-lg p-0">
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Trạng thái
-                  </label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
-                  >
-                    <option value="active">Đang hoạt động</option>
-                    <option value="inactive">Không hoạt động</option>
-                  </select>
-                </div>
               </div>
-            </section>
-
-            {/* Professional Information */}
-            <section className="rounded-xl border border-gray-200 bg-white p-6">
               <h4 className="text-base font-semibold mb-4 text-gray-800 flex items-center gap-2">
                 <FaGraduationCap className="text-gray-500" />
                 Thông tin chuyên môn
@@ -180,8 +205,9 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
                   >
-                    <option value="nurse">Y tá</option>
-                    <option value="specialist">Chuyên gia</option>
+                    <option value="Nurse">Y tá</option>
+                    <option value="Nursing">Nursing</option>
+                    <option value="Specialist">Chuyên gia</option>
                   </select>
                 </div>
 
@@ -203,28 +229,50 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
                   </select>
                 </div>
 
-                {/* Thêm trường chọn dịch vụ */}
+                {/* Thay thế phần chọn dịch vụ bằng checkbox group */}
                 <div className="bg-white rounded-lg p-0 md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Dịch vụ
                   </label>
-                  <select
-                    name="serviceID"
-                    value={formData.serviceID}
-                    onChange={handleChange}
-                    className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
-                  >
-                    <option value="">-- Chọn dịch vụ --</option>
+                  <div className="flex flex-col gap-2">
                     {Array.isArray(serviceTypes) &&
                       serviceTypes
-                        .filter(service => service.isPackage === false) // chỉ lấy dịch vụ không phải package
-                        .map(service => (
-                          <option key={service.serviceID} value={service.serviceID}>
-                            {service.serviceName}
-                          </option>
-                        ))
+                        .filter(service => service.isPackage === false)
+                        .map(service => {
+                          const isChecked = Array.isArray(formData.serviceID) && formData.serviceID.includes(String(service.serviceID));
+                          const isRegistered = Array.isArray(registeredServiceIDs) && registeredServiceIDs.includes(String(service.serviceID));
+                          return (
+                            <label key={service.serviceID} className="inline-flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                name="serviceID"
+                                value={service.serviceID}
+                                checked={isChecked}
+                                onChange={e => {
+                                  const value = e.target.value;
+                                  setFormData(prev => {
+                                    const current = Array.isArray(prev.serviceID) ? prev.serviceID.map(String) : [];
+                                    if (e.target.checked) {
+                                      if (!current.includes(value)) {
+                                        return { ...prev, serviceID: [...current, value] };
+                                      }
+                                      return prev;
+                                    } else {
+                                      return { ...prev, serviceID: current.filter(id => id !== value) };
+                                    }
+                                  });
+                                }}
+                                className="form-checkbox h-4 w-4 text-blue-600"
+                              />
+                              <span className={isRegistered ? "font-bold text-red-600" : ""}>
+                                {service.serviceName}
+                                {isRegistered && <span className="ml-2 text-xs text-red-600">(dịch vụ đã được thêm)</span>}
+                              </span>
+                            </label>
+                          );
+                        })
                     }
-                  </select>
+                  </div>
                 </div>
               </div>
             </section>
@@ -332,4 +380,4 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
   );
 };
 
-export default EditNurseModal; 
+export default EditNurseModal;
