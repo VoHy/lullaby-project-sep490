@@ -139,7 +139,7 @@ const NurseProfileTab = ({ nurseAccount }) => {
         address: nurseProfile.address || '',
         experience: nurseProfile.experience || '',
         slogan: nurseProfile.slogan || '',
-        major: nurseProfile.major || 'nurse',
+        major: nurseProfile.major || 'Nurse',
         status: nurseProfile.status || 'active'
       });
     }
@@ -236,12 +236,23 @@ const NurseProfileTab = ({ nurseAccount }) => {
             {/* Professional Info */}
             <Card title="Thông tin chuyên môn" icon={<FaGraduationCap />} color="purple">
               <InfoRow label="Kinh nghiệm" value={isEditing ? <input type="text" name="experience" value={profileFormData.experience} onChange={handleProfileInputChange} className="w-full border px-2 py-1 rounded-lg" /> : profileFormData.experience} />
-              <InfoRow label="Chuyên môn" value={isEditing ? (
-                <select name="major" value={profileFormData.major} onChange={handleProfileInputChange} className="w-full border px-2 py-1 rounded-lg">
-                  <option value="Nurse">Y tá</option>
-                  <option value="Specialist">Chuyên gia</option>
-                </select>
-              ) : profileFormData.major} />
+              <InfoRow
+                label="Chuyên môn"
+                value={isEditing ? (
+                  <select
+                    name="major"
+                    value={profileFormData.major}
+                    onChange={handleProfileInputChange}
+                    className="w-full border px-2 py-1 rounded-lg"
+                  >
+                    <option value="Nurse">Y tá</option>
+                    <option value="Specialist">Chuyên gia</option>
+                  </select>
+                ) : (
+                  profileFormData.major === "Nurse" ? "Y tá" :
+                    profileFormData.major === "Specialist" ? "Chuyên gia" : "-"
+                )}
+              />
               <InfoRow label="Slogan" value={isEditing ? <input type="text" name="slogan" value={profileFormData.slogan} onChange={handleProfileInputChange} className="w-full border px-2 py-1 rounded-lg" /> : profileFormData.slogan} icon={<FaQuoteLeft />} />
             </Card>
           </div>

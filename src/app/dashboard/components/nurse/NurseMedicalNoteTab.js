@@ -309,7 +309,7 @@ const NurseMedicalNoteTab = () => {
           <input
             type="text"
             className="w-full border border-gray-300 rounded-lg px-4 py-2 pr-10 focus:outline-none focus:ring-2 focus:ring-purple-400"
-            placeholder="Tìm kiếm theo tên, số điện thoại, địa chỉ, mã đơn hàng..."
+            placeholder="Tìm kiếm theo tên, số điện thoại, địa chỉ, mã lịch hẹn..."
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
@@ -344,7 +344,7 @@ const NurseMedicalNoteTab = () => {
                 <div className="grid grid-cols-2 gap-2 text-sm text-gray-600 mt-2">
                   <div className="flex items-center gap-1">
                     <FaClipboardList />
-                    Đơn hàng: {booking ? `#${bookingDisplayId}` : 'Không có'}
+                    Mã lịch hẹn: {booking ? `#${bookingDisplayId}` : 'Không có'}
                   </div>
                   <div className="flex items-center gap-1">
                     <FaUser />

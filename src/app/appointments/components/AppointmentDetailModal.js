@@ -499,7 +499,7 @@ const AppointmentDetailModal = ({
               <span className="truncate">{service.serviceName || service.ServiceName}</span>
               {hasNurse && (
                 <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full whitespace-nowrap">
-                  Đã có nhân viên
+                  Đã có chuyên viên
                 </span>
               )}
             </div>

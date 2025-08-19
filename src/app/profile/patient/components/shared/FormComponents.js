@@ -2,25 +2,30 @@
 import React from 'react';
 
 // Form Field Component
-export function FormField({ 
-  label, 
-  name, 
-  type = 'text', 
-  value, 
-  onChange, 
-  required = false, 
+export function FormField({
+  label,
+  name,
+  type = 'text',
+  value,
+  onChange,
+  required = false,
   options = [],
   className = '',
   placeholder = ''
 }) {
-  const baseClassName = "w-full rounded-lg border border-gray-200 px-3 py-2 focus:ring-2 focus:ring-purple-400 focus:border-purple-400 text-sm bg-white";
-  
+  const baseClassName = `
+  w-full px-3 py-2 rounded-xl border border-gray-300 
+  bg-white text-sm shadow-sm
+  focus:outline-none focus:ring-2 focus:ring-purple-400 focus:border-purple-400
+  transition
+`;
+
   return (
     <div className={className}>
       <label className="block text-sm font-medium mb-2 text-gray-700">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
-      
+
       {type === 'select' ? (
         <select
           name={name}
@@ -60,20 +65,20 @@ export function FormField({
 }
 
 // Avatar URL Component - Similar to profile account
-export function AvatarUpload({ 
-  currentImage, 
-  onImageChange, 
+export function AvatarUpload({
+  currentImage,
+  onImageChange,
   size = 'w-24 h-24',
-  name = 'image' 
+  name = 'image'
 }) {
   return (
     <div className="flex flex-col items-center gap-2">
       <label className="block text-sm font-medium mb-1 text-gray-700">Ảnh đại diện</label>
       <div className={`${size} mb-3`}>
-        <img 
-          src={(currentImage && currentImage !== 'string' && currentImage.trim() !== '') ? currentImage : '/images/hero-bg.jpg'} 
-          alt="avatar" 
-          className={`${size} rounded-full object-cover border-2 border-purple-200`} 
+        <img
+          src={(currentImage && currentImage !== 'string' && currentImage.trim() !== '') ? currentImage : '/images/hero-bg.jpg'}
+          alt="avatar"
+          className={`${size} rounded-full object-cover border-2 border-purple-200`}
         />
       </div>
       <div className="w-full">
@@ -113,12 +118,12 @@ export function StatusBadge({ status, variant = 'default' }) {
 }
 
 // Form Actions Component
-export function FormActions({ 
-  onCancel, 
-  onSubmit, 
-  loading = false, 
+export function FormActions({
+  onCancel,
+  onSubmit,
+  loading = false,
   submitText = 'Lưu',
-  cancelText = 'Hủy' 
+  cancelText = 'Hủy'
 }) {
   return (
     <div className="flex justify-end gap-3 pt-4 border-t border-gray-100">

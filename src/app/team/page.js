@@ -14,14 +14,16 @@ import {
   FaCheckCircle,
   FaMapMarkerAlt,
   FaEnvelope,
-  FaUserMd
+  FaUserMd,
+  FaQuoteLeft,
+  FaStar
 } from 'react-icons/fa';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import zoneService from '@/services/api/zoneService';
 import accountService from '@/services/api/accountService';
+import feedbackService from '@/services/api/feedbackService';
 // import customizeTaskService from '@/services/api/customizeTaskService';
 // import bookingService from '@/services/api/bookingService';
-// import feedbackService from '@/services/api/feedbackService';
 // import serviceTaskService from '@/services/api/serviceTaskService';
 
 export default function TeamPage() {
@@ -29,7 +31,7 @@ export default function TeamPage() {
   const [zones, setZones] = useState([]);
   const [customerTasks, setCustomerTasks] = useState([]);
   // const [bookings, setBookings] = useState([]);
-  // const [feedbacks, setFeedbacks] = useState([]);
+  const [feedbacks, setFeedbacks] = useState([]);
   // const [serviceTasks, setServiceTasks] = useState([]);
   const [showDetail, setShowDetail] = useState(false);
   const [detailData, setDetailData] = useState(null);
@@ -49,25 +51,16 @@ export default function TeamPage() {
         const [
           nursingSpecialistsData,
           zonesData,
-          // customizeTasksData,
-          // bookingsData,
-          // feedbacksData,
-          // serviceTasksData
+          feedbacksData
         ] = await Promise.all([
           nursingSpecialistService.getNursingSpecialists(),
           zoneService.getZones(),
-          // customizeTaskService.getCustomizeTasks(),
-          // bookingService.getBookings(),
-          // feedbackService.getFeedbacks(),
-          // serviceTaskService.getServiceTasks()
+          feedbackService.getAllFeedbacks()
         ]);
 
         setNursingSpecialists(Array.isArray(nursingSpecialistsData) ? nursingSpecialistsData : []);
         setZones(Array.isArray(zonesData) ? zonesData : []);
-        // setCustomerTasks(Array.isArray(customizeTasksData) ? customizeTasksData : []);
-        // setBookings(Array.isArray(bookingsData) ? bookingsData : []);
-        // setFeedbacks(Array.isArray(feedbacksData) ? feedbacksData : []);
-        // setServiceTasks(Array.isArray(serviceTasksData) ? serviceTasksData : []);
+        setFeedbacks(Array.isArray(feedbacksData) ? feedbacksData : []);
       } catch (error) {
         console.error('Error fetching team data:', error);
         setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
@@ -123,18 +116,24 @@ export default function TeamPage() {
   // Lấy danh sách zone unique
   const allZoneNames = Array.from(new Set(zones.map(z => z.Zone_name || z.zoneName || z.City || z.city).filter(Boolean)));
 
-  // Lấy số ca hoàn thành cho mỗi member
-  const getCompletedCases = (nursingID) => {
-    if (!nursingID) return 0;
-    // const tasks = customerTasks.filter(t => (t.NursingID || t.nursingID) === nursingID);
-    // const bookingIDs = [...new Set(tasks.map(t => t.BookingID || t.bookingID).filter(Boolean))];
-    // return bookingIDs.filter(bid => {
-    //   const b = bookings.find(bk => (bk.BookingID || bk.bookingID) === bid);
-    //   return b && (b.Status === 'completed' || b.status === 'completed');
-    // }).length;
+  // Tính rate trung bình cho mỗi member
+  const getAverageRate = (nursingID) => {
+    if (!nursingID || !feedbacks.length) return 0;
+    const rates = feedbacks.filter(fb => (fb.nursingID || fb.NursingID) === nursingID).map(fb => fb.rate);
+    if (!rates.length) return 0;
+    return (rates.reduce((a, b) => a + b, 0) / rates.length).toFixed(1);
+  };
 
-    // Tạm thời return 0 vì customizeTaskService đã bị comment
-    return 0;
+  // Lấy số ca hoàn thành (feedbacks count)
+  const getCompletedCases = (nursingID) => {
+    if (!nursingID || !feedbacks.length) return 0;
+    return feedbacks.filter(fb => (fb.nursingID || fb.NursingID) === nursingID).length;
+  };
+
+  // Lấy danh sách feedback content cho member
+  const getFeedbackContents = (nursingID) => {
+    if (!nursingID || !feedbacks.length) return [];
+    return feedbacks.filter(fb => (fb.nursingID || fb.NursingID) === nursingID && fb.content).map(fb => fb.content);
   };
 
   const handleViewDetail = async (member) => {
@@ -213,15 +212,34 @@ export default function TeamPage() {
       />
       <h3 className="text-lg font-bold text-blue-700 mb-1 flex items-center gap-2">
         {member.FullName || member.Nurse_Name || member.fullName}
-        <span className={`px-2 py-0.5 rounded-full text-xs font-semibold ml-2 ${(member.Major || member.major) && (member.Major || member.major).toLowerCase().includes('nurse') ? 'bg-blue-100 text-blue-700' : 'bg-pink-100 text-pink-700'}`}>{member.Major || member.major}</span>
+        <span
+          className={`px-2 py-0.5 rounded-full text-xs font-semibold ml-2 ${(member.Major || member.major)?.toLowerCase().includes("nurse")
+            ? "bg-blue-100 text-blue-700"
+            : "bg-pink-100 text-pink-700"
+            }`}
+        >
+          {(member.Major || member.major)?.toLowerCase() === "nurse"
+            ? "Y tá"
+            : (member.Major || member.major)?.toLowerCase() === "specialist"
+              ? "Chuyên gia"
+              : member.Major || member.major}
+        </span>
       </h3>
+
       <div className="flex items-center gap-2 mb-2">
         <span className="text-gray-600 text-sm">{getZoneName(member.ZoneID || member.zoneID || member.Address || member.address)}</span>
       </div>
       <div className="text-center mb-4">
-        <div className="text-2xl font-bold text-pink-600">{getCompletedCases(member.NursingID || member.nursingID)}</div>
+        <div className="text-2xl font-bold text-pink-600">
+          {getCompletedCases(member.NursingID || member.nursingID)}
+        </div>
         <div className="text-xs text-gray-500">Ca hoàn thành</div>
+        <div className="flex items-center justify-center gap-1 mt-1 text-yellow-600 font-bold">
+          <FaStar className="text-yellow-500" />
+          <span>{getAverageRate(member.NursingID || member.nursingID)}/5</span>
+        </div>
       </div>
+
       <button
         onClick={() => onViewDetail(member)}
         className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:from-pink-600 hover:to-purple-600 transition-all duration-200"
@@ -388,8 +406,15 @@ export default function TeamPage() {
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-blue-200/70">
                       <span className="text-gray-600">Chuyên môn:</span>
-                      <span className="font-semibold text-blue-700">{detailData.Major || detailData.major || 'N/A'}</span>
+                      <span className="font-semibold text-blue-700">
+                        {(detailData.Major || detailData.major)?.toLowerCase() === "nurse"
+                          ? "Y tá"
+                          : (detailData.Major || detailData.major)?.toLowerCase() === "specialist"
+                            ? "Chuyên gia"
+                            : detailData.Major || detailData.major || "N/A"}
+                      </span>
                     </div>
+
                     <div className="flex justify-between items-center py-2 border-b border-blue-200/70">
                       <span className="text-gray-600">Khu vực:</span>
                       <span className="font-semibold flex items-center gap-2"><FaMapMarkerAlt className="text-gray-500" />{getZoneName(detailData.ZoneID || detailData.zoneID || detailData.Address || detailData.address)}</span>
@@ -437,13 +462,13 @@ export default function TeamPage() {
                     </div>
                     <div className="flex justify-between items-center py-2 border-b border-yellow-200/70">
                       <span className="text-gray-600">Đánh giá trung bình:</span>
-                      <span className="font-bold text-yellow-600 text-xl">4.8/5.0</span>
+                      <span className="font-bold text-yellow-600 text-xl">{getAverageRate(detailData.NursingID || detailData.nursingID)}/5</span>
                     </div>
                     <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600">Trạng thái:</span>
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${(detailData.Status || detailData.status) === 'Active'
-                          ? 'bg-green-100 text-green-700 border border-green-300'
-                          : 'bg-red-100 text-red-700 border border-red-300'
+                        ? 'bg-green-100 text-green-700 border border-green-300'
+                        : 'bg-red-100 text-red-700 border border-red-300'
                         }`}>
                         {detailData.Status || detailData.status || 'N/A'}
                       </span>
@@ -464,6 +489,26 @@ export default function TeamPage() {
                   </div>
                 )}
               </div>
+
+              {/* Feedback content list */}
+              {getFeedbackContents(detailData.NursingID || detailData.nursingID).length > 0 && (
+                <div className="mt-8">
+                  <h4 className="font-semibold text-gray-800 mb-4 text-lg flex items-center gap-2">
+                    <FaChartBar className="text-yellow-500" /> Đánh giá từ khách hàng
+                  </h4>
+                  <div className="space-y-3">
+                    {getFeedbackContents(detailData.NursingID || detailData.nursingID).map((content, idx) => (
+                      <div
+                        key={idx}
+                        className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-start gap-3 shadow-sm hover:shadow-md transition"
+                      >
+                        <FaQuoteLeft className="text-pink-400 mt-1" />
+                        <p className="text-gray-700 leading-relaxed">{content}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         )}

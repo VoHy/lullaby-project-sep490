@@ -426,7 +426,7 @@ export default function ServicesPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-red-500 text-6xl mb-4">⚠️</div>
+          <div className="text-red-500 text-6xl mb-4"></div>
           <h3 className="text-xl font-semibold text-gray-600 mb-2">{error}</h3>
           <p className="text-gray-500">
             Vui lòng thử lại sau hoặc liên hệ hỗ trợ nếu vấn đề vẫn tiếp diễn.
@@ -552,7 +552,7 @@ export default function ServicesPage() {
         {filteredPackagesForBaby.length === 0 && filteredPackagesForMomAndBaby.length === 0 &&
           filteredServicesForMom.length === 0 && filteredServicesForBaby.length === 0 && (
             <div className="text-center py-16">
-              <div className="text-gray-400 text-6xl mb-4">🏥</div>
+              <div className="text-gray-400 text-6xl mb-4"></div>
               <h3 className="text-xl font-semibold text-gray-600 mb-2">
                 Không tìm thấy dịch vụ nào
               </h3>

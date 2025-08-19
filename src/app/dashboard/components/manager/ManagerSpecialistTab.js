@@ -15,6 +15,7 @@ import serviceTypeService from '@/services/api/serviceTypeService';
 
 const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZone, loading, error }) => {
   const [serviceTypes, setServiceTypes] = useState([]);
+  const [specialistsWithAccount, setSpecialistsWithAccount] = useState([]);
 
   // Lấy danh sách dịch vụ khi component mount
   useEffect(() => {
@@ -35,6 +36,32 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
     };
     fetchServiceTypes();
   }, []);
+
+  // Khi specialists thay đổi, fetch account cho từng specialist
+  useEffect(() => {
+    const fetchAccounts = async () => {
+      if (!specialists || specialists.length === 0) {
+        setSpecialistsWithAccount([]);
+        return;
+      }
+      const specialistsWithAcc = await Promise.all(
+        specialists.map(async (specialist) => {
+          if (specialist.accountID) {
+            try {
+              const acc = await accountService.getAccountById(specialist.accountID);
+              return { ...specialist, account: acc };
+            } catch {
+              return { ...specialist };
+            }
+          }
+          return { ...specialist };
+        })
+      );
+      setSpecialistsWithAccount(specialistsWithAcc);
+    };
+    fetchAccounts();
+  }, [specialists]);
+
   const [searchTerm, setSearchTerm] = useState('');
   const [filterStatus, setFilterStatus] = useState('all');
   const [showAddModal, setShowAddModal] = useState(false);
@@ -44,8 +71,8 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
   // Lọc và tìm kiếm
   const filteredSpecialists = specialists.filter(specialist => {
     const matchesSearch = specialist.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      specialist.phoneNumber?.includes(searchTerm) ||
-      specialist.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      specialistsWithAccount.find(x => x.nursingID === specialist.nursingID)?.account?.phoneNumber?.includes(searchTerm) ||
+      specialistsWithAccount.find(x => x.nursingID === specialist.nursingID)?.account?.email?.toLowerCase().includes(searchTerm.toLowerCase());
 
     const matchesStatus = filterStatus === 'all' || specialist.status === filterStatus;
 
@@ -157,6 +184,7 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
     );
   }
 
+  // Thay specialists thành specialistsWithAccount khi truyền vào SpecialistList
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -189,7 +217,7 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
 
       {/* Specialists List */}
       <SpecialistList
-        specialists={filteredSpecialists}
+        specialists={filteredSpecialists.map(s => specialistsWithAccount.find(x => x.nursingID === s.nursingID) || s)}
         onEdit={(specialist) => {
           setSelectedSpecialist(specialist);
           setShowEditModal(true);
