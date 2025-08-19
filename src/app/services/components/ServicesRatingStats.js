@@ -126,7 +126,7 @@ const ServicesRatingStats = ({ serviceTypes = [], customizeTasks = [], feedbacks
         Thống kê đánh giá dịch vụ
       </h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className="text-center p-4 bg-blue-50 rounded-xl">
           <FaUsers className="text-blue-500 text-2xl mx-auto mb-2" />
           <div className="text-2xl font-bold text-blue-600">{stats.totalServices}</div>
@@ -143,13 +143,6 @@ const ServicesRatingStats = ({ serviceTypes = [], customizeTasks = [], feedbacks
           <FaStar className="text-yellow-500 text-2xl mx-auto mb-2" />
           <div className="text-2xl font-bold text-yellow-600">{stats.averageRating}</div>
           <div className="text-sm text-gray-600">Rating TB</div>
-        </div>
-        
-        <div className="text-center p-4 bg-purple-50 rounded-xl">
-          <div className="text-2xl font-bold text-purple-600">
-            {stats.totalFeedbacks > 0 ? Math.round((stats.totalFeedbacks / stats.totalServices) * 10) / 10 : 0}
-          </div>
-          <div className="text-sm text-gray-600">Đánh giá/DV</div>
         </div>
       </div>
       

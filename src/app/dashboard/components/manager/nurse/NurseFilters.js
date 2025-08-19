@@ -12,10 +12,7 @@ const NurseFilters = ({
     <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {/* Search */}
-        <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-3">
-            <span className="inline-flex items-center gap-2"><FaSearch /> Tìm kiếm</span>
-          </label>
+        <div className="col-span-2">
           <div className="relative">
             <input
               type="text"
@@ -32,9 +29,6 @@ const NurseFilters = ({
 
         {/* Status Filter */}
         <div>
-          <label className="block text-sm font-semibold text-gray-700 mb-3">
-            <span className="inline-flex items-center gap-2"><FaChartBar /> Trạng thái</span>
-          </label>
           <select
             value={filterStatus}
             onChange={(e) => setFilterStatus(e.target.value)}

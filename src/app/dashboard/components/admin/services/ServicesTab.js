@@ -141,7 +141,7 @@ const ServicesTab = () => {
 
       setFormData({
         serviceName: '',
-        major: 'nurse',
+        major: 'Nurse',
         price: 0,
         duration: 0,
         description: '',
@@ -171,7 +171,7 @@ const ServicesTab = () => {
       setSelectedService(null);
       setFormData({
         serviceName: '',
-        major: 'nurse',
+        major: 'Nurse',
         price: 0,
         duration: 0,
         description: '',
@@ -220,7 +220,7 @@ const ServicesTab = () => {
   const openCreateModal = (isPackage = false) => {
     setFormData({
       serviceName: '',
-      major: 'nurse',
+      major: 'Nurse',
       price: 0,
       duration: 0,
       description: '',

@@ -33,7 +33,7 @@ const ServiceStatusBadge = ({ serviceId, customizeTasks = [] }) => {
       color: 'bg-green-100 text-green-700',
       icon: FaCheckCircle
     };
-  } else if (status === 'in_progress' || status === 'processing' || status === 'active') {
+  } else if (status === 'paid' || status === 'isScheduled' || status === 'active') {
     statusConfig = {
       text: 'Đang thực hiện',
       color: 'bg-blue-100 text-blue-700',

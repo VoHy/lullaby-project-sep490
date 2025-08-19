@@ -383,6 +383,8 @@ const ManagerBookingTab = () => {
               return (
                 String(b.bookingID).includes(lower) ||
                 careProfile?.profileName?.toLowerCase().includes(lower) ||
+                careProfile?.phoneNumber?.toLowerCase().includes(lower) ||
+                careProfile?.email?.toLowerCase().includes(lower) ||
                 serviceTasksOfBooking?.some(t => t.description?.toLowerCase().includes(lower))
               );
             });
