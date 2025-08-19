@@ -179,43 +179,43 @@ const BookingsTab = ({ bookings }) => {
     const [localNursesByTaskId, setLocalNursesByTaskId] = useState({});
     const [localInvoice, setLocalInvoice] = useState(null);
     const [selectedNurseByTask, setSelectedNurseByTask] = useState({});
-    
+
     // Assign nurse to a task function
     const handleAssignNurse = async (task) => {
       try {
         const nurseId = selectedNurseByTask[task.customizeTaskID];
         if (!nurseId) return;
-        
+
         // Gọi API UpdateNursing để phân công nurse và tạo lịch
         await customizeTaskService.updateNursing(
           task.customizeTaskID,
           nurseId
         );
-        
+
         // Clear selection for this task
         setSelectedNurseByTask((prev) => {
           const newState = { ...prev };
           delete newState[task.customizeTaskID];
           return newState;
         });
-        
+
         // Refresh nurses list for this task to reflect the change
         setLocalNursesByTaskId((prev) => {
           const newState = { ...prev };
           delete newState[task.customizeTaskID];
           return newState;
         });
-        
+
         // Force re-render of the modal to show updated status
         onClose();
         setTimeout(() => setSelectedBooking(booking), 100);
-        
+
         // Hiển thị thông báo thành công
         const successMessage = document.createElement('div');
         successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
         successMessage.textContent = '✓ Phân công điều dưỡng thành công!';
         document.body.appendChild(successMessage);
-        
+
         setTimeout(() => {
           if (successMessage.parentNode) {
             successMessage.parentNode.removeChild(successMessage);
@@ -228,7 +228,7 @@ const BookingsTab = ({ bookings }) => {
         errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
         errorMessage.textContent = '✗ Phân công thất bại: ' + (e?.message || 'Lỗi không xác định. Vui lòng thử lại.');
         document.body.appendChild(errorMessage);
-        
+
         setTimeout(() => {
           if (errorMessage.parentNode) {
             errorMessage.parentNode.removeChild(errorMessage);
@@ -289,7 +289,6 @@ const BookingsTab = ({ bookings }) => {
           {/* Header */}
           <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-lg p-6">
             <h3 className="text-2xl font-bold mb-2">Chi tiết Booking #{booking?.BookingID ?? booking?.bookingID}</h3>
-            <p className="text-blue-100">Ngày đặt: {new Date(booking?.workdate ?? booking?.Workdate ?? booking?.bookingDate ?? booking?.BookingDate).toLocaleDateString('vi-VN')}</p>
           </div>
 
           {/* Content */}
@@ -336,7 +335,11 @@ const BookingsTab = ({ bookings }) => {
                     )}
                     <div className="flex justify-between py-2 border-b border-gray-100">
                       <span className="font-medium text-gray-600">Ngày đặt:</span>
-                      <span className="text-gray-900">{new Date(booking?.workdate ?? booking?.Workdate ?? booking?.bookingDate ?? booking?.BookingDate).toLocaleDateString('vi-VN')}</span>
+                      <p className="text-blue-500">
+                        Ngày đặt: {new Date(booking?.workdate).toLocaleDateString('vi-VN')}
+                        {" "} {" "}
+                        {new Date(booking?.workdate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                      </p>
                     </div>
                     <div className="flex justify-between py-2">
                       <span className="font-medium text-gray-600">Trạng thái:</span>
@@ -541,7 +544,7 @@ const BookingsTab = ({ bookings }) => {
                                               const filtered = Array.isArray(pool) ? pool.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
                                               return (
                                                 <span className="block mt-1 text-xs text-blue-600">
-                                                  {localNursesByTaskId[taskId] 
+                                                  {localNursesByTaskId[taskId]
                                                     ? (filtered.length > 0 ? `${filtered.length} điều dưỡng có sẵn` : 'Không có điều dưỡng phù hợp')
                                                     : (
                                                       <span className="flex items-center gap-1">
@@ -564,8 +567,8 @@ const BookingsTab = ({ bookings }) => {
                                           disabled={!localNursesByTaskId[task.customizeTaskID]}
                                         >
                                           <option value="">
-                                            {localNursesByTaskId[task.customizeTaskID] 
-                                              ? "Chọn điều dưỡng..." 
+                                            {localNursesByTaskId[task.customizeTaskID]
+                                              ? "Chọn điều dưỡng..."
                                               : "Đang tải..."
                                             }
                                           </option>
@@ -857,7 +860,9 @@ const BookingsTab = ({ bookings }) => {
                           <div className="text-sm text-gray-500">{account?.phone_number || account?.phoneNumber || careProfile?.PhoneNumber || careProfile?.phoneNumber || 'N/A'}</div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {workDate ? new Date(workDate).toLocaleDateString('vi-VN') : '-'}
+                          {workDate
+                            ? `${new Date(workDate).toLocaleDateString('vi-VN')} ${new Date(workDate).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}`
+                            : '-'}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-semibold text-green-600">
                           {price?.toLocaleString()} VNĐ

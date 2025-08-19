@@ -92,7 +92,7 @@ const NurseDashboard = ({ user, initialTab }) => {
   const tabs = [
     { id: 'schedule', label: 'Lịch của tôi' },
     { id: 'bookings', label: 'Lịch hẹn' },
-    { id: 'patients', label: 'Hồ sơ bệnh nhân' },
+    { id: 'patients', label: 'Hồ sơ khách hàng' },
     { id: 'medicalnote', label: 'Ghi chú y tế' },
     { id: 'profile', label: 'Tài khoản cá nhân' },
   ];

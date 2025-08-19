@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { FaTimes, FaUser, FaGraduationCap, FaClipboardList, FaSave, FaHourglassHalf } from 'react-icons/fa';
+import { nursingSpecialistServiceTypeService } from '@/services/api';
 
 const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, serviceTypes = [] }) => {
   const [formData, setFormData] = useState({
@@ -27,6 +28,7 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [registeredServiceIDs, setRegisteredServiceIDs] = useState([]);
 
   useEffect(() => {
     setFormData({
@@ -52,6 +54,21 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
           : [],
     });
   }, [nurse]);
+
+  // Fetch các dịch vụ đã được thêm (đã đăng) theo nursingID để highlight
+  useEffect(() => {
+    const fetchRegisteredServices = async () => {
+      try {
+        if (!nurse?.nursingID) return;
+        const result = await nursingSpecialistServiceTypeService.getByNursing(nurse.nursingID);
+        const ids = Array.isArray(result) ? result.map(item => String(item.serviceID)) : [];
+        setRegisteredServiceIDs(ids);
+      } catch (err) {
+        // Bỏ qua lỗi highlight, không chặn UI
+      }
+    };
+    fetchRegisteredServices();
+  }, [nurse?.nursingID]);
 
   const handleChange = (e) => {
     const { name, value, multiple, options } = e.target;
@@ -221,32 +238,39 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
                     {Array.isArray(serviceTypes) &&
                       serviceTypes
                         .filter(service => service.isPackage === false)
-                        .map(service => (
-                          <label key={service.serviceID} className="inline-flex items-center gap-2">
-                            <input
-                              type="checkbox"
-                              name="serviceID"
-                              value={service.serviceID}
-                              checked={Array.isArray(formData.serviceID) && formData.serviceID.includes(String(service.serviceID))}
-                              onChange={e => {
-                                const value = e.target.value;
-                                setFormData(prev => {
-                                  const current = Array.isArray(prev.serviceID) ? prev.serviceID.map(String) : [];
-                                  if (e.target.checked) {
-                                    if (!current.includes(value)) {
-                                      return { ...prev, serviceID: [...current, value] };
+                        .map(service => {
+                          const isChecked = Array.isArray(formData.serviceID) && formData.serviceID.includes(String(service.serviceID));
+                          const isRegistered = Array.isArray(registeredServiceIDs) && registeredServiceIDs.includes(String(service.serviceID));
+                          return (
+                            <label key={service.serviceID} className="inline-flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                name="serviceID"
+                                value={service.serviceID}
+                                checked={isChecked}
+                                onChange={e => {
+                                  const value = e.target.value;
+                                  setFormData(prev => {
+                                    const current = Array.isArray(prev.serviceID) ? prev.serviceID.map(String) : [];
+                                    if (e.target.checked) {
+                                      if (!current.includes(value)) {
+                                        return { ...prev, serviceID: [...current, value] };
+                                      }
+                                      return prev;
+                                    } else {
+                                      return { ...prev, serviceID: current.filter(id => id !== value) };
                                     }
-                                    return prev;
-                                  } else {
-                                    return { ...prev, serviceID: current.filter(id => id !== value) };
-                                  }
-                                });
-                              }}
-                              className="form-checkbox h-4 w-4 text-blue-600"
-                            />
-                            <span>{service.serviceName}</span>
-                          </label>
-                        ))
+                                  });
+                                }}
+                                className="form-checkbox h-4 w-4 text-blue-600"
+                              />
+                              <span className={isRegistered ? "font-bold text-red-600" : ""}>
+                                {service.serviceName}
+                                {isRegistered && <span className="ml-2 text-xs text-red-600">(dịch vụ đã được thêm)</span>}
+                              </span>
+                            </label>
+                          );
+                        })
                     }
                   </div>
                 </div>

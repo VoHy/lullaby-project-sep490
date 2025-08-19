@@ -1,6 +1,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { FaTimes, FaUser, FaGraduationCap, FaClipboardList, FaSave, FaHourglassHalf } from 'react-icons/fa';
+import { nursingSpecialistServiceTypeService } from '@/services/api';
 
 const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpecialists, serviceTypes = [] }) => {
   const [formData, setFormData] = useState({
@@ -23,6 +24,7 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [registeredServiceIDs, setRegisteredServiceIDs] = useState([]);
 
   useEffect(() => {
     setFormData({
@@ -44,6 +46,21 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
       serviceID: Array.isArray(specialist.serviceIDs) ? specialist.serviceIDs.map(String) : []
     });
   }, [specialist]);
+
+  // Fetch các dịch vụ đã được thêm theo nursingID để highlight
+  useEffect(() => {
+    const fetchRegisteredServices = async () => {
+      try {
+        if (!specialist?.nursingID) return;
+        const result = await nursingSpecialistServiceTypeService.getByNursing(specialist.nursingID);
+        const ids = Array.isArray(result) ? result.map(item => String(item.serviceID)) : [];
+        setRegisteredServiceIDs(ids);
+      } catch (err) {
+        // Không chặn UI nếu lỗi
+      }
+    };
+    fetchRegisteredServices();
+  }, [specialist?.nursingID]);
 
   const handleChange = (e) => {
     const { name, value, multiple, options } = e.target;
@@ -216,6 +233,7 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
                         .filter(service => service.isPackage === false)
                         .map(service => {
                           const isChecked = Array.isArray(formData.serviceID) && formData.serviceID.includes(String(service.serviceID));
+                          const isRegistered = Array.isArray(registeredServiceIDs) && registeredServiceIDs.includes(String(service.serviceID));
                           return (
                             <label key={service.serviceID} className="inline-flex items-center gap-2">
                               <input
@@ -239,7 +257,12 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
                                 }}
                                 className="form-checkbox h-4 w-4 text-purple-600"
                               />
-                              <span>{service.serviceName}</span>
+                              <span className={isRegistered ? "font-bold text-red-600" : ""}>
+                                {service.serviceName}
+                                {isRegistered && (
+                                  <span className="ml-2 text-xs text-red-600">(dịch vụ đã được thêm)</span>
+                                )}
+                              </span>
                             </label>
                           );
                         })

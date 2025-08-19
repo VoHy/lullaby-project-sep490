@@ -83,6 +83,9 @@ const UsersTab = () => {
   const [detailAccount, setDetailAccount] = useState(null);
   const [editAccount, setEditAccount] = useState(null);
   const [currentTime, setCurrentTime] = useState(new Date());
+  // Pagination
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
 
   useEffect(() => {
     fetchAccounts();
@@ -120,6 +123,18 @@ const UsersTab = () => {
 
     return matchesSearch && matchesStatus && matchesRole;
   });
+
+  // Reset trang khi điều kiện lọc thay đổi hoặc dữ liệu cập nhật
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, roleFilter, accounts]);
+
+  // Pagination calculations
+  const totalItems = filteredAccounts.length;
+  const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
+  const startIndex = (currentPage - 1) * pageSize;
+  const endIndex = Math.min(startIndex + pageSize, totalItems);
+  const paginatedAccounts = filteredAccounts.slice(startIndex, endIndex);
 
   // Tính toán stats
   const stats = [
@@ -277,7 +292,7 @@ const UsersTab = () => {
             <tbody className="divide-y divide-gray-200">
               {loading ? (
                 <tr><td colSpan="6" className="text-center py-12 text-gray-500">Đang tải dữ liệu...</td></tr>
-              ) : filteredAccounts.length > 0 ? filteredAccounts.map((account, index) => {
+              ) : paginatedAccounts.length > 0 ? paginatedAccounts.map((account, index) => {
                 const isDeleted = isAccountDeleted(account);
                 return (
                   <tr key={account.accountID || account.AccountID || index}
@@ -390,6 +405,35 @@ const UsersTab = () => {
               )}
             </tbody>
           </table>
+        </div>
+        {/* Pagination Controls */}
+        <div className="flex flex-col md:flex-row items-center justify-center gap-3 p-4">
+          <div className="flex items-center gap-2">
+            <button
+              className="px-3 py-1 rounded border text-sm disabled:opacity-50"
+              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+              disabled={currentPage <= 1}
+            >
+              Trước
+            </button>
+            <div className="text-sm">Trang {currentPage} / {totalPages}</div>
+            <button
+              className="px-3 py-1 rounded border text-sm disabled:opacity-50"
+              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+              disabled={currentPage >= totalPages}
+            >
+              Sau
+            </button>
+            <select
+              className="ml-2 px-2 py-1 border rounded text-sm"
+              value={pageSize}
+              onChange={(e) => setPageSize(Number(e.target.value))}
+            >
+              {[10, 20, 50, 100].map(n => (
+                <option key={n} value={n}>{n}/trang</option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
       {/* Create User Modal */}
@@ -534,7 +578,7 @@ const EditUserModal = ({ show, account, onClose, onSave }) => {
                 value={formData.roleID}
                 onChange={handleInputChange}
                 className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors duration-200 bg-gray-50 focus:bg-white"
-                required
+                disabled
               >
                 <option value={1}>Quản trị viên</option>
                 <option value={2}>Chuyên viên</option>

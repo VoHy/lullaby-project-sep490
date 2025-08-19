@@ -19,6 +19,7 @@ import serviceTaskService from '@/services/api/serviceTaskService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 import workScheduleService from '@/services/api/workScheduleService';
 import medicalNoteService from '@/services/api/medicalNoteService';
+import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import { AuthContext } from '@/context/AuthContext';
 
 export default function NurseScheduleTab({ workSchedules = [] }) {
@@ -95,6 +96,13 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
   const [editNotePayload, setEditNotePayload] = useState({ note: '', advice: '', image: '', medicalNoteID: null });
   const [editNoteLoading, setEditNoteLoading] = useState(false);
   const [editNoteMeta, setEditNoteMeta] = useState({ task: null, booking: null, careProfile: null });
+  const [myNursingID, setMyNursingID] = useState(null);
+
+  // Service Notes (view by careProfile + service)
+  const [showServiceNotesModal, setShowServiceNotesModal] = useState(false);
+  const [serviceNotesLoading, setServiceNotesLoading] = useState(false);
+  const [serviceNotes, setServiceNotes] = useState([]);
+  const [selectedServiceIdForNotes, setSelectedServiceIdForNotes] = useState(null);
 
   // caches to avoid repeated calls
   const cacheRef = useRef({
@@ -102,6 +110,7 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
     serviceTasks: null,
     serviceTypes: null,
     medicalNotes: null,
+    nurses: [],
   });
 
   const safe = async (fn, fallback) => {
@@ -113,16 +122,27 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
     (async () => {
       setLoading(true);
       try {
-        const [hs, stasks, stypes, mnotes] = await Promise.all([
+        const [hs, stasks, stypes, mnotes, nurses] = await Promise.all([
           safe(() => holidayService.getAllHolidays(), []),
           safe(() => (serviceTaskService.getServiceTasks?.() || serviceTaskService.getAllServiceTasks?.()), []),
           safe(() => (serviceTypeService.getAllServiceTypes?.() || serviceTypeService.getServiceTypes?.()), []),
           safe(() => medicalNoteService.getAllMedicalNotes(), []),
+          safe(() => nursingSpecialistService.getAllNursingSpecialists(), []),
         ]);
         setHolidays(hs || []);
         cacheRef.current.serviceTasks = stasks || [];
         cacheRef.current.serviceTypes = stypes || [];
         cacheRef.current.medicalNotes = mnotes || [];
+        cacheRef.current.nurses = Array.isArray(nurses) ? nurses : [];
+        // try resolve my nursingID from nurses list if user has accountID
+        try {
+          const acctId = user?.accountID ?? user?.AccountID ?? null;
+          if (acctId) {
+            const me = (cacheRef.current.nurses || []).find(s => String(s.accountID ?? s.AccountID) === String(acctId));
+            const nid = me?.nursingID ?? me?.NursingID ?? me?.nursingId ?? null;
+            if (nid != null) setMyNursingID(nid);
+          }
+        } catch { }
       } catch (e) {
         setError('Không tải được dữ liệu ban đầu.');
       } finally {
@@ -159,6 +179,15 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
     const days = [];
     for (let d = startDate; d <= endDate; d = addDays(d, 1)) days.push(d);
     return days;
+  };
+
+  // Resolve nurse full name by nursingID using cached nurses list
+  const resolveNurseNameById = (nursingId) => {
+    try {
+      const nurses = cacheRef.current?.nurses || [];
+      const nurse = nurses.find(ns => String(ns.nursingID ?? ns.NursingID ?? ns.nursingId) === String(nursingId));
+      return nurse?.fullName ?? nurse?.FullName ?? (nursingId != null ? `#${nursingId}` : 'Không rõ');
+    } catch { return 'Không rõ'; }
   };
 
   const fetchBookingBundle = async (bookingId, fallbackServiceId, workObj = null) => {
@@ -298,11 +327,24 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
   const submitMedicalNote = async () => {
     if (!currentCustomizeTask) return;
 
-    const userNursingID = user?.nursingID ?? user?.NursingID ?? user?.nursingId ?? null;
+    const userNursingID = (() => {
+      let id = user?.nursingID ?? user?.NursingID ?? user?.nursingId ?? null;
+      if (!id && user?.accountID) {
+        try {
+          const nurses = cacheRef.current?.nurses || [];
+          const me = nurses.find(s => String(s.accountID ?? s.AccountID) === String(user.accountID));
+          id = me?.nursingID ?? me?.NursingID ?? me?.nursingId ?? null;
+        } catch { }
+      }
+      return id;
+    })();
+
     const taskNurseId = g(currentCustomizeTask, K.nursingID) ?? null;
     const taskStatus = SLC(g(currentCustomizeTask, K.status));
 
-    if (String(taskNurseId) !== String(userNursingID)) return alert('Chỉ nurse được phân công mới có thể ghi chú.');
+    if (taskNurseId != null && userNursingID != null && String(taskNurseId) !== String(userNursingID)) {
+      return alert('Chỉ nurse được phân công mới có thể ghi chú.');
+    }
     if (taskStatus !== 'completed') return alert('Chỉ ghi chú khi task đã hoàn thành (completed).');
     if (!notePayload.note || !notePayload.note.trim()) return alert('Ghi chú (note) là bắt buộc.');
     if (selectedEvent && selectedEvent.isAttended === false) return alert('Không thể ghi chú trước khi ca được điểm danh (attended).');
@@ -316,6 +358,12 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
       }
 
       const bookingIdCandidate = selectedEvent?.bookingId || g(selectedEvent?.workObj || {}, K.bookingID) || g(currentCustomizeTask, K.bookingID) || null;
+      const resolveCareProfileId = async () => {
+        try {
+          const b = selectedEvent?.bookingDetail?.booking || await safe(() => bookingService.getBookingById(bookingIdCandidate), null);
+          return b?.careProfileID || b?.CareProfileID || b?.careProfileId || null;
+        } catch { return null; }
+      };
 
       const payload = {
         customizeTaskID: g(currentCustomizeTask, K.customizeTaskID),
@@ -326,6 +374,12 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
         nursingID: userNursingID ?? null,
         bookingID: bookingIdCandidate ?? null,
       };
+
+      // Nếu backend yêu cầu careProfileID, thêm vào payload nếu có
+      try {
+        const cpId = await resolveCareProfileId();
+        if (cpId && payload.careProfileID === undefined) payload.careProfileID = cpId;
+      } catch { }
 
       await medicalNoteService.createMedicalNote(payload);
       alert('Tạo ghi chú y tế thành công.');
@@ -407,7 +461,17 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
     </div>
   );
 
-  const userNursingID = user?.nursingID ?? user?.NursingID ?? user?.nursingId ?? null;
+  const userNursingID = (() => {
+    let id = user?.nursingID ?? user?.NursingID ?? user?.nursingId ?? myNursingID ?? null;
+    if (!id && user?.accountID) {
+      try {
+        const nurses = cacheRef.current?.nurses || [];
+        const me = nurses.find(s => String(s.accountID ?? s.AccountID) === String(user.accountID));
+        id = me?.nursingID ?? me?.NursingID ?? me?.nursingId ?? null;
+      } catch { }
+    }
+    return id;
+  })();
 
   // --------------------------------- UI -----------------------------------
   return (
@@ -491,7 +555,7 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
       {selectedEvent && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black opacity-30" onClick={() => setSelectedEvent(null)} />
-          <div className="relative bg-white w-full max-w-6xl rounded-xl shadow-2xl overflow-hidden">
+          <div className="relative bg-white w-full max-w-7xl h-[90vh] rounded-xl shadow-2xl overflow-y-auto">
             <div className="flex items-center justify-between p-6 border-b">
               <div className="flex items-center gap-4">
                 <div className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">Chi tiết sự kiện</div>
@@ -580,7 +644,7 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
                   <div className="flex items-center gap-3">
                     <FaUser className="text-indigo-600" />
                     <div>
-                      <div className="text-sm text-gray-500">Bệnh nhân</div>
+                      <div className="text-sm text-gray-500">Bệnh </div>
                       <div className="text-lg font-semibold">{selectedEvent.bookingDetail?.careProfile?.profileName || '-'}</div>
                     </div>
                   </div>
@@ -592,6 +656,39 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
                     <div className="flex items-center gap-3">
                       <FaMapMarkerAlt className="text-gray-400" />
                       <span>{selectedEvent.bookingDetail?.careProfile?.address || selectedEvent.bookingDetail?.careProfile?.addressDetail || '-'}</span>
+                    </div>
+                    {/* View notes by service button */}
+                    <div className="pt-2">
+                      <button
+                        className="inline-flex items-center gap-2 px-3 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700"
+                        onClick={async () => {
+                          // Prefer serviceID of this work schedule/event
+                          const defaultServiceId = selectedEvent.serviceId
+                            || selectedEvent.bookingDetail?.serviceMain?.serviceID
+                            || selectedEvent.bookingDetail?.serviceType?.serviceID
+                            || null;
+                          setSelectedServiceIdForNotes(defaultServiceId || null);
+                          // Load notes
+                          try {
+                            setServiceNotesLoading(true);
+                            setShowServiceNotesModal(true);
+                            const cpId = selectedEvent.bookingDetail?.careProfile?.careProfileID
+                              || selectedEvent.bookingDetail?.careProfile?.CareProfileID
+                              || null;
+                            if (cpId) {
+                              const res = await medicalNoteService.getMedicalNotesByCareProfile(cpId, defaultServiceId || undefined);
+                              const arr = Array.isArray(res) ? res : (res?.data && Array.isArray(res.data) ? res.data : []);
+                              setServiceNotes(arr);
+                            } else {
+                              setServiceNotes([]);
+                            }
+                          } catch {
+                            setServiceNotes([]);
+                          } finally {
+                            setServiceNotesLoading(false);
+                          }
+                        }}
+                      >Xem ghi chú (dịch vụ)</button>
                     </div>
                   </div>
                 </div>
@@ -772,9 +869,9 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
           >
             <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl" onClick={() => setEditNoteModal(false)} type="button" title="Đóng">✕</button>
             <h4 className="text-xl font-bold mb-4 text-purple-700">Xem/Sửa ghi chú y tế</h4>
-            <div className="mb-2"><span className="font-semibold">Bệnh nhân:</span> {editNoteMeta.careProfile?.profileName || editNoteMeta.careProfile?.ProfileName}</div>
-            <div className="mb-2"><span className="font-semibold">Booking:</span> #{editNoteMeta.booking?.bookingID || editNoteMeta.booking?.BookingID}</div>
-            <div className="mb-2"><span className="font-semibold">Task:</span> {g(editNoteMeta.task || {}, K.serviceName) || '-'}</div>
+            <div className="mb-2"><span className="font-semibold">Khách hàng:</span> {editNoteMeta.careProfile?.profileName || editNoteMeta.careProfile?.ProfileName}</div>
+            <div className="mb-2"><span className="font-semibold">Mã lịch hẹn:</span> #{editNoteMeta.booking?.bookingID || editNoteMeta.booking?.BookingID}</div>
+            <div className="mb-2"><span className="font-semibold">Nhiệm vụ:</span> {g(editNoteMeta.task || {}, K.serviceName) || '-'}</div>
             <div className="mb-2">
               <label className="font-semibold">Nội dung:</label>
               <textarea className="w-full border rounded px-2 py-1" value={editNotePayload.note} onChange={e => setEditNotePayload(p => ({ ...p, note: e.target.value }))} required />
@@ -792,6 +889,73 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
               {editNoteLoading ? 'Đang lưu...' : 'Lưu thay đổi'}
             </button>
           </form>
+        </div>
+      )}
+
+      {/* Service Notes Modal */}
+      {showServiceNotesModal && (
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black opacity-30" onClick={() => setShowServiceNotesModal(false)} />
+          <div className="relative bg-white w-full max-w-2xl rounded-lg shadow-lg p-6">
+            <div className="flex items-center justify-between mb-4">
+              <div className="text-lg font-semibold">Ghi chú theo dịch vụ</div>
+              <button onClick={() => setShowServiceNotesModal(false)} className="p-2 rounded hover:bg-gray-100"><FaTimes /></button>
+            </div>
+
+            {/* Service info: resolve name by serviceID of current work schedule */}
+            <div className="mb-4 text-sm text-gray-700">
+              <div className="font-medium">Dịch vụ:</div>
+              <div>
+                {(() => {
+                  const evSid = selectedEvent?.serviceId ?? null;
+                  const tasks = selectedEvent?.bookingDetail?.detailTasks || [];
+                  const task = tasks.find(t => (g(t, K.serviceID) === evSid));
+                  const fallbackName = selectedEvent?.bookingDetail?.serviceMain?.serviceName || selectedEvent?.bookingDetail?.serviceType?.serviceName || '-';
+                  return (task ? (g(task, K.serviceName) || fallbackName) : fallbackName);
+                })()}
+              </div>
+            </div>
+
+            {/* Notes list */}
+            <div className="max-h-[60vh] overflow-y-auto border rounded">
+              {serviceNotesLoading ? (
+                <div className="p-4 text-gray-500">Đang tải ghi chú...</div>
+              ) : serviceNotes.length === 0 ? (
+                <div className="p-6 text-center text-gray-500">Chưa có ghi chú.</div>
+              ) : (
+                <ul className="divide-y">
+                  {serviceNotes.map((n, i) => (
+                    <li key={i} className="p-3">
+                      <div className="font-medium text-purple-700">{n.note || n.Note || '(Không có nội dung)'}</div>
+                      {n.advice && <div className="text-sm text-gray-600 mt-1">Lời khuyên: {n.advice}</div>}
+                      {n.createdAt && (
+                        <div className="text-sm text-gray-600 mt-1">
+                          <div>
+                            Ngày: {new Date(n.createdAt).toLocaleDateString('vi-VN', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: 'numeric',
+                            })}
+                          </div>
+                          <div>
+                            Lúc: {new Date(n.createdAt).toLocaleTimeString('vi-VN', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                            })}
+                          </div>
+                        </div>
+                      )}
+                      <div className="text-xs text-gray-400 mt-1">Tạo bởi: {resolveNurseNameById(n.nursingID || n.NursingID || n.nursingId)}</div>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+
+            <div className="mt-4 flex justify-end">
+              <button className="px-4 py-2 rounded bg-gray-100 hover:bg-gray-200" onClick={() => setShowServiceNotesModal(false)}>Đóng</button>
+            </div>
+          </div>
         </div>
       )}
     </div>
