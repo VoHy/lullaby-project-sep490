@@ -86,13 +86,13 @@ const Sidebar = ({ user }) => {
     1: [ // Admin
       { name: 'Tổng quan', path: '/dashboard?tab=overview', icon: faChartBar, color: 'text-purple-500', tab: 'overview' },
       { name: 'Quản lý người dùng', path: '/dashboard?tab=users', icon: faUsers, color: 'text-blue-500', tab: 'users' },
-      { name: 'Quản lý Manager', path: '/dashboard?tab=managers', icon: faUserMd, color: 'text-indigo-500', tab: 'managers' },
-      { name: 'Quản lý Khu vực', path: '/dashboard?tab=zone', icon: faMapLocationDot, color: 'text-red-500', tab: 'zone' },
-      { name: 'Quản lý Booking', path: '/dashboard?tab=bookings', icon: faCalendarAlt, color: 'text-green-500', tab: 'bookings' },
-      { name: 'Quản lý Dịch vụ', path: '/dashboard?tab=services', icon: faStethoscope, color: 'text-pink-500', tab: 'services' },
-      { name: 'Báo cáo Doanh thu', path: '/dashboard?tab=revenue', icon: faMoneyBill, color: 'text-yellow-500', tab: 'revenue' },
-      { name: 'Quản lý Blog', path: '/dashboard?tab=blog', icon: faNewspaper, color: 'text-red-500', tab: 'blog' },
-      { name: 'Quản lý Lịch nghỉ', path: '/dashboard?tab=holiday', icon: faCalendarCheck, color: 'text-red-500', tab: 'holiday' },
+      { name: 'Quản lý', path: '/dashboard?tab=managers', icon: faUserMd, color: 'text-indigo-500', tab: 'managers' },
+      { name: 'Quản lý khu vực', path: '/dashboard?tab=zone', icon: faMapLocationDot, color: 'text-red-500', tab: 'zone' },
+      { name: 'Quản lý lịch hẹn', path: '/dashboard?tab=bookings', icon: faCalendarAlt, color: 'text-green-500', tab: 'bookings' },
+      { name: 'Quản lý dịch vụ', path: '/dashboard?tab=services', icon: faStethoscope, color: 'text-pink-500', tab: 'services' },
+      { name: 'Báo cáo doanh thu', path: '/dashboard?tab=revenue', icon: faMoneyBill, color: 'text-yellow-500', tab: 'revenue' },
+      { name: 'Quản lý tin tức', path: '/dashboard?tab=blog', icon: faNewspaper, color: 'text-red-500', tab: 'blog' },
+      { name: 'Quản lý lịch nghỉ lễ', path: '/dashboard?tab=holiday', icon: faCalendarCheck, color: 'text-red-500', tab: 'holiday' },
     ],
     2: ({ major }) => [ // Nursing/Specialist
       { name: 'Lịch của tôi', path: '/dashboard?tab=schedule', icon: faCalendarAlt, color: 'text-green-500', tab: 'schedule' },
@@ -102,18 +102,18 @@ const Sidebar = ({ user }) => {
       { name: 'Hồ sơ cá nhân', path: '/dashboard?tab=profile', icon: faUser, color: 'text-pink-500', tab: 'profile' },
     ],
     3: [ // Manager
-      { name: 'Quản lý Nurse', path: '/dashboard?tab=nurse', icon: faUserNurse, color: 'text-blue-500', tab: 'nurse' },
-      { name: 'Quản lý Specialist', path: '/dashboard?tab=specialist', icon: faUserMd, color: 'text-pink-500', tab: 'specialist' },
-      { name: 'Quản lý Booking', path: '/dashboard?tab=booking', icon: faCalendarAlt, color: 'text-green-500', tab: 'booking' },
+      { name: 'Quản lý chuyên gia chăm sóc', path: '/dashboard?tab=nurse', icon: faUserNurse, color: 'text-blue-500', tab: 'nurse' },
+      { name: 'Quản lý chuyên gia tư vấn', path: '/dashboard?tab=specialist', icon: faUserMd, color: 'text-pink-500', tab: 'specialist' },
+      { name: 'Quản lý lịch hẹn', path: '/dashboard?tab=booking', icon: faCalendarAlt, color: 'text-green-500', tab: 'booking' },
     ],
   };
 
   // Get role name based on role_id or roleID
   const getRoleName = (role_id) => {
     const roleMap = {
-      1: 'Admin',
-      2: 'Nursing/Specialist',
-      3: 'Manager',
+      1: 'Quản trị viên',
+      2: 'Chuyên gia',
+      3: 'Quản lý',
     };
     return roleMap[role_id] || 'Unauthorized';
   };
@@ -187,7 +187,6 @@ const Sidebar = ({ user }) => {
       {/* Navigation Menu */}
       <nav className="mt-4 px-2 flex-1">
         <div className="space-y-1">
-          <div className="text-xs text-gray-500 mb-2">Menu items: {currentMenuItems.length}</div>
           {currentMenuItems.length > 0 ? (
             currentMenuItems.map((item, index) => {
               let isActive = false;
@@ -249,7 +248,7 @@ const Sidebar = ({ user }) => {
             })
           ) : (
             <div className="text-center py-8">
-              <div className="text-gray-400 text-4xl mb-2">📋</div>
+              <div className="text-gray-400 text-4xl mb-2"></div>
               <p className="text-gray-500 text-sm">Không có menu</p>
               <p className="text-gray-400 text-xs mt-1">Role: {userRole}, Major: {userMajor || 'N/A'}</p>
             </div>

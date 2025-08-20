@@ -426,15 +426,15 @@ const ManagerBookingTab = () => {
               {totalItems === 0 ? (
                 <div className="text-center py-12 text-gray-500">
                   <FaClipboardList className="text-3xl mb-2 mx-auto" />
-                  <p className="text-lg font-medium">Không có booking nào</p>
-                  <p className="text-sm mt-1">Hiện tại chưa có booking nào thuộc khu vực quản lý của bạn</p>
+                  <p className="text-lg font-medium">Không có lịch hẹn nào</p>
+                  <p className="text-sm mt-1">Hiện tại chưa có lịch hẹn nào thuộc khu vực quản lý của bạn</p>
                 </div>
               ) : (
                 <>
                   <table className="w-full bg-white rounded-lg overflow-hidden shadow-md">
                     <thead className="bg-gradient-to-r from-purple-500 to-pink-500 text-white">
                       <tr>
-                        <th className="px-6 py-3 text-left">Mã Booking</th>
+                        <th className="px-6 py-3 text-left">Mã lịch hẹn</th>
                         <th className="px-6 py-3 text-left">Khách hàng</th>
                         <th className="px-6 py-3 text-left">Dịch vụ</th>
                         <th className="px-6 py-3 text-left">Trạng thái</th>

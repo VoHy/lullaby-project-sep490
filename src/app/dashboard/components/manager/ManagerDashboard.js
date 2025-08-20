@@ -11,9 +11,9 @@ import notificationService from '@/services/api/notificationService';
 import { AuthContext } from '@/context/AuthContext';
 
 const TABS = [
-  { id: 'nurse', label: 'Quản lý Nurse', icon: FaUserNurse },
-  { id: 'specialist', label: 'Quản lý Specialist', icon: FaUserMd },
-  { id: 'booking', label: 'Quản lý Booking', icon: FaCalendarAlt },
+  { id: 'nurse', label: 'Quản lý chuyên gia chăm sóc', icon: FaUserNurse },
+  { id: 'specialist', label: 'Quản lý chuyên gia tư vấn', icon: FaUserMd },
+  { id: 'booking', label: 'Quản lý lịch hẹn', icon: FaCalendarAlt },
 ];
 
 const ManagerDashboard = ({ user }) => {
@@ -196,18 +196,12 @@ const ManagerDashboard = ({ user }) => {
 
       <div className="bg-white rounded-lg shadow-lg p-6">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Chào mừng Manager: {user.fullName}</h2>
+          <h2 className="text-2xl font-bold text-gray-900">Chào mừng quản lý: {user.fullName}</h2>
           <button
             onClick={() => router.push('/notifications')}
             className="relative p-2 text-gray-600 hover:text-purple-600 transition-colors"
             title="Xem thông báo"
           >
-            <FaBell className="text-xl" />
-            {unreadNotifications > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 min-w-[1.25rem] px-1 flex items-center justify-center">
-                {unreadNotifications}
-              </span>
-            )}
           </button>
         </div>
 
@@ -219,7 +213,7 @@ const ManagerDashboard = ({ user }) => {
                 <FaUserNurse className="text-2xl" />
               </div>
               <div className="ml-4">
-                <p className="text-sm opacity-90">Tổng Nurse</p>
+                <p className="text-sm opacity-90">Tổng số chuyên gia chăm sóc</p>
                 <p className="text-2xl font-bold">{stats.nurses}</p>
               </div>
             </div>
@@ -231,7 +225,7 @@ const ManagerDashboard = ({ user }) => {
                 <FaUserMd className="text-2xl" />
               </div>
               <div className="ml-4">
-                <p className="text-sm opacity-90">Tổng Specialist</p>
+                <p className="text-sm opacity-90">Tổng số chuyên gia tư vấn</p>
                 <p className="text-2xl font-bold">{stats.specialists}</p>
               </div>
             </div>

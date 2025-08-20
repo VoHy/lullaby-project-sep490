@@ -139,18 +139,18 @@ const AdminZoneTab = () => {
       subtitle: 'Số thành phố'
     },
     {
-      title: 'Y tá',
+      title: 'Chuyên gia chăm sóc',
       value: Object.values(staffCountMap.nurses).reduce((a, b) => a + b, 0),
       icon: faUsers,
       color: 'from-purple-500 to-pink-500',
-      subtitle: 'Tổng y tá'
+      subtitle: 'Tổng'
     },
     {
-      title: 'Chuyên gia',
+      title: 'Chuyên gia tư vấn',
       value: Object.values(staffCountMap.specialists).reduce((a, b) => a + b, 0),
       icon: faUserMd,
       color: 'from-orange-500 to-red-500',
-      subtitle: 'Tổng chuyên gia'
+      subtitle: 'Tổng'
     }
   ], [zones, staffCountMap]);
 
@@ -356,8 +356,16 @@ const AdminZoneTab = () => {
                     </button>
                   </td>
                   <td className="px-6 py-4">
-                    <div className="text-sm">Y tá: {staffCountMap.nurses[zone.zoneID] || 0}</div>
-                    <div className="text-sm">Chuyên gia: {staffCountMap.specialists[zone.zoneID] || 0}</div>
+                    <div
+                      className={`text-sm font-medium ${getManagerByZone(zone.zoneID) ? 'text-green-600' : 'text-red-500'
+                        }`}
+                    >
+                      Quản lý: {getManagerByZone(zone.zoneID)?.fullName || 'Chưa có'}
+                    </div>
+
+                    <div className="text-sm">Chuyên gia chăm sóc: {staffCountMap.nurses[zone.zoneID] || 0}</div>
+                    <div className="text-sm">Chuyên gia tư vấn: {staffCountMap.specialists[zone.zoneID] || 0}</div>
+
                     <button
                       className="text-xs text-blue-600 hover:underline"
                       onClick={() => setSelectedZone(zone.zoneID)}
@@ -365,6 +373,7 @@ const AdminZoneTab = () => {
                       Xem nhân sự
                     </button>
                   </td>
+
                   <td className="px-6 py-4 flex space-x-2">
                     <button className="text-yellow-600" onClick={() => handleOpenZoneModal(zone)}>
                       <FontAwesomeIcon icon={faEdit} />

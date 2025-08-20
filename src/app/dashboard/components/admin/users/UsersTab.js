@@ -360,8 +360,8 @@ const UsersTab = () => {
                       <div className="flex justify-center space-x-2">
                         <button
                           className={`p-2 rounded-lg transition-all duration-200 ${isDeleted ?
-                              'text-gray-400 cursor-not-allowed' :
-                              'text-blue-600 hover:text-blue-800 hover:bg-blue-50'
+                            'text-gray-400 cursor-not-allowed' :
+                            'text-blue-600 hover:text-blue-800 hover:bg-blue-50'
                             }`}
                           onClick={() => handleViewDetail(account)}
                           title="Xem chi tiết"
@@ -370,8 +370,8 @@ const UsersTab = () => {
                         </button>
                         <button
                           className={`p-2 rounded-lg transition-all duration-200 ${isDeleted ?
-                              'text-gray-400 cursor-not-allowed' :
-                              'text-green-600 hover:text-green-800 hover:bg-green-50'
+                            'text-gray-400 cursor-not-allowed' :
+                            'text-green-600 hover:text-green-800 hover:bg-green-50'
                             }`}
                           onClick={() => handleEditAccount(account)}
                           disabled={isDeleted}
@@ -381,8 +381,8 @@ const UsersTab = () => {
                         </button>
                         <button
                           className={`p-2 rounded-lg transition-all duration-200 ${isDeleted ?
-                              'text-gray-400 cursor-not-allowed' :
-                              'text-red-600 hover:text-red-800 hover:bg-red-50'
+                            'text-gray-400 cursor-not-allowed' :
+                            'text-red-600 hover:text-red-800 hover:bg-red-50'
                             }`}
                           onClick={() => handleDeleteAccount(account)}
                           disabled={isDeleted}
@@ -424,15 +424,6 @@ const UsersTab = () => {
             >
               Sau
             </button>
-            <select
-              className="ml-2 px-2 py-1 border rounded text-sm"
-              value={pageSize}
-              onChange={(e) => setPageSize(Number(e.target.value))}
-            >
-              {[10, 20, 50, 100].map(n => (
-                <option key={n} value={n}>{n}/trang</option>
-              ))}
-            </select>
           </div>
         </div>
       </div>

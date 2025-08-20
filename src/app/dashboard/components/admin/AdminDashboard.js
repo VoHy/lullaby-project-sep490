@@ -29,14 +29,14 @@ const AdminDashboard = ({ user, initialTab }) => {
   
   const tabsConfig = [
     { id: 'overview', label: 'Tổng quan', icon: faChartLine, color: 'from-blue-500 to-cyan-500' },
-    { id: 'users', label: 'Quản lý User', icon: faUsers, color: 'from-purple-500 to-pink-500' },
-    { id: 'managers', label: 'Quản lý Manager', icon: faUserMd, color: 'from-indigo-500 to-purple-500' },
+    { id: 'users', label: 'Quản lý người dùng', icon: faUsers, color: 'from-purple-500 to-pink-500' },
+    { id: 'managers', label: 'Quản lý', icon: faUserMd, color: 'from-indigo-500 to-purple-500' },
     { id: 'zone', label: 'Quản lý Khu vực', icon: faMapMarkerAlt, color: 'from-green-500 to-emerald-500' },
-    { id: 'bookings', label: 'Quản lý Booking', icon: faCalendar, color: 'from-orange-500 to-red-500' },
-    { id: 'services', label: 'Quản lý Dịch vụ', icon: faStethoscope, color: 'from-teal-500 to-cyan-500' },
+    { id: 'bookings', label: 'Quản lý lịch hẹn', icon: faCalendar, color: 'from-orange-500 to-red-500' },
+    { id: 'services', label: 'Quản lý dịch vụ', icon: faStethoscope, color: 'from-teal-500 to-cyan-500' },
     { id: 'revenue', label: 'Doanh thu', icon: faMoneyBill, color: 'from-yellow-500 to-orange-500' },
-    { id: 'blog', label: 'Quản lý Blog', icon: faFileAlt, color: 'from-pink-500 to-rose-500' },
-    { id: 'holiday', label: 'Quản lý Holiday', icon: faCalendarAlt, color: 'from-violet-500 to-purple-500' },
+    { id: 'blog', label: 'Quản lý tin tức', icon: faFileAlt, color: 'from-pink-500 to-rose-500' },
+    { id: 'holiday', label: 'Quản lý lịch nghỉ lễ', icon: faCalendarAlt, color: 'from-violet-500 to-purple-500' },
   ];
 
   const validTabIds = tabsConfig.map(tab => tab.id);

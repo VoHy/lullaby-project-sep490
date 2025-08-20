@@ -89,7 +89,7 @@ const HolidayTab = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text mb-2">
-                Quản lý Lịch nghỉ
+                Quản lý lịch nghỉ lễ
               </h1>
               <p className="text-gray-600 text-lg">
                 Quản lý các ngày nghỉ lễ và ngày đặc biệt
@@ -136,7 +136,7 @@ const HolidayTab = () => {
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              Thêm Lịch nghỉ
+              Thêm lịch nghỉ lễ
             </button>
           </div>
         </div>
