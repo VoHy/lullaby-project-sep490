@@ -276,7 +276,7 @@ const NurseBookingsTab = () => {
               >✕</button>
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-purple-700 font-bold text-lg">Booking #{selectedBooking.bookingID || selectedBooking.BookingID}</span>
+                  <span className="text-purple-700 font-bold text-lg">Lịch hẹn #{selectedBooking.bookingID || selectedBooking.BookingID}</span>
                   <span className={`px-3 py-1 rounded-full text-xs font-semibold ${sv.cls}`}>{sv.label}</span>
                 </div>
                 <div className="text-gray-600 text-sm">Ngày làm việc: <span className="font-medium">{workdate ? new Date(workdate).toLocaleString('vi-VN') : '-'}</span></div>

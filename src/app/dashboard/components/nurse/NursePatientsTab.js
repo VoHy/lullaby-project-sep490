@@ -149,8 +149,8 @@ const NursePatientsTab = () => {
             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none">
               {/* Search icon SVG */}
               <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
-                <circle cx="11" cy="11" r="7" stroke="#9ca3af" strokeWidth="2"/>
-                <path stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" d="M20 20l-3-3"/>
+                <circle cx="11" cy="11" r="7" stroke="#9ca3af" strokeWidth="2" />
+                <path stroke="#9ca3af" strokeWidth="2" strokeLinecap="round" d="M20 20l-3-3" />
               </svg>
             </span>
           </div>
@@ -180,7 +180,7 @@ const NursePatientsTab = () => {
         {patientRows.map(({ booking, patient }, index) => {
           const raw = (booking.status || booking.Status || '').toString().toLowerCase();
           const mapping = {
-            paid: { label: 'Đã thanh toán', cls: 'bg-green-100 text-green-700' },
+            paid: { label: 'Đã thanh toán', cls: 'bg-pink-100 text-green-700' },
             pending: { label: 'Chờ xử lý', cls: 'bg-yellow-100 text-yellow-700' },
             confirmed: { label: 'Đã xác nhận', cls: 'bg-blue-100 text-blue-700' },
             completed: { label: 'Hoàn thành', cls: 'bg-emerald-100 text-emerald-700' },
@@ -228,21 +228,7 @@ const NursePatientsTab = () => {
             >✕</button>
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-blue-700 font-bold text-lg">Booking #{selectedPatient.booking.bookingID || selectedPatient.booking.BookingID}</span>
-                <span className={`px-3 py-1 rounded-full text-xs font-semibold ${(() => {
-                  const raw = (selectedPatient.booking.status || selectedPatient.booking.Status || '').toString().toLowerCase();
-                  const mapping = {
-                    paid: 'bg-green-100 text-green-700',
-                    pending: 'bg-yellow-100 text-yellow-700',
-                    confirmed: 'bg-blue-100 text-blue-700',
-                    completed: 'bg-emerald-100 text-emerald-700',
-                    cancelled: 'bg-gray-200 text-gray-700',
-                    canceled: 'bg-gray-200 text-gray-700',
-                    waiting: 'bg-slate-100 text-slate-700',
-                    isscheduled: 'bg-indigo-100 text-indigo-700',
-                  };
-                  return mapping[raw] || 'bg-gray-100 text-gray-700';
-                })()}`}>{selectedPatient.booking?.status || selectedPatient.booking?.Status}</span>
+                <span className="text-blue-700 font-bold text-lg">Lịch hẹn #{selectedPatient.booking.bookingID || selectedPatient.booking.BookingID}</span>
               </div>
               <div className="text-gray-600 text-sm">Ngày làm việc: <span className="font-medium">{formatDateToDDMMYYYY(selectedPatient.booking?.workdate || selectedPatient.booking?.workDate || selectedPatient.booking?.WorkDate) || '-'}</span></div>
               <div className="text-gray-600 text-sm">Giờ làm việc: <span className="font-medium">{(() => {
