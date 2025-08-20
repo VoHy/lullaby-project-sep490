@@ -36,6 +36,7 @@ export default function TeamPage() {
   const [showDetail, setShowDetail] = useState(false);
   const [detailData, setDetailData] = useState(null);
   const [accountData, setAccountData] = useState(null);
+  const [accountsMap, setAccountsMap] = useState({}); // Map accountID -> account
   const [selectedZone, setSelectedZone] = useState('all');
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(true);
@@ -51,16 +52,30 @@ export default function TeamPage() {
         const [
           nursingSpecialistsData,
           zonesData,
-          feedbacksData
+          feedbacksData,
+          accountsData
         ] = await Promise.all([
           nursingSpecialistService.getNursingSpecialists(),
           zoneService.getZones(),
-          feedbackService.getAllFeedbacks()
+          feedbackService.getAllFeedbacks(),
+          accountService.getAllAccounts()
         ]);
 
         setNursingSpecialists(Array.isArray(nursingSpecialistsData) ? nursingSpecialistsData : []);
         setZones(Array.isArray(zonesData) ? zonesData : []);
         setFeedbacks(Array.isArray(feedbacksData) ? feedbacksData : []);
+
+        // Tạo map accountID -> account để tra nhanh avatarUrl/email/phone
+        if (Array.isArray(accountsData)) {
+          const map = {};
+          for (const acc of accountsData) {
+            const id = acc.accountID || acc.AccountID || acc.id || acc.ID;
+            if (id != null) map[id] = acc;
+          }
+          setAccountsMap(map);
+        } else {
+          setAccountsMap({});
+        }
       } catch (error) {
         console.error('Error fetching team data:', error);
         setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
@@ -205,30 +220,47 @@ export default function TeamPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
     >
-      <img
-        src={member.avatar_url || member.avatarUrl || '/images/hero-bg.jpg'}
-        alt={member.FullName || member.Nurse_Name || member.fullName}
-        className="w-24 h-24 rounded-full object-cover mb-4 border-4 border-pink-200 group-hover:scale-105 transition"
-      />
-      <h3 className="text-lg font-bold text-blue-700 mb-1 flex items-center gap-2">
-        {member.FullName || member.Nurse_Name || member.fullName}
+      {/* Avatar + Badge */}
+      <div className="relative mb-4">
+        <img
+          src={
+            accountsMap[member.accountID || member.AccountID]?.avatarUrl ||
+            member.avatar_url ||
+            member.avatarUrl ||
+            '/images/hero-bg.jpg'
+          }
+          alt={member.FullName || member.Nurse_Name || member.fullName}
+          className="w-24 h-24 rounded-full object-cover border-4 border-pink-200 group-hover:scale-105 transition"
+        />
+        {/* Badge Major ở góc phải */}
         <span
-          className={`px-2 py-0.5 rounded-full text-xs font-semibold ml-2 ${(member.Major || member.major)?.toLowerCase().includes("nurse")
-            ? "bg-blue-100 text-blue-700"
-            : "bg-pink-100 text-pink-700"
+          className={`absolute top-0 right-0 translate-x-2 -translate-y-2 px-2 py-0.5 rounded-full text-xs font-semibold shadow-md
+            ${(member.Major || member.major)?.toLowerCase().includes("nurse")
+              ? "bg-blue-100 text-blue-700"
+              : "bg-pink-100 text-pink-700"
             }`}
         >
           {(member.Major || member.major)?.toLowerCase() === "nurse"
-            ? "Y tá"
+            ? "Chăm sóc"
             : (member.Major || member.major)?.toLowerCase() === "specialist"
-              ? "Chuyên gia"
+              ? "Tư vấn"
               : member.Major || member.major}
         </span>
+      </div>
+
+      {/* Tên */}
+      <h3 className="text-lg font-bold text-blue-700 mb-1 flex items-center gap-2">
+        {member.FullName || member.Nurse_Name || member.fullName}
       </h3>
 
+      {/* Zone */}
       <div className="flex items-center gap-2 mb-2">
-        <span className="text-gray-600 text-sm">{getZoneName(member.ZoneID || member.zoneID || member.Address || member.address)}</span>
+        <span className="text-gray-600 text-sm">
+          {getZoneName(member.ZoneID || member.zoneID || member.Address || member.address)}
+        </span>
       </div>
+
+      {/* Stats */}
       <div className="text-center mb-4">
         <div className="text-2xl font-bold text-pink-600">
           {getCompletedCases(member.NursingID || member.nursingID)}
@@ -240,6 +272,7 @@ export default function TeamPage() {
         </div>
       </div>
 
+      {/* Button */}
       <button
         onClick={() => onViewDetail(member)}
         className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:from-pink-600 hover:to-purple-600 transition-all duration-200"
@@ -300,11 +333,11 @@ export default function TeamPage() {
             <div className="flex gap-6 text-sm">
               <div className="text-center">
                 <div className="text-2xl font-bold text-blue-600">{filteredNurses.length}</div>
-                <div className="text-gray-600">Y tá</div>
+                <div className="text-gray-600">Chuyên viên chăm sóc</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-pink-600">{filteredSpecialists.length}</div>
-                <div className="text-gray-600">Chuyên gia</div>
+                <div className="text-gray-600">Chuyên gia tư vấn</div>
               </div>
             </div>
           </div>
@@ -314,7 +347,7 @@ export default function TeamPage() {
         <div className="space-y-12">
           {/* Nurses Section */}
           <div>
-            <h2 className="text-3xl font-bold text-blue-700 mb-8 text-center">Đội ngũ Y tá</h2>
+            <h2 className="text-3xl font-bold text-blue-700 mb-8 text-center">Đội ngũ chuyên viên chăm sóc</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredNurses.map((nurse) => (
                 <MemberCard key={nurse.NursingID || nurse.nursingID} member={nurse} onViewDetail={handleViewDetail} />
@@ -330,7 +363,7 @@ export default function TeamPage() {
 
           {/* Specialists Section */}
           <div>
-            <h2 className="text-3xl font-bold text-pink-700 mb-8 text-center">Đội ngũ Chuyên gia</h2>
+            <h2 className="text-3xl font-bold text-pink-700 mb-8 text-center">Đội ngũ chuyên viên tư vấn</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
               {filteredSpecialists.map((specialist) => (
                 <MemberCard key={specialist.NursingID || specialist.nursingID} member={specialist} onViewDetail={handleViewDetail} />
@@ -362,7 +395,12 @@ export default function TeamPage() {
                 <div className="flex items-center gap-4">
                   <div className="relative">
                     <img
-                      src={detailData.avatar_url || detailData.avatarUrl || '/images/hero-bg.jpg'}
+                      src={
+                        accountsMap[detailData.accountID || detailData.AccountID]?.avatarUrl ||
+                        detailData.avatar_url ||
+                        detailData.avatarUrl ||
+                        '/images/hero-bg.jpg'
+                      }
                       alt={detailData.FullName || detailData.Nurse_Name || detailData.fullName}
                       className="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover border-4 border-pink-200 shadow-xl"
                     />

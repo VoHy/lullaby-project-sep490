@@ -66,7 +66,7 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
       completed: ['Hoàn thành', 'bg-teal-600 text-white'],
       cancelled: ['Đã hủy', 'bg-gray-500 text-white'],
       canceled: ['Đã hủy', 'bg-gray-500 text-white'],
-      waiting: ['Chưa hoàn thành', 'bg-gray-500 text-white'],
+      waiting: ['Đang đến', 'bg-gray-500 text-white'],
       isscheduled: ['Đã lên lịch', 'bg-indigo-600 text-white'],
       scheduled: ['Đã lên lịch', 'bg-indigo-600 text-white'],
       holiday: ['Ngày nghỉ', 'bg-red-600 text-white'],

@@ -5,7 +5,6 @@ import { FaStar, FaClock, FaEye, FaShoppingCart, FaCheck, FaTimes, FaTag } from 
 import { useState, useEffect } from 'react';
 import QuantitySelector from './QuantitySelector';
 import ServiceRatingDisplay from './ServiceRatingDisplay';
-import ServiceStatusBadge from './ServiceStatusBadge';
 
 // Component để hiển thị danh sách dịch vụ con trong gói
 const PackageServicesList = ({ packageId, getServicesOfPackage }) => {
@@ -117,10 +116,7 @@ const ServiceCard = ({
               count={rating.count} 
               size="sm" 
             />
-            <ServiceStatusBadge 
-              serviceId={service.serviceID}
-              customizeTasks={customizeTasks}
-            />
+            {/* Bỏ badge trạng thái ngoài danh sách dịch vụ */}
           </div>
         </div>
 

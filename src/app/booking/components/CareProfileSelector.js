@@ -1,7 +1,9 @@
 import { HiOutlineUserGroup, HiOutlinePhone, HiOutlineMapPin } from "react-icons/hi2";
+import { formatDateToDDMMYYYY } from '@/app/profile/utils/dateUtils';
 
 export default function CareProfileSelector({
   careProfiles,
+  relatives,
   selectedCareProfile,
   setSelectedCareProfile,
   error
@@ -76,7 +78,26 @@ export default function CareProfileSelector({
                     </div>
                     {profile.dateOfBirth && (
                       <div className="text-xs text-gray-500">
-                        Ngày sinh: {profile.dateOfBirth}
+                        Ngày sinh: {formatDateToDDMMYYYY(profile.dateOfBirth)}
+                      </div>
+                    )}
+                    {Array.isArray(relatives) && relatives.length > 0 && (
+                      <div className="pt-2 text-xs text-gray-600">
+                        <div className="font-semibold text-gray-700 mb-1">Con:</div>
+                        <ul className="list-disc pl-5 space-y-0.5">
+                          {relatives
+                            .filter(r => (r.careProfileID || r.CareProfileID) === profile.careProfileID)
+                            .slice(0, 3)
+                            .map(r => (
+                              <li key={(r.relativeID || r.RelativeID || r.relativeid) + '_' + (r.relativeName || r.name)}>
+                                {(r.relativeName || r.name) || 'Người thân'}
+                                {r.dateOfBirth || r.DateOfBirth ? ` - ${formatDateToDDMMYYYY(r.dateOfBirth || r.DateOfBirth)}` : ''}
+                              </li>
+                            ))}
+                          {relatives.filter(r => (r.careProfileID || r.CareProfileID) === profile.careProfileID).length > 3 && (
+                            <li>...</li>
+                          )}
+                        </ul>
                       </div>
                     )}
                   </div>

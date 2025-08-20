@@ -68,41 +68,7 @@ const clearServicesCache = () => {
   localStorage.removeItem('relatives_cache_time');
 };
 
-// Function to refresh data after new feedback
-const refreshData = async () => {
-  try {
-    setLoading(true);
-    const [feedbacksData, customizeTasksData, careProfilesData, relativesData] = await Promise.all([
-      feedbackService.getAllFeedbacks(),
-      customizeTaskService.getAllCustomizeTasks(),
-      careProfileService.getCareProfiles(),
-      relativesService.getRelatives()
-    ]);
-
-    setFeedbacks(feedbacksData);
-    setCustomizeTasks(customizeTasksData);
-    setCareProfiles(careProfilesData);
-    setRelatives(relativesData);
-
-    // Update cache with new data
-    const cachedData = localStorage.getItem('services_data');
-    if (cachedData) {
-      const parsedData = JSON.parse(cachedData);
-      const updatedData = {
-        ...parsedData,
-        feedbacks: feedbacksData,
-        customizeTasks: customizeTasksData,
-        careProfiles: careProfilesData,
-        relatives: relativesData
-      };
-      localStorage.setItem('services_data', JSON.stringify(updatedData));
-    }
-  } catch (error) {
-    console.error('Error refreshing data:', error);
-  } finally {
-    setLoading(false);
-  }
-};
+// Bỏ tính năng gửi feedback; chỉ giữ dữ liệu để hiển thị rating
 
 export default function ServicesPage() {
   const { user, token } = useContext(AuthContext);
@@ -122,6 +88,7 @@ export default function ServicesPage() {
   const [expandedPackage, setExpandedPackage] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [ratingsMap, setRatingsMap] = useState({}); // { [serviceID]: { rating, count } }
   const router = useRouter();
 
   // Lấy dữ liệu từ API với caching
@@ -145,6 +112,7 @@ export default function ServicesPage() {
           setCustomizeTasks(parsedData.customizeTasks || []);
           setCareProfiles(parsedData.careProfiles || []);
           setRelatives(parsedData.relatives || []);
+          setRatingsMap(parsedData.ratingsMap || {});
           setLoading(false);
           return;
         }
@@ -166,14 +134,43 @@ export default function ServicesPage() {
         setCareProfiles(careProfilesData);
         setRelatives(relativesData);
 
-        // Cache the data
+        // Fetch ratings cho từng dịch vụ qua API Feedback/GetAllByService/{serviceId}
+        let latestRatingsMap = {};
+        try {
+          const results = await Promise.allSettled(
+            services.map(async (s) => {
+              const list = await feedbackService.getAllByService(s.serviceID);
+              if (!Array.isArray(list) || list.length === 0) {
+                return [s.serviceID, { rating: 5.0, count: 0 }];
+              }
+              const sum = list.reduce((acc, f) => acc + Number(f.rate || f.Rate || 0), 0);
+              const avg = parseFloat((sum / list.length).toFixed(1));
+              return [s.serviceID, { rating: avg, count: list.length }];
+            })
+          );
+          const map = {};
+          results.forEach(r => {
+            if (r.status === 'fulfilled') {
+              const [id, data] = r.value;
+              map[id] = data;
+            }
+          });
+          setRatingsMap(map);
+          latestRatingsMap = map;
+        } catch (e) {
+          console.warn('Không thể tải rating theo dịch vụ:', e);
+          latestRatingsMap = {};
+        }
+
+        // Cache the data (kèm ratingsMap tính được)
         localStorage.setItem('services_data', JSON.stringify({
           services,
           tasks,
           feedbacks: feedbacksData,
           customizeTasks: customizeTasksData,
           careProfiles: careProfilesData,
-          relatives: relativesData
+          relatives: relativesData,
+          ratingsMap: latestRatingsMap
         }));
         localStorage.setItem('services_cache_time', now.toString());
 
@@ -321,56 +318,11 @@ export default function ServicesPage() {
   const filteredServicesForMom = servicesForMom.filter(filterService);
   const filteredServicesForBaby = servicesForBaby.filter(filterService);
 
-  // Tính rating từ feedbacks API dựa vào customizeTaskID
+  // Lấy rating trực tiếp theo dịch vụ từ ratingsMap (được tạo từ API Feedback/GetAllByService)
   const getRating = (serviceId) => {
-    // Tìm tất cả customize tasks liên quan đến service này
-    const relatedTasks = customizeTasks.filter(task => 
-      task.serviceID === serviceId || 
-      task.ServiceID === serviceId ||
-      task.serviceTypeID === serviceId
-    );
-    
-    if (relatedTasks.length === 0) {
-      return { rating: 5.0, count: 0 };
-    }
-
-    // Lọc chỉ các tasks đã hoàn thành
-    const completedTasks = relatedTasks.filter(task => {
-      const status = task.status || task.Status;
-      return status === 'completed' || status === 'done' || status === 'finished';
-    });
-
-    if (completedTasks.length === 0) {
-      return { rating: 5.0, count: 0 };
-    }
-
-    // Lấy tất cả customizeTaskID từ các tasks đã hoàn thành
-    const taskIds = completedTasks.map(task => 
-      task.customizeTaskID || task.CustomizeTaskID || task.id
-    );
-
-    // Tìm feedbacks cho các tasks này
-    const relatedFeedbacks = feedbacks.filter(feedback => {
-      const feedbackTaskId = feedback.customizeTaskID || feedback.CustomizeTaskID;
-      return taskIds.includes(feedbackTaskId);
-    });
-
-    if (relatedFeedbacks.length === 0) {
-      return { rating: 5.0, count: 0 };
-    }
-
-    // Tính rating trung bình
-    const totalRating = relatedFeedbacks.reduce((sum, feedback) => {
-      const rate = feedback.rate || feedback.Rate || 5;
-      return sum + rate;
-    }, 0);
-    
-    const averageRating = (totalRating / relatedFeedbacks.length).toFixed(1);
-    
-    return { 
-      rating: parseFloat(averageRating), 
-      count: relatedFeedbacks.length 
-    };
+    const info = ratingsMap[serviceId];
+    if (!info) return { rating: 5.0, count: 0 };
+    return info;
   };
 
   // Handle booking
@@ -579,9 +531,6 @@ export default function ServicesPage() {
           onClose={() => setServiceDetail(null)}
           item={serviceDetail}
           type="service"
-          customizeTasks={customizeTasks}
-          feedbacks={feedbacks}
-          onRefreshData={refreshData}
         />
 
         {/* Package Detail Modal */}
@@ -591,9 +540,6 @@ export default function ServicesPage() {
           item={packageDetail}
           type="package"
           getServicesOfPackage={getServicesOfPackage}
-          customizeTasks={customizeTasks}
-          feedbacks={feedbacks}
-          onRefreshData={refreshData}
         />
       </div>
     </div>

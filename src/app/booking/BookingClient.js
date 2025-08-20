@@ -4,6 +4,7 @@ import { useState, useMemo, useContext, useEffect } from "react";
 import serviceTypeService from '@/services/api/serviceTypeService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import careProfileService from '@/services/api/careProfileService';
+import relativesService from '@/services/api/relativesService';
 import bookingService from '@/services/api/bookingService';
 import customizePackageService from '@/services/api/customizePackageService';
 import {
@@ -121,6 +122,7 @@ function BookingContent() {
   const [packages, setPackages] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
+  const [relatives, setRelatives] = useState([]);
   const [selectedCareProfile, setSelectedCareProfile] = useState(null);
   const [datetime, setDatetime] = useState("");
   const [note, setNote] = useState("");
@@ -129,6 +131,7 @@ function BookingContent() {
   const [loading, setLoading] = useState(true);
   const [servicesLoading, setServicesLoading] = useState(true);
   const [careProfilesLoading, setCareProfilesLoading] = useState(true);
+  const [relativesLoading, setRelativesLoading] = useState(true);
 
   // Error states
   const [error, setError] = useState("");
@@ -217,6 +220,20 @@ function BookingContent() {
     }
   };
 
+  // Load relatives
+  const loadRelatives = async () => {
+    try {
+      setRelativesLoading(true);
+      const relativesData = await relativesService.getRelatives();
+      setRelatives(relativesData || []);
+    } catch (error) {
+      console.error('Error loading relatives:', error);
+      // Không set error để không chặn flow booking
+    } finally {
+      setRelativesLoading(false);
+    }
+  };
+
   // Load all data on component mount
   useEffect(() => {
     const loadAllData = async () => {
@@ -224,7 +241,8 @@ function BookingContent() {
       await Promise.all([
         loadServices(),
         loadPackages(),
-        loadCareProfiles()
+        loadCareProfiles(),
+        loadRelatives()
       ]);
       setLoading(false);
     };
@@ -262,6 +280,12 @@ function BookingContent() {
     const currentAccountId = user.accountID || user.AccountID;
     return careProfiles.filter(cp => (cp.accountID || cp.AccountID) === currentAccountId);
   }, [user, careProfiles]);
+
+  const userRelatives = useMemo(() => {
+    if (!user || !relatives.length || !userCareProfiles.length) return [];
+    const careIds = new Set(userCareProfiles.map(cp => cp.careProfileID || cp.CareProfileID));
+    return relatives.filter(r => careIds.has(r.careProfileID || r.CareProfileID));
+  }, [user, relatives, userCareProfiles]);
 
   const detail = useMemo(() => {
     // Ưu tiên sử dụng data từ URL parameters
@@ -659,6 +683,7 @@ function BookingContent() {
                 error={error}
                 handlePayment={handlePayment}
                 careProfiles={userCareProfiles}
+                relatives={userRelatives}
                 selectedCareProfile={selectedCareProfile}
                 setSelectedCareProfile={setSelectedCareProfile}
                 careProfileError={careProfileError}

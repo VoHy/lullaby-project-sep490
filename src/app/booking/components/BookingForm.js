@@ -10,6 +10,7 @@ export default function BookingForm({
   error, 
   handlePayment,
   careProfiles,
+  relatives,
   selectedCareProfile,
   setSelectedCareProfile,
   careProfileError,
@@ -20,6 +21,7 @@ export default function BookingForm({
       {/* Chọn hồ sơ người thân */}
       <CareProfileSelector
         careProfiles={careProfiles}
+        relatives={relatives}
         selectedCareProfile={selectedCareProfile}
         setSelectedCareProfile={setSelectedCareProfile}
         error={careProfileError}
