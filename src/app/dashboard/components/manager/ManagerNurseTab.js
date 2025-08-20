@@ -190,10 +190,9 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h3 className="text-2xl font-bold text-gray-900">Quản lý Y tá</h3>
+          <h3 className="text-2xl font-bold text-gray-900">Quản lý chuyên gia chăm sóc</h3>
           <p className="text-gray-600">
-            Khu vực: {managedZone?.zoneName || 'N/A'} |
-            Tổng số: {nurses.length} y tá
+            Khu vực: {managedZone?.zoneName || 'N/A'}
           </p>
         </div>
         <button
@@ -201,7 +200,7 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
           className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
         >
           <FaPlus />
-          <span>Thêm Y tá</span>
+          <span>Thêm chuyên gia chăm sóc</span>
         </button>
       </div>
 

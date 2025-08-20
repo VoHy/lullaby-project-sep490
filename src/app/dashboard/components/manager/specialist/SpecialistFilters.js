@@ -49,7 +49,7 @@ const SpecialistFilters = ({
                 {filteredCount} / {totalSpecialists}
               </span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">chuyên gia được tìm thấy</p>
+            <p className="text-xs text-gray-500 mt-1">chuyên gia tư vấn được tìm thấy</p>
           </div>
         </div>
       </div>

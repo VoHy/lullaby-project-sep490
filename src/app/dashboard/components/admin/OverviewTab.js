@@ -145,7 +145,7 @@ const OverviewTab = ({ bookings }) => {
           subtitle={viewMode === "day" ? "So với hôm qua" : "So với tháng trước"}
         />
         <StatCard
-          title="Tổng booking"
+          title="Tổng lịch hẹn"
           value={totalBookings}
           icon={faCalendar}
           color="from-green-500 to-emerald-500"
@@ -159,7 +159,7 @@ const OverviewTab = ({ bookings }) => {
           subtitle={viewMode === "day" ? "So với hôm qua" : "So với tháng trước"}
         />
         <StatCard
-          title="Nhân viên active"
+          title="Nhân viên hoạt động"
           value={activeNurses}
           icon={faUserCheck}
           color="from-orange-500 to-red-500"
@@ -186,7 +186,7 @@ const OverviewTab = ({ bookings }) => {
       {/* Biểu đồ */}
       <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100">
         <h3 className="text-lg font-semibold mb-4">
-          Doanh thu & Booking {viewMode === "day" ? "theo ngày" : "theo tháng"}
+          Doanh thu & lịch hẹn {viewMode === "day" ? "theo ngày" : "theo tháng"}
         </h3>
         <ResponsiveContainer width="100%" height={350}>
           <ComposedChart data={chartData}>
@@ -211,7 +211,7 @@ const OverviewTab = ({ bookings }) => {
             />
             <Legend />
             <Bar yAxisId="left" dataKey="revenue" barSize={20} fill="#413ea0" name="Doanh thu" />
-            <Line yAxisId="right" type="monotone" dataKey="bookings" stroke="#ff7300" name="Booking" />
+            <Line yAxisId="right" type="monotone" dataKey="bookings" stroke="#ff7300" name="Lịch hẹn" />
           </ComposedChart>
         </ResponsiveContainer>
       </div>

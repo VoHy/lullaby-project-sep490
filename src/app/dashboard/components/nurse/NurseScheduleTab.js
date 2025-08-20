@@ -66,7 +66,7 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
       completed: ['Hoàn thành', 'bg-teal-600 text-white'],
       cancelled: ['Đã hủy', 'bg-gray-500 text-white'],
       canceled: ['Đã hủy', 'bg-gray-500 text-white'],
-      waiting: ['Đang chờ', 'bg-gray-500 text-white'],
+      waiting: ['Chưa hoàn thành', 'bg-gray-500 text-white'],
       isscheduled: ['Đã lên lịch', 'bg-indigo-600 text-white'],
       scheduled: ['Đã lên lịch', 'bg-indigo-600 text-white'],
       holiday: ['Ngày nghỉ', 'bg-red-600 text-white'],
@@ -241,11 +241,10 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
       const total = (g(t, K.total)) ?? (price * quantity);
 
       const taskCustomizeTaskID = g(t, K.customizeTaskID);
-      const taskNursingID = g(t, K.nursingID);
+      // One medical note per customizeTask → match only by customizeTaskID
       const medicalNotes = allMedicalNotes.filter(mn => {
         const mnTaskID = mn.customizeTaskID || mn.CustomizeTaskID || mn.customizeTaskId;
-        const mnNursingID = mn.nursingID || mn.NursingID;
-        return mnTaskID === taskCustomizeTaskID && mnNursingID === taskNursingID;
+        return mnTaskID === taskCustomizeTaskID;
       });
 
       return { ...t, serviceName, quantity, price, total, status: g(t, K.status) || null, medicalNotes };
@@ -345,7 +344,7 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
     if (taskNurseId != null && userNursingID != null && String(taskNurseId) !== String(userNursingID)) {
       return alert('Chỉ nurse được phân công mới có thể ghi chú.');
     }
-    if (taskStatus !== 'completed') return alert('Chỉ ghi chú khi task đã hoàn thành (completed).');
+    // Cho phép ghi chú sau khi ca đã điểm danh, không bắt buộc task phải 'completed'
     if (!notePayload.note || !notePayload.note.trim()) return alert('Ghi chú (note) là bắt buộc.');
     if (selectedEvent && selectedEvent.isAttended === false) return alert('Không thể ghi chú trước khi ca được điểm danh (attended).');
 
@@ -611,7 +610,11 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
                         <>
                           <div className="flex items-center justify-between">
                             <div className="text-gray-600">Dịch vụ chính</div>
-                            <div className="text-gray-800">{selectedEvent.bookingDetail?.serviceMain?.serviceName || selectedEvent.bookingDetail?.serviceType?.serviceName || '-'}</div>
+                            <span className="bg-pink-100 text-pink-700 px-2 py-1 rounded-lg font-medium">
+                              {selectedEvent.bookingDetail?.serviceMain?.serviceName ||
+                                selectedEvent.bookingDetail?.serviceType?.serviceName ||
+                                '-'}
+                            </span>
                           </div>
                           <div className="flex items-center justify-between">
                             <div className="text-gray-600">Ngày làm việc</div>
@@ -693,91 +696,45 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
                   </div>
                 </div>
 
-                {/* Service details (with +Ghi chú per customizeTask) */}
+                {/* Ghi chú y tế - chỉ hiển thị một nút thêm cho customizeTask duy nhất */}
                 <div className="p-4 border rounded-lg bg-white">
                   <div className="flex items-center gap-3 mb-3">
-                    <FaMoneyBillWave className="text-green-600" />
+                    <div className="text-green-600" />
                     <div>
-                      <div className="text-sm text-gray-500">Dịch vụ chi tiết</div>
-                      <div className="text-base font-semibold">{(selectedEvent.bookingDetail?.detailTasks?.length ?? 0)} mục</div>
+                      <div className="text-sm text-gray-500">Ghi chú y tế</div>
+                      <div className="text-base font-semibold">Thêm ghi chú cho nhiệm vụ</div>
                     </div>
                   </div>
 
-                  <div className="w-full overflow-x-auto">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-gradient-to-r from-purple-50 to-blue-50 text-gray-700 w-3/4">
-                          <th className="p-2 text-left">Dịch vụ</th>
-                          <th className="p-2 text-right">SL</th>
-                          <th className="p-2 text-right">Đơn giá</th>
-                          <th className="p-2 text-right">Thành tiền</th>
-                          <th className="p-2 text-left">Trạng thái</th>
-                          <th className="p-2 text-center">Ghi chú</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {(selectedEvent.bookingDetail?.detailTasks?.length > 0) ? (
-                          selectedEvent.bookingDetail.detailTasks.map((t, i) => {
-                            const taskStatus = SLC(g(t, K.status));
-                            const medicalNote = t.medicalNote || t.medicalNotes?.[0];
-                            const tNursingId = g(t, K.nursingID) ?? null;
-                            const isTaskOwner = userNursingID && String(tNursingId) === String(userNursingID);
-                            const canAddNote = isTaskOwner && selectedEvent.isAttended && taskStatus === 'completed' && !medicalNote;
-                            const canEditNote = isTaskOwner && !!medicalNote;
-                            return (
-                              <tr key={i} className="hover:bg-purple-50">
-                                <td className="p-2">{g(t, K.serviceName) || '-'}</td>
-                                <td className="p-2 text-right">{g(t, K.quantity) ?? 1}</td>
-                                <td className="p-2 text-right">{(g(t, K.price) || 0).toLocaleString('vi-VN')}đ</td>
-                                <td className="p-2 text-right">{(g(t, K.total) || 0).toLocaleString('vi-VN')}đ</td>
-                                <td className="p-2">
-                                  <span className={`px-2 py-1 rounded text-xs ${getStatusView(g(t, K.status)).cls}`}>{getStatusView(g(t, K.status)).label}</span>
-                                </td>
-                                <td className="p-2 text-center">
-                                  {medicalNote && isTaskOwner ? (
-                                    <button
-                                      className="inline-flex items-center gap-2 px-3 py-1 bg-purple-600 text-white rounded text-xs hover:bg-purple-700"
-                                      onClick={() => {
-                                        setEditNotePayload({
-                                          note: medicalNote.note || medicalNote.Note || '',
-                                          advice: medicalNote.advice || medicalNote.Advice || '',
-                                          image: medicalNote.image || medicalNote.Image || '',
-                                          medicalNoteID: medicalNote.medicalNoteID || medicalNote.MedicalNoteID,
-                                        });
-                                        setEditNoteMeta({ task: t, booking: selectedEvent.bookingDetail?.booking, careProfile: selectedEvent.bookingDetail?.careProfile });
-                                        setEditNoteModal(true);
-                                      }}
-                                    >Xem/Sửa ghi chú</button>
-                                  ) : medicalNote ? (
-                                    <span className="inline-block px-3 py-1 bg-gray-200 text-gray-500 rounded text-xs">Đã có ghi chú</span>
-                                  ) : isTaskOwner ? (
-                                    canAddNote ? (
-                                      <button className="inline-flex items-center gap-2 px-3 py-1 bg-blue-600 text-white rounded text-xs hover:bg-blue-700" onClick={() => openAddNoteModal(t)}>
-                                        <FaPlus /> Ghi chú
-                                      </button>
-                                    ) : (
-                                      <div className="text-xs text-gray-400">—</div>
-                                    )
-                                  ) : null}
-                                </td>
-                              </tr>
-                            );
-                          })
-                        ) : (
-                          <tr><td className="p-4 text-center text-gray-500" colSpan={6}>Không có dịch vụ.</td></tr>
-                        )}
-                      </tbody>
-                      {selectedEvent.bookingDetail?.detailTasks?.length > 0 && (
-                        <tfoot>
-                          <tr className="bg-gray-100">
-                            <td className="p-2 text-right font-semibold" colSpan={3}>Tổng</td>
-                            <td className="p-2 text-right font-semibold">{selectedEvent.bookingDetail.detailTasks.reduce((s, x) => s + (g(x, K.total) || 0), 0).toLocaleString('vi-VN')}đ</td>
-                            <td colSpan={2}></td>
-                          </tr>
-                        </tfoot>
-                      )}
-                    </table>
-                  </div>
+                  {(() => {
+                    const tasks = selectedEvent.bookingDetail?.detailTasks || [];
+                    if (tasks.length === 0) return <div className="p-2 text-sm text-gray-500">Không có dữ liệu nhiệm vụ.</div>;
+
+                    // Ưu tiên nhiệm vụ được phân công cho nurse hiện tại
+                    const t = tasks.find(x => String(g(x, K.nursingID)) === String(userNursingID)) || tasks[0];
+                    const medicalNote = t.medicalNote || t.medicalNotes?.[0];
+                    const hasNote = !!(medicalNote && (
+                      medicalNote.medicalNoteID || medicalNote.MedicalNoteID ||
+                      (S(medicalNote.note) || S(medicalNote.Note))
+                    ));
+                    const tNursingId = g(t, K.nursingID) ?? null;
+                    const isTaskOwner = userNursingID && String(tNursingId) === String(userNursingID);
+                    const canAddNote = isTaskOwner && selectedEvent.isAttended && !hasNote;
+
+                    if (canAddNote) {
+                      return (
+                        <button
+                          className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700"
+                          onClick={() => openAddNoteModal(t)}
+                        >
+                          <FaPlus /> Thêm ghi chú y tế
+                        </button>
+                      );
+                    }
+                    if (hasNote) return <span className="text-xs text-gray-500">Đã có ghi chú</span>;
+                    if (!isTaskOwner) return <span className="text-xs text-gray-400">Bạn không được phân công nhiệm vụ</span>;
+                    return null;
+                  })()}
                 </div>
               </div>
             </div>
@@ -801,7 +758,7 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
 
             <div className="space-y-3">
               <div>
-                <div className="text-sm text-gray-600 mb-1">Task</div>
+                <div className="text-sm text-gray-600 mb-1">Nhiệm vụ</div>
                 <div className="font-medium">{g(currentCustomizeTask, K.serviceName) || `Task #${g(currentCustomizeTask, K.customizeTaskID)}`}</div>
               </div>
 

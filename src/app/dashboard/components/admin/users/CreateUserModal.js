@@ -63,12 +63,15 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
     setAvatarUrl(e.target.value);
     setAvatarPreview('');
   };
+  const roleLabels = {
+    Nurse: 'Chuyên gia chăm sóc',
+    Specialist: 'Chuyên gia tư vấn',
+  };
+
   const handleRoleChange = (e) => {
     const value = e.target.value;
     setRole(value);
-    if (value === 'Nurse') setMajor('Nurse');
-    else if (value === 'Specialist') setMajor('Specialist');
-    else setMajor('');
+    setMajor(value);
   };
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -186,8 +189,8 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
                   onChange={handleRoleChange}
                 >
                   <option value="" hidden>Chọn vai trò</option>
-                  <option value="Nurse">Y tá</option>
-                  <option value="Specialist">Chuyên gia</option>
+                  <option value="Nurse">Chuyên gia chăm sóc</option>
+                  <option value="Specialist">Chuyên gia tư vấn</option>
                 </select>
               </div>
             </div>
@@ -269,7 +272,7 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
                     required
                     className="w-full px-2 py-1 border border-gray-300 rounded focus:ring-2 focus:ring-purple-300"
                     placeholder="Nhập chuyên ngành"
-                    value={major}
+                    value={roleLabels[major] || ''}
                     readOnly
                   />
                 </div>

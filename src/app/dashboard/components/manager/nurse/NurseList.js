@@ -17,10 +17,10 @@ const NurseList = ({ nurses, onEdit, onDelete }) => {
         <div className="text-center py-16">
       <FaUserNurse className="text-gray-300 text-8xl mb-6 mx-auto" />
           <h3 className="text-2xl font-bold text-gray-800 mb-3">
-            Chưa có y tá nào
+            Chưa có chuyên gia chăm sóc nào
           </h3>
           <p className="text-gray-500 text-lg">
-            Hãy thêm y tá đầu tiên vào khu vực quản lý của bạn.
+            Hãy thêm chuyên gia chăm sóc đầu tiên vào khu vực quản lý của bạn.
           </p>
         </div>
       ) : (
