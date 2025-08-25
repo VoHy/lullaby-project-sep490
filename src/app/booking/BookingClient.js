@@ -7,6 +7,7 @@ import careProfileService from '@/services/api/careProfileService';
 import relativesService from '@/services/api/relativesService';
 import bookingService from '@/services/api/bookingService';
 import customizePackageService from '@/services/api/customizePackageService';
+// Bỏ các thao tác hậu xử lý customizeTask để đơn giản hóa theo schema API
 import {
   BookingHeader,
   PackageInfo,
@@ -500,7 +501,6 @@ function BookingContent() {
 
     // Xác định loại booking dựa trên URL parameters
     const isPackageBooking = packageId && !serviceId && !servicesId;
-    let requestData = null; // Để lưu request data cho error handling
 
     try {
       setIsProcessingPayment(true);
@@ -508,20 +508,7 @@ function BookingContent() {
       let createdBooking;
       
       if (isPackageBooking) {
-        // PACKAGE BOOKING
-        const packageServiceTasks = serviceTasks.length > 0 ? serviceTasks.map(task => ({
-          serviceTaskID: task.serviceTaskID || task.ServiceTaskID,
-          childServiceID: task.child_ServiceID || task.childServiceID,
-          packageServiceID: task.package_ServiceID || task.packageServiceID,
-          duration: task.duration || task.Duration || 0,
-          price: task.price || task.Price || 0,
-          quantity: task.quantity || 1,
-          taskName: task.serviceName || task.ServiceName || task.taskName || 'Dịch vụ con',
-          description: task.description || task.Description || '',
-          taskOrder: task.taskOrder || 1,
-          status: task.status || 'active'
-        })) : [];
-        
+        // PACKAGE BOOKING: gửi đúng schema API
         const packageBookingData = {
           careProfileID: parseInt(selectedCareProfile.careProfileID, 10),
           amount: parseInt(total, 10),
@@ -534,7 +521,7 @@ function BookingContent() {
 
         createdBooking = await bookingService.createPackageBooking(packageBookingData);
       } else {
-        // SERVICE BOOKING
+        // SERVICE BOOKING: gửi đúng schema API
         let servicesForRequest = [];
         
         if (servicesData && Array.isArray(servicesData)) {
@@ -557,6 +544,21 @@ function BookingContent() {
           });
         }
         
+        // Gộp các dịch vụ trùng serviceID thành 1 item với tổng quantity
+        if (Array.isArray(servicesForRequest) && servicesForRequest.length > 0) {
+          const aggregated = Object.values(
+            servicesForRequest.reduce((acc, item) => {
+              const key = String(item.serviceID);
+              if (!acc[key]) {
+                acc[key] = { serviceID: item.serviceID, quantity: 0 };
+              }
+              acc[key].quantity += (parseInt(item.quantity, 10) || 1);
+              return acc;
+            }, {})
+          );
+          servicesForRequest = aggregated;
+        }
+        
         const serviceBookingData = {
           careProfileID: parseInt(selectedCareProfile.careProfileID, 10),
           amount: parseInt(total, 10),
@@ -564,7 +566,6 @@ function BookingContent() {
           customizePackageCreateDtos: servicesForRequest
         };
 
-        requestData = serviceBookingData;
         createdBooking = await bookingService.createServiceBooking(serviceBookingData);
       }
       

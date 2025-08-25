@@ -32,7 +32,7 @@ export default function ServicesList({
               `service-${idx}`
             );
             return (
-              <li key={uniqueKey} className={`bg-white rounded-xl shadow p-3 md:p-4 border flex flex-col gap-1 ${s.isPackage ? 'border-purple-300 bg-purple-50' : s.isServiceTask ? 'border-blue-200 bg-blue-50' : ''}`}>
+              <li key={`${uniqueKey}-${idx}`} className={`bg-white rounded-xl shadow p-3 md:p-4 border flex flex-col gap-1 ${s.isPackage ? 'border-purple-300 bg-purple-50' : s.isServiceTask ? 'border-blue-200 bg-blue-50' : ''}`}>
                <div className="flex items-center justify-between">
                  <div className="flex items-center gap-2">
                    <span className={`font-bold text-base md:text-lg ${s.isPackage ? 'text-purple-700' : s.isServiceTask ? 'text-blue-700' : 'text-blue-700'}`}>

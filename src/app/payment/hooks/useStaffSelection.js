@@ -3,25 +3,15 @@ import customizeTaskService from '@/services/api/customizeTaskService';
 import workScheduleService from '@/services/api/workScheduleService';
 
 export const useStaffSelection = (booking, bookingData) => {
-  const [selectionMode, setSelectionMode] = useState(null); // 'user' | 'auto'
+  const [selectionMode, setSelectionMode] = useState('auto'); // 'user' | 'auto'
   const [selectedStaffByTask, setSelectedStaffByTask] = useState({}); // { [customizeTaskId]: nursingId }
   const [canConfirm, setCanConfirm] = useState(true);
   const [assignError, setAssignError] = useState("");
 
-  // Build list of customizeTasks for this booking for user selection flow
+  // Danh sách customizeTasks của booking (chỉ dựa vào dữ liệu đã tạo trên backend)
   const bookingCustomizeTasks = useMemo(() => {
-    if (Array.isArray(booking?.customizeTasks) && booking.customizeTasks.length > 0) {
-      return booking.customizeTasks;
-    }
-    // Fallback: try from booking payload createDtos
-    const dtos = booking?.customizePackageCreateDtos || [];
-    return dtos
-      .map(dto => ({
-        customizeTaskID: dto.customizeTaskID || dto.customize_TaskID,
-        serviceID: dto.serviceID || dto.service_ID,
-      }))
-      .filter(x => x.customizeTaskID && x.serviceID);
-  }, [booking]);
+    return Array.isArray(booking?.customizeTasks) ? booking.customizeTasks : [];
+  }, [booking?.customizeTasks]);
 
   // Initialize selected staff from existing assignments
   useEffect(() => {

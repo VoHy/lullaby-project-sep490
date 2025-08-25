@@ -15,6 +15,11 @@ export default function NotificationBell() {
   const dropdownRef = useRef(null);
 
   useEffect(() => {
+    const getCreatedAtTs = (n) => {
+      const v = n.createdAt || n.CreatedAt || n.created_at || n.createdAT;
+      const t = v ? new Date(v).getTime() : 0;
+      return Number.isFinite(t) ? t : 0;
+    };
     const fetchUnread = async () => {
       try {
         if (!user) return;
@@ -39,7 +44,7 @@ export default function NotificationBell() {
         // Get recent notifications for dropdown
         const allNotifications = await notificationService.getAllByAccount(accountId);
         const recentNotifications = Array.isArray(allNotifications)
-          ? allNotifications.slice(0, 5)
+          ? [...allNotifications].sort((a, b) => getCreatedAtTs(b) - getCreatedAtTs(a)).slice(0, 5)
           : [];
         setNotifications(recentNotifications);
       } catch (e) {
@@ -78,8 +83,13 @@ export default function NotificationBell() {
 
       // Get recent notifications for dropdown
       const allNotifications = await notificationService.getAllByAccount(accountId);
+      const getCreatedAtTs = (n) => {
+        const v = n.createdAt || n.CreatedAt || n.created_at || n.createdAT;
+        const t = v ? new Date(v).getTime() : 0;
+        return Number.isFinite(t) ? t : 0;
+      };
       const recentNotifications = Array.isArray(allNotifications)
-        ? allNotifications.slice(0, 5)
+        ? [...allNotifications].sort((a, b) => getCreatedAtTs(b) - getCreatedAtTs(a)).slice(0, 5)
         : [];
       setNotifications(recentNotifications);
     } catch (e) {

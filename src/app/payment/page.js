@@ -791,15 +791,11 @@ const ServiceInfoCard = ({
                 {relatives.map((relative) => {
                   const relativeId = relative.relativeID || relative.relativeid || relative.id;
                   const isSelected = String(selectedRelativeId) === String(relativeId);
-                  const isDisabled = Object.entries(selectedRelativeByTask).some(
-                    ([taskId, relId]) => relId === relativeId && String(taskId) !== String(customizeTaskId)
-                  );
                   return (
                     <div
                       key={relativeId}
-                      className={`border rounded-lg p-3 cursor-pointer transition-all ${isSelected ? 'border-green-500 bg-green-50' : isDisabled ? 'border-gray-200 bg-gray-100 cursor-not-allowed opacity-50' : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'}`}
+                      className={`border rounded-lg p-3 cursor-pointer transition-all ${isSelected ? 'border-green-500 bg-green-50' : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'}`}
                       onClick={async () => {
-                        if (isDisabled) return;
                         try {
                           await customizeTaskService.updateRelative(customizeTaskId, relativeId);
                           setSelectedRelativeByTask?.((prev) => ({ ...prev, [customizeTaskId]: relativeId }));
@@ -814,7 +810,6 @@ const ServiceInfoCard = ({
                         <div className="text-sm text-gray-600">{new Date(relative.dateOfBirth).toLocaleDateString('vi-VN')}</div>
                       )}
                       {isSelected && <div className="text-green-600 mt-1">✓ Đã chọn</div>}
-                      {isDisabled && <div className="text-red-600 text-xs mt-1">Đã được chọn ở dịch vụ khác</div>}
                     </div>
                   );
                 })}
