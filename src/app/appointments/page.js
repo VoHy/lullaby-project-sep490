@@ -157,14 +157,6 @@ export default function AppointmentsPage() {
           <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
             Lịch hẹn của bạn
           </h1>
-          <button
-            onClick={() => fetchData(true)}
-            disabled={refreshing}
-            className="flex items-center gap-2 px-3 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition disabled:opacity-50"
-          >
-            <FaSync className={`${refreshing && "animate-spin"}`} />
-            Làm mới
-          </button>
         </motion.div>
 
         {/* Toolbar */}

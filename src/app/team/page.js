@@ -42,6 +42,11 @@ export default function TeamPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  const majorMap = {
+    Nurse: "Chuyên viên chăm sóc",
+    Specialist: "Chuyên gia tư vấn"
+  }
+
   // Load data từ API
   useEffect(() => {
     const fetchData = async () => {
@@ -418,8 +423,7 @@ export default function TeamPage() {
                     </h3>
                     <div className="mt-1 inline-flex items-center gap-2 text-sm text-gray-600">
                       <span className="px-2 py-0.5 rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                        {(detailData.Major || detailData.major) || 'Chưa cập nhật'}
-                      </span>
+                        {majorMap[detailData.Major || detailData.major] || 'Chưa cập nhật'}                      </span>
                       <span className="inline-flex items-center gap-1">
                         <FaMapMarkerAlt className="text-gray-500" />
                         {getZoneName(detailData.ZoneID || detailData.zoneID || detailData.Address || detailData.address)}
@@ -504,11 +508,15 @@ export default function TeamPage() {
                     </div>
                     <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600">Trạng thái:</span>
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${(detailData.Status || detailData.status) === 'Active'
-                        ? 'bg-green-100 text-green-700 border border-green-300'
-                        : 'bg-red-100 text-red-700 border border-red-300'
-                        }`}>
-                        {detailData.Status || detailData.status || 'N/A'}
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold ${(detailData.Status || detailData.status) === "active"
+                            ? "bg-green-100 text-green-700 border border-green-300"
+                            : "bg-red-100 text-red-700 border border-red-300"
+                          }`}
+                      >
+                        {(detailData.Status || detailData.status) === "active"
+                          ? "Hoạt động"
+                          : "Ngưng hoạt động"}
                       </span>
                     </div>
                   </div>

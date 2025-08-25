@@ -105,7 +105,7 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
 
                 return (
                   <div
-                    key={relativeId || idx}
+                    key={relativeId ? `relative-${relativeId}` : `idx-${idx}`}
                     className="bg-gray-50 rounded-lg p-3 flex items-center justify-between cursor-pointer group"
                     onClick={() => onViewDetailRelative && onViewDetailRelative(relative)}
                   >

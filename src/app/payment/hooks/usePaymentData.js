@@ -8,17 +8,20 @@ import walletService from '@/services/api/walletService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import customizeTaskService from '@/services/api/customizeTaskService';
 import careProfileService from '@/services/api/careProfileService';
+import relativesService from '@/services/api/relativesService';
 import { calculateCompletePayment } from '../../booking/utils/paymentCalculation';
 
 export const usePaymentData = (bookingId, user) => {
   const [booking, setBooking] = useState(null);
-  const [accounts, setAccounts] = useState([]);
+  const [customizeTasks, setCustomizeTasks] = useState([]);
   const [packages, setPackages] = useState([]);
+
   const [serviceTypes, setServiceTypes] = useState([]);
   const [serviceTasks, setServiceTasks] = useState([]);
-  const [customizeTasks, setCustomizeTasks] = useState([]);
+  const [accounts, setAccounts] = useState([]);
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
   const [careProfiles, setCareProfiles] = useState([]);
+  const [relatives, setRelatives] = useState([]);
   const [wallets, setWallets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -70,26 +73,36 @@ export const usePaymentData = (bookingId, user) => {
           }
 
           setBooking(bookingData);
-          
+
           // Load customize tasks
           try {
             const tasks = await customizeTaskService.getAllByBooking(parseInt(bookingId));
-            
+
             const mapped = Array.isArray(tasks) ? tasks.map(t => ({
               customizeTaskID: t.customizeTaskID || t.CustomizeTaskID || t.id,
               customizePackageID: t.customizePackageID || t.CustomizePackageID,
               serviceID: t.serviceID || t.ServiceID || t.serviceTypeID,
               nursingID: t.nursingID || t.NursingID || null,
+              relativeID: t.relativeID || t.RelativeID || null,
               taskOrder: t.taskOrder || t.TaskOrder,
               startTime: t.startTime || t.StartTime,
               endTime: t.endTime || t.EndTime,
               status: t.status || t.Status
             })) : [];
-            
+
             setCustomizeTasks(mapped);
           } catch (taskErr) {
             console.error('Could not load customize tasks for booking', taskErr);
             setCustomizeTasks([]);
+          }
+
+          // Load relatives theo booking
+          try {
+            const relativesData = await relativesService.getAllByBooking(parseInt(bookingId));
+            setRelatives(relativesData || []);
+          } catch (relativesErr) {
+            console.error('Could not load relatives for booking', relativesErr);
+            setRelatives([]);
           }
 
           // Load customize packages
@@ -243,12 +256,16 @@ export const usePaymentData = (bookingId, user) => {
       nursingSpecialists,
       accounts,
       customizeTasks,
-      customizePackages: booking?.customizePackages || []
+      customizePackages: booking?.customizePackages || [],
+      relatives
     },
     bookingData,
     loading,
     error,
-    refreshData: fetchData
+    refreshData: fetchData,
+    relatives,
+    serviceTypes,
+    serviceTasks
   };
   return result;
 };

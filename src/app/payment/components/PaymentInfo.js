@@ -120,7 +120,9 @@ const PaymentButton = ({
   loading, 
   isProcessingPayment, 
   canConfirm, 
-  handleConfirm 
+  handleConfirm, 
+  onCancel, 
+  isCancelling 
 }) => {
   const walletAmount = myWallet?.amount || myWallet?.Amount || 0;
   const isSufficient = walletAmount >= total;
@@ -156,11 +158,11 @@ const PaymentButton = ({
 
       {/* Cancel Button */}
       <button
-        className="w-full py-3 rounded-xl font-bold text-lg border-2 border-gray-300 text-gray-600 hover:bg-gray-50 transition-all duration-200"
-        onClick={() => window.history.back()}
-        disabled={isProcessingPayment}
+        className={`w-full py-3 rounded-xl font-bold text-lg border-2 ${onCancel ? 'bg-red-600 hover:bg-red-700 text-white border-red-600' : 'border-gray-300 text-gray-600 hover:bg-gray-50'} transition-all duration-200`}
+        onClick={onCancel ? onCancel : () => window.history.back()}
+        disabled={isProcessingPayment || isCancelling}
       >
-        Hủy
+        {isCancelling ? 'Đang hủy...' : 'Hủy'}
       </button>
     </div>
   );
@@ -176,6 +178,8 @@ export default function PaymentInfo({
   isProcessingPayment,
   paymentBreakdown,
   canConfirm,
+  onCancel,
+  isCancelling
 }) {
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6">
@@ -226,6 +230,8 @@ export default function PaymentInfo({
         isProcessingPayment={isProcessingPayment}
         canConfirm={canConfirm}
         handleConfirm={handleConfirm}
+        onCancel={onCancel}
+        isCancelling={isCancelling}
       />
 
       {/* Security Info */}

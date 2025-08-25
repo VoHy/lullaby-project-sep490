@@ -249,8 +249,6 @@ export default function ServicesPage() {
 
   // Hàm tính số lượng tối đa cho dịch vụ dựa trên số relative trong careProfile
   const getMaxQuantityForService = (serviceId) => {
-    console.log('DEBUG relatives:', relatives);
-    console.log('DEBUG careProfiles:', careProfiles);
     if (!user || !careProfiles.length || !relatives.length) return 10; // Default max
 
     // Lấy careProfile của user hiện tại
@@ -268,8 +266,6 @@ export default function ServicesPage() {
         (cp.careProfileID || cp.CareProfileID) === relativeCareProfileId
       );
     }).length;
-
-    console.log('DEBUG totalRelatives:', totalRelatives);
 
     // Trả về số lượng tối đa là số relative, nhưng không quá 10
     return Math.min(totalRelatives, 10);
