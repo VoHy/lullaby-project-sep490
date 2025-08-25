@@ -9,6 +9,7 @@ import {
   AppointmentInfo,
   PaymentInfo,
   PaymentSuccessModal,
+  RelativeSelection
 } from './components';
 
 // Custom hooks
@@ -17,6 +18,8 @@ import { useStaffSelection } from './hooks/useStaffSelection';
 import { usePaymentProcessing } from './hooks/usePaymentProcessing';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import customizeTaskService from '@/services/api/customizeTaskService';
+import bookingService from '@/services/api/bookingService';
+import notificationService from '@/services/api/notificationService';
 
 // Icons
 import { Clock, Calendar } from 'lucide-react';
@@ -28,13 +31,25 @@ function PaymentContent() {
   const { user } = useContext(AuthContext);
   const { wallet: contextWallet, refreshWalletData } = useWalletContext();
 
+  // State cho relative selection
+  const [selectedRelativeByTask, setSelectedRelativeByTask] = useState({});
+  const [isCancelling, setIsCancelling] = useState(false);
+  const [cancelError, setCancelError] = useState("");
+  const [showCancelModal, setShowCancelModal] = useState(false);
+
   // Custom hooks
   const {
     booking,
     bookingData,
     loading,
     error: dataError,
-    refreshData
+    refreshData,
+    relatives,
+    serviceTypes,
+    serviceTasks,
+    accounts,
+    zoneDetails,
+    zones
   } = usePaymentData(bookingId, user);
 
   const {
@@ -65,6 +80,127 @@ function PaymentContent() {
     refreshWalletData,
     router
   });
+
+  // Hàm tìm manager theo zone
+  const findManagerByZone = useCallback((zoneID) => {
+    if (!zoneID || !accounts || !zones) return null;
+
+    // Tìm zone có zoneID này
+    const zone = zones.find(z => z.zoneID === zoneID);
+    if (!zone?.managerID) {
+      return null;
+    }
+
+    // Tìm manager theo managerID từ zone
+    const manager = accounts.find(acc =>
+      acc.roleID === 3 &&
+      acc.accountID === zone.managerID
+    );
+    return manager;
+  }, [accounts, zones]);
+
+  // Hàm lấy zoneID từ careProfile
+  const getZoneIDFromCareProfile = useCallback(() => {
+    if (bookingData?.zoneID) {
+      return bookingData.zoneID;
+    }
+
+    // Nếu chưa có zoneID, lấy từ zoneDetailID của careProfile
+    if (bookingData?.selectedCareProfile?.zoneDetailID && zoneDetails?.length > 0) {
+      const zoneDetail = zoneDetails.find(zd =>
+        zd.zoneDetailID === bookingData.selectedCareProfile.zoneDetailID ||
+        zd.ZoneDetailID === bookingData.selectedCareProfile.zoneDetailID ||
+        zd.zonedetailid === bookingData.selectedCareProfile.zoneDetailID
+      );
+      if (zoneDetail) {
+        return zoneDetail.zoneID || zoneDetail.ZoneID;
+      }
+    }
+
+    return null;
+  }, [bookingData, zoneDetails]);
+
+  // Hàm wrapper cho handleConfirm để gửi thông báo cho manager
+  const handleConfirmWithNotify = useCallback(async () => {
+    try {
+      // Nếu chọn "Hệ thống tự chọn" và có thể lấy được zoneID
+      if (selectionMode === 'auto') {
+        // Kiểm tra xem accounts đã được load chưa
+        if (!accounts || accounts.length === 0) {
+          console.warn('Accounts chưa được load, bỏ qua thông báo manager');
+          // Tiếp tục xử lý thanh toán mà không gửi thông báo
+          await handleConfirm();
+          return;
+        }
+
+        const zoneID = getZoneIDFromCareProfile();
+
+        if (zoneID) {
+          const manager = findManagerByZone(zoneID);
+          if (manager) {
+            try {
+              await notificationService.createNotification({
+                accountID: manager.accountID,
+                message: "Bạn có yêu cầu điều phối chuyên viên mới"
+              });
+            } catch (notifyError) {
+              console.error('Lỗi khi gửi thông báo cho manager:', notifyError);
+              // Không throw error vì thanh toán vẫn có thể tiếp tục
+            }
+          } else {
+            console.warn('Không tìm thấy manager cho zone:', zoneID);
+          }
+        } else {
+          console.warn('Không thể xác định zoneID từ careProfile');
+        }
+      } else {
+      }
+
+      // Tiếp tục xử lý thanh toán
+      await handleConfirm();
+    } catch (error) {
+      console.error('Error in payment confirmation:', error);
+      throw error;
+    }
+  }, [selectionMode, zones, accounts, getZoneIDFromCareProfile, findManagerByZone, handleConfirm]);
+
+  // Khởi tạo selectedRelativeByTask từ customizeTasks
+  useEffect(() => {
+    if (booking?.customizeTasks && Array.isArray(booking.customizeTasks)) {
+      const initialRelativeSelection = {};
+      booking.customizeTasks.forEach(task => {
+        const customizeTaskId = task.customizeTaskID || task.customize_TaskID || task.id;
+        const relativeId = task.relativeID || task.RelativeID;
+        if (customizeTaskId && relativeId) {
+          initialRelativeSelection[customizeTaskId] = relativeId;
+        }
+      });
+      setSelectedRelativeByTask(initialRelativeSelection);
+    }
+  }, [booking?.customizeTasks]);
+
+  // Hàm xử lý hủy booking
+  const handleCancelBooking = async () => {
+    if (!bookingId) {
+      return;
+    }
+
+    setIsCancelling(true);
+    setCancelError("");
+
+    try {
+      await bookingService.deleteBooking(parseInt(bookingId));
+
+      // Chuyển về trang appointments
+      router.push('/appointments');
+    } catch (error) {
+      console.error('Lỗi khi hủy booking:', error);
+      setCancelError(`Không thể hủy booking. ${error.message || 'Vui lòng thử lại sau.'}`);
+    } finally {
+      setIsCancelling(false);
+      setShowCancelModal(false);
+    }
+  };
 
   // Loading state
   if (loading) {
@@ -149,7 +285,22 @@ function PaymentContent() {
               getCandidatesForService={getCandidatesForService}
               onAssign={handleAssignNurseToTask}
               accounts={booking?.accounts || []}
+              selectedRelativeByTask={selectedRelativeByTask} // thêm dòng này
+              relatives={relatives || []}
             />
+
+            {/* Relative Selection */}
+            <RelativeSelection
+              customizeTasks={booking?.customizeTasks || []}
+              relatives={relatives || []}
+              selectedRelativeByTask={selectedRelativeByTask}
+              setSelectedRelativeByTask={setSelectedRelativeByTask}
+              bookingId={bookingId}
+              serviceTypes={serviceTypes || []}
+              serviceTasks={serviceTasks || []}
+            />
+
+            {/* Cancel Booking Section */}
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
               <div className="text-sm font-semibold text-purple-800 mb-2">Chọn cách phân công điều dưỡng</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -195,10 +346,12 @@ function PaymentContent() {
               myWallet={contextWallet}
               error={dataError}
               loading={loading}
-              handleConfirm={handleConfirm}
+              handleConfirm={handleConfirmWithNotify}
               isProcessingPayment={isProcessingPayment}
               paymentBreakdown={bookingData?.paymentCalculation}
               canConfirm={canConfirm}
+              onCancel={handleCancelBooking}
+              isCancelling={isCancelling}
             />
           </div>
         </div>
@@ -217,6 +370,57 @@ function PaymentContent() {
             router.push('/appointments');
           }}
         />
+
+        {/* Cancel Booking Modal */}
+        {showCancelModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-xl p-6 max-w-md w-full relative">
+              <div className="flex items-center mb-4">
+                <span className="text-red-600 text-2xl mr-2"></span>
+                <span className="text-xl font-bold text-red-700">Xác nhận hủy booking</span>
+              </div>
+              <div className="text-gray-800 mb-6">
+                <p className="mb-2">Bạn có chắc chắn muốn hủy booking này không?</p>
+                <p className="text-sm text-gray-600 mb-2">Booking ID: <span className="font-semibold">{bookingId}</span></p>
+                {bookingData?.datetime && (
+                  <p className="text-sm text-gray-600 mb-2">Ngày: <span className="font-semibold">{new Date(bookingData.datetime).toLocaleDateString('vi-VN')}</span></p>
+                )}
+                {bookingData?.selectedCareProfile?.profileName && (
+                  <p className="text-sm text-gray-600 mb-2">Người được chăm sóc: <span className="font-semibold">{bookingData.selectedCareProfile.profileName}</span></p>
+                )}
+                <p className="text-sm text-red-600 font-semibold">Hành động này không thể hoàn tác.</p>
+              </div>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowCancelModal(false)}
+                  disabled={isCancelling}
+                  className="bg-gray-300 hover:bg-gray-400 disabled:bg-gray-200 text-gray-800 font-bold py-2 px-4 rounded transition-colors"
+                >
+                  Không hủy
+                </button>
+                <button
+                  onClick={handleCancelBooking}
+                  disabled={isCancelling}
+                  className="bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white font-bold py-2 px-4 rounded transition-colors"
+                >
+                  {isCancelling ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                      Đang hủy...
+                    </div>
+                  ) : (
+                    'Hủy booking'
+                  )}
+                </button>
+              </div>
+              {cancelError && (
+                <div className="mt-4 p-3 bg-red-100 border border-red-300 rounded-lg">
+                  <div className="text-red-700 text-sm font-semibold">{cancelError}</div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -245,9 +449,7 @@ const getStaffInfo = (serviceId, booking, nursingSpecialists) => {
 
 const getCandidatesForService = async (customizeTaskId) => {
   try {
-    console.log('Fetching nurses for customizeTaskId:', customizeTaskId);
     const freeNurses = await nursingSpecialistService.getAllFreeNursingSpecialists(customizeTaskId);
-    console.log('API response:', freeNurses);
     return Array.isArray(freeNurses) ? freeNurses : [];
   } catch (e) {
     console.error('Không thể lấy danh sách nurse rảnh:', e);
@@ -258,11 +460,8 @@ const getCandidatesForService = async (customizeTaskId) => {
 // Function để gán nurse cho task (chỉ lưu vào state, không gọi API)
 const handleAssignNurseToTask = async (customizeTaskId, nursingId) => {
   try {
-    console.log(`Selecting nurse ${nursingId} for task ${customizeTaskId} (saved to state only)`);
-
     // Chỉ lưu vào state, KHÔNG gọi API ngay
     // API sẽ được gọi khi user xác nhận thanh toán
-
     return true;
   } catch (error) {
     console.error(`Error selecting nurse ${nursingId} for task ${customizeTaskId}:`, error);
@@ -281,7 +480,9 @@ const ServiceInfoCard = ({
   setSelectedStaffByTask,
   getCandidatesForService,
   onAssign,
-  accounts = []
+  accounts = [],
+  selectedRelativeByTask = {}, // thêm dòng này
+  relatives = []
 }) => {
   // State cho việc chọn điều dưỡng
   const [loadingMap, setLoadingMap] = useState({});
@@ -383,6 +584,11 @@ const ServiceInfoCard = ({
                 String(n.NursingID || n.nursingID) === String(selectedNurseId)
               );
 
+              // Lấy relative đã chọn cho dịch vụ này
+              const selectedRelativeId = selectedRelativeByTask[customizeTaskId];
+              const selectedRelative = relatives.find(r => r.relativeID === selectedRelativeId);
+
+
               return (
                 <li key={service.id || idx} className="py-4">
                   <div className="flex justify-between items-start">
@@ -432,18 +638,31 @@ const ServiceInfoCard = ({
 
                   {/* Nút chọn điều dưỡng - chỉ hiển thị khi selectionMode === 'user' */}
                   {selectionMode === 'user' && customizeTaskId && (
-                    <div className="mt-3 flex justify-between items-center">
-                      <div className="text-sm text-gray-500">
-                        {isLoading ? 'Đang tải...' : `${candidates.length} điều dưỡng có sẵn`}
+                    <div className="mt-3 flex flex-col gap-2">
+                      <div className="flex justify-between items-center">
+                        <div className="text-sm text-gray-500">
+                          {isLoading ? 'Đang tải...' : `${candidates.length} điều dưỡng có sẵn`}
+                        </div>
+                        <button
+                          className="bg-purple-600 text-white border-purple-600 border text-white px-4 py-2 rounded transition-colors hover:bg-purple-700"
+                          onClick={() => setOpenTaskId(customizeTaskId)}
+                        >
+                          {selectedNurse
+                            ? `Đã chọn: ${selectedNurse.Full_Name || selectedNurse.fullName || selectedNurse.FullName || selectedNurse.name || 'Điều dưỡng'}`
+                            : 'Chọn điều dưỡng'}
+                        </button>
                       </div>
-                      <button
-                        className="bg-purple-600 text-white border-purple-600 border text-white px-4 py-2 rounded transition-colors hover:bg-purple-700"
-                        onClick={() => setOpenTaskId(customizeTaskId)}
-                      >
-                        {selectedNurse
-                          ? `Đã chọn: ${selectedNurse.Full_Name || selectedNurse.fullName || selectedNurse.FullName || selectedNurse.name || 'Điều dưỡng'}`
-                          : 'Chọn điều dưỡng'}
-                      </button>
+                      {/* Thông tin người thân đã chọn */}
+                      {selectedRelative && (
+                        <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
+                          <strong>Người thân đã chọn:</strong> {selectedRelative.relativeName || selectedRelative.name}
+                          {selectedRelative.dateOfBirth && (
+                            <span className="ml-2">
+                              ({new Date(selectedRelative.dateOfBirth).toLocaleDateString('vi-VN')})
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
                   )}
                 </li>
@@ -508,8 +727,6 @@ const ServiceInfoCard = ({
                       onClick={async () => {
                         try {
                           const nurseId = nurse.NursingID || nurse.nursingID;
-                          console.log(`Selecting nurse ${nurseId} for task ${openTaskId}`);
-
                           setSelectedStaffByTask?.((prev) => ({
                             ...prev,
                             [openTaskId]: nurseId

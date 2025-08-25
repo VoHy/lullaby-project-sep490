@@ -12,6 +12,7 @@ const customizeTaskService = {
   updateStatus: async (customizePackageId, status) => apiPut(`${base}/UpdateStatus/${customizePackageId}/${status}`, {}, 'Không thể cập nhật trạng thái'),
   updateTaskOrder: async (customizeTaskId, taskOrder) => apiPut(`${base}/UpdateTaskOrder/${customizeTaskId}/${taskOrder}`, {}, 'Không thể cập nhật thứ tự'),
   updateNursing: async (customizeTaskId, nursingId) => apiPut(`${base}/UpdateNursing/${customizeTaskId}/${nursingId}`, {}, 'Không thể gán nurse'),
+  updateRelative: async (customizeTaskId, relativeId) => apiPut(`${base}/UpdateRelative/${customizeTaskId}/${relativeId}`, {}, 'Không thể cập nhật relative'),
   deleteCustomizeTask: async (id) => apiDelete(`${base}/${id}`, 'Không thể xóa task'),
 };
 

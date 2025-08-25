@@ -18,9 +18,10 @@ export default function NotificationsPage() {
       setLoading(true);
       const data = await notificationService.getAllByAccount(user.accountID || user.AccountID);
       const items = Array.isArray(data) ? data : [];
-      // Hiển thị tất cả thông báo thay vì chỉ lọc theo booking
-  setNotifications(items);
-  setCurrentPage(1); // Reset về trang đầu khi load mới
+      // Sắp xếp thông báo mới nhất lên đầu
+      items.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      setNotifications(items);
+      setCurrentPage(1); // Reset về trang đầu khi load mới
     } catch (error) {
       console.error('Error fetching notifications:', error);
       setNotifications([]);
@@ -33,9 +34,9 @@ export default function NotificationsPage() {
     try {
       await notificationService.markAsRead(notificationId);
       // Update local state
-      setNotifications(prev => 
-        prev.map(n => 
-          n.notificationID === notificationId 
+      setNotifications(prev =>
+        prev.map(n =>
+          n.notificationID === notificationId
             ? { ...n, isRead: true }
             : n
         )
@@ -59,7 +60,7 @@ export default function NotificationsPage() {
       await Promise.all(
         unreadNotifications.map(n => notificationService.markAsRead(n.notificationID))
       );
-      setNotifications(prev => 
+      setNotifications(prev =>
         prev.map(n => ({ ...n, isRead: true }))
       );
       // Refresh notifications to sync with backend
@@ -99,14 +100,14 @@ export default function NotificationsPage() {
     if (user) {
       fetchNotifications();
     }
-    
+
     // Tự động cập nhật mỗi 30 giây
     const interval = setInterval(() => {
       if (user) {
         fetchNotifications();
       }
     }, 30000);
-    
+
     return () => clearInterval(interval);
   }, [user]);
 
@@ -115,60 +116,62 @@ export default function NotificationsPage() {
   const paginatedNotifications = notifications.slice((currentPage - 1) * pageSize, currentPage * pageSize);
 
   if (loading) {
-          {notifications.length === 0 ? (
-            <div className="bg-white p-8 text-center border rounded-lg">
-              <FaInfoCircle className="text-3xl text-gray-400 mb-2" />
-              <h3 className="text-lg font-semibold text-gray-700 mb-2">Không có thông báo</h3>
-              <p className="text-gray-500">Bạn chưa có thông báo nào.</p>
-            </div>
-          ) : (
-            <table className="w-full bg-white border rounded-lg">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="py-2 px-3 text-left">Loại</th>
-                  <th className="py-2 px-3 text-left">Nội dung</th>
-                  <th className="py-2 px-3 text-left">Thời gian</th>
-                  <th className="py-2 px-3 text-left">Trạng thái</th>
-                  <th className="py-2 px-3 text-left">Thao tác</th>
-                </tr>
-              </thead>
-              <tbody>
-                {paginatedNotifications.map((notification) => {
-                  const typeInfo = getNotificationType(notification);
-                  return (
-                    <tr key={notification.notificationID} className="border-b">
-                      <td className="py-2 px-3">{typeInfo.label}</td>
-                      <td className="py-2 px-3">{notification.message || notification.Content || 'Thông báo mới'}</td>
-                      <td className="py-2 px-3">{new Date(notification.createdAt).toLocaleString('vi-VN')}</td>
-                      <td className="py-2 px-3">
-                        {notification.isRead ? (
-                          <span className="text-green-600">Đã đọc</span>
-                        ) : (
-                          <span className="text-purple-600">Chưa đọc</span>
-                        )}
-                      </td>
-                      <td className="py-2 px-3">
-                        {!notification.isRead && (
-                          <button
-                            onClick={() => markAsRead(notification.notificationID)}
-                            className="px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
-                          >
-                            Đánh dấu đã đọc
-                          </button>
-                        )}
-                        <button
-                          onClick={() => setSelectedNotification(notification)}
-                          className="px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 ml-2"
-                        >
-                          Xem
-                        </button>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          )}
+    {
+      notifications.length === 0 ? (
+        <div className="bg-white p-8 text-center border rounded-lg">
+          <FaInfoCircle className="text-3xl text-gray-400 mb-2" />
+          <h3 className="text-lg font-semibold text-gray-700 mb-2">Không có thông báo</h3>
+          <p className="text-gray-500">Bạn chưa có thông báo nào.</p>
+        </div>
+      ) : (
+      <table className="w-full bg-white border rounded-lg">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="py-2 px-3 text-left">Loại</th>
+            <th className="py-2 px-3 text-left">Nội dung</th>
+            <th className="py-2 px-3 text-left">Thời gian</th>
+            <th className="py-2 px-3 text-left">Trạng thái</th>
+            <th className="py-2 px-3 text-left">Thao tác</th>
+          </tr>
+        </thead>
+        <tbody>
+          {paginatedNotifications.map((notification) => {
+            const typeInfo = getNotificationType(notification);
+            return (
+              <tr key={notification.notificationID} className="border-b">
+                <td className="py-2 px-3">{typeInfo.label}</td>
+                <td className="py-2 px-3">{notification.message || notification.Content || 'Thông báo mới'}</td>
+                <td className="py-2 px-3">{new Date(notification.createdAt).toLocaleString('vi-VN')}</td>
+                <td className="py-2 px-3">
+                  {notification.isRead ? (
+                    <span className="text-green-600">Đã đọc</span>
+                  ) : (
+                    <span className="text-purple-600">Chưa đọc</span>
+                  )}
+                </td>
+                <td className="py-2 px-3">
+                  {!notification.isRead && (
+                    <button
+                      onClick={() => markAsRead(notification.notificationID)}
+                      className="px-2 py-1 bg-purple-100 text-purple-700 rounded hover:bg-purple-200"
+                    >
+                      Đánh dấu đã đọc
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setSelectedNotification(notification)}
+                    className="px-2 py-1 bg-gray-100 text-gray-700 rounded hover:bg-gray-200 ml-2"
+                  >
+                    Xem
+                  </button>
+                </td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    )
+    }
     return (
       <div className="min-h-screen bg-gradient-to-br from-purple-50 to-pink-50 py-8">
         <div className="max-w-4xl mx-auto px-4">
@@ -233,11 +236,10 @@ export default function NotificationsPage() {
               return (
                 <div
                   key={notification.notificationID}
-                  className={`bg-white rounded-2xl shadow-lg p-6 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] border-l-4 notification-item animate-slide-in-up ${
-                    !notification.isRead 
-                      ? `border-${typeInfo.color}-500 bg-gradient-to-r from-${typeInfo.color}-50 to-white` 
+                  className={`bg-white rounded-2xl shadow-lg p-6 cursor-pointer transition-all duration-300 hover:shadow-xl hover:scale-[1.02] border-l-4 notification-item animate-slide-in-up ${!notification.isRead
+                      ? `border-${typeInfo.color}-500 bg-gradient-to-r from-${typeInfo.color}-50 to-white`
                       : 'border-gray-200'
-                  }`}
+                    }`}
                   onClick={() => setSelectedNotification(notification)}
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
@@ -253,9 +255,8 @@ export default function NotificationsPage() {
                         <span className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-${typeInfo.color}-100 text-${typeInfo.color}-800`}>
                           {typeInfo.label}
                         </span>
-                        <h3 className={`font-semibold text-lg ${
-                          !notification.isRead ? 'text-gray-900' : 'text-gray-700'
-                        }`}>
+                        <h3 className={`font-semibold text-lg ${!notification.isRead ? 'text-gray-900' : 'text-gray-700'
+                          }`}>
                           {notification.message || notification.Content || 'Thông báo mới'}
                         </h3>
                       </div>
@@ -328,7 +329,7 @@ export default function NotificationsPage() {
                     ×
                   </button>
                 </div>
-                
+
                 <div className="space-y-6">
                   <div>
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -338,7 +339,7 @@ export default function NotificationsPage() {
                       {selectedNotification.message || selectedNotification.Content || 'Không có nội dung'}
                     </p>
                   </div>
-                  
+
                   <div className="grid grid-cols-2 gap-6">
                     <div className="bg-gray-50 p-4 rounded-xl">
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
@@ -350,16 +351,15 @@ export default function NotificationsPage() {
                       <label className="block text-sm font-semibold text-gray-700 mb-2">
                         Trạng thái
                       </label>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${
-                        selectedNotification.isRead
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${selectedNotification.isRead
                           ? 'bg-green-100 text-green-800'
                           : 'bg-purple-100 text-purple-800'
-                      }`}>
+                        }`}>
                         {selectedNotification.isRead ? 'Đã đọc' : 'Chưa đọc'}
                       </span>
                     </div>
                   </div>
-                  
+
                   <div className="bg-gray-50 p-4 rounded-xl">
                     <label className="block text-sm font-semibold text-gray-700 mb-2">
                       Thời gian tạo
@@ -369,7 +369,7 @@ export default function NotificationsPage() {
                     </p>
                   </div>
                 </div>
-                
+
                 <div className="flex gap-4 mt-8">
                   {!selectedNotification.isRead && (
                     <button

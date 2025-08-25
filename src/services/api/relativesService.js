@@ -11,6 +11,7 @@ const relativesService = {
   updateRelative: async (id, data) => apiPut(`${base}/update/${id}`, data, 'Không thể cập nhật thân nhân'),
   deleteRelative: async (id) => apiDelete(`${base}/delete/${id}`, 'Không thể xóa thân nhân'),
   getCount: async () => apiGet(`${base}/count`, 'Không thể lấy số lượng thân nhân'),
+  getAllByBooking: async (bookingId) => apiGet(`${base}/GetAllByBooking/${bookingId}`, 'Không thể lấy thân nhân theo booking'),
 };
 
 export default relativesService;

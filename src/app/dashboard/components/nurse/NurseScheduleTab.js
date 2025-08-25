@@ -21,6 +21,8 @@ import workScheduleService from '@/services/api/workScheduleService';
 import medicalNoteService from '@/services/api/medicalNoteService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import { AuthContext } from '@/context/AuthContext';
+import notificationService from '@/services/api/notificationService';
+import SuccessNotification from '@/app/components/SuccessNotification';
 
 export default function NurseScheduleTab({ workSchedules = [] }) {
   // -------------------------- Helpers & Constants --------------------------
@@ -67,6 +69,7 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
       cancelled: ['Đã hủy', 'bg-gray-500 text-white'],
       canceled: ['Đã hủy', 'bg-gray-500 text-white'],
       waiting: ['Đang đến', 'bg-gray-500 text-white'],
+      arrived: ['Đã đến', 'bg-gray-500 text-white'],
       isscheduled: ['Đã lên lịch', 'bg-indigo-600 text-white'],
       scheduled: ['Đã lên lịch', 'bg-indigo-600 text-white'],
       holiday: ['Ngày nghỉ', 'bg-red-600 text-white'],
@@ -85,6 +88,7 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
   const [loading, setLoading] = useState(true);
   const [eventLoading, setEventLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
 
   // Medical Note modals/state
   const [showNoteModal, setShowNoteModal] = useState(false);
@@ -581,7 +585,45 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
                   <div className="mt-4 space-y-2 text-sm">
                     <div className="flex items-center justify-between">
                       <div className="text-gray-600">Trạng thái</div>
-                      <div className={`px-3 py-1 rounded text-sm ${getStatusView(selectedEvent.status).cls}`}>{getStatusView(selectedEvent.status).label}</div>
+                      {selectedEvent.status !== 'arrived' ? (
+                        <button
+                          className="px-3 py-1 rounded text-sm bg-blue-600 text-white hover:bg-blue-700 transition"
+                          onClick={async () => {
+                            try {
+                              await workScheduleService.updateStatus(
+                                selectedEvent.workObj?.workScheduleID || selectedEvent.workObj?.WorkScheduleID,
+                                'arrived'
+                              );
+                              setSelectedEvent(prev => ({
+                                ...prev,
+                                status: 'arrived'
+                              }));
+                              setShowSuccess(true); // Hiện toast thành công
+
+                              // Gửi thông báo cho user, lỗi thì chỉ log, không alert
+                              const accountID = selectedEvent.bookingDetail?.careProfile?.accountID
+                                || selectedEvent.bookingDetail?.careProfile?.AccountID;
+                              if (accountID && accountID !== 0) {
+                                try {
+                                  await notificationService.createNotification({ accountID, message: 'Điều dưỡng đã đến lịch hẹn.' });
+                                } catch (err) {
+                                  console.error('Gửi thông báo thất bại', err);
+                                }
+                              } else {
+                                console.warn('Không tìm thấy accountID hợp lệ để gửi thông báo!');
+                              }
+                            } catch (err) {
+                              alert('Không thể cập nhật trạng thái!');
+                            }
+                          }}
+                        >
+                          Đã đến
+                        </button>
+                      ) : (
+                        <div className={`px-3 py-1 rounded text-sm ${getStatusView(selectedEvent.status).cls}`}>
+                          {getStatusView(selectedEvent.status).label}
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="text-gray-600">Đã tham gia</div>
@@ -915,6 +957,12 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
           </div>
         </div>
       )}
+      {/* Toast thành công */}
+      <SuccessNotification
+        message="Cập nhật trạng thái và gửi thông báo thành công!"
+        isVisible={showSuccess}
+        onClose={() => setShowSuccess(false)}
+      />
     </div>
   );
 }

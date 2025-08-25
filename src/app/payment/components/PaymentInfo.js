@@ -104,7 +104,7 @@ const ErrorDisplay = ({ error }) => {
       <div className="text-red-700 font-semibold text-center mb-2">{error}</div>
       {error.includes('Hóa đơn đã được tạo') && (
         <div className="text-green-700 text-sm text-center">
-          ✅ Hóa đơn đã được tạo thành công. Bạn có thể thanh toán sau khi nạp thêm tiền.
+          Hóa đơn đã được tạo thành công. Bạn có thể thanh toán sau khi nạp thêm tiền.
         </div>
       )}
     </div>
@@ -120,7 +120,9 @@ const PaymentButton = ({
   loading, 
   isProcessingPayment, 
   canConfirm, 
-  handleConfirm 
+  handleConfirm, 
+  onCancel, 
+  isCancelling 
 }) => {
   const walletAmount = myWallet?.amount || myWallet?.Amount || 0;
   const isSufficient = walletAmount >= total;
@@ -156,11 +158,11 @@ const PaymentButton = ({
 
       {/* Cancel Button */}
       <button
-        className="w-full py-3 rounded-xl font-bold text-lg border-2 border-gray-300 text-gray-600 hover:bg-gray-50 transition-all duration-200"
-        onClick={() => window.history.back()}
-        disabled={isProcessingPayment}
+        className={`w-full py-3 rounded-xl font-bold text-lg border-2 ${onCancel ? 'bg-red-600 hover:bg-red-700 text-white border-red-600' : 'border-gray-300 text-gray-600 hover:bg-gray-50'} transition-all duration-200`}
+        onClick={onCancel ? onCancel : () => window.history.back()}
+        disabled={isProcessingPayment || isCancelling}
       >
-        Hủy
+        {isCancelling ? 'Đang hủy...' : 'Hủy'}
       </button>
     </div>
   );
@@ -176,6 +178,8 @@ export default function PaymentInfo({
   isProcessingPayment,
   paymentBreakdown,
   canConfirm,
+  onCancel,
+  isCancelling
 }) {
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6">
@@ -206,7 +210,7 @@ export default function PaymentInfo({
       {/* Process Information */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
         <div className="text-blue-800 text-sm">
-          <div className="font-semibold mb-2">ℹ️ Quy trình thanh toán:</div>
+          <div className="font-semibold mb-2">Quy trình thanh toán:</div>
           <div className="space-y-1 text-xs">
             <div>1. Tạo hóa đơn (luôn luôn)</div>
             <div>2. Kiểm tra số dư ví</div>
@@ -226,6 +230,8 @@ export default function PaymentInfo({
         isProcessingPayment={isProcessingPayment}
         canConfirm={canConfirm}
         handleConfirm={handleConfirm}
+        onCancel={onCancel}
+        isCancelling={isCancelling}
       />
 
       {/* Security Info */}

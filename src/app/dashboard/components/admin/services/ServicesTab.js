@@ -141,7 +141,7 @@ const ServicesTab = () => {
 
       setFormData({
         serviceName: '',
-        major: 'Nurse',
+        major: '',
         price: 0,
         duration: 0,
         description: '',

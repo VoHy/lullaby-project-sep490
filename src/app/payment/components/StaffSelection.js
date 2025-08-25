@@ -19,14 +19,11 @@ export default function StaffSelection({
   const [assignError, setAssignError] = useState("");
 
   const taskRows = useMemo(() => {
-    console.log('StaffSelection - tasks:', tasks);
-    console.log('StaffSelection - serviceTypes:', serviceTypes);
     
     return tasks.map((t) => {
       const customizeTaskId = t.customizeTaskID || t.customize_TaskID;
       const serviceId = t.serviceID || t.service_ID || t.Service_ID;
       const st = serviceTypes.find(s => (s.serviceID === serviceId || s.serviceTypeID === serviceId || s.ServiceID === serviceId));
-      console.log(`Task ${customizeTaskId}: serviceID=${serviceId}, found serviceType:`, st);
       
       return {
         customizeTaskId: customizeTaskId,
@@ -39,18 +36,14 @@ export default function StaffSelection({
   useEffect(() => {
     let cancelled = false;
     const load = async () => {
-      console.log('Loading candidates for tasks:', taskRows);
       
       for (const row of taskRows) {
         const customizeTaskId = row.customizeTaskId;
         if (!customizeTaskId || candidatesByTask[customizeTaskId]) continue;
-        
-        console.log(`Loading candidates for customizeTaskId ${customizeTaskId} (${row.serviceName})`);
-        setLoadingMap((m) => ({ ...m, [customizeTaskId]: true }));
+                setLoadingMap((m) => ({ ...m, [customizeTaskId]: true }));
         
         try {
           const list = await getCandidatesForService?.(customizeTaskId);
-          console.log(`Candidates for customizeTaskId ${customizeTaskId}:`, list);
           
           if (!cancelled) {
             setCandidatesByTask((m) => ({ ...m, [customizeTaskId]: list || [] }));
@@ -72,7 +65,6 @@ export default function StaffSelection({
   }, [taskRows, getCandidatesForService]);
 
   if (!Array.isArray(taskRows) || taskRows.length === 0) {
-    console.log('No tasks to display');
     return null;
   }
 
@@ -95,9 +87,7 @@ export default function StaffSelection({
               const selectedNurse = candidates.find(n => 
                 String(n.NursingID || n.nursingID) === String(selectedNurseId)
               );
-              
-              console.log(`Row ${row.customizeTaskId}: candidates=${candidates.length}, selected=${selectedNurseId}, nurse=`, selectedNurse);
-              
+                            
               return (
                 <tr key={row.customizeTaskId}>
                   <td className="px-4 py-2 font-medium text-gray-800">{row.serviceName}</td>
@@ -155,9 +145,7 @@ export default function StaffSelection({
                                   onClick={async () => {
                                     setAssignError("");
                                     try {
-                                      const nurseId = nurse.NursingID || nurse.nursingID;
-                                      console.log(`Selecting nurse ${nurseId} for task ${row.customizeTaskId}`);
-                                      
+                                      const nurseId = nurse.NursingID || nurse.nursingID;                                      
                                       setSelectedStaffByTask?.((prev) => ({ 
                                         ...prev, 
                                         [row.customizeTaskId]: nurseId 
