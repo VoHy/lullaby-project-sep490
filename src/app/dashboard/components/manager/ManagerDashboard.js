@@ -1,11 +1,18 @@
 'use client';
 import { useState, useEffect, useContext } from 'react';
 import { FaUserNurse, FaUserMd, FaCalendarAlt, FaExclamationTriangle, FaCheckCircle, FaUsers, FaMapMarkedAlt, FaBell } from 'react-icons/fa';
+import {
+  ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer
+} from 'recharts';
 import ManagerNurseTab from './ManagerNurseTab';
 import ManagerSpecialistTab from './ManagerSpecialistTab';
 import ManagerBookingTab from './ManagerBookingTab';
 import { useRouter, useSearchParams } from 'next/navigation';
 import zoneService from '@/services/api/zoneService';
+import bookingService from '@/services/api/bookingService';
+import invoiceService from '@/services/api/invoiceService';
+import careProfileService from '@/services/api/careProfileService';
+import zoneDetailService from '@/services/api/zoneDetailService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import notificationService from '@/services/api/notificationService';
 import { AuthContext } from '@/context/AuthContext';
@@ -38,6 +45,11 @@ const ManagerDashboard = ({ user }) => {
   const [showNotification, setShowNotification] = useState(false);
   const [notificationMessage, setNotificationMessage] = useState('');
   const [unreadNotifications, setUnreadNotifications] = useState(0);
+  const [viewMode, setViewMode] = useState('day'); // 'day' | 'month'
+  const [bookings, setBookings] = useState([]);
+  const [invoices, setInvoices] = useState([]);
+  const [careProfiles, setCareProfiles] = useState([]);
+  const [zoneDetails, setZoneDetails] = useState([]);
 
   // Load data từ API
   const fetchData = async () => {
@@ -45,13 +57,21 @@ const ManagerDashboard = ({ user }) => {
       setLoading(true);
       setError("");
 
-      const [zonesData, nursingSpecialistsData] = await Promise.all([
+      const [zonesData, nursingSpecialistsData, bookingsData, invoicesData, careProfilesData, zoneDetailsData] = await Promise.all([
         zoneService.getZones(),
-        nursingSpecialistService.getAllNursingSpecialists()
+        nursingSpecialistService.getAllNursingSpecialists(),
+        bookingService.getAllBookings(),
+        invoiceService.getAllInvoices(),
+        careProfileService.getCareProfiles(),
+        zoneDetailService.getZoneDetails()
       ]);
 
       setZones(zonesData);
       setNursingSpecialists(nursingSpecialistsData);
+      setBookings(Array.isArray(bookingsData) ? bookingsData : []);
+      setInvoices(Array.isArray(invoicesData) ? invoicesData : []);
+      setCareProfiles(Array.isArray(careProfilesData) ? careProfilesData : []);
+      setZoneDetails(Array.isArray(zoneDetailsData) ? zoneDetailsData : []);
     } catch (error) {
       console.error('Error fetching manager dashboard data:', error);
       setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
@@ -182,6 +202,57 @@ const ManagerDashboard = ({ user }) => {
   const managedZone = getManagedZone();
   const stats = getZoneStats();
 
+  // Chart data (booking & revenue) theo zone
+  const formatKey = (date) => (viewMode === 'day'
+    ? `${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear()}`
+    : `${date.getMonth() + 1}/${date.getFullYear()}`);
+
+  const zoneId = managedZone?.zoneID;
+  const cpMap = new Map((careProfiles || []).map(cp => [cp.careProfileID || cp.CareProfileID, cp]));
+  const zdMap = new Map((zoneDetails || []).map(zd => [zd.zoneDetailID || zd.ZoneDetailID, zd]));
+
+  const belongsToZone = (booking) => {
+    if (!zoneId) return false;
+    const cp = cpMap.get(booking?.careProfileID || booking?.CareProfileID);
+    if (!cp) return false;
+    const zd = zdMap.get(cp.zoneDetailID || cp.ZoneDetailID);
+    return zd && (zd.zoneID || zd.ZoneID) === zoneId;
+  };
+
+  const zoneBookings = (bookings || []).filter(belongsToZone);
+  const zoneInvoices = (invoices || []).filter(inv => {
+    const bId = inv?.bookingID || inv?.BookingID;
+    if (!bId) return false;
+    const b = zoneBookings.find(x => (x.bookingID || x.BookingID) === bId);
+    return !!b;
+  });
+
+  const revenueAndBookings = zoneBookings.reduce((acc, b) => {
+    const status = String(b?.status ?? b?.Status).toLowerCase();
+    if (status !== 'paid') return acc;
+    const date = new Date(b?.createdAt ?? b?.CreatedAt ?? new Date());
+    const key = formatKey(date);
+    if (!acc[key]) acc[key] = { revenue: 0, bookings: 0 };
+    acc[key].bookings += 1;
+    return acc;
+  }, {});
+
+  zoneInvoices.forEach(inv => {
+    const status = String(inv?.status ?? inv?.Status).toLowerCase();
+    if (status === 'paid' || status === 'success' || status === 'completed' || status === 'true') {
+      const date = new Date(inv?.paymentDate ?? inv?.CreatedAt ?? new Date());
+      const key = formatKey(date);
+      if (!revenueAndBookings[key]) revenueAndBookings[key] = { revenue: 0, bookings: 0 };
+      revenueAndBookings[key].revenue += Number(inv?.totalAmount ?? inv?.TotalAmount ?? 0);
+    }
+  });
+
+  const chartData = Object.keys(revenueAndBookings).map(k => ({
+    label: k,
+    revenue: revenueAndBookings[k].revenue,
+    bookings: revenueAndBookings[k].bookings
+  }));
+
   return (
     <div className="space-y-6">
       {/* Notification */}
@@ -254,6 +325,31 @@ const ManagerDashboard = ({ user }) => {
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Chart Doanh thu & Lịch hẹn theo zone quản lý */}
+        <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-100 mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-lg font-semibold">
+              Doanh thu & lịch hẹn ({managedZone?.zoneName || 'N/A'}) {viewMode === 'day' ? 'theo ngày' : 'theo tháng'}
+            </h3>
+            <div className="flex gap-2">
+              <button onClick={() => setViewMode('day')} className={`px-3 py-1 rounded ${viewMode === 'day' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}>Ngày</button>
+              <button onClick={() => setViewMode('month')} className={`px-3 py-1 rounded ${viewMode === 'month' ? 'bg-blue-500 text-white' : 'bg-gray-200 text-gray-700'}`}>Tháng</button>
+            </div>
+          </div>
+          <ResponsiveContainer width="100%" height={320}>
+            <ComposedChart data={chartData}>
+              <CartesianGrid stroke="#f5f5f5" />
+              <XAxis dataKey="label" />
+              <YAxis yAxisId="left" orientation="left" tickFormatter={(v) => v.toLocaleString()} tick={{ fontSize: 12 }} />
+              <YAxis yAxisId="right" orientation="right" tickFormatter={(v) => Math.round(v)} tick={{ fontSize: 12 }} />
+              <Tooltip formatter={(v, n) => (n === 'revenue' ? `${Number(v).toLocaleString()} VNĐ` : v)} />
+              <Legend />
+              <Bar yAxisId="left" dataKey="revenue" barSize={20} fill="#413ea0" name="Doanh thu" />
+              <Line yAxisId="right" type="monotone" dataKey="bookings" stroke="#ff7300" name="Lịch hẹn" />
+            </ComposedChart>
+          </ResponsiveContainer>
         </div>
 
         {/* Tab Navigation */}

@@ -71,7 +71,7 @@ const RevenueTab = () => {
           <p className="text-3xl font-bold">{totals.monthly.toLocaleString()} VND</p>
         </div>
         <div className="bg-gradient-to-r from-purple-500 to-purple-600 p-6 rounded-xl text-white">
-          <h3 className="text-lg font-semibold mb-2">Tổng doanh thu (hóa đơn đã thanh toán)</h3>
+          <h3 className="text-lg font-semibold mb-2">Tổng doanh thu (đã thanh toán)</h3>
           <p className="text-3xl font-bold">{totals.total.toLocaleString()} VND</p>
         </div>
       </div>
@@ -88,11 +88,20 @@ const RevenueTab = () => {
                   <div className="text-xs text-gray-600">Ngày: {new Date(inv.paymentDate ?? inv.PaymentDate).toLocaleString('vi-VN')}</div>
                 </div>
                 <div className="text-right">
-                  <div className={`font-bold ${status === 'paid' ? 'text-green-600' : 'text-gray-600'}`}>
+                  <div
+                    className={`font-bold ${status === "paid" ? "text-green-600" : "text-red-600"
+                      }`}
+                  >
                     {(inv.totalAmount ?? inv.total_amount ?? 0).toLocaleString()} VND
                   </div>
-                  <div className={`text-xs ${status === 'paid' ? 'text-green-600' : 'text-red-600'}`}>{inv.status ?? inv.Status}</div>
+                  <div
+                    className={`text-xs ${status === "paid" ? "text-green-600" : "text-red-600"
+                      }`}
+                  >
+                    {status === "paid" ? "Đã thanh toán" : "Đã hoàn tiền"}
+                  </div>
                 </div>
+
               </div>
             );
           })}
