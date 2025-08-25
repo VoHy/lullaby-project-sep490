@@ -3,8 +3,12 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { FaUserMd, FaCalendarAlt, FaPhone, FaArrowRight } from 'react-icons/fa';
+import { useContext } from 'react';
+import { AuthContext } from '@/context/AuthContext'; 
 
 const CTASection = () => {
+  const { user } = useContext(AuthContext);
+
   const trustIndicators = [
     {
       icon: <FaUserMd className="text-white text-2xl" />,
@@ -65,7 +69,7 @@ const CTASection = () => {
             transition={{ duration: 0.6, delay: 0.2 }}
           >
             <Link
-              href="/auth/register"
+              href={user ? "/services" : "/auth/register"}
               className="group inline-flex items-center gap-3 bg-white text-purple-600 hover:bg-gray-50 font-bold px-8 py-4 rounded-full shadow-xl transition-all duration-300 transform hover:scale-105"
             >
               Bắt đầu ngay
@@ -104,4 +108,4 @@ const CTASection = () => {
   );
 };
 
-export default CTASection; 
+export default CTASection;

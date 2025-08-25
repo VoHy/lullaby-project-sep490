@@ -22,7 +22,7 @@ export default function Footer() {
           <div className="md:col-span-2 flex flex-col items-center md:items-start text-center md:text-left">
             <div className="flex items-center mb-4">
               <img
-                src="/images/logo-eldora.png"
+                src="/images/logo.png"
                 alt="Lullaby"
                 className="h-12 w-12 mr-2 bg-transparent"
               />

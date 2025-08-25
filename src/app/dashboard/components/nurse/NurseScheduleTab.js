@@ -373,7 +373,6 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
         note: notePayload.note.trim(),
         image: base64Image ? `data:${(notePayload.imageFile?.type || 'image/*')};base64,${base64Image}` : null,
         advice: notePayload.advice || null,
-        relativeID: notePayload.relativeID ?? null,
         nursingID: userNursingID ?? null,
         bookingID: bookingIdCandidate ?? null,
       };
@@ -817,11 +816,6 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
               <div>
                 <label className="text-sm text-gray-700">Hình ảnh (tùy chọn)</label>
                 <input type="file" accept="image/*" className="mt-1" onChange={e => setNotePayload(p => ({ ...p, imageFile: e.target.files?.[0] || null }))} />
-              </div>
-
-              <div>
-                <label className="text-sm text-gray-700">Relative ID (tùy chọn)</label>
-                <input type="number" className="w-full mt-1 p-2 border rounded" value={notePayload.relativeID ?? ''} onChange={e => setNotePayload(p => ({ ...p, relativeID: e.target.value ? Number(e.target.value) : null }))} />
               </div>
 
               <div className="flex justify-end gap-2">

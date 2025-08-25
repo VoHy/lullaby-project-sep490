@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { AuthContext } from '../../../context/AuthContext';
 import WalletIcon from './WalletIcon';
 import NotificationBell from './NotificationBell';
+import { FaUser, FaSignOutAlt, FaWallet } from 'react-icons/fa';
 
 export default function Header() {
   const pathname = usePathname();
@@ -15,7 +16,7 @@ export default function Header() {
   const [imgError, setImgError] = useState(false);
 
   // Derive avatar url and display name robustly across field variants
-  const avatarUrl = user?.avatarUrl || user?.AvatarUrl || user?.avatarURL || user?.AvatarURL || user?.avatar || user?.Avatar || '';
+  const avatarUrl = user?.avatarUrl || user?.AvatarUrl || user?.avatar || user?.Avatar || '';
   const displayName = user?.fullName || user?.full_name || user?.FullName || user?.Full_Name || user?.email || '';
   const initial = (displayName?.trim?.()[0] || 'U').toUpperCase();
 
@@ -24,224 +25,225 @@ export default function Header() {
     setImgError(false);
   }, [avatarUrl]);
 
-
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
   };
 
   return (
-    <header className="bg-gradient-to-r from-pink-50 to-rose-100 shadow-2xl text font-sans">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between h-24">
-          <div className="flex">
-            <div className="flex-shrink-0 flex items-center">
-              <Link href="/" className="font-extrabold text-3xl bg-gradient-to-r from-purple-500 to-pink-500 text-transparent bg-clip-text hover:from-purple-600 hover:to-pink-600 transition-all duration-300 hover:scale-105 tracking-wide" id="logo-icon">
+    <header className="bg-gradient-to-r from-pink-100 via-rose-50 to-pink-100 shadow-md text-gray-800 font-sans">
+      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16 lg:h-20">
+          <div className="flex items-center">
+            <Link href="/" className="flex items-center gap-2 group" id="logo-icon">
+              {/* Logo hình ảnh */}
+              <img
+                src="/images/logo.png"
+                alt="Lullaby Logo"
+                className="w-10 h-10 object-contain rounded-full"
+              />
+              <span className="font-bold text-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text group-hover:from-purple-700 group-hover:to-pink-700 transition-all duration-300">
                 Lullaby
-              </Link>
-            </div>
-            <nav className="hidden sm:ml-8 sm:flex sm:space-x-10">
-              {/* Admin (roleID = 1) */}
-              {user && (user.roleID === 1 || user.RoleID === 1) && (
-                <>
-                  <Link
-                    href="/team"
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/team')
-                        ? 'border-blue-500 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                      }`}
-                  >
-                    Điều dưỡng viên
-                  </Link>
-                  <Link
-                    href="/services"
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/services')
-                        ? 'border-blue-500 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                      }`}
-                  >
-                    Dịch vụ
-                  </Link>
-                  <Link
-                    href="/news"
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/news')
-                        ? 'border-blue-500 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                      }`}
-                  >
-                    Tin tức
-                  </Link>
-                  <Link
-                    href="/dashboard"
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/dashboard')
-                        ? 'border-blue-500 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                      }`}
-                  >
-                    Quản trị viên
-                  </Link>
-                </>
-              )}
-
-                             {/* NurseSpecialist (roleID = 2) */}
-               {user && (user.roleID === 2 || user.RoleID === 2) && (
-                 <>
-                   <Link
-                     href="/team"
-                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/team')
-                         ? 'border-blue-500 text-gray-900'
-                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                       }`}
-                   >
-                     Điều dưỡng viên
-                   </Link>
-                   <Link
-                     href="/services"
-                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/services')
-                         ? 'border-blue-500 text-gray-900'
-                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                       }`}
-                   >
-                     Dịch vụ
-                   </Link>
-                   <Link
-                     href="/news"
-                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/news')
-                         ? 'border-blue-500 text-gray-900'
-                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                       }`}
-                   >
-                     Tin tức
-                   </Link>
-                   {/* Notification link removed: now handled by header bell icon */}
-                   <Link
-                     href="/dashboard"
-                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/dashboard')
-                         ? 'border-blue-500 text-gray-900'
-                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                       }`}
-                   >
-                     Y tá
-                   </Link>
-                 </>
-               )}
-
-                             {/* Manager (roleID = 3) */}
-               {user && (user.roleID === 3 || user.RoleID === 3) && (
-                 <>
-                   <Link
-                     href="/team"
-                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/team')
-                         ? 'border-blue-500 text-gray-900'
-                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                       }`}
-                   >
-                     Điều dưỡng viên
-                   </Link>
-                   <Link
-                     href="/services"
-                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/services')
-                         ? 'border-blue-500 text-gray-900'
-                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                       }`}
-                   >
-                     Dịch vụ
-                   </Link>
-                   <Link
-                     href="/news"
-                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/news')
-                         ? 'border-blue-500 text-gray-900'
-                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                       }`}
-                   >
-                     Tin tức
-                   </Link>
-                   {/* Notification link removed: now handled by header bell icon */}
-                   <Link
-                     href="/dashboard"
-                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/dashboard')
-                         ? 'border-blue-500 text-gray-900'
-                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                       }`}
-                   >
-                     Quản lý
-                   </Link>
-                 </>
-               )}
-
-              {/* Customer (roleID = 4) hoặc chưa đăng nhập */}
-              {(!user || user.roleID === 4 || user.RoleID === 4) && (
-                <>
-                  <Link
-                    href="/team"
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/team')
-                        ? 'border-blue-500 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                      }`}
-                  >
-                    Điều dưỡng viên
-                  </Link>
-                  <Link
-                    href="/services"
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/services')
-                        ? 'border-blue-500 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                      }`}
-                  >
-                    Dịch vụ
-                  </Link>
-                  <Link
-                    href="/news"
-                    className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/news')
-                        ? 'border-blue-500 text-gray-900'
-                        : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                      }`}
-                  >
-                    Tin tức
-                  </Link>
-                </>
-              )}
-
-                             {/* Menu điều hướng cho Customer đã đăng nhập */}
-               {user && (user.roleID === 4 || user.RoleID === 4) && (
-                 <>
-                   <Link
-                     href="/appointments"
-                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/appointments')
-                         ? 'border-blue-500 text-gray-900'
-                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                       }`}
-                   >
-                     Lịch hẹn
-                   </Link>
-                   {/* Notification link removed: now handled by header bell icon */}
-                   <Link
-                     href="/profile/patient"
-                     className={`inline-flex items-center px-1 pt-1 border-b-2 text-lg font-semibold ${pathname.startsWith('/profile/patient')
-                         ? 'border-blue-500 text-gray-900'
-                         : 'border-transparent text-gray-500 hover:border-gray-300 hover:text-gray-700'
-                       }`}
-                   >
-                     Hồ sơ người thân
-                   </Link>
-                 </>
-               )}
-            </nav>
+              </span>
+            </Link>
           </div>
+          <nav className="hidden md:flex items-center space-x-6 lg:space-x-8 ml-8">
+            {/* Admin (roleID = 1) */}
+            {user && (user.roleID === 1 || user.RoleID === 1) && (
+              <>
+                <Link
+                  href="/team"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/team')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Điều dưỡng viên
+                </Link>
+                <Link
+                  href="/services"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/services')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Dịch vụ
+                </Link>
+                <Link
+                  href="/news"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/news')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Tin tức
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/dashboard')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Quản trị viên
+                </Link>
+              </>
+            )}
+
+            {/* NurseSpecialist (roleID = 2) */}
+            {user && (user.roleID === 2 || user.RoleID === 2) && (
+              <>
+                <Link
+                  href="/team"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/team')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Điều dưỡng viên
+                </Link>
+                <Link
+                  href="/services"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/services')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Dịch vụ
+                </Link>
+                <Link
+                  href="/news"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/news')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Tin tức
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/dashboard')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Y tá
+                </Link>
+              </>
+            )}
+
+            {/* Manager (roleID = 3) */}
+            {user && (user.roleID === 3 || user.RoleID === 3) && (
+              <>
+                <Link
+                  href="/team"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/team')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Điều dưỡng viên
+                </Link>
+                <Link
+                  href="/services"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/services')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Dịch vụ
+                </Link>
+                <Link
+                  href="/news"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/news')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Tin tức
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/dashboard')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Quản lý
+                </Link>
+              </>
+            )}
+
+            {/* Customer (roleID = 4) hoặc chưa đăng nhập */}
+            {(!user || user.roleID === 4 || user.RoleID === 4) && (
+              <>
+                <Link
+                  href="/team"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/team')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Điều dưỡng viên
+                </Link>
+                <Link
+                  href="/services"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/services')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Dịch vụ
+                </Link>
+                <Link
+                  href="/news"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/news')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Tin tức
+                </Link>
+              </>
+            )}
+
+            {/* Menu điều hướng cho Customer đã đăng nhập */}
+            {user && (user.roleID === 4 || user.RoleID === 4) && (
+              <>
+                <Link
+                  href="/appointments"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/appointments')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Lịch hẹn
+                </Link>
+                <Link
+                  href="/profile/patient"
+                  className={`text-base font-medium transition-colors duration-200 ${pathname.startsWith('/profile/patient')
+                    ? 'text-purple-700 border-b-2 border-purple-500'
+                    : 'text-gray-600 hover:text-purple-600'
+                    }`}
+                >
+                  Hồ sơ người thân
+                </Link>
+              </>
+            )}
+          </nav>
           <div className="flex items-center gap-4">
             {/* Wallet Icon - chỉ hiển thị cho customer đã đăng nhập */}
             <WalletIcon />
-            {/* Notification bell: between wallet and avatar for customer; next to avatar for other roles */}
+            {/* Notification bell */}
             <NotificationBell />
-            
+
             {user ? (
               <div className="relative">
                 <button
                   onClick={toggleMenu}
-                  className="w-10 h-10 rounded-full overflow-hidden border border-blue-100 bg-blue-50 flex items-center justify-center text-blue-700 font-bold text-lg"
+                  className="w-10 h-10 rounded-full overflow-hidden border-2 border-purple-200 bg-white flex items-center justify-center text-purple-700 font-bold text-lg shadow-sm hover:shadow-md transition-shadow duration-200"
                   aria-label="Tài khoản"
                 >
                   {avatarUrl && !imgError ? (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={avatarUrl}
                       alt={displayName || 'Avatar'}
@@ -253,281 +255,336 @@ export default function Header() {
                   )}
                 </button>
                 {isMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-white rounded shadow-lg z-50">
-                                         {/* Customer (roleID = 4) */}
-                     {(user.roleID === 4 || user.RoleID === 4) && (
-                       <>
-                         <button
-                           className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                           onClick={() => { setIsMenuOpen(false); router.push('/profile'); }}
-                         >
-                           Tài khoản
-                         </button>
-                         <button
-                           className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                           onClick={() => { setIsMenuOpen(false); router.push('/payment/history'); }}
-                         >
-                           Lịch sử thanh toán
-                         </button>
-                         <button
-                           className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                           onClick={() => { 
-                             setIsMenuOpen(false); 
-                             logout(); 
-                           }}
-                         >
-                           Đăng xuất
-                         </button>
-                       </>
-                     )}
-                    
-                    {/* Admin, NurseSpecialist, Manager - chỉ có logout */}
-                    {((user.roleID === 1 || user.RoleID === 1) || 
-                      (user.roleID === 2 || user.RoleID === 2) || 
-                      (user.roleID === 3 || user.RoleID === 3)) && (
-                      <button
-                        className="block w-full text-left px-4 py-2 hover:bg-gray-100"
-                        onClick={() => { 
-                          setIsMenuOpen(false); 
-                          logout(); 
-                        }}
-                      >
-                        Đăng xuất
-                      </button>
+                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 z-50 overflow-hidden">
+                    {/* User info header */}
+                    <div className="px-4 py-3 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-gray-100">
+                      <div className="flex items-center">
+                        <div className="w-8 h-8 rounded-full overflow-hidden border-2 border-white shadow-md mr-3">
+                          {avatarUrl && !imgError ? (
+                            <img
+                              src={avatarUrl}
+                              alt={displayName || 'Avatar'}
+                              className="w-full h-full object-cover"
+                              onError={() => setImgError(true)}
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-purple-500 flex items-center justify-center text-white font-bold text-sm">
+                              {initial}
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <p className="font-semibold text-gray-900 text-sm truncate max-w-[150px]">{displayName}</p>
+                          <p className="text-xs text-gray-500 truncate max-w-[150px]">{user?.email}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Customer (roleID = 4) */}
+                    {(user.roleID === 4 || user.RoleID === 4) && (
+                      <>
+                        <button
+                          className="flex items-center w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-200"
+                          onClick={() => { setIsMenuOpen(false); router.push('/profile'); }}
+                        >
+                          <FaUser className="w-4 h-4 mr-3 text-purple-600" />
+                          <span>Tài khoản</span>
+                        </button>
+                        <button
+                          className="flex items-center w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-200"
+                          onClick={() => { setIsMenuOpen(false); router.push('/wallet'); }}
+                        >
+                          <FaWallet className="w-4 h-4 mr-3 text-green-600" />
+                          <span>Ví tiền</span>
+                        </button>
+
+                        {/* Separator */}
+                        <div className="border-t border-gray-100 my-1"></div>
+
+                        <button
+                          className="flex items-center w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-200"
+                          onClick={() => {
+                            setIsMenuOpen(false);
+                            logout();
+                          }}
+                        >
+                          <FaSignOutAlt className="w-4 h-4 mr-3 text-red-600" />
+                          <span>Đăng xuất</span>
+                        </button>
+                      </>
                     )}
+
+                    {/* Admin, NurseSpecialist, Manager - chỉ có logout */}
+                    {((user.roleID === 1 || user.RoleID === 1) ||
+                      (user.roleID === 2 || user.RoleID === 2) ||
+                      (user.roleID === 3 || user.RoleID === 3)) && (
+                        <button
+                          className="flex items-center w-full text-left px-4 py-3 hover:bg-gray-50 transition-colors duration-200"
+                          onClick={() => {
+                            setIsMenuOpen(false);
+                            logout();
+                          }}
+                        >
+                          <FaSignOutAlt className="w-4 h-4 mr-3 text-red-600" />
+                          <span>Đăng xuất</span>
+                        </button>
+                      )}
                   </div>
                 )}
               </div>
             ) : (
-              <>
-                <Link href="/auth/login" className="px-4 py-2 bg-white text-pink-600 rounded font-semibold mr-2">Đăng nhập</Link>
-                <Link href="/auth/register" className="px-4 py-2 bg-black text-white rounded font-semibold">Đăng ký</Link>
-              </>
+              <div className="flex gap-3">
+                <Link
+                  href="/auth/login"
+                  className="inline-flex items-center gap-1 px-4 py-2 rounded-full font-medium bg-white text-purple-600 border border-purple-300 shadow-sm hover:bg-purple-50 hover:border-purple-400 transition-all duration-300"
+                >
+                  Đăng nhập
+                </Link>
+                <Link
+                  href="/auth/register"
+                  className="inline-flex items-center gap-1 px-4 py-2 rounded-full font-medium bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-md hover:from-pink-600 hover:to-purple-600 transition-all duration-300"
+                >
+                  Đăng ký
+                </Link>
+              </div>
             )}
+            {/* Mobile menu toggle */}
+            <button
+              onClick={toggleMenu}
+              className="md:hidden ml-4 text-gray-600 hover:text-purple-600 focus:outline-none"
+            >
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                {isMenuOpen ? (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                ) : (
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                )}
+              </svg>
+            </button>
           </div>
         </div>
       </div>
 
       {/* Mobile menu */}
-      <div className={`${isMenuOpen ? 'block' : 'hidden'} sm:hidden`}>
-        <div className="pt-2 pb-3 space-y-1">
-          {/* Admin (roleID = 1) */}
-          {user && (user.roleID === 1 || user.RoleID === 1) && (
-            <>
-              <Link
-                href="/team"
-                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/team')
-                    ? 'border-blue-500 text-blue-700 bg-blue-50'
-                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                  }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Điều dưỡng viên
-              </Link>
-              <Link
-                href="/services"
-                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/services')
-                    ? 'border-blue-500 text-blue-700 bg-blue-50'
-                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                  }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Dịch vụ
-              </Link>
-              <Link
-                href="/news"
-                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/news')
-                    ? 'border-blue-500 text-blue-700 bg-blue-50'
-                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                  }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Tin tức
-              </Link>
-              <Link
-                href="/dashboard"
-                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/dashboard')
-                    ? 'border-blue-500 text-blue-700 bg-blue-50'
-                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                  }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Quản trị viên
-              </Link>
-            </>
-          )}
+      {isMenuOpen && (
+        <div className="md:hidden bg-white shadow-md">
+          <div className="px-2 pt-2 pb-3 space-y-1">
+            {/* Admin (roleID = 1) */}
+            {user && (user.roleID === 1 || user.RoleID === 1) && (
+              <>
+                <Link
+                  href="/team"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/team')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Điều dưỡng viên
+                </Link>
+                <Link
+                  href="/services"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/services')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Dịch vụ
+                </Link>
+                <Link
+                  href="/news"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/news')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Tin tức
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/dashboard')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Quản trị viên
+                </Link>
+              </>
+            )}
 
-                     {/* NurseSpecialist (roleID = 2) */}
-           {user && (user.roleID === 2 || user.RoleID === 2) && (
-             <>
-               <Link
-                 href="/team"
-                 className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/team')
-                     ? 'border-blue-500 text-blue-700 bg-blue-50'
-                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                   }`}
-                 onClick={() => setIsMenuOpen(false)}
-               >
-                 Điều dưỡng viên
-               </Link>
-               <Link
-                 href="/services"
-                 className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/services')
-                     ? 'border-blue-500 text-blue-700 bg-blue-50'
-                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                   }`}
-                 onClick={() => setIsMenuOpen(false)}
-               >
-                 Dịch vụ
-               </Link>
-               <Link
-                 href="/news"
-                 className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/news')
-                     ? 'border-blue-500 text-blue-700 bg-blue-50'
-                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                   }`}
-                 onClick={() => setIsMenuOpen(false)}
-               >
-                 Tin tức
-               </Link>
-                {/* Notification link removed on mobile */}
-               <Link
-                 href="/dashboard"
-                 className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/dashboard')
-                     ? 'border-blue-500 text-blue-700 bg-blue-50'
-                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                   }`}
-                 onClick={() => setIsMenuOpen(false)}
-               >
-                 Chuyên gia
-               </Link>
-             </>
-           )}
+            {/* NurseSpecialist (roleID = 2) */}
+            {user && (user.roleID === 2 || user.RoleID === 2) && (
+              <>
+                <Link
+                  href="/team"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/team')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Điều dưỡng viên
+                </Link>
+                <Link
+                  href="/services"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/services')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Dịch vụ
+                </Link>
+                <Link
+                  href="/news"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/news')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Tin tức
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/dashboard')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Y tá
+                </Link>
+              </>
+            )}
 
-                     {/* Manager (roleID = 3) */}
-           {user && (user.roleID === 3 || user.RoleID === 3) && (
-             <>
-               <Link
-                 href="/team"
-                 className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/team')
-                     ? 'border-blue-500 text-blue-700 bg-blue-50'
-                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                   }`}
-                 onClick={() => setIsMenuOpen(false)}
-               >
-                 Điều dưỡng viên
-               </Link>
-               <Link
-                 href="/services"
-                 className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/services')
-                     ? 'border-blue-500 text-blue-700 bg-blue-50'
-                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                   }`}
-                 onClick={() => setIsMenuOpen(false)}
-               >
-                 Dịch vụ
-               </Link>
-               <Link
-                 href="/news"
-                 className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/news')
-                     ? 'border-blue-500 text-blue-700 bg-blue-50'
-                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                   }`}
-                 onClick={() => setIsMenuOpen(false)}
-               >
-                 Tin tức
-               </Link>
-                {/* Notification link removed on mobile */}
-               <Link
-                 href="/dashboard"
-                 className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/dashboard')
-                     ? 'border-blue-500 text-blue-700 bg-blue-50'
-                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                   }`}
-                 onClick={() => setIsMenuOpen(false)}
-               >
-                 Quản lý
-               </Link>
-             </>
-           )}
+            {/* Manager (roleID = 3) */}
+            {user && (user.roleID === 3 || user.RoleID === 3) && (
+              <>
+                <Link
+                  href="/team"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/team')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Điều dưỡng viên
+                </Link>
+                <Link
+                  href="/services"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/services')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Dịch vụ
+                </Link>
+                <Link
+                  href="/news"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/news')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Tin tức
+                </Link>
+                <Link
+                  href="/dashboard"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/dashboard')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Quản lý
+                </Link>
+              </>
+            )}
 
-          {/* Customer (roleID = 4) hoặc chưa đăng nhập */}
-          {(!user || user.roleID === 4 || user.RoleID === 4) && (
-            <>
-              <Link
-                href="/team"
-                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/team')
-                    ? 'border-blue-500 text-blue-700 bg-blue-50'
-                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                  }`}
-                onClick={() => setIsMenuOpen(false)}
+            {/* Customer (roleID = 4) hoặc chưa đăng nhập */}
+            {(!user || user.roleID === 4 || user.RoleID === 4) && (
+              <>
+                <Link
+                  href="/team"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/team')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Điều dưỡng viên
+                </Link>
+                <Link
+                  href="/services"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/services')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Dịch vụ
+                </Link>
+                <Link
+                  href="/news"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/news')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Tin tức
+                </Link>
+              </>
+            )}
+
+            {/* Customer đã đăng nhập: thêm lịch hẹn, hồ sơ người thân */}
+            {user && (user.roleID === 4 || user.RoleID === 4) && (
+              <>
+                <Link
+                  href="/appointments"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/appointments')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Lịch hẹn
+                </Link>
+                <Link
+                  href="/profile/patient"
+                  className={`block px-3 py-2 rounded-md text-base font-medium ${pathname.startsWith('/profile/patient')
+                    ? 'bg-purple-100 text-purple-700'
+                    : 'text-gray-600 hover:bg-purple-50 hover:text-purple-700'
+                    }`}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  Hồ sơ người thân
+                </Link>
+              </>
+            )}
+
+            {/* Logout button for all logged in users */}
+            {user && (
+              <button
+                className="flex items-center w-full text-left px-3 py-2 rounded-md text-base font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-700"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  logout();
+                }}
               >
-                Điều dưỡng viên
-              </Link>
-              <Link
-                href="/services"
-                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/services')
-                    ? 'border-blue-500 text-blue-700 bg-blue-50'
-                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                  }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Dịch vụ
-              </Link>
-              <Link
-                href="/news"
-                className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/news')
-                    ? 'border-blue-500 text-blue-700 bg-blue-50'
-                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                  }`}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                Tin tức
-              </Link>
-            </>
-          )}
-
-                     {/* Customer đã đăng nhập: thêm lịch hẹn, thông báo, hồ sơ người thân */}
-           {user && (user.roleID === 4 || user.RoleID === 4) && (
-             <>
-               <Link
-                 href="/appointments"
-                 className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/appointments')
-                     ? 'border-blue-500 text-blue-700 bg-blue-50'
-                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                   }`}
-                 onClick={() => setIsMenuOpen(false)}
-               >
-                 Lịch hẹn
-               </Link>
-                {/* Notification link removed on mobile */}
-               <Link
-                 href="/profile/patient"
-                 className={`block pl-3 pr-4 py-2 border-l-4 text-base font-medium ${pathname.startsWith('/profile/patient')
-                     ? 'border-blue-500 text-blue-700 bg-blue-50'
-                     : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700'
-                   }`}
-                 onClick={() => setIsMenuOpen(false)}
-               >
-                 Hồ sơ người thân
-               </Link>
-             </>
-           )}
-
-          {/* Logout button for all logged in users */}
-          {user && (
-            <button
-              className="block w-full text-left pl-3 pr-4 py-2 border-l-4 border-transparent text-base font-medium text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700"
-              onClick={() => {
-                setIsMenuOpen(false);
-                logout();
-              }}
-            >
-              Đăng xuất
-            </button>
-          )}
+                <FaSignOutAlt className="w-4 h-4 mr-3 text-red-600" />
+                <span>Đăng xuất</span>
+              </button>
+            )}
+          </div>
         </div>
-      </div>
+      )}
     </header>
   );
-} 
+}

@@ -20,7 +20,7 @@ export default function NotificationBell() {
         if (!user) return;
         const accountId = user.accountID || user.AccountID;
         if (!accountId) return;
-        
+
         // Try to get count; if API not available, fall back to length of unread list
         try {
           const count = await notificationService.getUnreadCountByAccount(accountId);
@@ -31,15 +31,15 @@ export default function NotificationBell() {
         } catch (_) {
           // ignore and try fetch unread list
         }
-        
+
         const unread = await notificationService.getUnreadByAccount(accountId);
         const unreadArray = Array.isArray(unread) ? unread : [];
         setUnreadCount(unreadArray.length);
-        
+
         // Get recent notifications for dropdown
         const allNotifications = await notificationService.getAllByAccount(accountId);
-        const recentNotifications = Array.isArray(allNotifications) 
-          ? allNotifications.slice(0, 5) 
+        const recentNotifications = Array.isArray(allNotifications)
+          ? allNotifications.slice(0, 5)
           : [];
         setNotifications(recentNotifications);
       } catch (e) {
@@ -49,10 +49,10 @@ export default function NotificationBell() {
     };
 
     fetchUnread();
-    
+
     // Tự động cập nhật mỗi 30 giây
     const interval = setInterval(fetchUnread, 30000);
-    
+
     return () => clearInterval(interval);
   }, [user]);
 
@@ -62,7 +62,7 @@ export default function NotificationBell() {
       if (!user) return;
       const accountId = user.accountID || user.AccountID;
       if (!accountId) return;
-      
+
       // Try to get count; if API not available, fall back to length of unread list
       try {
         const count = await notificationService.getUnreadCountByAccount(accountId);
@@ -75,11 +75,11 @@ export default function NotificationBell() {
         const unreadArray = Array.isArray(unread) ? unread : [];
         setUnreadCount(unreadArray.length);
       }
-      
+
       // Get recent notifications for dropdown
       const allNotifications = await notificationService.getAllByAccount(accountId);
-      const recentNotifications = Array.isArray(allNotifications) 
-        ? allNotifications.slice(0, 5) 
+      const recentNotifications = Array.isArray(allNotifications)
+        ? allNotifications.slice(0, 5)
         : [];
       setNotifications(recentNotifications);
     } catch (e) {
@@ -155,16 +155,6 @@ export default function NotificationBell() {
               <h3 className="text-lg font-semibold text-gray-900">Thông báo gần đây</h3>
               <div className="flex gap-2">
                 <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    refreshNotifications();
-                  }}
-                  className="text-sm text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200 p-1 hover:bg-blue-50 rounded"
-                  title="Làm mới thông báo"
-                >
-                  <div className="w-3 h-3 border border-current border-t-transparent rounded-full animate-spin"></div>
-                </button>
-                <button
                   onClick={() => router.push('/notifications')}
                   className="text-sm text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200"
                 >
@@ -187,7 +177,7 @@ export default function NotificationBell() {
               notifications.map((notification, index) => {
                 const typeInfo = getNotificationType(notification);
                 const isUnread = !notification.isRead;
-                
+
                 return (
                   <div
                     key={notification.notificationID}
@@ -208,9 +198,8 @@ export default function NotificationBell() {
                             {typeInfo.label}
                           </span>
                         </div>
-                        <p className={`text-sm font-medium ${
-                          isUnread ? 'text-gray-900' : 'text-gray-700'
-                        } line-clamp-2 transition-colors duration-200`}>
+                        <p className={`text-sm font-medium ${isUnread ? 'text-gray-900' : 'text-gray-700'
+                          } line-clamp-2 transition-colors duration-200`}>
                           {notification.message || notification.Content || 'Thông báo mới'}
                         </p>
                         <div className="flex items-center gap-2 mt-2 text-xs text-gray-500">
