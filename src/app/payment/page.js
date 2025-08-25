@@ -8,8 +8,7 @@ import {
   PaymentHeader,
   AppointmentInfo,
   PaymentInfo,
-  PaymentSuccessModal,
-  RelativeSelection
+  PaymentSuccessModal
 } from './components';
 
 // Custom hooks
@@ -285,19 +284,9 @@ function PaymentContent() {
               getCandidatesForService={getCandidatesForService}
               onAssign={handleAssignNurseToTask}
               accounts={booking?.accounts || []}
-              selectedRelativeByTask={selectedRelativeByTask} // thêm dòng này
-              relatives={relatives || []}
-            />
-
-            {/* Relative Selection */}
-            <RelativeSelection
-              customizeTasks={booking?.customizeTasks || []}
-              relatives={relatives || []}
               selectedRelativeByTask={selectedRelativeByTask}
+              relatives={relatives || []}
               setSelectedRelativeByTask={setSelectedRelativeByTask}
-              bookingId={bookingId}
-              serviceTypes={serviceTypes || []}
-              serviceTasks={serviceTasks || []}
             />
 
             {/* Cancel Booking Section */}
@@ -482,12 +471,14 @@ const ServiceInfoCard = ({
   onAssign,
   accounts = [],
   selectedRelativeByTask = {}, // thêm dòng này
-  relatives = []
+  relatives = [],
+  setSelectedRelativeByTask
 }) => {
   // State cho việc chọn điều dưỡng
   const [loadingMap, setLoadingMap] = useState({});
   const [candidatesByTask, setCandidatesByTask] = useState({});
   const [openTaskId, setOpenTaskId] = useState(null);
+  const [relativeModalTaskId, setRelativeModalTaskId] = useState(null);
 
   // Tính toán thông tin dịch vụ chi tiết (KHÔNG group, mỗi customizeTask là 1 suất)
   const serviceDetails = useMemo(() => {
@@ -565,10 +556,12 @@ const ServiceInfoCard = ({
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-          <span className="text-blue-600 text-xl font-bold">!</span>
+        <div className="flex items-center gap-3 flex-1">
+          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+            <span className="text-blue-600 text-xl font-bold">!</span>
+          </div>
+          <h2 className="text-2xl font-bold text-gray-800">Thông tin dịch vụ đã đặt</h2>
         </div>
-        <h2 className="text-2xl font-bold text-gray-800">Thông tin dịch vụ đã đặt</h2>
       </div>
 
       {serviceDetails.length > 0 && (
@@ -636,26 +629,34 @@ const ServiceInfoCard = ({
                     </div>
                   </div>
 
-                  {/* Nút chọn điều dưỡng - chỉ hiển thị khi selectionMode === 'user' */}
-                  {selectionMode === 'user' && customizeTaskId && (
+                  {customizeTaskId && (
                     <div className="mt-3 flex flex-col gap-2">
-                      <div className="flex justify-between items-center">
+                      <div className="flex justify-between items-center gap-2 flex-wrap">
                         <div className="text-sm text-gray-500">
-                          {isLoading ? 'Đang tải...' : `${candidates.length} điều dưỡng có sẵn`}
+                          {selectionMode === 'user'
+                            ? (isLoading ? 'Đang tải...' : `${candidates.length} điều dưỡng có sẵn`)
+                            : 'Phân công điều dưỡng: Hệ thống tự chọn'}
                         </div>
+                        {selectionMode === 'user' && (
+                          <button
+                            className="bg-purple-600 text-white border-purple-600 border text-white px-4 py-2 rounded transition-colors hover:bg-purple-700"
+                            onClick={() => setOpenTaskId(customizeTaskId)}
+                          >
+                            {selectedNurse
+                              ? `Đã chọn: ${selectedNurse.Full_Name || selectedNurse.fullName || selectedNurse.FullName || selectedNurse.name || 'Điều dưỡng'}`
+                              : 'Chọn điều dưỡng'}
+                          </button>
+                        )}
                         <button
                           className="bg-purple-600 text-white border-purple-600 border text-white px-4 py-2 rounded transition-colors hover:bg-purple-700"
-                          onClick={() => setOpenTaskId(customizeTaskId)}
+                          onClick={() => setRelativeModalTaskId(customizeTaskId)}
                         >
-                          {selectedNurse
-                            ? `Đã chọn: ${selectedNurse.Full_Name || selectedNurse.fullName || selectedNurse.FullName || selectedNurse.name || 'Điều dưỡng'}`
-                            : 'Chọn điều dưỡng'}
+                          {selectedRelative ? 'Đổi con' : 'Chọn con'}
                         </button>
                       </div>
-                      {/* Thông tin người thân đã chọn */}
                       {selectedRelative && (
                         <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
-                          <strong>Người thân đã chọn:</strong> {selectedRelative.relativeName || selectedRelative.name}
+                          <strong>Con đã chọn:</strong> {selectedRelative.relativeName || selectedRelative.name}
                           {selectedRelative.dateOfBirth && (
                             <span className="ml-2">
                               ({new Date(selectedRelative.dateOfBirth).toLocaleDateString('vi-VN')})
@@ -764,6 +765,56 @@ const ServiceInfoCard = ({
                       {isSelected && (
                         <div className="text-green-600 text-2xl">✓</div>
                       )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Modal chọn con cho dịch vụ */}
+      {relativeModalTaskId && (() => {
+        const customizeTaskId = relativeModalTaskId;
+        const selectedRelativeId = selectedRelativeByTask[customizeTaskId];
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
+            <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-xl relative">
+              <h4 className="text-lg font-bold mb-4">Chọn con cho dịch vụ</h4>
+              <button
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
+                onClick={() => setRelativeModalTaskId(null)}
+              >×</button>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto">
+                {relatives.map((relative) => {
+                  const relativeId = relative.relativeID || relative.relativeid || relative.id;
+                  const isSelected = String(selectedRelativeId) === String(relativeId);
+                  const isDisabled = Object.entries(selectedRelativeByTask).some(
+                    ([taskId, relId]) => relId === relativeId && String(taskId) !== String(customizeTaskId)
+                  );
+                  return (
+                    <div
+                      key={relativeId}
+                      className={`border rounded-lg p-3 cursor-pointer transition-all ${isSelected ? 'border-green-500 bg-green-50' : isDisabled ? 'border-gray-200 bg-gray-100 cursor-not-allowed opacity-50' : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'}`}
+                      onClick={async () => {
+                        if (isDisabled) return;
+                        try {
+                          await customizeTaskService.updateRelative(customizeTaskId, relativeId);
+                          setSelectedRelativeByTask?.((prev) => ({ ...prev, [customizeTaskId]: relativeId }));
+                          setRelativeModalTaskId(null);
+                        } catch (e) {
+                          console.error('Không thể cập nhật người thân:', e);
+                        }
+                      }}
+                    >
+                      <div className="font-medium text-gray-800">{relative.relativeName || relative.name || 'Người thân'}</div>
+                      {relative.dateOfBirth && (
+                        <div className="text-sm text-gray-600">{new Date(relative.dateOfBirth).toLocaleDateString('vi-VN')}</div>
+                      )}
+                      {isSelected && <div className="text-green-600 mt-1">✓ Đã chọn</div>}
+                      {isDisabled && <div className="text-red-600 text-xs mt-1">Đã được chọn ở dịch vụ khác</div>}
                     </div>
                   );
                 })}
