@@ -42,7 +42,6 @@ export default function RelativeSelection({
         [customizeTaskId]: relativeId
       }));
 
-      console.log(`Đã cập nhật relative ${relativeId} cho task ${customizeTaskId}`);
     } catch (error) {
       console.error('Lỗi khi cập nhật relative:', error);
       setUpdateError(`Không thể cập nhật relative cho dịch vụ. Vui lòng thử lại.`);

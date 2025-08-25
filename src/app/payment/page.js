@@ -19,6 +19,7 @@ import { usePaymentProcessing } from './hooks/usePaymentProcessing';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import customizeTaskService from '@/services/api/customizeTaskService';
 import bookingService from '@/services/api/bookingService';
+import notificationService from '@/services/api/notificationService';
 
 // Icons
 import { Clock, Calendar } from 'lucide-react';
@@ -45,7 +46,10 @@ function PaymentContent() {
     refreshData,
     relatives,
     serviceTypes,
-    serviceTasks
+    serviceTasks,
+    accounts,
+    zoneDetails,
+    zones
   } = usePaymentData(bookingId, user);
 
   const {
@@ -76,6 +80,89 @@ function PaymentContent() {
     refreshWalletData,
     router
   });
+
+  // Hàm tìm manager theo zone
+  const findManagerByZone = useCallback((zoneID) => {
+    if (!zoneID || !accounts || !zones) return null;
+
+    // Tìm zone có zoneID này
+    const zone = zones.find(z => z.zoneID === zoneID);
+    if (!zone?.managerID) {
+      return null;
+    }
+
+    // Tìm manager theo managerID từ zone
+    const manager = accounts.find(acc =>
+      acc.roleID === 3 &&
+      acc.accountID === zone.managerID
+    );
+    return manager;
+  }, [accounts, zones]);
+
+  // Hàm lấy zoneID từ careProfile
+  const getZoneIDFromCareProfile = useCallback(() => {
+    if (bookingData?.zoneID) {
+      return bookingData.zoneID;
+    }
+
+    // Nếu chưa có zoneID, lấy từ zoneDetailID của careProfile
+    if (bookingData?.selectedCareProfile?.zoneDetailID && zoneDetails?.length > 0) {
+      const zoneDetail = zoneDetails.find(zd =>
+        zd.zoneDetailID === bookingData.selectedCareProfile.zoneDetailID ||
+        zd.ZoneDetailID === bookingData.selectedCareProfile.zoneDetailID ||
+        zd.zonedetailid === bookingData.selectedCareProfile.zoneDetailID
+      );
+      if (zoneDetail) {
+        return zoneDetail.zoneID || zoneDetail.ZoneID;
+      }
+    }
+
+    return null;
+  }, [bookingData, zoneDetails]);
+
+  // Hàm wrapper cho handleConfirm để gửi thông báo cho manager
+  const handleConfirmWithNotify = useCallback(async () => {
+    try {
+      // Nếu chọn "Hệ thống tự chọn" và có thể lấy được zoneID
+      if (selectionMode === 'auto') {
+        // Kiểm tra xem accounts đã được load chưa
+        if (!accounts || accounts.length === 0) {
+          console.warn('Accounts chưa được load, bỏ qua thông báo manager');
+          // Tiếp tục xử lý thanh toán mà không gửi thông báo
+          await handleConfirm();
+          return;
+        }
+
+        const zoneID = getZoneIDFromCareProfile();
+
+        if (zoneID) {
+          const manager = findManagerByZone(zoneID);
+          if (manager) {
+            try {
+              await notificationService.createNotification({
+                accountID: manager.accountID,
+                message: "Bạn có yêu cầu điều phối chuyên viên mới"
+              });
+            } catch (notifyError) {
+              console.error('Lỗi khi gửi thông báo cho manager:', notifyError);
+              // Không throw error vì thanh toán vẫn có thể tiếp tục
+            }
+          } else {
+            console.warn('Không tìm thấy manager cho zone:', zoneID);
+          }
+        } else {
+          console.warn('Không thể xác định zoneID từ careProfile');
+        }
+      } else {
+      }
+
+      // Tiếp tục xử lý thanh toán
+      await handleConfirm();
+    } catch (error) {
+      console.error('Error in payment confirmation:', error);
+      throw error;
+    }
+  }, [selectionMode, zones, accounts, getZoneIDFromCareProfile, findManagerByZone, handleConfirm]);
 
   // Khởi tạo selectedRelativeByTask từ customizeTasks
   useEffect(() => {
@@ -259,7 +346,7 @@ function PaymentContent() {
               myWallet={contextWallet}
               error={dataError}
               loading={loading}
-              handleConfirm={handleConfirm}
+              handleConfirm={handleConfirmWithNotify}
               isProcessingPayment={isProcessingPayment}
               paymentBreakdown={bookingData?.paymentCalculation}
               canConfirm={canConfirm}

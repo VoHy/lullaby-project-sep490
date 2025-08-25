@@ -9,6 +9,8 @@ import serviceTaskService from '@/services/api/serviceTaskService';
 import customizeTaskService from '@/services/api/customizeTaskService';
 import careProfileService from '@/services/api/careProfileService';
 import relativesService from '@/services/api/relativesService';
+import zoneDetailService from '@/services/api/zoneDetailService';
+import zoneService from '@/services/api/zoneService';
 import { calculateCompletePayment } from '../../booking/utils/paymentCalculation';
 
 export const usePaymentData = (bookingId, user) => {
@@ -23,6 +25,8 @@ export const usePaymentData = (bookingId, user) => {
   const [careProfiles, setCareProfiles] = useState([]);
   const [relatives, setRelatives] = useState([]);
   const [wallets, setWallets] = useState([]);
+  const [zoneDetails, setZoneDetails] = useState([]);
+  const [zones, setZones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -51,6 +55,22 @@ export const usePaymentData = (bookingId, user) => {
         accountService.getAllAccounts()
       ]);
 
+      // Lấy thêm zoneDetails để có thể lấy zoneID từ zoneDetailID
+      let zoneDetailsData = [];
+      try {
+        zoneDetailsData = await zoneDetailService.getZoneDetails();
+      } catch (zoneDetailError) {
+        console.error('Lỗi khi lấy zone details:', zoneDetailError);
+      }
+
+      // Lấy thêm zones để có thể tìm manager theo managerID
+      let zonesData = [];
+      try {
+        zonesData = await zoneService.getZones();
+      } catch (zonesError) {
+        console.error('Lỗi khi lấy zones:', zonesError);
+      }
+
       setPackages([]);
       setServiceTypes(serviceTypesData);
       setServiceTasks(serviceTasksData);
@@ -58,6 +78,8 @@ export const usePaymentData = (bookingId, user) => {
       setAccounts(Array.isArray(accountsData) ? accountsData : []);
       setCareProfiles([]);
       setWallets(walletsData);
+      setZoneDetails(zoneDetailsData);
+      setZones(zonesData);
 
       if (bookingId) {
         try {
@@ -67,6 +89,18 @@ export const usePaymentData = (bookingId, user) => {
             try {
               const careProfileData = await careProfileService.getCareProfileById(bookingData.careProfileID);
               bookingData.careProfile = careProfileData;
+
+              // Lấy zoneID từ zoneDetailID của careProfile
+              if (careProfileData.zoneDetailID && zoneDetailsData.length > 0) {
+                const zoneDetail = zoneDetailsData.find(zd =>
+                  zd.zoneDetailID === careProfileData.zoneDetailID ||
+                  zd.ZoneDetailID === careProfileData.zoneDetailID ||
+                  zd.zonedetailid === careProfileData.zoneDetailID
+                );
+                if (zoneDetail) {
+                  bookingData.zoneID = zoneDetail.zoneID || zoneDetail.ZoneID;
+                }
+              }
             } catch (careProfileError) {
               console.warn('Could not fetch care profile:', careProfileError);
             }
@@ -228,7 +262,9 @@ export const usePaymentData = (bookingId, user) => {
         phoneNumber: careProfile.phoneNumber,
         address: careProfile.address,
         status: careProfile.status || 'active',
-        note: careProfile.note
+        note: careProfile.note,
+        zoneID: careProfile.zoneID,
+        zoneDetailID: careProfile.zoneDetailID || careProfile.ZoneDetailID || careProfile.zonedetailid
       };
     })();
 
@@ -265,7 +301,10 @@ export const usePaymentData = (bookingId, user) => {
     refreshData: fetchData,
     relatives,
     serviceTypes,
-    serviceTasks
+    serviceTasks,
+    zoneDetails,
+    zones,
+    accounts
   };
   return result;
 };
