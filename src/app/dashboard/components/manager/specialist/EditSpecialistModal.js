@@ -1,6 +1,6 @@
 'use client';
 import { useState, useEffect } from 'react';
-import { FaTimes, FaUser, FaGraduationCap, FaClipboardList, FaSave, FaHourglassHalf } from 'react-icons/fa';
+import { FaTimes, FaUser, FaGraduationCap, FaClipboardList, FaSave, FaHourglassHalf, FaTrash } from 'react-icons/fa';
 import { nursingSpecialistServiceTypeService } from '@/services/api';
 
 const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpecialists, serviceTypes = [] }) => {
@@ -25,6 +25,7 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [registeredServiceIDs, setRegisteredServiceIDs] = useState([]);
+  const [registeredMapByService, setRegisteredMapByService] = useState({}); // serviceID -> mappingID
 
   useEffect(() => {
     setFormData({
@@ -47,20 +48,52 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
     });
   }, [specialist]);
 
-  // Fetch các dịch vụ đã được thêm theo nursingID để highlight
+  // Fetch các dịch vụ đã được thêm theo nursingID để highlight và lưu mappingID để xóa
   useEffect(() => {
     const fetchRegisteredServices = async () => {
       try {
         if (!specialist?.nursingID) return;
         const result = await nursingSpecialistServiceTypeService.getByNursing(specialist.nursingID);
-        const ids = Array.isArray(result) ? result.map(item => String(item.serviceID)) : [];
+        const ids = Array.isArray(result) ? result.map(item => String(item.serviceID || item.ServiceID)) : [];
         setRegisteredServiceIDs(ids);
+        // Build map serviceID -> mappingID (nhiều backend đặt tên khác nhau nên lấy linh hoạt)
+        const map = {};
+        (Array.isArray(result) ? result : []).forEach((item) => {
+          const sid = String(item.serviceID || item.ServiceID);
+          const mid = item.nursingSpecialist_ServiceTypeID || item.nursingSpecialistServiceTypeID || item.mappingID || item.id || item.ID || item.NSST_ID || item.nsstID;
+          if (sid && mid != null) map[sid] = mid;
+        });
+        setRegisteredMapByService(map);
       } catch (err) {
         // Không chặn UI nếu lỗi
       }
     };
     fetchRegisteredServices();
   }, [specialist?.nursingID]);
+
+  const handleDeleteRegisteredService = async (serviceId) => {
+    try {
+      const sid = String(serviceId);
+      const mappingId = registeredMapByService[sid];
+      if (!mappingId) {
+        // Nếu không có mappingId, fallback: chỉ loại khỏi local state
+        setRegisteredServiceIDs(prev => prev.filter(id => id !== sid));
+        setFormData(prev => ({ ...prev, serviceID: (prev.serviceID || []).filter(id => String(id) !== sid) }));
+        return;
+      }
+      await nursingSpecialistServiceTypeService.delete(mappingId);
+      // Cập nhật UI ngay
+      setRegisteredServiceIDs(prev => prev.filter(id => id !== sid));
+      setRegisteredMapByService(prev => {
+        const next = { ...prev };
+        delete next[sid];
+        return next;
+      });
+      setFormData(prev => ({ ...prev, serviceID: (Array.isArray(prev.serviceID) ? prev.serviceID : []).filter(id => String(id) !== sid) }));
+    } catch (e) {
+      setError(e.message || 'Xóa dịch vụ thất bại');
+    }
+  };
 
   const handleChange = (e) => {
     const { name, value, multiple, options } = e.target;
@@ -117,7 +150,7 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[80vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-100 px-8 py-6">
           <div className="flex justify-between items-center">
-            <h3 className="text-2xl font-bold text-gray-900">Sửa thông tin Chuyên gia</h3>
+            <h3 className="text-2xl font-bold text-gray-900">Sửa thông tin chuyên gia tư vấn</h3>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-2 rounded-full hover:bg-gray-100"
@@ -133,7 +166,7 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
         )}
         <form onSubmit={handleSubmit} className="px-8 py-6 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {/* Account Information */}
+            {/* Account + Professional Information (merged to match nurse layout) */}
             <section className="rounded-xl border border-gray-200 bg-white p-6">
               <h4 className="text-base font-semibold mb-4 text-gray-800 flex items-center gap-2">
                 <FaUser className="text-gray-500" />
@@ -154,10 +187,6 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
                   />
                 </div>
               </div>
-            </section>
-
-            {/* Professional Information */}
-            <section className="rounded-xl border border-gray-200 bg-white p-6">
               <h4 className="text-base font-semibold mb-4 text-gray-800 flex items-center gap-2">
                 <FaGraduationCap className="text-gray-500" />
                 Thông tin chuyên môn
@@ -201,8 +230,8 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
                   >
-                    <option value="specialist">Chuyên gia</option>
-                    <option value="nurse">Y tá</option>
+                    <option value="Nurse">Chuyên viên chăm sóc</option>
+                    <option value="Specialist">Chuyên gia tư vấn</option>
                   </select>
                 </div>
 
@@ -231,38 +260,55 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
                     {Array.isArray(serviceTypes) &&
                       serviceTypes
                         .filter(service => service.isPackage === false)
+                        .filter(service => !service.major || String(service.major) === String(formData.major))
                         .map(service => {
                           const isChecked = Array.isArray(formData.serviceID) && formData.serviceID.includes(String(service.serviceID));
                           const isRegistered = Array.isArray(registeredServiceIDs) && registeredServiceIDs.includes(String(service.serviceID));
                           return (
-                            <label key={service.serviceID} className="inline-flex items-center gap-2">
-                              <input
-                                type="checkbox"
-                                name="serviceID"
-                                value={service.serviceID}
-                                checked={isChecked}
-                                onChange={e => {
-                                  const value = e.target.value;
-                                  setFormData(prev => {
-                                    const current = Array.isArray(prev.serviceID) ? prev.serviceID.map(String) : [];
-                                    if (e.target.checked) {
-                                      if (!current.includes(value)) {
-                                        return { ...prev, serviceID: [...current, value] };
+                            <label key={service.serviceID} className="inline-flex items-center justify-between gap-2">
+                              <span className="inline-flex items-center gap-2 flex-1">
+                                <input
+                                  type="checkbox"
+                                  name="serviceID"
+                                  value={service.serviceID}
+                                  checked={isChecked}
+                                  onChange={e => {
+                                    const value = e.target.value;
+                                    setFormData(prev => {
+                                      const current = Array.isArray(prev.serviceID) ? prev.serviceID.map(String) : [];
+                                      if (e.target.checked) {
+                                        if (!current.includes(value)) {
+                                          return { ...prev, serviceID: [...current, value] };
+                                        }
+                                        return prev;
+                                      } else {
+                                        // Nếu bỏ chọn và dịch vụ đã đăng ký, gọi API xóa
+                                        if (isRegistered) {
+                                          handleDeleteRegisteredService(value);
+                                        }
+                                        return { ...prev, serviceID: current.filter(id => id !== value) };
                                       }
-                                      return prev;
-                                    } else {
-                                      return { ...prev, serviceID: current.filter(id => id !== value) };
-                                    }
-                                  });
-                                }}
-                                className="form-checkbox h-4 w-4 text-purple-600"
-                              />
-                              <span className={isRegistered ? "font-bold text-red-600" : ""}>
-                                {service.serviceName}
-                                {isRegistered && (
-                                  <span className="ml-2 text-xs text-red-600">(dịch vụ đã được thêm)</span>
-                                )}
+                                    });
+                                  }}
+                                  className="form-checkbox h-4 w-4 text-blue-600"
+                                />
+                                <span className={isRegistered ? "font-bold text-red-600" : ""}>
+                                  {service.serviceName}
+                                  {isRegistered && (
+                                    <span className="ml-2 text-xs text-red-600">(dịch vụ đã được thêm)</span>
+                                  )}
+                                </span>
                               </span>
+                              {isRegistered && (
+                                <button
+                                  type="button"
+                                  onClick={() => handleDeleteRegisteredService(String(service.serviceID))}
+                                  className="text-red-600 hover:text-red-800 p-1"
+                                  aria-label="Xóa dịch vụ"
+                                >
+                                  <FaTrash />
+                                </button>
+                              )}
                             </label>
                           );
                         })
@@ -320,27 +366,6 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
                     placeholder="Số nhà, đường, phường, quận, thành phố"
                   />
                 </div>
-              </div>
-            </section>
-
-            {/* Avatar Information */}
-            <section className="rounded-xl border border-gray-200 bg-white p-6">
-              <h4 className="text-base font-semibold mb-4 text-gray-800 flex items-center gap-2">
-                <FaClipboardList className="text-gray-500" />
-                Thông tin bổ sung
-              </h4>
-              <div className="bg-white rounded-lg p-0">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Avatar URL
-                </label>
-                <input
-                  type="text"
-                  name="avatarUrl"
-                  value={formData.avatarUrl}
-                  onChange={handleChange}
-                  className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
-                  placeholder="URL hình ảnh (tùy chọn)"
-                />
               </div>
             </section>
           </div>

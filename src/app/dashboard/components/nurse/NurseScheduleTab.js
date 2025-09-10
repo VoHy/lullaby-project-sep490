@@ -589,6 +589,23 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
                           className="px-3 py-1 rounded text-sm bg-blue-600 text-white hover:bg-blue-700 transition"
                           onClick={async () => {
                             try {
+                              // Validate time window: allowed from 15 minutes before workDate until endTime
+                              const start = parseDT(g(selectedEvent.workObj || {}, K.workDate));
+                              const end = parseDT(g(selectedEvent.workObj || {}, K.endTime));
+                              const now = new Date();
+
+                              if (start && !isNaN(start) && end && !isNaN(end)) {
+                                const minus15 = new Date(start.getTime() - 15 * 60 * 1000);
+                                if (now < minus15) {
+                                  alert('Chưa đến giờ để bấm "Đã đến". Bạn chỉ có thể bấm trước tối đa 15 phút so với giờ bắt đầu.');
+                                  return;
+                                }
+                                if (now > end) {
+                                  alert('Đã quá thời gian của ca làm, không thể bấm "Đã đến".');
+                                  return;
+                                }
+                              }
+
                               await workScheduleService.updateStatus(
                                 selectedEvent.workObj?.workScheduleID || selectedEvent.workObj?.WorkScheduleID,
                                 'arrived'

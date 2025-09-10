@@ -9,7 +9,7 @@ const nursingSpecialistServiceTypeService = {
   getByService: async (serviceId) => apiGet(`${base}/getbyservice/${serviceId}`, 'Không thể lấy mapping theo service'),
   create: async (data) => apiPost(`${base}/create-multiple`, data, 'Không thể tạo mapping'),
   update: async (id, data) => apiPut(`${base}/${id}`, data, 'Không thể cập nhật mapping'),
-  delete: async (id) => apiDelete(`${base}/${id}`, 'Không thể xóa mapping'),
+  delete: async (id) => apiDelete(`${base}/delete/${id}`, 'Không thể xóa mapping'),
 };
 
 export default nursingSpecialistServiceTypeService;

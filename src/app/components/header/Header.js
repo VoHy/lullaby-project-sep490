@@ -4,6 +4,7 @@ import { useState, useContext, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { AuthContext } from '../../../context/AuthContext';
+import accountService from '@/services/api/accountService';
 import WalletIcon from './WalletIcon';
 import NotificationBell from './NotificationBell';
 import { FaUser, FaSignOutAlt, FaWallet } from 'react-icons/fa';
@@ -11,7 +12,7 @@ import { FaUser, FaSignOutAlt, FaWallet } from 'react-icons/fa';
 export default function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout, updateUser } = useContext(AuthContext);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [imgError, setImgError] = useState(false);
 
@@ -24,6 +25,58 @@ export default function Header() {
     // reset image error when avatar changes
     setImgError(false);
   }, [avatarUrl]);
+
+  // Fetch avatar (và thông tin account mới nhất) nếu thiếu avatar trong context
+  useEffect(() => {
+    const ensureAvatar = async () => {
+      try {
+        const accountId = user?.accountID || user?.AccountID;
+        if (!accountId) return;
+        if (avatarUrl) return; // đã có avatar thì bỏ qua
+        const fresh = await accountService.getAccountById(accountId);
+        const freshAvatar = fresh?.avatarUrl || fresh?.AvatarUrl || fresh?.avatar || fresh?.Avatar || '';
+        if (freshAvatar) {
+          updateUser({ ...(user || {}), ...fresh });
+        }
+      } catch (_) {
+        // bỏ qua lỗi để không chặn UI
+      }
+    };
+    ensureAvatar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.accountID, user?.AccountID, avatarUrl]);
+
+  // Init realtime listeners (SignalR + optional FCM)
+  useEffect(() => {
+    let unsub;
+    (async () => {
+      try {
+        const { initRealtimeNotifications, initFirebaseMessaging } = await import('@/lib/realtime');
+        await initRealtimeNotifications(() => localStorage.getItem('token') || '');
+
+        // Optional FCM init if env provided
+        const firebaseConfig = {
+          apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
+          authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
+          projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
+          messagingSenderId: process.env.NEXT_PUBLIC_FIREBASE_SENDER_ID,
+          appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
+        };
+        if (firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId) {
+          try { await initFirebaseMessaging(firebaseConfig); } catch (_) {}
+        }
+
+        // Ensure NotificationBell refreshes on events
+        const handler = () => {
+          const ev = new CustomEvent('notification:fetch');
+          window.dispatchEvent(ev);
+        };
+        window.addEventListener('notification:refresh', handler);
+        unsub = () => window.removeEventListener('notification:refresh', handler);
+      } catch (_) {}
+    })();
+    return () => { try { unsub?.(); } catch (_) {} };
+  }, []);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -126,7 +179,7 @@ export default function Header() {
                     : 'text-gray-600 hover:text-purple-600'
                     }`}
                 >
-                  Y tá
+                  Quản lý
                 </Link>
               </>
             )}
@@ -456,7 +509,7 @@ export default function Header() {
                     }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Y tá
+                  Quản lý 
                 </Link>
               </>
             )}

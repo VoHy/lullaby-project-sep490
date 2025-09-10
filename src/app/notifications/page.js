@@ -108,7 +108,16 @@ export default function NotificationsPage() {
       }
     }, 30000);
 
-    return () => clearInterval(interval);
+    // Lắng nghe realtime để refetch ngay
+    const onRealtimeRefresh = () => {
+      if (user) fetchNotifications();
+    };
+    window.addEventListener('notification:refresh', onRealtimeRefresh);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('notification:refresh', onRealtimeRefresh);
+    };
   }, [user]);
 
   // Tính toán phân trang

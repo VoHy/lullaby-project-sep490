@@ -58,7 +58,14 @@ export default function NotificationBell() {
     // Tự động cập nhật mỗi 30 giây
     const interval = setInterval(fetchUnread, 30000);
 
-    return () => clearInterval(interval);
+    // Lắng nghe tín hiệu realtime để refetch ngay
+    const onRealtimeRefresh = () => fetchUnread();
+    window.addEventListener('notification:refresh', onRealtimeRefresh);
+
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('notification:refresh', onRealtimeRefresh);
+    };
   }, [user]);
 
   // Thêm hàm để refresh thủ công

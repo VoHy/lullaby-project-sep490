@@ -3,7 +3,7 @@ import { formatDateToDDMMYYYY } from '../../utils/dateUtils';
 
 export default function RelativeDetailModal({ open, onClose, relative }) {
   if (!open || !relative) return null;
-  
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-2xl p-0 w-full max-w-md relative scale-95 animate-popup-open">
@@ -22,7 +22,13 @@ export default function RelativeDetailModal({ open, onClose, relative }) {
               </div>
               <div>
                 <div className="text-xs text-gray-500">Giới tính</div>
-                <div className="font-medium text-gray-800">{relative.Gender || relative.gender || 'N/A'}</div>
+                <div className="font-medium text-gray-800">
+                  {{
+                    male: 'Nam',
+                    female: 'Nữ',
+                    other: 'Khác'
+                  }[(relative.Gender || relative.gender || '').toLowerCase()] || 'N/A'}
+                </div>
               </div>
             </div>
             {(relative.Note || relative.note) && (

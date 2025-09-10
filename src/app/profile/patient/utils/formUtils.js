@@ -162,38 +162,44 @@ export const normalizeFieldNames = (data) => {
 export const prepareCareProfileData = (formData, user) => {
     const normalized = normalizeFieldNames(formData);
     // Keep empty string as is for database compatibility
-    const imageUrl = normalized.image && normalized.image !== 'string' 
-        ? normalized.image.trim() 
-        : '';
+    const imageUrl = normalized.image && normalized.image !== 'string'
+        ? normalized.image.trim()
+        : null;
 
     return {
-        accountID: user?.accountID,
-        zoneDetailID: parseInt(normalized.zoneDetailID) || 1,
-        profileName: normalized.profileName,
-        dateOfBirth: formatDateForAPI(normalized.dateOfBirth),
-        phoneNumber: normalized.phoneNumber,
-        address: normalized.address,
+        accountID: user?.accountID ?? null,
+        zoneDetailID: normalized.zoneDetailID ? parseInt(normalized.zoneDetailID) : null,
+        profileName: normalized.profileName ?? null,
+        dateOfBirth: normalized.dateOfBirth ? formatDateForAPI(normalized.dateOfBirth) : null,
+        phoneNumber: normalized.phoneNumber ?? null,
+        address: normalized.address ?? null,
         image: imageUrl,
-        note: normalized.note || '',
-        status: (normalized.status || 'active').toString().toLowerCase()
+        note: (typeof normalized.note === 'string' ? normalized.note : '') ?? '',
+        status: normalized.status
+            ? normalized.status.toString().toLowerCase()
+            : 'active'
     };
 };
 
 export const prepareRelativeData = (formData, careProfileID) => {
     const normalized = normalizeFieldNames(formData);
     // Keep empty string as is for database compatibility
-    const imageUrl = normalized.image && normalized.image !== 'string' 
-        ? normalized.image.trim() 
-        : '';
+    const imageUrl = normalized.image && normalized.image !== 'string'
+        ? normalized.image.trim()
+        : null;
 
     return {
-        careProfileID: careProfileID,
-        relativeName: normalized.relativeName,
-        dateOfBirth: formatDateForAPI(normalized.dateOfBirth),
-        gender: (normalized.gender || 'male').toString().toLowerCase(),
-        note: normalized.note || '',
+        careProfileID: careProfileID ?? null,
+        relativeName: normalized.relativeName ?? null,
+        dateOfBirth: normalized.dateOfBirth ? formatDateForAPI(normalized.dateOfBirth) : null,
+        gender: normalized.gender
+            ? normalized.gender.toString().toLowerCase()
+            : 'male',
+        note: (typeof normalized.note === 'string' ? normalized.note : '') ?? '',
         createdAt: new Date().toISOString(),
-        status: (normalized.status || 'active').toString().toLowerCase(),
+        status: normalized.status
+            ? normalized.status.toString().toLowerCase()
+            : 'active',
         image: imageUrl
     };
 };

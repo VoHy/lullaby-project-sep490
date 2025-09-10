@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useContext } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams, useRouter } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
@@ -10,11 +10,14 @@ import {
   faChevronRight, faSignOutAlt, faBars, faStethoscope,
   faUserMd, faNewspaper, faCalendarCheck, faMapLocationDot
 } from '@fortawesome/free-solid-svg-icons';
+import { AuthContext } from '@/context/AuthContext';
+import accountService from '@/services/api/accountService';
 
-// Enhanced User Profile Component (unchanged)
-const UserProfile = ({ user, getRoleName }) => {
+// Enhanced User Profile Component (with avatar)
+const UserProfile = ({ user, getRoleName, avatarUrl, displayName, initial }) => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);
+  const [imgError, setImgError] = useState(false);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -25,6 +28,10 @@ const UserProfile = ({ user, getRoleName }) => {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  useEffect(() => {
+    setImgError(false);
+  }, [avatarUrl]);
 
   const handleLogout = () => {
     if (typeof window !== 'undefined') {
@@ -40,14 +47,23 @@ const UserProfile = ({ user, getRoleName }) => {
         onClick={() => setDropdownOpen(!dropdownOpen)}
       >
         <div className="relative">
-          <div className="w-12 h-12 rounded-full bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
-            {(user?.fullName || user?.full_name || 'U').charAt(0)}
+          <div className="w-12 h-12 rounded-full overflow-hidden bg-gradient-to-r from-purple-500 to-pink-500 flex items-center justify-center text-white font-bold text-lg shadow-lg">
+            {avatarUrl && !imgError ? (
+              <img
+                src={avatarUrl}
+                alt={displayName || 'Avatar'}
+                className="w-full h-full object-cover"
+                onError={() => setImgError(true)}
+              />
+            ) : (
+              <span>{initial}</span>
+            )}
           </div>
           <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-400 border-2 border-white rounded-full animate-pulse"></div>
         </div>
         <div className="ml-3 flex-1">
           <h3 className="font-semibold text-gray-800 text-sm">
-            {user?.fullName || user?.full_name || 'User'}
+            {displayName || 'User'}
           </h3>
           <p className="text-xs text-purple-600 font-medium">
             {getRoleName(user?.roleID || user?.role_id)}
@@ -81,6 +97,32 @@ const Sidebar = ({ user }) => {
   const currentTab = searchParams.get('tab');
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const { updateUser } = useContext(AuthContext);
+
+  // Derive avatar and display name
+  const avatarUrl = user?.avatarUrl || user?.AvatarUrl || user?.avatar || user?.Avatar || '';
+  const displayName = user?.fullName || user?.full_name || user?.FullName || user?.Full_Name || user?.email || '';
+  const initial = (displayName?.trim?.()[0] || 'U').toUpperCase();
+
+  // Ensure avatar by fetching account if missing
+  useEffect(() => {
+    const ensureAvatar = async () => {
+      try {
+        const accountId = user?.accountID || user?.AccountID;
+        if (!accountId) return;
+        if (avatarUrl) return;
+        const fresh = await accountService.getAccountById(accountId);
+        const freshAvatar = fresh?.avatarUrl || fresh?.AvatarUrl || fresh?.avatar || fresh?.Avatar || '';
+        if (freshAvatar) {
+          updateUser ? updateUser({ ...(user || {}), ...fresh }) : null;
+        }
+      } catch (_) {
+        // ignore
+      }
+    };
+    ensureAvatar();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.accountID, user?.AccountID, avatarUrl]);
 
   const menuItems = {
     1: [ // Admin
@@ -180,7 +222,7 @@ const Sidebar = ({ user }) => {
 
         {/* User Profile Section */}
         <div className={`mt-6 transition-all duration-300 ${isCollapsed ? 'opacity-0 h-0' : 'opacity-100'}`}>
-          <UserProfile user={user} getRoleName={getRoleName} />
+          <UserProfile user={user} getRoleName={getRoleName} avatarUrl={avatarUrl} displayName={displayName} initial={initial} />
         </div>
       </div>
 

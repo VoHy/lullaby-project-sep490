@@ -51,11 +51,15 @@ const NurseList = ({ nurses, onEdit, onDelete }) => {
                   <td className="px-8 py-6 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-12 w-12">
-                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center shadow-lg">
-                          <span className="text-white font-bold text-lg">
-                            {nurse.fullName?.charAt(0) || 'N'}
-                          </span>
-                        </div>
+                        <img
+                          src={(nurse.avatarUrl && nurse.avatarUrl !== 'string')
+                            ? nurse.avatarUrl
+                            : ((nurse.account?.avatarUrl && nurse.account?.avatarUrl !== 'string')
+                              ? nurse.account.avatarUrl
+                              : '/images/logo-eldora.png')}
+                          alt={nurse.fullName || 'Avatar'}
+                          className="h-12 w-12 rounded-full object-cover border-2 border-blue-200 shadow-lg"
+                        />
                       </div>
                       <div className="ml-4">
                         <div className="text-base font-semibold text-gray-900">

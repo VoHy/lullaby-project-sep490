@@ -21,12 +21,12 @@ export default function RootLayout({ children }) {
   const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || process.env.GOOGLE_CLIENT_ID || '';
   return (
     <html lang="en">
-      <body className={`${inter.className} antialiased`}>
+      <body className={`${inter.className} antialiased min-h-screen flex flex-col`}>
         <GoogleOAuthProvider clientId={googleClientId}>
           <AuthProvider>
             <WalletProvider>
               <Header />
-              <main className="max-w-full mx-auto">
+              <main className="max-w-full mx-auto flex-1 w-full min-h-0 flex flex-col">
                 {children}
               </main>
               <Footer />

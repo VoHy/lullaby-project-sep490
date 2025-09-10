@@ -158,6 +158,14 @@ export default function AppointmentsPage() {
         <div className="text-center py-8 text-gray-500">
           Bạn chưa có lịch hẹn nào.<br />
           Hãy tạo hồ sơ người thân và đặt lịch dịch vụ để bắt đầu trải nghiệm!
+          <div className="mt-6">
+            <button
+              onClick={() => router.push('/services')}
+              className="px-6 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105"
+            >
+              Đặt lịch ngay
+            </button>
+          </div>
         </div>
       );
     }
@@ -165,15 +173,16 @@ export default function AppointmentsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
-      <div className="max-w-6xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         {/* Header */}
         <motion.div
-          className="flex items-center justify-between mb-8"
+          className="text-center mb-12"
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
         >
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
             Lịch hẹn của bạn
           </h1>
         </motion.div>

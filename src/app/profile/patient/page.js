@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useContext } from 'react';
+import { motion } from "framer-motion";
 import { useRouter, usePathname } from 'next/navigation';
 import { AuthContext } from '@/context/AuthContext';
 // Thêm các import icon cần thiết
@@ -41,24 +42,23 @@ const TabNavigation = () => {
       active: pathname === '/wallet',
     }
   ];
-    return (
+  return (
     <div className="flex flex-wrap gap-2 border-b border-gray-200 mb-8">
       {tabs.map(tab => (
         <button
           key={tab.id}
           onClick={() => router.push(tab.href)}
-          className={`flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${
-            tab.active
-              ? 'bg-white text-purple-600 border-b-2 border-purple-600 shadow-sm'
-              : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
-          }`}
+          className={`flex items-center gap-2 px-4 py-3 rounded-t-lg font-medium transition-all duration-200 ${tab.active
+            ? 'bg-white text-purple-600 border-b-2 border-purple-600 shadow-sm'
+            : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+            }`}
         >
           {tab.icon}
           {tab.name}
         </button>
       ))}
-      </div>
-    );
+    </div>
+  );
 };
 
 export default function PatientProfilePage(props) {
@@ -94,23 +94,27 @@ export default function PatientProfilePage(props) {
   if (manager.loading) return <div className="text-center py-20">Đang tải dữ liệu...</div>;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
       {/* Thông báo thành công ở góc phải trên */}
       {manager.careProfileSuccess && (
         <div className="fixed top-4 right-4 z-50 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg">
           {manager.careProfileSuccess}
         </div>
       )}
-      <div className="max-w-6xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-purple-600 to-pink-600 mb-2">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <motion.div className="text-center mb-12"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
+        >
+          <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
             Hồ sơ người thân
           </h1>
-          <p className="text-gray-600">Quản lý thông tin hồ sơ chăm sóc và người thân</p>
-        </div>
+          <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">Quản lý thông tin hồ sơ chăm sóc và người thân</p>
+        </motion.div>
         <TabNavigation />
         <div className="bg-white rounded-xl shadow-lg">
-        <PatientCareProfileList
+          <PatientCareProfileList
             careProfiles={manager.careProfiles}
             relativesList={manager.relativesList}
             zones={manager.zones}

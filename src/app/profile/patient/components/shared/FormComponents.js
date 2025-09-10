@@ -81,15 +81,6 @@ export function AvatarUpload({
           className={`${size} rounded-full object-cover border-2 border-purple-200`}
         />
       </div>
-      <div className="w-full">
-        <FormField
-          label="URL Ảnh (tùy chọn)"
-          name={name}
-          value={currentImage || ''}
-          onChange={onImageChange}
-          placeholder="https://example.com/image.jpg"
-        />
-      </div>
     </div>
   );
 }

@@ -21,10 +21,16 @@ const NurseDetailModal = ({ nurse, onClose }) => {
         <div className="px-8 py-6 space-y-6">
           {/* Header với avatar */}
           <div className="flex items-center space-x-6 border-b border-gray-100 pb-8">
-            <div className="h-20 w-20 rounded-full bg-gradient-to-br from-gray-600 to-gray-800 flex items-center justify-center shadow-xl">
-              <span className="text-white font-bold text-3xl">
-                {nurse.fullName?.charAt(0) || 'N'}
-              </span>
+            <div className="h-20 w-20 rounded-full overflow-hidden shadow-xl border-4 border-blue-100">
+              <img
+                src={(nurse.avatarUrl && nurse.avatarUrl !== 'string')
+                  ? nurse.avatarUrl
+                  : ((nurse.account?.avatarUrl && nurse.account?.avatarUrl !== 'string')
+                    ? nurse.account.avatarUrl
+                    : '/images/logo-eldora.png')}
+                alt={nurse.fullName || 'Avatar'}
+                className="h-full w-full object-cover"
+              />
             </div>
             <div>
               <h2 className="text-3xl font-bold text-gray-900 mb-2">{nurse.fullName}</h2>
@@ -127,18 +133,6 @@ const NurseDetailModal = ({ nurse, onClose }) => {
                   <label className="block text-sm font-medium text-gray-700 mb-2">Địa chỉ</label>
                   <p className="text-base font-medium text-gray-900">{nurse.address || 'N/A'}</p>
                 </div>
-              </div>
-            </section>
-
-            {/* Thông tin bổ sung */}
-            <section className="rounded-xl border border-gray-200 bg-white p-6">
-              <h4 className="text-base font-semibold mb-4 text-gray-800 flex items-center gap-2">
-                <FaClipboardList />
-                Thông tin bổ sung
-              </h4>
-              <div className="bg-white rounded-lg p-0">
-                <label className="block text-sm font-medium text-gray-700 mb-2">Avatar URL</label>
-                <p className="text-base font-medium text-gray-900 break-all">{nurse.avatarUrl || 'N/A'}</p>
               </div>
             </section>
           </div>

@@ -84,7 +84,7 @@ const WalletInfo = ({ myWallet, total }) => {
       {isInsufficient && (
         <div className="mt-3 p-3 bg-red-100 rounded-lg">
           <div className="text-red-700 text-sm font-semibold">
-            ⚠️ Số dư ví không đủ để thanh toán!
+            Số dư ví không đủ để thanh toán!
           </div>
           <div className="text-red-600 text-xs mt-1">
             Vui lòng nạp thêm {(total - walletAmount).toLocaleString()}đ
@@ -129,6 +129,17 @@ const PaymentButton = ({
   const canProceed = isSufficient && canConfirm;
   const isDisabled = loading || isProcessingPayment || !canConfirm;
 
+  const handlePrimaryClick = () => {
+    if (isDisabled) return;
+    if (!isSufficient) {
+      if (typeof window !== 'undefined') {
+        window.location.href = '/wallet';
+      }
+      return;
+    }
+    if (handleConfirm) handleConfirm();
+  };
+
   return (
     <div className="space-y-3">
       <button
@@ -137,7 +148,7 @@ const PaymentButton = ({
             ? "bg-gradient-to-r from-pink-500 to-purple-500 text-white hover:scale-105 hover:shadow-xl"
             : "bg-gradient-to-r from-blue-500 to-purple-500 text-white hover:scale-105 hover:shadow-xl"
         }`}
-        onClick={handleConfirm}
+        onClick={handlePrimaryClick}
         disabled={isDisabled}
       >
         {loading || isProcessingPayment ? (

@@ -52,11 +52,15 @@ const SpecialistList = ({ specialists, onEdit, onDelete }) => {
                   <td className="px-8 py-6 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-12 w-12">
-                        <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-400 to-pink-600 flex items-center justify-center shadow-lg">
-                          <span className="text-white font-bold text-lg">
-                            {specialist.fullName?.charAt(0) || 'C'}
-                          </span>
-                        </div>
+                        <img
+                          src={(specialist.avatarUrl && specialist.avatarUrl !== 'string')
+                            ? specialist.avatarUrl
+                            : ((specialist.account?.avatarUrl && specialist.account?.avatarUrl !== 'string')
+                              ? specialist.account.avatarUrl
+                              : '/images/logo-eldora.png')}
+                          alt={specialist.fullName || 'Avatar'}
+                          className="h-12 w-12 rounded-full object-cover border-2 border-pink-200 shadow-lg"
+                        />
                       </div>
                       <div className="ml-4">
                         <div className="text-base font-semibold text-gray-900">
