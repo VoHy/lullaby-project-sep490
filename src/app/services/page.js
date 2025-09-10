@@ -59,7 +59,7 @@ const ServicesSkeleton = () => (
 );
 
 // Utility function to clear services cache
-const clearServicesCache = () => {
+export const clearServicesCache = () => {
   localStorage.removeItem('services_data');
   localStorage.removeItem('services_cache_time');
   localStorage.removeItem('careProfiles_data');

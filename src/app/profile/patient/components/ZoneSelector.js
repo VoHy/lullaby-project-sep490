@@ -92,7 +92,7 @@ export default function ZoneSelector({
       {/* Zone Detail Selection */}
       <div>
         <label className="block text-sm font-medium text-gray-700 mb-2">
-          Quận/Huyện {required && <span className="text-red-500">*</span>}
+        Phường {required && <span className="text-red-500">*</span>}
         </label>
         <select
           value={selectedZoneDetailID || ''}
@@ -102,7 +102,7 @@ export default function ZoneSelector({
           required={required}
         >
           <option value="">
-            {selectedZoneID ? "Chọn quận/huyện" : "Vui lòng chọn tỉnh/thành phố trước"}
+            {selectedZoneID ? "Chọn phường" : "Vui lòng chọn tỉnh/thành phố trước"}
           </option>
           {zoneDetailOptions.map(option => (
             <option key={option.value} value={option.value}>

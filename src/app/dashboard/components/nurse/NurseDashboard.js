@@ -15,7 +15,7 @@ import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 const NurseDashboard = ({ user, initialTab }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [activeTab, setActiveTab] = useState(initialTab || 'schedule');
+  const tabFromUrl = searchParams.get('tab') || 'schedule';
 
   // State cho API data
   const [nurseBookings, setNurseBookings] = useState([]);
@@ -99,18 +99,10 @@ const NurseDashboard = ({ user, initialTab }) => {
 
   // Khi đổi tab thì cập nhật query param
   const handleTabChange = (tabId) => {
-    setActiveTab(tabId);
     const params = new URLSearchParams(Array.from(searchParams.entries()));
     params.set('tab', tabId);
     router.replace(`/dashboard?${params.toString()}`);
   };
-
-  useEffect(() => {
-    if (initialTab && initialTab !== activeTab) {
-      setActiveTab(initialTab);
-    }
-    // eslint-disable-next-line
-  }, [initialTab]);
 
   // Loading state
   if (loading) {
@@ -156,7 +148,7 @@ const NurseDashboard = ({ user, initialTab }) => {
           <button
             key={tab.id}
             onClick={() => handleTabChange(tab.id)}
-            className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${activeTab === tab.id ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-purple-100'}`}
+            className={`px-4 py-2 rounded-lg font-semibold transition-all duration-200 ${tabFromUrl === tab.id ? 'bg-gradient-to-r from-indigo-500 to-purple-500 text-white' : 'bg-gray-100 text-gray-700 hover:bg-purple-100'}`}
           >
             {tab.label}
           </button>
@@ -164,22 +156,22 @@ const NurseDashboard = ({ user, initialTab }) => {
       </div>
       <div className="bg-white rounded-lg shadow p-6 w-full">
         <div>
-          {activeTab === 'schedule' && (
+          {tabFromUrl === 'schedule' && (
             <NurseScheduleTab workSchedules={nurseWorkSchedules} nurseBookings={nurseBookings} />
           )}
-          {activeTab === 'bookings' && (
+          {tabFromUrl === 'bookings' && (
             <NurseBookingsTab nurseBookings={nurseBookings} />
           )}
-          {activeTab === 'patients' && (
+          {tabFromUrl === 'patients' && (
             <NursePatientsTab patients={patients} />
           )}
-          {activeTab === 'medicalnote' && (
+          {tabFromUrl === 'medicalnote' && (
             <NurseMedicalNoteTab medicalNotes={medicalNotes} patients={patients} />
           )}
-          {activeTab === 'notifications' && (
+          {tabFromUrl === 'notifications' && (
             <NurseNotificationsTab notifications={notifications} />
           )}
-          {activeTab === 'profile' && (
+          {tabFromUrl === 'profile' && (
             <NurseProfileTab nurseAccount={user} />
           )}
         </div>

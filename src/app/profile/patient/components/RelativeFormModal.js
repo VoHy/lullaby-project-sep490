@@ -3,7 +3,7 @@ import BaseModal from './shared/BaseModal';
 import { FormField, AvatarUpload, FormActions } from './shared/FormComponents';
 import { validateRelative, prepareRelativeData, normalizeFieldNames } from '../utils/formUtils';
 
-export default function RelativeFormModal({ open, onClose, onSave, formData, onChange, loading, isEdit }) {
+export default function RelativeFormModal({ open, onClose, onSave, formData, onChange, loading, isEdit, currentCareID }) {
   const handleSubmit = (e) => {
     e.preventDefault();
 
@@ -15,7 +15,7 @@ export default function RelativeFormModal({ open, onClose, onSave, formData, onC
     }
 
     // Prepare data using utility function
-    const submitData = prepareRelativeData(formData, formData.careProfileID);
+    const submitData = prepareRelativeData(formData, currentCareID);
     onSave(submitData);
   };
 

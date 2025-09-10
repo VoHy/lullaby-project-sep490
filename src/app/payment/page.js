@@ -498,6 +498,7 @@ const ServiceInfoCard = ({
         endTime: task.endTime,
         taskOrder: task.taskOrder,
         customizeTaskId: task.customizeTaskID || task.id,
+        forMom: serviceType?.forMom || false, // Add forMom property
         // ... các trường khác nếu cần
       };
     });
@@ -590,11 +591,6 @@ const ServiceInfoCard = ({
                         <span className="font-semibold text-blue-700 text-lg">
                           {service.name}
                         </span>
-                        {service.taskOrder && (
-                          <span className="bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
-                            Thứ tự: {service.taskOrder}
-                          </span>
-                        )}
                       </div>
 
                       {/* Thông tin thời gian */}
@@ -647,14 +643,16 @@ const ServiceInfoCard = ({
                               : 'Chọn điều dưỡng'}
                           </button>
                         )}
-                        <button
-                          className="bg-purple-600 text-white border-purple-600 border text-white px-4 py-2 rounded transition-colors hover:bg-purple-700"
-                          onClick={() => setRelativeModalTaskId(customizeTaskId)}
-                        >
-                          {selectedRelative ? 'Đổi con' : 'Chọn con'}
-                        </button>
+                        {!service.forMom && (
+                          <button
+                            className="bg-purple-600 text-white border-purple-600 border text-white px-4 py-2 rounded transition-colors hover:bg-purple-700"
+                            onClick={() => setRelativeModalTaskId(customizeTaskId)}
+                          >
+                            {selectedRelative ? 'Đổi con' : 'Chọn con'}
+                          </button>
+                        )}
                       </div>
-                      {selectedRelative && (
+                      {selectedRelative && !service.forMom && (
                         <div className="mt-2 p-2 bg-green-50 border border-green-200 rounded-lg text-sm text-green-800">
                           <strong>Con đã chọn:</strong> {selectedRelative.relativeName || selectedRelative.name}
                           {selectedRelative.dateOfBirth && (

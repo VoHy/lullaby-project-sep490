@@ -6,7 +6,7 @@ import zoneDetailService from '@/services/api/zoneDetailService';
 import careProfileService from '@/services/api/careProfileService';
 import bookingService from '@/services/api/bookingService';
 import { validateCareProfile, validateRelative, prepareCareProfileData, prepareRelativeData } from '../../utils/formUtils';
-import clearServicesCache from '@/app/services/page.js'; // Import hàm clearServicesCache
+import { clearServicesCache } from '@/app/services/page.js'; // Import hàm clearServicesCache
 
 export const useDataManager = (user, router) => {
   // Data states

@@ -150,6 +150,7 @@ export default function PatientProfilePage(props) {
           onChange={manager.handleRelativeInputChange}
           loading={manager.relativeLoading}
           isEdit={!!manager.editRelative}
+          currentCareID={manager.currentCareID}
         />
         {/* Modal xác nhận xoá hồ sơ */}
         <ConfirmDeleteModal

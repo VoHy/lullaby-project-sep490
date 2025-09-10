@@ -11,6 +11,7 @@ const careProfileService = {
   createCareProfile: async (data) => apiPost(`${base}/create`, data, 'Không thể tạo care profile'),
   updateCareProfile: async (id, data) => apiPut(`${base}/update/${id}`, data, 'Không thể cập nhật care profile'),
   deleteCareProfile: async (id) => apiDelete(`${base}/delete/${id}`, 'Không thể xóa care profile'),
+  getCareProfilesByAccount: async (accountId) => apiGet(`${base}/getbyaccount/${accountId}`, 'Không thể lấy careProfile theo account'),
 };
 
 export default careProfileService;

@@ -120,7 +120,6 @@ export function StatusBadge({ status, variant = 'default' }) {
 // Form Actions Component
 export function FormActions({
   onCancel,
-  onSubmit,
   loading = false,
   submitText = 'Lưu',
   cancelText = 'Hủy'
@@ -137,7 +136,6 @@ export function FormActions({
       </button>
       <button
         type="submit"
-        onClick={onSubmit}
         className="px-6 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium hover:shadow-lg transition"
         disabled={loading}
       >

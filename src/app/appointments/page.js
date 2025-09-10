@@ -97,13 +97,13 @@ export default function AppointmentsPage() {
       isRefresh ? setRefreshing(true) : setLoading(true);
       setError(null);
 
+      // Lấy careProfiles của user
       const [
-        bookings, careProfiles, services, tasks,
+        careProfiles, services, tasks,
         specialists, zones, invoiceData,
         packages, customizeTasksRaw
       ] = await Promise.all([
-        bookingService.getAllBookings(),
-        careProfileService.getCareProfiles(),
+        careProfileService.getCareProfilesByAccount(user.accountID),
         serviceTypeService.getServiceTypes(),
         serviceTaskService.getServiceTasks(),
         nursingSpecialistService.getAllNursingSpecialists(),
@@ -112,6 +112,15 @@ export default function AppointmentsPage() {
         customizePackageService.getAllCustomizePackages(),
         customizeTaskService.getAllCustomizeTasks()
       ]);
+      console.log('CareProfiles:', careProfiles, 'User:', user);
+      // Lấy tất cả booking của từng careProfile
+      const bookingsArr = await Promise.all(
+        careProfiles.map(profile =>
+          bookingService.getAllByCareProfile(profile.careProfileID)
+        )
+      );
+      // Gộp tất cả booking lại thành 1 mảng
+      const bookings = bookingsArr.flat();
 
       const bookingsWithProfile = bookings.map(b => {
         const profileId = b.careProfileId || b.careProfileID;
@@ -143,7 +152,17 @@ export default function AppointmentsPage() {
   useEffect(() => { if (user) fetchData(); }, [fetchData, user]);
 
   if (loading) return <LoadingSpinner message="Đang tải lịch hẹn..." fullScreen />;
-  if (error) return <div className="text-center text-red-600 py-8">{error}</div>;
+  if (error) {
+    if (error.includes('No CareProfiles found')) {
+      return (
+        <div className="text-center py-8 text-gray-500">
+          Bạn chưa có lịch hẹn nào.<br />
+          Hãy tạo hồ sơ người thân và đặt lịch dịch vụ để bắt đầu trải nghiệm!
+        </div>
+      );
+    }
+    return <div className="text-center text-red-600 py-8">{error}</div>;
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50">
