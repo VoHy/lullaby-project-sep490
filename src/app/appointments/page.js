@@ -79,7 +79,8 @@ export default function AppointmentsPage() {
     if (searchText) {
       filtered = filtered.filter(a =>
         a.serviceName?.toLowerCase().includes(searchText.toLowerCase()) ||
-        a.bookingID?.toString().includes(searchText)
+        a.bookingID?.toString().includes(searchText) ||
+        a.careProfile?.profileName?.toLowerCase().includes(searchText.toLowerCase())
       );
     }
     return filtered;
@@ -188,9 +189,9 @@ export default function AppointmentsPage() {
         </motion.div>
 
         {/* Toolbar */}
-        <div className="bg-white p-4 rounded-xl shadow-md mb-6 grid gap-4 md:grid-cols-2 lg:grid-cols-4 items-center">
+        <div className="bg-white p-4 rounded-xl shadow-md mb-6 grid gap-4 md:grid-cols-2 items-center">
           {/* Search */}
-          <div className="relative col-span-2">
+          <div className="relative">
             <input
               type="text"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 pr-10"
@@ -214,43 +215,52 @@ export default function AppointmentsPage() {
             <option value="completed">Hoàn thành</option>
             <option value="cancelled">Đã hủy</option>
             <option value="isScheduled">Đã lên lịch</option>
-            <option value="notScheduled">Chưa lên lịch</option>
           </select>
-
-          {/* Pagination */}
-          <div className="flex items-center justify-end gap-2">
-            <button
-              className="px-3 py-1 rounded bg-purple-100 text-purple-700 font-semibold disabled:opacity-50"
-              disabled={currentPage === 1}
-              onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
-            >Trước</button>
-            <span className="font-semibold text-gray-700">Trang {currentPage} / {totalPages || 1}</span>
-            <button
-              className="px-3 py-1 rounded bg-purple-100 text-purple-700 font-semibold disabled:opacity-50"
-              disabled={currentPage === totalPages || totalPages === 0}
-              onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
-            >Sau</button>
-          </div>
         </div>
 
         {/* Appointment List */}
         {paginatedAppointments.length === 0 ? (
           <EmptyState onNewAppointment={() => router.push('/services')} />
         ) : (
-          <div className="grid gap-6 sm:grid-cols-2">
-            {paginatedAppointments.map((appointment, idx) => (
-              <AppointmentCard
-                key={appointment.bookingID || idx}
-                appointment={appointment}
-                index={idx}
-                serviceTypes={serviceTypes}
-                onSelect={setSelectedAppointment}
-                getStatusColor={getStatusColor}
-                getStatusText={getStatusText}
-                formatDate={formatDate}
-              />
-            ))}
-          </div>
+          <>
+            <div className="grid gap-6 sm:grid-cols-2">
+              {paginatedAppointments.map((appointment, idx) => (
+                <AppointmentCard
+                  key={appointment.bookingID || idx}
+                  appointment={appointment}
+                  index={idx}
+                  serviceTypes={serviceTypes}
+                  onSelect={setSelectedAppointment}
+                  getStatusColor={getStatusColor}
+                  getStatusText={getStatusText}
+                  formatDate={formatDate}
+                />
+              ))}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex items-center justify-center gap-2 mt-8">
+                <button
+                  className="px-4 py-2 rounded-lg bg-purple-100 text-purple-700 font-semibold disabled:opacity-50 hover:bg-purple-200 transition-colors"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                >
+                  Trước
+                </button>
+                <span className="font-semibold text-gray-700 px-4">
+                  Trang {currentPage} / {totalPages}
+                </span>
+                <button
+                  className="px-4 py-2 rounded-lg bg-purple-100 text-purple-700 font-semibold disabled:opacity-50 hover:bg-purple-200 transition-colors"
+                  disabled={currentPage === totalPages || totalPages === 0}
+                  onClick={() => setCurrentPage(p => Math.min(totalPages, p + 1))}
+                >
+                  Sau
+                </button>
+              </div>
+            )}
+          </>
         )}
 
         {/* Appointment Detail Modal */}

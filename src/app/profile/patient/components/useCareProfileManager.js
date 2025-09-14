@@ -7,6 +7,8 @@ import { useFormManager } from './hooks/useFormManager';
 export default function useCareProfileManager(router) {
   const { user } = useContext(AuthContext);
   const [successMessage, setSuccessMessage] = useState('');
+  const [showMedicalNotesModal, setShowMedicalNotesModal] = useState(false);
+  const [selectedCareProfile, setSelectedCareProfile] = useState(null);
 
   // Use custom hooks
   const modalManager = useModalManager();
@@ -30,6 +32,16 @@ export default function useCareProfileManager(router) {
   const handleOpenRelativeForm = (item = null, careProfileID = null) => {
     formManager.openForm('relative', item, careProfileID);
     modalManager.openModal('relativeForm');
+  };
+
+  const handleViewMedicalNotes = (careProfile) => {
+    setSelectedCareProfile(careProfile);
+    setShowMedicalNotesModal(true);
+  };
+
+  const handleCloseMedicalNotesModal = () => {
+    setShowMedicalNotesModal(false);
+    setSelectedCareProfile(null);
   };
 
   const handleSaveCareProfile = async (dataOrEvent) => {
@@ -138,6 +150,8 @@ export default function useCareProfileManager(router) {
     showRelativeDetail: modalManager.modals.relativeDetail,
     showDeleteCareProfile: modalManager.modals.deleteCareProfile,
     showDeleteRelative: modalManager.modals.deleteRelative,
+    showMedicalNotesModal,
+    selectedCareProfile,
     
     // Form data
     editCareProfile: formManager.editItems.careProfile,
@@ -172,6 +186,8 @@ export default function useCareProfileManager(router) {
     confirmDeleteCareProfile,
     handleDeleteRelative,
     confirmDeleteRelative,
+    handleViewMedicalNotes,
+    handleCloseMedicalNotesModal,
     
     // Input handlers
     handleCareProfileInputChange: (e) => formManager.handleInputChange('careProfile', e),

@@ -2,7 +2,7 @@ import PatientCareProfileCard from './PatientCareProfileCard';
 import { FaUsers, FaPlus } from 'react-icons/fa';
 import { filterItems } from '../utils/displayUtils';
 
-export default function PatientCareProfileList({ careProfiles, relativesList, zones, relativesFilter, setRelativesFilter, handleOpenForm, careProfileFilter, setCareProfileFilter, handleOpenCareProfileForm, onViewDetailCareProfile, onViewDetailRelative, handleOpenEditCareProfile, handleOpenEditRelative, handleDeleteCareProfile, handleDeleteRelative }) {
+export default function PatientCareProfileList({ careProfiles, relativesList, zones, relativesFilter, setRelativesFilter, handleOpenForm, careProfileFilter, setCareProfileFilter, handleOpenCareProfileForm, onViewDetailCareProfile, onViewDetailRelative, handleOpenEditCareProfile, handleOpenEditRelative, handleDeleteCareProfile, handleDeleteRelative, onViewMedicalNotes }) {
   // Filter care profiles using utility function
   const filteredCareProfiles = filterItems(careProfiles, careProfileFilter);
 
@@ -65,6 +65,7 @@ export default function PatientCareProfileList({ careProfiles, relativesList, zo
               handleOpenEditRelative={handleOpenEditRelative}
               handleDeleteCareProfile={handleDeleteCareProfile}
               handleDeleteRelative={handleDeleteRelative}
+              onViewMedicalNotes={onViewMedicalNotes}
             />
           ))}
         </div>

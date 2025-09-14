@@ -14,6 +14,7 @@ import RelativeFormModal from './components/RelativeFormModal';
 import ConfirmDeleteModal from './components/ConfirmDeleteModal';
 import CareProfileDetailModal from './components/CareProfileDetailModal';
 import RelativeDetailModal from './components/RelativeDetailModal';
+import MedicalNotesModal from './components/MedicalNotesModal';
 
 // TabNavigation đồng bộ với profile
 const TabNavigation = () => {
@@ -130,6 +131,7 @@ export default function PatientProfilePage(props) {
             handleOpenEditRelative={manager.handleOpenRelativeForm}
             handleDeleteCareProfile={manager.handleDeleteCareProfile}
             handleDeleteRelative={manager.handleDeleteRelative}
+            onViewMedicalNotes={manager.handleViewMedicalNotes}
           />
         </div>
         {/* Modal form hồ sơ người thân */}
@@ -187,6 +189,12 @@ export default function PatientProfilePage(props) {
           open={manager.showRelativeDetail}
           onClose={manager.handleCloseRelativeDetail}
           relative={manager.detailRelative}
+        />
+        {/* Modal Medical Notes */}
+        <MedicalNotesModal
+          open={manager.showMedicalNotesModal}
+          onClose={manager.handleCloseMedicalNotesModal}
+          careProfile={manager.selectedCareProfile}
         />
       </div>
     </div>

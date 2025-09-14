@@ -1,10 +1,10 @@
-import { FaPhone, FaMapMarkerAlt, FaStickyNote, FaUsers, FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaPhone, FaMapMarkerAlt, FaStickyNote, FaUsers, FaPlus, FaEdit, FaTrash, FaFileMedical } from 'react-icons/fa';
 import { formatDateToDDMMYYYY } from '../../utils/dateUtils';
 import { StatusBadge } from './shared/FormComponents';
 import { normalizeFieldNames } from '../utils/formUtils';
 import { filterItems, getCareProfileId, getRelativeId } from '../utils/displayUtils';
 
-export default function PatientCareProfileCard({ care, relativesList, relFilter, setRelFilter, handleOpenForm, onViewDetailCareProfile, onViewDetailRelative, handleOpenEditCareProfile, handleOpenEditRelative, handleDeleteCareProfile, handleDeleteRelative }) {
+export default function PatientCareProfileCard({ care, relativesList, relFilter, setRelFilter, handleOpenForm, onViewDetailCareProfile, onViewDetailRelative, handleOpenEditCareProfile, handleOpenEditRelative, handleDeleteCareProfile, handleDeleteRelative, onViewMedicalNotes }) {
   const normalizedCare = normalizeFieldNames(care);
   const careId = getCareProfileId(care);
 
@@ -31,6 +31,13 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
         <div className="flex flex-col items-end gap-2">
           <StatusBadge status={normalizedCare.status} variant="detailed" />
           <div className="flex items-center gap-1">
+            <button
+              className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-blue-600 transition"
+              title="Xem bệnh án"
+              onClick={e => { e.stopPropagation(); onViewMedicalNotes && onViewMedicalNotes(care); }}
+            >
+              <FaFileMedical />
+            </button>
             <button
               className="p-1 rounded hover:bg-gray-100 text-gray-500 hover:text-purple-600 transition"
               title="Sửa hồ sơ"
