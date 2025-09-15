@@ -76,8 +76,8 @@ const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
           )}
           {item.major && (
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${getMajorColor(item.major)}`}>
-              {item.major === 'Nurse' ? 'Y tá' :
-                item.major === 'Specialist' ? 'Chuyên gia' : item.major}
+              {item.major === 'Nurse' ? 'Chuyên viên chăm sóc' :
+                item.major === 'Specialist' ? 'Chuyên gia tư vấn' : item.major}
             </span>
           )}
           {item.isPackage && (

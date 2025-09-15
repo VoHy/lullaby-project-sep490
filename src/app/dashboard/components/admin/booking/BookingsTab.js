@@ -288,7 +288,7 @@ const BookingsTab = ({ bookings }) => {
 
           {/* Header */}
           <div className="bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-t-lg p-6">
-            <h3 className="text-2xl font-bold mb-2">Chi tiết Booking #{booking?.BookingID ?? booking?.bookingID}</h3>
+            <h3 className="text-2xl font-bold mb-2">Chi tiết lịch hẹn #{booking?.BookingID ?? booking?.bookingID}</h3>
           </div>
 
           {/* Content */}

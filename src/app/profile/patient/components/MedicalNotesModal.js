@@ -179,10 +179,9 @@ export default function MedicalNotesModal({ open, onClose, careProfile }) {
                       </div>
 
                       <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <fauser className="text-green-500">
+                        <FaUser className="text-green-500"/>
                           <span className="font-medium">Họ và tên: </span>
                           <span>{note.relativeID ? (relativeNames[note.relativeID] || note.relativeID || 'N/A') : careProfile?.ProfileName || careProfile?.profileName || 'N/A'}</span>
-                        </fauser>
                       </div>
                     </div>
 
