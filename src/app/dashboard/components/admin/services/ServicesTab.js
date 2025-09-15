@@ -376,8 +376,8 @@ const ServicesTab = () => {
               className="w-full pl-12 pr-4 py-3.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200 bg-gray-50 focus:bg-white appearance-none"
             >
               <option value="all">Tất cả chuyên môn</option>
-              <option value="Nurse">Y tá</option>
-              <option value="Specialist">Chuyên gia</option>
+              <option value="Nurse">Chuyên viên chăm sóc</option>
+              <option value="Specialist">Chuyên gia tư vấn</option>
             </select>
           </div>
 

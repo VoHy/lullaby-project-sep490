@@ -209,7 +209,7 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
               <input
                 type="text"
                 className="w-full px-2 py-1 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-400"
-                placeholder="Dán URL ảnh đại diện"
+                placeholder="url ( không bắt buộc )"
                 value={avatarUrl}
                 onChange={handleAvatarUrlChange}
               />

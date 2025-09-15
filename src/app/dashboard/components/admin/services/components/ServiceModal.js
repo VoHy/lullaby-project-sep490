@@ -165,8 +165,8 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                       onChange={(e) => setFormData({ ...formData, major: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
                     >
-                      <option value="Nurse">Y tá</option>
-                      <option value="Specialist">Chuyên gia</option>
+                      <option value="Nurse">Chuyên viên chăm sóc</option>
+                      <option value="Specialist">Chuyên gia tư vấn</option>
                     </select>
                   </div>
                 </div>

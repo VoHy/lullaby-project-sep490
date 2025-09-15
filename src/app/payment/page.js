@@ -19,9 +19,11 @@ import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import customizeTaskService from '@/services/api/customizeTaskService';
 import bookingService from '@/services/api/bookingService';
 import notificationService from '@/services/api/notificationService';
+import wishlistService from '@/services/api/wishlistService';
 
 // Icons
 import { Clock, Calendar } from 'lucide-react';
+import { FaHeart } from 'react-icons/fa';
 
 function PaymentContent() {
   const searchParams = useSearchParams();
@@ -29,6 +31,9 @@ function PaymentContent() {
   const bookingId = searchParams.get("bookingId");
   const { user } = useContext(AuthContext);
   const { wallet: contextWallet, refreshWalletData } = useWalletContext();
+
+  // Favorites map nursingID -> true
+  const [favoriteMap, setFavoriteMap] = useState({});
 
   // State cho relative selection
   const [selectedRelativeByTask, setSelectedRelativeByTask] = useState({});
@@ -79,6 +84,29 @@ function PaymentContent() {
     refreshWalletData,
     router
   });
+
+  // Load favorites của user
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        if (!user?.accountID && !user?.AccountID) {
+          setFavoriteMap({});
+          return;
+        }
+        const accountId = user.accountID || user.AccountID;
+        const list = await wishlistService.getAllByAccount(accountId);
+        const map = {};
+        (Array.isArray(list) ? list : []).forEach(item => {
+          const nId = item.nursingID || item.NursingID;
+          if (nId != null) map[nId] = true;
+        });
+        setFavoriteMap(map);
+      } catch (e) {
+        setFavoriteMap({});
+      }
+    };
+    loadFavorites();
+  }, [user]);
 
   // Hàm tìm manager theo zone
   const findManagerByZone = useCallback((zoneID) => {
@@ -287,6 +315,7 @@ function PaymentContent() {
               selectedRelativeByTask={selectedRelativeByTask}
               relatives={relatives || []}
               setSelectedRelativeByTask={setSelectedRelativeByTask}
+              favoriteMap={favoriteMap}
             />
 
             {/* Cancel Booking Section */}
@@ -472,7 +501,8 @@ const ServiceInfoCard = ({
   accounts = [],
   selectedRelativeByTask = {}, // thêm dòng này
   relatives = [],
-  setSelectedRelativeByTask
+  setSelectedRelativeByTask,
+  favoriteMap = {}
 }) => {
   // State cho việc chọn điều dưỡng
   const [loadingMap, setLoadingMap] = useState({});
@@ -717,6 +747,7 @@ const ServiceInfoCard = ({
                 {!isLoading && candidates.map((nurse) => {
                   const account = accounts?.find(acc => String(acc.accountID) === String(nurse.accountID));
                   const isSelected = String(nurse.NursingID || nurse.nursingID) === String(selectedNurseId);
+                  const isFavorite = !!favoriteMap[nurse.NursingID || nurse.nursingID];
 
                   return (
                     <div
@@ -747,8 +778,9 @@ const ServiceInfoCard = ({
                         className="w-12 h-12 rounded-full object-cover border"
                       />
                       <div className="flex-1">
-                        <div className="font-bold text-blue-700 text-lg">
+                        <div className="font-bold text-blue-700 text-lg flex items-center gap-2">
                           {nurse.Full_Name || nurse.fullName || nurse.FullName || nurse.name || `Nurse #${nurse.NursingID || nurse.nursingID}`}
+                          {isFavorite && <FaHeart className="text-pink-500 " />}
                         </div>
                         <div className="text-sm text-gray-600">
                           Năm sinh: {nurse.birthYear || nurse.BirthYear || nurse.dateOfBirth?.slice(0, 4) || nurse.birth_year || (account?.dateOfBirth?.slice(0, 4)) || '---'}

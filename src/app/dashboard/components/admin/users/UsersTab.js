@@ -364,7 +364,8 @@ const UsersTab = () => {
                             'text-blue-600 hover:text-blue-800 hover:bg-blue-50'
                             }`}
                           onClick={() => handleViewDetail(account)}
-                          title="Xem chi tiết"
+                          disabled={isDeleted}
+                          title={isDeleted ? "Không thể xem chi tiết tài khoản đã xóa" : "Xem chi tiết"}
                         >
                           <FontAwesomeIcon icon={faEye} />
                         </button>
