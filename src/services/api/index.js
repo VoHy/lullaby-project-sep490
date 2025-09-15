@@ -67,6 +67,9 @@ export { default as transactionHistoryService } from './transactionHistoryServic
 // Wallet Services
 export { default as walletService } from './walletService';
 
+// Wishlist Services
+export { default as wishlistService } from './wishlistService';
+
 // Work Schedule Services
 export { default as workScheduleService } from './workScheduleService';
 

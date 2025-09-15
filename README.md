@@ -36,7 +36,7 @@ Lullaby là nền tảng chăm sóc sức khỏe tại nhà hiện đại, kết
 ### **Frontend Framework**
 - **Next.js 15** với App Router - SSR và client-side routing
 - **React 19** - Component-based UI với hooks
-- **TypeScript/JavaScript** - Development với ES6+
+- **JavaScript** - Development với ES6+
 
 ### **Styling & UI**
 - **TailwindCSS 4** - Utility-first CSS framework với custom config
@@ -55,11 +55,6 @@ Lullaby là nền tảng chăm sóc sức khỏe tại nhà hiện đại, kết
 - **React Context API** - Global state (Auth, Wallet)
 - **Axios 1.9** - HTTP client với interceptors
 - **Custom hooks** - Reusable business logic
-
-### **Real-time & Notifications**
-- **Firebase 12** - Push notifications và messaging
-- **@microsoft/signalr 9** - Real-time communication hub
-- **Service Workers** - Background notification handling
 
 ### **UI Components & Utils**
 - **@radix-ui/react-*** - Accessible UI primitives
