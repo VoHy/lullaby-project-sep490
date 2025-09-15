@@ -32,7 +32,7 @@ export default function Footer() {
             </div>
             <p className="text-gray-700 leading-relaxed mb-4 max-w-md">
               Cung cấp tình yêu thương, sự ấm áp và dịch vụ tận tâm để mang đến
-              cho người cao tuổi một gia đình thực sự.
+              cho một gia đình thực sự.
               <br />
               <br />
               Để biết thêm chi tiết, vui lòng liên hệ qua các liên kết bên dưới.
