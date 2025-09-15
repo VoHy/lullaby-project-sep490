@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useContext, useMemo } from 'react';
 import { motion } from "framer-motion";
 // Icons
 import {
@@ -16,17 +16,21 @@ import {
   FaEnvelope,
   FaUserMd,
   FaQuoteLeft,
-  FaStar
+  FaStar,
+  FaHeart
 } from 'react-icons/fa';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import zoneService from '@/services/api/zoneService';
 import accountService from '@/services/api/accountService';
 import feedbackService from '@/services/api/feedbackService';
+import wishlistService from '@/services/api/wishlistService';
+import { AuthContext } from '@/context/AuthContext';
 // import customizeTaskService from '@/services/api/customizeTaskService';
 // import bookingService from '@/services/api/bookingService';
 // import serviceTaskService from '@/services/api/serviceTaskService';
 
 export default function TeamPage() {
+  const { user } = useContext(AuthContext);
   const [nursingSpecialists, setNursingSpecialists] = useState([]);
   const [zones, setZones] = useState([]);
   const [customerTasks, setCustomerTasks] = useState([]);
@@ -41,6 +45,9 @@ export default function TeamPage() {
   const [searchText, setSearchText] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [favorites, setFavorites] = useState([]);
+  const [favoriteMap, setFavoriteMap] = useState({});
+  const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
 
   const majorMap = {
     Nurse: "Chuyên viên chăm sóc",
@@ -92,6 +99,57 @@ export default function TeamPage() {
     fetchData();
   }, []);
 
+  // Load favorites theo account khi đăng nhập
+  useEffect(() => {
+    const loadFavorites = async () => {
+      try {
+        if (!user?.accountID && !user?.AccountID) {
+          setFavorites([]);
+          setFavoriteMap({});
+          return;
+        }
+        const accountId = user.accountID || user.AccountID;
+        const list = await wishlistService.getAllByAccount(accountId);
+        setFavorites(Array.isArray(list) ? list : []);
+        const map = {};
+        (Array.isArray(list) ? list : []).forEach(item => {
+          const nId = item.nursingID || item.NursingID;
+          if (nId != null) map[nId] = item.wishlistID || item.WishlistID || item.id || item.ID;
+        });
+        setFavoriteMap(map);
+      } catch (err) {
+        // ignore silently
+      }
+    };
+    loadFavorites();
+  }, [user]);
+
+  const isFavorite = useMemo(() => (nursingId) => !!favoriteMap[nursingId], [favoriteMap]);
+
+  const toggleFavorite = async (member) => {
+    try {
+      const nursingId = member.NursingID || member.nursingID;
+      if (!nursingId) return;
+      const accountId = user?.accountID || user?.AccountID;
+      if (!accountId) return;
+      if (favoriteMap[nursingId]) {
+        const wishlistId = favoriteMap[nursingId];
+        await wishlistService.remove(wishlistId);
+        const newFav = (favorites || []).filter(it => (it.wishlistID || it.WishlistID || it.id || it.ID) !== wishlistId);
+        setFavorites(newFav);
+        const { [nursingId]: _removed, ...rest } = favoriteMap;
+        setFavoriteMap(rest);
+      } else {
+        const created = await wishlistService.add({ nursingID: nursingId, accountID: accountId });
+        const createdId = created?.wishlistID || created?.WishlistID || created?.id || created?.ID;
+        setFavorites([...(favorites || []), created]);
+        setFavoriteMap({ ...favoriteMap, [nursingId]: createdId });
+      }
+    } catch (err) {
+      // ignore or add toast later
+    }
+  };
+
   // Phân biệt Y tá và Chuyên gia
   const nurses = nursingSpecialists.filter(m => m && (m.Major || m.major) && (m.Major || m.major).toLowerCase().includes('nurse'));
   const specialists = nursingSpecialists.filter(m => m && (m.Major || m.major) && !(m.Major || m.major).toLowerCase().includes('nurse'));
@@ -130,8 +188,12 @@ export default function TeamPage() {
     return zoneMatch && searchMatch;
   };
 
-  const filteredNurses = nurses.filter(filterMember);
-  const filteredSpecialists = specialists.filter(filterMember);
+  let filteredNurses = nurses.filter(filterMember);
+  let filteredSpecialists = specialists.filter(filterMember);
+  if (showOnlyFavorites) {
+    filteredNurses = filteredNurses.filter(m => isFavorite(m.NursingID || m.nursingID));
+    filteredSpecialists = filteredSpecialists.filter(m => isFavorite(m.NursingID || m.nursingID));
+  }
 
   // Lấy danh sách zone unique
   const allZoneNames = Array.from(new Set(zones.map(z => z.Zone_name || z.zoneName || z.City || z.city).filter(Boolean)));
@@ -225,6 +287,14 @@ export default function TeamPage() {
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
     >
+      {/* Favorite icon */}
+      <button
+        aria-label="Yêu thích"
+        className={`absolute right-4 top-4 text-xl ${isFavorite(member.NursingID || member.nursingID) ? 'text-pink-500' : 'text-gray-300'} hover:text-pink-500 transition`}
+        onClick={(e) => { e.stopPropagation(); toggleFavorite(member); }}
+      >
+        <FaHeart />
+      </button>
       {/* Avatar + Badge */}
       <div className="relative mb-4">
         <img
@@ -321,6 +391,12 @@ export default function TeamPage() {
                 </select>
               </div>
 
+              {/* Favorites */}
+              <div className="flex items-center gap-2">
+                <label className="text-gray-700 font-semibold">Danh sách yêu thích:</label>
+                <input type="checkbox" checked={showOnlyFavorites} onChange={(e) => setShowOnlyFavorites(e.target.checked)} />
+              </div>
+
               {/* Search */}
               <div className="flex items-center gap-2">
                 <label className="text-gray-700 font-semibold">Tìm kiếm:</label>
@@ -343,6 +419,10 @@ export default function TeamPage() {
               <div className="text-center">
                 <div className="text-2xl font-bold text-pink-600">{filteredSpecialists.length}</div>
                 <div className="text-gray-600">Chuyên gia tư vấn</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-600">{Object.keys(favoriteMap).length}</div>
+                <div className="text-gray-600">Yêu thích</div>
               </div>
             </div>
           </div>

@@ -64,6 +64,9 @@ export const API_ENDPOINTS = {
   // Wallet
   WALLET: '/Wallet',
 
+  // Wishlist (Favorites)
+  WISHLIST: '/Wishlist',
+
   // Work Schedules
   WORK_SCHEDULES: '/WorkSchedule'
 };
