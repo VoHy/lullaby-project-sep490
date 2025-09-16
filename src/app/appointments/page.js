@@ -14,7 +14,8 @@ import {
   zoneDetailService,
   customizePackageService,
   customizeTaskService,
-  careProfileService
+  careProfileService,
+  transactionHistoryService
 } from '@/services/api';
 import { AppointmentCard, AppointmentDetailModal, EmptyState } from './components';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
@@ -53,7 +54,7 @@ export default function AppointmentsPage() {
   };
   const getStatusText = (status) => {
     switch (status) {
-      case 'pending': return 'Đang chờ';
+      case 'pending': return 'Chưa thanh toán';
       case 'completed': return 'Hoàn thành';
       case 'cancelled': return 'Đã hủy';
       case 'isScheduled': return 'Đã lên lịch';
@@ -83,6 +84,18 @@ export default function AppointmentsPage() {
         a.careProfile?.profileName?.toLowerCase().includes(searchText.toLowerCase())
       );
     }
+    // Ẩn các booking pending nếu còn < 2 giờ đến thời gian làm việc
+    const now = new Date();
+    const twoHoursMs = 2 * 60 * 60 * 1000;
+    filtered = filtered.filter((booking) => {
+      const status = booking.status || booking.Status;
+      if (status !== 'pending') return true;
+      const workRaw = booking.workdate || booking.Workdate || booking.BookingDate;
+      const work = workRaw ? new Date(workRaw) : null;
+      if (!work || isNaN(work.getTime())) return true;
+      const diffMs = work.getTime() - now.getTime();
+      return diffMs > twoHoursMs;
+    });
     return filtered;
   }, [userAppointments, statusFilter, searchText]);
 
@@ -152,6 +165,43 @@ export default function AppointmentsPage() {
 
   useEffect(() => { if (user) fetchData(); }, [fetchData, user]);
 
+  // Hủy lịch hẹn + hoàn tiền về ví
+  const handleCancelWithRefund = useCallback(async (appointment) => {
+    try {
+      const bookingId = appointment?.bookingID || appointment?.BookingID;
+      if (!bookingId) {
+        throw new Error('Không tìm thấy mã đặt lịch');
+      }
+
+      // Tìm invoice của booking này
+      const invoice = invoices.find(inv =>
+        inv.bookingID === bookingId || inv.BookingID === bookingId
+      );
+
+      if (!invoice) {
+        throw new Error('Không tìm thấy hóa đơn của booking');
+      }
+
+      const invoiceId = invoice.invoiceID || invoice.invoice_ID || invoice.InvoiceID;
+      if (!invoiceId) {
+        throw new Error('Không tìm thấy mã hóa đơn');
+      }
+
+      // Gọi API hoàn tiền (endpoint này đã tự cập nhật trạng thái hóa đơn trên server)
+      await transactionHistoryService.refundMoneyToWallet(parseInt(invoiceId));
+
+      // Refresh data ví và danh sách lịch hẹn
+      await Promise.all([
+        refreshWalletData(),
+        fetchData(true)
+      ]);
+      alert('Hủy lịch hẹn thành công và đã hoàn tiền vào ví.');
+    } catch (err) {
+      console.error('Cancel with refund failed:', err);
+      alert(`Không thể hủy/hoàn tiền: ${err.message || 'Vui lòng thử lại sau.'}`);
+    }
+  }, [fetchData, invoices, refreshWalletData]);
+
   if (loading) return <LoadingSpinner message="Đang tải lịch hẹn..." fullScreen />;
   if (error) {
     if (error.includes('No CareProfiles found')) {
@@ -211,7 +261,7 @@ export default function AppointmentsPage() {
             onChange={e => setStatusFilter(e.target.value)}
           >
             <option value="all">Tất cả trạng thái</option>
-            <option value="pending">Đang chờ</option>
+            <option value="pending">Chưa thanh toán</option>
             <option value="completed">Hoàn thành</option>
             <option value="cancelled">Đã hủy</option>
             <option value="isScheduled">Đã lên lịch</option>
@@ -231,6 +281,7 @@ export default function AppointmentsPage() {
                   index={idx}
                   serviceTypes={serviceTypes}
                   onSelect={setSelectedAppointment}
+                  onCancel={handleCancelWithRefund}
                   getStatusColor={getStatusColor}
                   getStatusText={getStatusText}
                   formatDate={formatDate}

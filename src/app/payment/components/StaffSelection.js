@@ -12,11 +12,12 @@ export default function StaffSelection({
   getCandidatesForService,
   onAssign,
   accounts = [], // Thêm prop accounts
+  assignError = "", // Thêm prop để nhận thông báo lỗi từ parent
+  setAssignError = () => {} // Thêm prop để set lỗi
 }) {
   const [loadingMap, setLoadingMap] = useState({}); // { customizeTaskId: boolean }
   const [candidatesByTask, setCandidatesByTask] = useState({}); // { customizeTaskId: Nurse[] }
   const [openTaskId, setOpenTaskId] = useState(null); // taskId đang mở popup
-  const [assignError, setAssignError] = useState("");
 
   const taskRows = useMemo(() => {
     
@@ -71,6 +72,14 @@ export default function StaffSelection({
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6">
       <h3 className="text-lg font-bold text-gray-800 mb-4">Chọn điều dưỡng cho từng dịch vụ</h3>
+      
+      {/* Hiển thị thông báo lỗi nếu có */}
+      {assignError && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-300 rounded-lg">
+          <div className="text-red-700 font-semibold">{assignError}</div>
+        </div>
+      )}
+      
       <div className="overflow-x-auto">
         <table className="min-w-full text-sm">
           <thead>

@@ -108,7 +108,7 @@ const AppointmentCard = ({
     e.stopPropagation();
 
     if (!isCancelAllowed()) {
-      alert('Không thể hủy booking này. Booking chỉ có thể hủy trước 3 tiếng so với giờ hẹn và phải ở trạng thái đã thanh toán.');
+      alert('Không thể hủy booking này. Booking chỉ có thể hủy trước 2 tiếng so với giờ hẹn và phải ở trạng thái đã thanh toán.');
       return;
     }
 
@@ -136,7 +136,7 @@ const AppointmentCard = ({
   const getStatusText = (status, isSchedule) => {
     if (isSchedule === false && status === 'paid') return 'Chưa lên lịch';
     switch (status) {
-      case 'pending': return 'Đang chờ';
+      case 'pending': return 'Chưa thanh toán';
       case 'completed': return 'Hoàn thành';
       case 'cancelled': return 'Đã hủy';
       case 'isScheduled': return 'Đã lên lịch';
@@ -221,7 +221,6 @@ const AppointmentCard = ({
               )}
               {isPaymentNeeded() && (
                 <div className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
-                  Chưa thanh toán
                 </div>
               )}
             </div>
