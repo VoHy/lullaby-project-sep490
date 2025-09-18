@@ -181,6 +181,11 @@ const UsersTab = () => {
       alert('Không thể chỉnh sửa tài khoản đã xóa!');
       return;
     }
+    // Không cho phép admin update tài khoản khách hàng (roleID = 4)
+    if (account.roleID === 4) {
+      alert('Admin không được phép chỉnh sửa tài khoản khách hàng!');
+      return;
+    }
     setEditAccount(account);
     setShowEditModal(true);
   };
@@ -204,6 +209,12 @@ const UsersTab = () => {
 
   const handleUpdateAccount = async (updatedAccount) => {
     try {
+      // Kiểm tra không cho phép update tài khoản khách hàng (roleID = 4)
+      if (updatedAccount.roleID === 4) {
+        alert('Admin không được phép cập nhật tài khoản khách hàng!');
+        return;
+      }
+      
       await accountService.updateAccount(updatedAccount.accountID, updatedAccount);
       setShowEditModal(false);
       setEditAccount(null);
@@ -323,10 +334,17 @@ const UsersTab = () => {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isDeleted ? 'bg-gray-100 text-gray-500' : ROLE_STYLES[String(account.roleID)] || 'bg-red-100 text-red-700'
-                        }`}>
-                        {ROLE_LABELS[String(account.roleID)] || 'Không xác định'}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isDeleted ? 'bg-gray-100 text-gray-500' : ROLE_STYLES[String(account.roleID)] || 'bg-red-100 text-red-700'
+                          }`}>
+                          {ROLE_LABELS[String(account.roleID)] || 'Không xác định'}
+                        </span>
+                        {account.roleID === 4 && !isDeleted && (
+                          <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full font-medium">
+                            Chỉ xem
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4">
                       <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isDeleted ? 'bg-gray-100 text-gray-500' : STATUS_STYLES[account.status] || 'bg-red-100 text-red-700'
@@ -370,13 +388,17 @@ const UsersTab = () => {
                           <FontAwesomeIcon icon={faEye} />
                         </button>
                         <button
-                          className={`p-2 rounded-lg transition-all duration-200 ${isDeleted ?
+                          className={`p-2 rounded-lg transition-all duration-200 ${isDeleted || account.roleID === 4 ?
                             'text-gray-400 cursor-not-allowed' :
                             'text-green-600 hover:text-green-800 hover:bg-green-50'
                             }`}
                           onClick={() => handleEditAccount(account)}
-                          disabled={isDeleted}
-                          title={isDeleted ? "Không thể sửa tài khoản đã xóa" : "Sửa"}
+                          disabled={isDeleted || account.roleID === 4}
+                          title={
+                            isDeleted ? "Không thể sửa tài khoản đã xóa" : 
+                            account.roleID === 4 ? "Admin không được phép sửa tài khoản khách hàng" : 
+                            "Sửa"
+                          }
                         >
                           <FontAwesomeIcon icon={faEdit} />
                         </button>

@@ -32,6 +32,9 @@ const BlogList = ({ onEdit, onDelete, onActivate, onDeactivate, refreshTrigger }
   };
 
   const getCategoryName = (categoryId) => {
+    if (!categoryId) {
+      return 'Không có danh mục';
+    }
     const category = categories.find(cat => cat.blogCategoryID === categoryId);
     return category ? category.categoryName : 'Không xác định';
   };
@@ -39,7 +42,8 @@ const BlogList = ({ onEdit, onDelete, onActivate, onDeactivate, refreshTrigger }
   const filteredBlogs = blogs.filter(blog => {
     const matchesSearch = blog.title?.toLowerCase().includes(search.toLowerCase()) ||
       blog.content?.toLowerCase().includes(search.toLowerCase());
-    const matchesCategory = !filterCategory || blog.blogCategoryID === parseInt(filterCategory);
+    const matchesCategory = !filterCategory || 
+      (filterCategory === 'none' ? !blog.blogCategoryID : blog.blogCategoryID === parseInt(filterCategory));
     return matchesSearch && matchesCategory;
   });
 
@@ -77,6 +81,7 @@ const BlogList = ({ onEdit, onDelete, onActivate, onDeactivate, refreshTrigger }
               onChange={(e) => setFilterCategory(e.target.value)}
             >
               <option value="">Tất cả danh mục</option>
+              <option value="none">Không có danh mục</option>
               {categories.map(category => (
                 <option key={category.blogCategoryID} value={category.blogCategoryID}>
                   {category.categoryName}
