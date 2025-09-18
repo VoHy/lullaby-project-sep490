@@ -38,7 +38,7 @@ const BlogForm = ({ blog, onSubmit, onCancel }) => {
     const { name, value } = e.target;
     setForm(prev => ({
       ...prev,
-      [name]: name === 'blogCategoryID' ? parseInt(value) : value
+      [name]: value
     }));
   };
 
@@ -46,7 +46,12 @@ const BlogForm = ({ blog, onSubmit, onCancel }) => {
     e.preventDefault();
     setLoading(true);
     try {
-      await onSubmit(form);
+      // Chuẩn bị data để gửi, chuyển empty string thành null cho blogCategoryID
+      const submitData = {
+        ...form,
+        blogCategoryID: form.blogCategoryID === '' ? null : parseInt(form.blogCategoryID)
+      };
+      await onSubmit(submitData);
     } catch (error) {
       console.error('Lỗi khi lưu blog:', error);
     } finally {
@@ -91,16 +96,15 @@ const BlogForm = ({ blog, onSubmit, onCancel }) => {
           {/* Danh mục */}
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Danh mục <span className="text-red-500">*</span>
+              Danh mục
             </label>
             <select
               name="blogCategoryID"
               value={form.blogCategoryID}
               onChange={handleChange}
-              required
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent"
             >
-              <option value="">Chọn danh mục</option>
+              <option value="">Không chọn danh mục</option>
               {categories.map(category => (
                 <option key={category.blogCategoryID} value={category.blogCategoryID}>
                   {category.categoryName}
