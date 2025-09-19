@@ -18,10 +18,10 @@ const SpecialistList = ({ specialists, onEdit, onDelete }) => {
         <div className="text-center py-16">
       <FaUserMd className="text-gray-300 text-8xl mb-6 mx-auto" />
           <h3 className="text-2xl font-bold text-gray-800 mb-3">
-            Chưa có chuyên gia tư vấn nào
+            Chưa có Chuyên viên tư vấn nào
           </h3>
           <p className="text-gray-500 text-lg">
-            Hãy thêm chuyên gia tư vấn đầu tiên vào khu vực quản lý của bạn.
+            Hãy thêm Chuyên viên tư vấn đầu tiên vào khu vực quản lý của bạn.
           </p>
         </div>
       ) : (

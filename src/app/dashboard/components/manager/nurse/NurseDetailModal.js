@@ -36,7 +36,7 @@ const NurseDetailModal = ({ nurse, onClose }) => {
               <h2 className="text-3xl font-bold text-gray-900 mb-2">{nurse.fullName}</h2>
               <div className="flex items-center space-x-4">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 gap-2">
-                  {nurse.major === 'Nurse' ? (<><FaUser /> Chuyên gia chăm sóc</>) : (<><FaUserMd /> Chuyên gia tư vấn</>)}
+                  {nurse.major === 'Nurse' ? (<><FaUser /> Chuyên gia chăm sóc</>) : (<><FaUserMd /> Chuyên viên tư vấn</>)}
                 </span>
                 <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
                   nurse.status === 'active' 
@@ -102,7 +102,7 @@ const NurseDetailModal = ({ nurse, onClose }) => {
                 <div className="bg-white rounded-lg p-0">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Chuyên môn</label>
                   <p className="text-base font-medium text-gray-900 inline-flex items-center gap-2">
-                    {nurse.major === 'Nurse' ? (<><FaUser /> Chuyên gia chăm sóc</>) : (<><FaUserMd /> Chuyên gia tư vấn</>)}
+                    {nurse.major === 'Nurse' ? (<><FaUser /> Chuyên gia chăm sóc</>) : (<><FaUserMd /> Chuyên viên tư vấn</>)}
                   </p>
                 </div>
                 <div className="bg-white rounded-lg p-0">

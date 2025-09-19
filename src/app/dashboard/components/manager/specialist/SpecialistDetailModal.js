@@ -8,7 +8,7 @@ const SpecialistDetailModal = ({ specialist, onClose }) => {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[80vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-100 px-8 py-6">
           <div className="flex justify-between items-center">
-            <h3 className="text-2xl font-bold text-gray-900">Chi tiết Chuyên gia tư vấn</h3>
+            <h3 className="text-2xl font-bold text-gray-900">Chi tiết Chuyên viên tư vấn</h3>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-2 rounded-full hover:bg-gray-100"
@@ -36,7 +36,7 @@ const SpecialistDetailModal = ({ specialist, onClose }) => {
               <h2 className="text-3xl font-bold text-gray-900 mb-2">{specialist.fullName}</h2>
               <div className="flex items-center space-x-4">
                 <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium bg-purple-100 text-purple-800">
-                  {specialist.major === 'Specialist' ? (<><FaUserMd /> Chuyên gia tư vấn</>) : (<><FaUser /> Chuyên viên chăm sóc</>)}
+                  {specialist.major === 'Specialist' ? (<><FaUserMd /> Chuyên viên tư vấn</>) : (<><FaUser /> Chuyên viên chăm sóc</>)}
                 </span>
                 <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
                   specialist.status === 'active' 
@@ -102,7 +102,7 @@ const SpecialistDetailModal = ({ specialist, onClose }) => {
                 <div className="bg-white rounded-lg p-0">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Chuyên môn</label>
                   <p className="text-base font-medium text-gray-900 inline-flex items-center gap-2">
-                    {specialist.major === 'Specialist' ? (<><FaUserMd /> Chuyên gia tư vấn</>) : (<><FaUser /> Chuyên viên chăm sóc</>)}
+                    {specialist.major === 'Specialist' ? (<><FaUserMd /> Chuyên viên tư vấn</>) : (<><FaUser /> Chuyên viên chăm sóc</>)}
                   </p>
                 </div>
                 <div className="bg-white rounded-lg p-0">

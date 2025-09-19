@@ -145,7 +145,7 @@ const Sidebar = ({ user }) => {
     ],
     3: [ // Manager
       { name: 'Quản lý chuyên gia chăm sóc', path: '/dashboard?tab=nurse', icon: faUserNurse, color: 'text-blue-500', tab: 'nurse' },
-      { name: 'Quản lý chuyên gia tư vấn', path: '/dashboard?tab=specialist', icon: faUserMd, color: 'text-pink-500', tab: 'specialist' },
+      { name: 'Quản lý Chuyên viên tư vấn', path: '/dashboard?tab=specialist', icon: faUserMd, color: 'text-pink-500', tab: 'specialist' },
       { name: 'Quản lý lịch hẹn', path: '/dashboard?tab=booking', icon: faCalendarAlt, color: 'text-green-500', tab: 'booking' },
     ],
   };

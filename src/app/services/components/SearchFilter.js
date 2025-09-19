@@ -7,7 +7,7 @@ const SearchFilter = ({ searchText, setSearchText, selectedCategory, setSelected
   const categories = [
     { id: 'all', name: 'Tất cả', icon: '' },
     { id: 'Nurse', name: 'Chuyên viên chăm sóc', icon: '' },
-    { id: 'Specialist', name: 'Chuyên gia tư vấn', icon: '' }
+    { id: 'Specialist', name: 'Chuyên viên tư vấn', icon: '' }
   ];
 
   return (

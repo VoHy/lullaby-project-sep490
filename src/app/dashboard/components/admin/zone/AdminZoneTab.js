@@ -146,7 +146,7 @@ const AdminZoneTab = () => {
       subtitle: 'Tổng'
     },
     {
-      title: 'Chuyên gia tư vấn',
+      title: 'Chuyên viên tư vấn',
       value: Object.values(staffCountMap.specialists).reduce((a, b) => a + b, 0),
       icon: faUserMd,
       color: 'from-orange-500 to-red-500',
@@ -364,7 +364,7 @@ const AdminZoneTab = () => {
                     </div>
 
                     <div className="text-sm">Chuyên gia chăm sóc: {staffCountMap.nurses[zone.zoneID] || 0}</div>
-                    <div className="text-sm">Chuyên gia tư vấn: {staffCountMap.specialists[zone.zoneID] || 0}</div>
+                    <div className="text-sm">Chuyên viên tư vấn: {staffCountMap.specialists[zone.zoneID] || 0}</div>
 
                     <button
                       className="text-xs text-blue-600 hover:underline"

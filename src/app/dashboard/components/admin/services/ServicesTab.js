@@ -377,7 +377,7 @@ const ServicesTab = () => {
             >
               <option value="all">Tất cả chuyên môn</option>
               <option value="Nurse">Chuyên viên chăm sóc</option>
-              <option value="Specialist">Chuyên gia tư vấn</option>
+              <option value="Specialist">Chuyên viên tư vấn</option>
             </select>
           </div>
 

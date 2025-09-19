@@ -65,7 +65,7 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
   };
   const roleLabels = {
     Nurse: 'Chuyên gia chăm sóc',
-    Specialist: 'Chuyên gia tư vấn',
+    Specialist: 'Chuyên viên tư vấn',
   };
 
   const handleRoleChange = (e) => {
@@ -190,7 +190,7 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
                 >
                   <option value="" hidden>Chọn vai trò</option>
                   <option value="Nurse">Chuyên gia chăm sóc</option>
-                  <option value="Specialist">Chuyên gia tư vấn</option>
+                  <option value="Specialist">Chuyên viên tư vấn</option>
                 </select>
               </div>
             </div>
