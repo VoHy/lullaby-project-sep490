@@ -186,6 +186,11 @@ const UsersTab = () => {
       alert('Admin không được phép chỉnh sửa tài khoản khách hàng!');
       return;
     }
+    // Không cho phép admin update tài khoản quản lý (roleID = 3)
+    if (account.roleID === 3) {
+      alert('Admin không được phép chỉnh sửa tài khoản quản lý!');
+      return;
+    }
     setEditAccount(account);
     setShowEditModal(true);
   };
@@ -209,12 +214,12 @@ const UsersTab = () => {
 
   const handleUpdateAccount = async (updatedAccount) => {
     try {
-      // Kiểm tra không cho phép update tài khoản khách hàng (roleID = 4)
-      if (updatedAccount.roleID === 4) {
-        alert('Admin không được phép cập nhật tài khoản khách hàng!');
+      // Kiểm tra không cho phép update tài khoản khách hàng (roleID = 4) và quản lý (roleID = 3)
+      if (updatedAccount.roleID === 4 || updatedAccount.roleID === 3) {
+        alert('Admin không được phép cập nhật tài khoản khách hàng hoặc quản lý!');
         return;
       }
-      
+
       await accountService.updateAccount(updatedAccount.accountID, updatedAccount);
       setShowEditModal(false);
       setEditAccount(null);
@@ -344,6 +349,11 @@ const UsersTab = () => {
                             Chỉ xem
                           </span>
                         )}
+                        {account.roleID === 3 && !isDeleted && (
+                          <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full font-medium">
+                            Chỉ xem
+                          </span>
+                        )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
@@ -388,16 +398,17 @@ const UsersTab = () => {
                           <FontAwesomeIcon icon={faEye} />
                         </button>
                         <button
-                          className={`p-2 rounded-lg transition-all duration-200 ${isDeleted || account.roleID === 4 ?
+                          className={`p-2 rounded-lg transition-all duration-200 ${isDeleted || account.roleID === 4 || account.roleID === 3 ?
                             'text-gray-400 cursor-not-allowed' :
                             'text-green-600 hover:text-green-800 hover:bg-green-50'
                             }`}
                           onClick={() => handleEditAccount(account)}
-                          disabled={isDeleted || account.roleID === 4}
+                          disabled={isDeleted || account.roleID === 4 || account.roleID === 3}
                           title={
-                            isDeleted ? "Không thể sửa tài khoản đã xóa" : 
-                            account.roleID === 4 ? "Admin không được phép sửa tài khoản khách hàng" : 
-                            "Sửa"
+                            isDeleted ? "Không thể sửa tài khoản đã xóa" :
+                              account.roleID === 4 ? "Admin không được phép sửa tài khoản khách hàng" :
+                                account.roleID === 3 ? "Admin không được phép sửa tài khoản quản lý" :
+                                "Sửa"
                           }
                         >
                           <FontAwesomeIcon icon={faEdit} />
@@ -517,6 +528,17 @@ const EditUserModal = ({ show, account, onClose, onSave }) => {
     // Kiểm tra tài khoản đã xóa
     if (account.deletedAt) {
       alert('Không thể cập nhật tài khoản đã xóa!');
+      return;
+    }
+
+    // Kiểm tra không cho phép cập nhật tài khoản khách hàng (roleID = 4) và quản lý (roleID = 3)
+    if (account.roleID === 4) {
+      alert('Không thể cập nhật tài khoản khách hàng!');
+      return;
+    }
+
+    if (account.roleID === 3) {
+      alert('Không thể cập nhật tài khoản quản lý!');
       return;
     }
 
