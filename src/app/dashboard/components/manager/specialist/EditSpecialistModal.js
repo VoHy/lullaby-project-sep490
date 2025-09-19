@@ -150,7 +150,7 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[80vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-100 px-8 py-6">
           <div className="flex justify-between items-center">
-            <h3 className="text-2xl font-bold text-gray-900">Sửa thông tin chuyên gia tư vấn</h3>
+            <h3 className="text-2xl font-bold text-gray-900">Sửa thông tin Chuyên viên tư vấn</h3>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-2 rounded-full hover:bg-gray-100"
@@ -231,7 +231,7 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
                   >
                     <option value="Nurse">Chuyên viên chăm sóc</option>
-                    <option value="Specialist">Chuyên gia tư vấn</option>
+                    <option value="Specialist">Chuyên viên tư vấn</option>
                   </select>
                 </div>
 

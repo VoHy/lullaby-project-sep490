@@ -51,7 +51,7 @@ export default function TeamPage() {
 
   const majorMap = {
     Nurse: "Chuyên viên chăm sóc",
-    Specialist: "Chuyên gia tư vấn"
+    Specialist: "Chuyên viên tư vấn"
   }
 
   // Load data từ API
@@ -418,7 +418,7 @@ export default function TeamPage() {
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-pink-600">{filteredSpecialists.length}</div>
-                <div className="text-gray-600">Chuyên gia tư vấn</div>
+                <div className="text-gray-600">Chuyên viên tư vấn</div>
               </div>
               <div className="text-center">
                 <div className="text-2xl font-bold text-yellow-600">{Object.keys(favoriteMap).length}</div>
