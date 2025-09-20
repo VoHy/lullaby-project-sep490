@@ -408,7 +408,7 @@ const UsersTab = () => {
                             isDeleted ? "Không thể sửa tài khoản đã xóa" :
                               account.roleID === 4 ? "Admin không được phép sửa tài khoản khách hàng" :
                                 account.roleID === 3 ? "Admin không được phép sửa tài khoản quản lý" :
-                                "Sửa"
+                                  "Sửa"
                           }
                         >
                           <FontAwesomeIcon icon={faEdit} />
@@ -628,15 +628,16 @@ const EditUserModal = ({ show, account, onClose, onSave }) => {
                 Trạng thái
               </label>
               <select
-                name="status"
+                name="status_display"
                 value={formData.status}
-                onChange={handleInputChange}
-                className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 transition-colors duration-200 bg-gray-50 focus:bg-white"
+                disabled
+                className="w-full px-4 py-3 border border-gray-200 rounded-lg bg-gray-100 text-gray-500"
               >
                 <option value="active">Hoạt động</option>
-                <option value="banned">Bị cấm</option>
-                <option value="remove">Đã xóa</option>
+                <option value="inactive">Không hoạt động</option>
               </select>
+
+              <input type="hidden" name="status" value={formData.status} />
             </div>
 
             <div>
