@@ -52,6 +52,17 @@ function PackageBuilder({ formData, setFormData }) {
       {childTasks.length === 0 && (
         <p className="text-sm text-gray-500">Chưa thêm dịch vụ con nào. Nhấn "Thêm" để bắt đầu.</p>
       )}
+      
+      {/* Header labels */}
+      {childTasks.length > 0 && (
+        <div className="grid grid-cols-12 gap-3 items-center mb-2 text-sm font-medium text-gray-700">
+          <div className="col-span-12 md:col-span-6">Dịch vụ con</div>
+          <div className="col-span-6 md:col-span-3">Số lượng</div>
+          <div className="col-span-5 md:col-span-2">Thứ tự</div>
+          <div className="col-span-1"></div>
+        </div>
+      )}
+      
       {childTasks.map((row, idx) => (
         <div key={idx} className="grid grid-cols-12 gap-3 items-center">
           <div className="col-span-12 md:col-span-6">
@@ -75,7 +86,7 @@ function PackageBuilder({ formData, setFormData }) {
           <div className="col-span-6 md:col-span-3">
             <input
               type="number"
-              placeholder="Số lượng"
+              placeholder="1"
               value={row.quantity}
               min={1}
               onChange={(e) => updateRow(idx, 'quantity', e.target.value)}
@@ -85,7 +96,7 @@ function PackageBuilder({ formData, setFormData }) {
           <div className="col-span-5 md:col-span-2">
             <input
               type="number"
-              placeholder="#"
+              placeholder="1"
               value={row.taskOrder}
               min={1}
               onChange={(e) => updateRow(idx, 'taskOrder', e.target.value)}
@@ -156,19 +167,21 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Chuyên môn <span className="text-red-500">*</span>
-                    </label>
-                    <select
-                      value={formData.major}
-                      onChange={(e) => setFormData({ ...formData, major: e.target.value })}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                    >
-                      <option value="Nurse">Chuyên viên chăm sóc</option>
-                      <option value="Specialist">Chuyên viên tư vấn</option>
-                    </select>
-                  </div>
+                  {!formData.isPackage && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Chuyên môn <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        value={formData.major}
+                        onChange={(e) => setFormData({ ...formData, major: e.target.value })}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                      >
+                        <option value="Nurse">Chuyên viên chăm sóc</option>
+                        <option value="Specialist">Chuyên viên tư vấn</option>
+                      </select>
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -182,23 +195,25 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Giá (VNĐ) <span className="text-red-500">*</span>
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₫</span>
-                      <input
-                        type="number"
-                        value={formData.price}
-                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                        className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                        placeholder="0"
-                        min="0"
-                        required
-                      />
+                  {!formData.isPackage && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Giá (VNĐ) <span className="text-red-500">*</span>
+                      </label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">₫</span>
+                        <input
+                          type="number"
+                          value={formData.price}
+                          onChange={(e) => setFormData({ ...formData, price: e.target.value })}
+                          className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                          placeholder="0"
+                          min="0"
+                          required
+                        />
+                      </div>
                     </div>
-                  </div>
+                  )}
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -234,16 +249,18 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                       min="0"
                     />
                   </div>
-                  <div className="flex items-center mt-8">
-                    <input
-                      id="forMom"
-                      type="checkbox"
-                      checked={!!formData.forMom}
-                      onChange={(e) => setFormData({ ...formData, forMom: e.target.checked })}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                    <label htmlFor="forMom" className="ml-2 block text-sm text-gray-700">Dịch vụ dành cho mẹ</label>
-                  </div>
+                  {!formData.isPackage && (
+                    <div className="flex items-center mt-8">
+                      <input
+                        id="forMom"
+                        type="checkbox"
+                        checked={!!formData.forMom}
+                        onChange={(e) => setFormData({ ...formData, forMom: e.target.checked })}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                      <label htmlFor="forMom" className="ml-2 block text-sm text-gray-700">Dịch vụ dành cho mẹ</label>
+                    </div>
+                  )}
                 </div>
               </div>
 

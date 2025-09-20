@@ -4,10 +4,10 @@ import { motion } from 'framer-motion';
 import { FaStar, FaThumbsUp, FaUsers, FaChartLine } from 'react-icons/fa';
 import ServiceRatingDisplay from './ServiceRatingDisplay';
 
-const ServicesRatingStats = ({ serviceTypes = [], customizeTasks = [], feedbacks = [] }) => {
-  // Tính toán thống kê tổng hợp
+const ServicesRatingStats = ({ serviceTypes = [], ratingsMap = {}, feedbacks = [] }) => {
+  // Tính toán thống kê tổng hợp từ ratingsMap
   const calculateStats = () => {
-    if (!serviceTypes.length || !customizeTasks.length) {
+    if (!serviceTypes.length) {
       return {
         totalServices: 0,
         totalFeedbacks: 0,
@@ -19,82 +19,24 @@ const ServicesRatingStats = ({ serviceTypes = [], customizeTasks = [], feedbacks
     const totalServices = serviceTypes.length;
     const totalFeedbacks = feedbacks.length;
     
-    // Tính rating trung bình tổng hợp
+    // Tính rating trung bình tổng hợp từ ratingsMap
     let totalRating = 0;
     let ratedServices = 0;
     
     serviceTypes.forEach(service => {
-      const relatedTasks = customizeTasks.filter(task => 
-        task.serviceID === service.serviceID || 
-        task.ServiceID === service.serviceID ||
-        task.serviceTypeID === service.serviceID
-      );
-      
-      if (relatedTasks.length > 0) {
-        // Lọc chỉ các tasks đã hoàn thành
-        const completedTasks = relatedTasks.filter(task => {
-          const status = task.status || task.Status;
-          return status === 'completed' || status === 'done' || status === 'finished';
-        });
-
-        if (completedTasks.length > 0) {
-          const taskIds = completedTasks.map(task => 
-            task.customizeTaskID || task.CustomizeTaskID || task.id
-          );
-          
-          const relatedFeedbacks = feedbacks.filter(feedback => {
-            const feedbackTaskId = feedback.customizeTaskID || feedback.CustomizeTaskID;
-            return taskIds.includes(feedbackTaskId);
-          });
-          
-          if (relatedFeedbacks.length > 0) {
-            const serviceRating = relatedFeedbacks.reduce((sum, feedback) => {
-              return sum + (feedback.rate || feedback.Rate || 5);
-            }, 0) / relatedFeedbacks.length;
-            
-            totalRating += serviceRating;
-            ratedServices++;
-          }
-        }
+      const serviceRating = ratingsMap[service.serviceID];
+      if (serviceRating && serviceRating.count > 0) {
+        totalRating += serviceRating.rating;
+        ratedServices++;
       }
     });
     
     const averageRating = ratedServices > 0 ? totalRating / ratedServices : 5.0;
     
-    // Tìm các dịch vụ có rating cao nhất
+    // Tìm các dịch vụ có rating cao nhất từ ratingsMap
     const serviceRatings = serviceTypes.map(service => {
-      const relatedTasks = customizeTasks.filter(task => 
-        task.serviceID === service.serviceID || 
-        task.ServiceID === service.serviceID ||
-        task.serviceTypeID === service.serviceID
-      );
-      
-      if (relatedTasks.length === 0) return { service, rating: 5.0, count: 0 };
-      
-      // Lọc chỉ các tasks đã hoàn thành
-      const completedTasks = relatedTasks.filter(task => {
-        const status = task.status || task.Status;
-        return status === 'completed' || status === 'done' || status === 'finished';
-      });
-
-      if (completedTasks.length === 0) return { service, rating: 5.0, count: 0 };
-      
-      const taskIds = completedTasks.map(task => 
-        task.customizeTaskID || task.CustomizeTaskID || task.id
-      );
-      
-      const relatedFeedbacks = feedbacks.filter(feedback => {
-        const feedbackTaskId = feedback.customizeTaskID || feedback.CustomizeTaskID;
-        return taskIds.includes(feedbackTaskId);
-      });
-      
-      if (relatedFeedbacks.length === 0) return { service, rating: 5.0, count: 0 };
-      
-      const rating = relatedFeedbacks.reduce((sum, feedback) => {
-        return sum + (feedback.rate || feedback.Rate || 5);
-      }, 0) / relatedFeedbacks.length;
-      
-      return { service, rating, count: relatedFeedbacks.length };
+      const rating = ratingsMap[service.serviceID] || { rating: 5.0, count: 0 };
+      return { service, rating: rating.rating, count: rating.count };
     });
     
     const topRatedServices = serviceRatings

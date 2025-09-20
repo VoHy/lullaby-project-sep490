@@ -112,10 +112,8 @@ const ServicesTab = () => {
         // Build payload for /api/servicetypes/createpackage
         const payload = {
           serviceName: formData.serviceName,
-          major: formData.major,
           duration: parseInt(formData.duration) || 0,
           description: formData.description,
-          forMom: !!formData.forMom,
           discount: parseInt(formData.discount) || 0,
           childServiceTasks: (formData.childServiceTasks || []).map((c, idx) => ({
             child_ServiceID: parseInt(c.child_ServiceID),
@@ -207,11 +205,13 @@ const ServicesTab = () => {
     setSelectedService(service);
     setFormData({
       serviceName: service.serviceName,
-      major: service.major,
+      major: service.major || '',
       price: service.price,
       duration: service.duration,
       description: service.description,
       isPackage: service.isPackage,
+      discount: service.discount || 0,
+      forMom: service.forMom || false,
       status: service.status || 'active'
     });
     setShowEditModal(true);
@@ -220,11 +220,14 @@ const ServicesTab = () => {
   const openCreateModal = (isPackage = false) => {
     setFormData({
       serviceName: '',
-      major: 'Nurse',
-      price: 0,
+      major: isPackage ? '' : 'Nurse',
+      price: isPackage ? 0 : 0,
       duration: 0,
       description: '',
       isPackage,
+      discount: 0,
+      forMom: false,
+      childServiceTasks: isPackage ? [] : undefined,
       status: isPackage ? 'inactive' : 'active'
     });
     setShowCreateModal(true);

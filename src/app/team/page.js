@@ -36,6 +36,7 @@ export default function TeamPage() {
   const [customerTasks, setCustomerTasks] = useState([]);
   // const [bookings, setBookings] = useState([]);
   const [feedbacks, setFeedbacks] = useState([]);
+  const [ratingsMap, setRatingsMap] = useState({}); // Map nursingID -> { rating, count }
   // const [serviceTasks, setServiceTasks] = useState([]);
   const [showDetail, setShowDetail] = useState(false);
   const [detailData, setDetailData] = useState(null);
@@ -54,12 +55,52 @@ export default function TeamPage() {
     Specialist: "Chuyên viên tư vấn"
   }
 
+  // Cache duration - 5 phút để ratings được cập nhật định kỳ
+  const CACHE_DURATION = 5 * 60 * 1000; // 5 phút
+
+  // Utility function to clear team cache
+  const clearTeamCache = () => {
+    localStorage.removeItem('team_data');
+    localStorage.removeItem('team_cache_time');
+    localStorage.removeItem('team_ratings_data');
+    localStorage.removeItem('team_ratings_cache_time');
+  };
+
+  // Utility function to refresh only ratings cache
+  const refreshRatingsCache = () => {
+    localStorage.removeItem('team_ratings_data');
+    localStorage.removeItem('team_ratings_cache_time');
+  };
+
   // Load data từ API
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         setError("");
+
+        // Check cache first
+        const cachedTeamData = localStorage.getItem('team_data');
+        const teamCacheTime = localStorage.getItem('team_cache_time');
+        const cachedRatingsData = localStorage.getItem('team_ratings_data');
+        const ratingsCacheTime = localStorage.getItem('team_ratings_cache_time');
+        const now = Date.now();
+
+        // Use cache if it's less than 5 minutes old
+        if (cachedTeamData && teamCacheTime && (now - parseInt(teamCacheTime)) < CACHE_DURATION) {
+          const parsedData = JSON.parse(cachedTeamData);
+          setNursingSpecialists(parsedData.nursingSpecialists);
+          setZones(parsedData.zones);
+          setFeedbacks(parsedData.feedbacks);
+          setAccountsMap(parsedData.accountsMap);
+          
+          // Use cached ratings if available and fresh
+          if (cachedRatingsData && ratingsCacheTime && (now - parseInt(ratingsCacheTime)) < CACHE_DURATION) {
+            setRatingsMap(JSON.parse(cachedRatingsData));
+            setLoading(false);
+            return;
+          }
+        }
 
         const [
           nursingSpecialistsData,
@@ -88,9 +129,84 @@ export default function TeamPage() {
         } else {
           setAccountsMap({});
         }
+
+        // Fetch ratings cho từng nursing specialist qua API getAverageRatingByNursing
+        if (Array.isArray(nursingSpecialistsData) && nursingSpecialistsData.length > 0) {
+          let ratingsData = {};
+          try {
+            const ratingPromises = nursingSpecialistsData.map(async (specialist) => {
+              const nursingId = specialist.NursingID || specialist.nursingID;
+              if (!nursingId) return null;
+              
+              try {
+                // Sử dụng API mới để lấy rating trung bình trực tiếp
+                const ratingResult = await feedbackService.getAverageRatingByNursing(nursingId);
+                
+                // API trả về object có dạng { averageRating: number, totalFeedbacks: number }
+                const rating = ratingResult?.averageRating || 0;
+                const count = ratingResult?.totalFeedbacks || 0;
+                
+                return [nursingId, { 
+                  rating: parseFloat(rating.toFixed(1)), 
+                  count: count 
+                }];
+              } catch (error) {
+                // Fallback về cách cũ nếu API mới không hoạt động
+                console.warn(`Fallback to old method for nursing ${nursingId}:`, error);
+                const nursingFeedbacks = feedbacksData.filter(fb => 
+                  (fb.nursingID || fb.NursingID) === nursingId
+                );
+                if (nursingFeedbacks.length === 0) {
+                  return [nursingId, { rating: 0, count: 0 }];
+                }
+                const rates = nursingFeedbacks.map(fb => fb.rate || 0);
+                const avg = rates.reduce((a, b) => a + b, 0) / rates.length;
+                return [nursingId, { rating: parseFloat(avg.toFixed(1)), count: rates.length }];
+              }
+            });
+
+            const results = await Promise.allSettled(ratingPromises);
+            results.forEach(result => {
+              if (result.status === 'fulfilled' && result.value) {
+                const [nursingId, ratingData] = result.value;
+                if (nursingId) {
+                  ratingsData[nursingId] = ratingData;
+                }
+              }
+            });
+            
+            setRatingsMap(ratingsData);
+            
+            // Cache the ratings data
+            localStorage.setItem('team_ratings_data', JSON.stringify(ratingsData));
+            localStorage.setItem('team_ratings_cache_time', now.toString());
+          } catch (error) {
+            console.warn('Không thể tải ratings cho nursing specialists:', error);
+            setRatingsMap({});
+          }
+        }
+
+        // Cache the team data
+        localStorage.setItem('team_data', JSON.stringify({
+          nursingSpecialists: Array.isArray(nursingSpecialistsData) ? nursingSpecialistsData : [],
+          zones: Array.isArray(zonesData) ? zonesData : [],
+          feedbacks: Array.isArray(feedbacksData) ? feedbacksData : [],
+          accountsMap: Array.isArray(accountsData) ? (() => {
+            const map = {};
+            for (const acc of accountsData) {
+              const id = acc.accountID || acc.AccountID || acc.id || acc.ID;
+              if (id != null) map[id] = acc;
+            }
+            return map;
+          })() : {}
+        }));
+        localStorage.setItem('team_cache_time', now.toString());
+
       } catch (error) {
         console.error('Error fetching team data:', error);
         setError('Không thể tải dữ liệu. Vui lòng thử lại sau.');
+        // Clear cache on error
+        clearTeamCache();
       } finally {
         setLoading(false);
       }
@@ -198,17 +314,21 @@ export default function TeamPage() {
   // Lấy danh sách zone unique
   const allZoneNames = Array.from(new Set(zones.map(z => z.Zone_name || z.zoneName || z.City || z.city).filter(Boolean)));
 
-  // Tính rate trung bình cho mỗi member
+  // Lấy rate trung bình cho mỗi member từ ratingsMap
   const getAverageRate = (nursingID) => {
-    if (!nursingID || !feedbacks.length) return 0;
-    const rates = feedbacks.filter(fb => (fb.nursingID || fb.NursingID) === nursingID).map(fb => fb.rate);
-    if (!rates.length) return 0;
-    return (rates.reduce((a, b) => a + b, 0) / rates.length).toFixed(1);
+    if (!nursingID) return 0;
+    const ratingData = ratingsMap[nursingID];
+    return ratingData ? ratingData.rating : 0;
   };
 
-  // Lấy số ca hoàn thành (feedbacks count)
+  // Lấy số ca hoàn thành từ ratingsMap hoặc fallback về feedbacks
   const getCompletedCases = (nursingID) => {
-    if (!nursingID || !feedbacks.length) return 0;
+    if (!nursingID) return 0;
+    const ratingData = ratingsMap[nursingID];
+    if (ratingData) return ratingData.count;
+    
+    // Fallback về cách cũ nếu không có trong ratingsMap
+    if (!feedbacks.length) return 0;
     return feedbacks.filter(fb => (fb.nursingID || fb.NursingID) === nursingID).length;
   };
 
