@@ -57,6 +57,8 @@ const ServicesSkeleton = () => (
     </div>
   </div>
 );
+// Cache duration - giảm từ 10 phút xuống 3 phút để đồng bộ rating nhanh hơn
+const CACHE_DURATION = 3 * 60 * 1000; // 3 phút
 
 // Utility function to clear services cache
 export const clearServicesCache = () => {
@@ -66,6 +68,19 @@ export const clearServicesCache = () => {
   localStorage.removeItem('careProfiles_cache_time');
   localStorage.removeItem('relatives_data');
   localStorage.removeItem('relatives_cache_time');
+};
+
+// Utility function to refresh only ratings cache
+export const refreshRatingsCache = () => {
+  const cachedData = localStorage.getItem('services_data');
+  if (cachedData) {
+    const parsedData = JSON.parse(cachedData);
+    // Xóa ratingsMap khỏi cache để force refresh
+    delete parsedData.ratingsMap;
+    localStorage.setItem('services_data', JSON.stringify(parsedData));
+  }
+  // Set cache time cũ để trigger reload
+  localStorage.setItem('services_cache_time', '0');
 };
 
 // Bỏ tính năng gửi feedback; chỉ giữ dữ liệu để hiển thị rating
@@ -103,18 +118,21 @@ export default function ServicesPage() {
         const cacheTime = localStorage.getItem('services_cache_time');
         const now = Date.now();
 
-        // Use cache if it's less than 10 minutes old
-        if (cachedData && cacheTime && (now - parseInt(cacheTime)) < 10 * 60 * 1000) {
+        // Use cache if it's less than 3 minutes old and has ratingsMap
+        if (cachedData && cacheTime && (now - parseInt(cacheTime)) < CACHE_DURATION) {
           const parsedData = JSON.parse(cachedData);
-          setServiceTypes(parsedData.services);
-          setServiceTasks(parsedData.tasks);
-          setFeedbacks(parsedData.feedbacks || []);
-          setCustomizeTasks(parsedData.customizeTasks || []);
-          setCareProfiles(parsedData.careProfiles || []);
-          setRelatives(parsedData.relatives || []);
-          setRatingsMap(parsedData.ratingsMap || {});
-          setLoading(false);
-          return;
+          // Nếu cache không có ratingsMap hoặc ratingsMap rỗng, force refresh
+          if (parsedData.ratingsMap && Object.keys(parsedData.ratingsMap).length > 0) {
+            setServiceTypes(parsedData.services);
+            setServiceTasks(parsedData.tasks);
+            setFeedbacks(parsedData.feedbacks || []);
+            setCustomizeTasks(parsedData.customizeTasks || []);
+            setCareProfiles(parsedData.careProfiles || []);
+            setRelatives(parsedData.relatives || []);
+            setRatingsMap(parsedData.ratingsMap || {});
+            setLoading(false);
+            return;
+          }
         }
 
         // Fetch fresh data
@@ -134,18 +152,34 @@ export default function ServicesPage() {
         setCareProfiles(careProfilesData);
         setRelatives(relativesData);
 
-        // Fetch ratings cho từng dịch vụ qua API Feedback/GetAllByService/{serviceId}
+        // Fetch ratings cho từng dịch vụ qua API mới getAverageRatingByService
         let latestRatingsMap = {};
         try {
           const results = await Promise.allSettled(
             services.map(async (s) => {
-              const list = await feedbackService.getAllByService(s.serviceID);
-              if (!Array.isArray(list) || list.length === 0) {
-                return [s.serviceID, { rating: 5.0, count: 0 }];
+              try {
+                // Sử dụng API mới để lấy rating trung bình trực tiếp
+                const ratingData = await feedbackService.getAverageRatingByService(s.serviceID);
+                
+                // API trả về object có dạng { averageRating: number, totalFeedbacks: number }
+                const rating = ratingData?.averageRating || 5.0;
+                const count = ratingData?.totalFeedbacks || 0;
+                
+                return [s.serviceID, { 
+                  rating: parseFloat(rating.toFixed(1)), 
+                  count: count 
+                }];
+              } catch (error) {
+                // Fallback về cách cũ nếu API mới không hoạt động
+                console.warn(`Fallback to old method for service ${s.serviceID}:`, error);
+                const list = await feedbackService.getAllByService(s.serviceID);
+                if (!Array.isArray(list) || list.length === 0) {
+                  return [s.serviceID, { rating: 5.0, count: 0 }];
+                }
+                const sum = list.reduce((acc, f) => acc + Number(f.rate || f.Rate || 0), 0);
+                const avg = parseFloat((sum / list.length).toFixed(1));
+                return [s.serviceID, { rating: avg, count: list.length }];
               }
-              const sum = list.reduce((acc, f) => acc + Number(f.rate || f.Rate || 0), 0);
-              const avg = parseFloat((sum / list.length).toFixed(1));
-              return [s.serviceID, { rating: avg, count: list.length }];
             })
           );
           const map = {};
@@ -413,7 +447,7 @@ export default function ServicesPage() {
         {/* Rating Statistics */}
         <ServicesRatingStats
           serviceTypes={serviceTypes}
-          customizeTasks={customizeTasks}
+          ratingsMap={ratingsMap}
           feedbacks={feedbacks}
         />
 
