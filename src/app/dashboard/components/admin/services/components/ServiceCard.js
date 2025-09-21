@@ -11,12 +11,16 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 
 const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
+  const isDeleted = item.status === 'Remove';
+  
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
         return 'bg-gradient-to-r from-green-500 to-emerald-500 text-white';
       case 'inactive':
         return 'bg-gradient-to-r from-red-500 to-pink-500 text-white';
+      case 'Remove':
+        return 'bg-gradient-to-r from-gray-500 to-gray-600 text-white';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -34,7 +38,7 @@ const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
   };
 
   return (
-    <div className="group bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden">
+    <div className={`group bg-white rounded-2xl shadow-sm border border-gray-200 hover:shadow-lg transition-all duration-300 overflow-hidden ${isDeleted ? 'opacity-50 grayscale' : ''}`}>
       {/* Header */}
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-start justify-between mb-3">
@@ -44,6 +48,11 @@ const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
                 <FontAwesomeIcon icon={item.isPackage ? faGift : faUserMd} className={`${item.isPackage ? 'text-purple-600' : 'text-blue-600'}`} />
               </div>
               <h3 className="text-lg font-semibold text-gray-900">{item.serviceName}</h3>
+              {isDeleted && (
+                <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-600 rounded-full">
+                  Đã xóa
+                </span>
+              )}
             </div>
             {item.description && (
               <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>
@@ -51,16 +60,26 @@ const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
           </div>
           <div className="flex items-center space-x-2">
             <button
-              onClick={onEdit}
-              className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-              title="Chỉnh sửa"
+              onClick={isDeleted ? undefined : onEdit}
+              disabled={isDeleted}
+              className={`p-2 rounded-lg transition-colors ${
+                isDeleted 
+                  ? 'text-gray-300 cursor-not-allowed' 
+                  : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
+              }`}
+              title={isDeleted ? 'Không thể chỉnh sửa dịch vụ đã xóa' : 'Chỉnh sửa'}
             >
               <FontAwesomeIcon icon={faEdit} className="w-4 h-4" />
             </button>
             <button
-              onClick={onDelete}
-              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-              title="Xóa"
+              onClick={isDeleted ? undefined : onDelete}
+              disabled={isDeleted}
+              className={`p-2 rounded-lg transition-colors ${
+                isDeleted 
+                  ? 'text-gray-300 cursor-not-allowed' 
+                  : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
+              }`}
+              title={isDeleted ? 'Không thể xóa dịch vụ đã xóa' : 'Xóa'}
             >
               <FontAwesomeIcon icon={faTrash} className="w-4 h-4" />
             </button>
@@ -71,7 +90,9 @@ const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
         <div className="flex flex-wrap gap-2">
           {item.status && (
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
-              {item.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
+              {item.status === 'active' ? 'Hoạt động' : 
+               item.status === 'inactive' ? 'Không hoạt động' :
+               item.status === 'removed' ? 'Đã xóa' : item.status}
             </span>
           )}
           {item.major && (
