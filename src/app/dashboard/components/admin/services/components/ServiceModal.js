@@ -399,9 +399,17 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
           serviceTaskService.getServiceTasksByPackage(editingService.serviceID),
           serviceTypeService.getServiceTypes(),
         ]);
-        setPackageTasks(tasks || []);
-        const singles = (allServices || []).filter(s => !s.isPackage && (s.status === 'active' || !s.status));
+        
+        console.log('Loaded package tasks:', tasks);
+        console.log('Loaded services:', allServices);
+        
+        setPackageTasks(Array.isArray(tasks) ? tasks : []);
+        const singles = Array.isArray(allServices) ? allServices.filter(s => !s.isPackage && (s.status === 'active' || !s.status)) : [];
         setAvailableServices(singles);
+      } catch (error) {
+        console.error('Error loading package data:', error);
+        setPackageTasks([]);
+        setAvailableServices([]);
       } finally {
         setLoading(false);
       }
@@ -415,32 +423,67 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
       alert('Vui lòng chọn dịch vụ con');
       return;
     }
-    if (!taskFormData.description.trim()) {
-      alert('Vui lòng nhập mô tả cho dịch vụ con');
+    if (!taskFormData.quantity || taskFormData.quantity < 1) {
+      alert('Vui lòng nhập số lượng hợp lệ');
       return;
     }
-    await serviceTaskService.createServiceTask({
-      package_ServiceID: editingService.serviceID,
-      childServiceTasks: [
-        {
-          child_ServiceID: parseInt(selectedServiceId),
-          taskOrder: (packageTasks?.length || 0) + 1,
-          quantity: parseInt(taskFormData.quantity) || 1,
-        },
-      ],
-    });
-    const refreshed = await serviceTaskService.getServiceTasksByPackage(editingService.serviceID);
-    setPackageTasks(refreshed || []);
-    setSelectedServiceId('');
-    setTaskFormData({ description: '', price: 0, quantity: 1 });
-    setShowAddTaskModal(false);
+    
+    try {
+      await serviceTaskService.createServiceTask({
+        package_ServiceID: editingService.serviceID,
+        childServiceTasks: [
+          {
+            child_ServiceID: parseInt(selectedServiceId),
+            taskOrder: (packageTasks?.length || 0) + 1,
+            quantity: parseInt(taskFormData.quantity) || 1,
+          },
+        ],
+      });
+      
+      // Refresh danh sách tasks
+      try {
+        const refreshed = await serviceTaskService.getServiceTasksByPackage(editingService.serviceID);
+        console.log('Refreshed tasks after create:', refreshed);
+        setPackageTasks(Array.isArray(refreshed) ? refreshed : []);
+      } catch (refreshError) {
+        console.warn('Error refreshing tasks, but task was created successfully:', refreshError);
+        // Vẫn có thể close modal và reset form vì task đã được tạo thành công
+      }
+      
+      setSelectedServiceId('');
+      setTaskFormData({ description: '', price: 0, quantity: 1 });
+      setShowAddTaskModal(false);
+      
+      // Thông báo thành công
+      alert('Thêm dịch vụ con thành công!');
+      
+    } catch (error) {
+      console.error('Error creating service task:', error);
+      alert('Có lỗi xảy ra khi thêm dịch vụ con: ' + (error.message || 'Lỗi không xác định'));
+    }
   };
 
   const handleDeleteTask = async (taskId) => {
     if (!window.confirm('Bạn có chắc chắn muốn xóa dịch vụ con này khỏi gói?')) return;
-    await serviceTaskService.deleteServiceTask(taskId);
-    const refreshed = await serviceTaskService.getServiceTasksByPackage(editingService.serviceID);
-    setPackageTasks(refreshed || []);
+    
+    try {
+      await serviceTaskService.deleteServiceTask(taskId);
+      
+      // Refresh danh sách tasks
+      try {
+        const refreshed = await serviceTaskService.getServiceTasksByPackage(editingService.serviceID);
+        console.log('Refreshed tasks after delete:', refreshed);
+        setPackageTasks(Array.isArray(refreshed) ? refreshed : []);
+      } catch (refreshError) {
+        console.warn('Error refreshing tasks, but task was deleted successfully:', refreshError);
+      }
+      
+      alert('Xóa dịch vụ con thành công!');
+      
+    } catch (error) {
+      console.error('Error deleting service task:', error);
+      alert('Có lỗi xảy ra khi xóa dịch vụ con: ' + (error.message || 'Lỗi không xác định'));
+    }
   };
 
   const toggleEditTask = (task) => {
@@ -453,20 +496,43 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
   };
 
   const updateEditDraft = (id, field, value) => {
-    setEditDraftMap(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+    // Chỉ cho phép cập nhật quantity, các field khác readonly
+    if (field === 'quantity') {
+      setEditDraftMap(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+    }
   };
 
   const saveTaskEdits = async (task) => {
     const id = task.serviceTaskID || task.taskID;
     const draft = editDraftMap[id];
-    await serviceTaskService.updateServiceTask(id, {
-      description: draft.description,
-      price: parseInt(draft.price) || 0,
-      quantity: parseInt(draft.quantity) || 1,
-    });
-    const refreshed = await serviceTaskService.getServiceTasksByPackage(editingService.serviceID);
-    setPackageTasks(refreshed || []);
-    setEditingTaskMap(prev => ({ ...prev, [id]: false }));
+    
+    try {
+      // Gửi tất cả fields theo API spec, chỉ quantity có thể thay đổi
+      await serviceTaskService.updateServiceTask(id, {
+        child_ServiceID: task.child_ServiceID,
+        package_ServiceID: task.package_ServiceID || editingService.serviceID,
+        description: task.description || draft.description,
+        taskOrder: task.taskOrder,
+        price: task.price || draft.price,
+        quantity: parseInt(draft.quantity) || 1,
+      });
+      
+      // Refresh danh sách tasks
+      try {
+        const refreshed = await serviceTaskService.getServiceTasksByPackage(editingService.serviceID);
+        console.log('Refreshed tasks after update:', refreshed);
+        setPackageTasks(Array.isArray(refreshed) ? refreshed : []);
+      } catch (refreshError) {
+        console.warn('Error refreshing tasks, but task was updated successfully:', refreshError);
+      }
+      
+      setEditingTaskMap(prev => ({ ...prev, [id]: false }));
+      alert('Cập nhật dịch vụ con thành công!');
+      
+    } catch (error) {
+      console.error('Error updating service task:', error);
+      alert('Có lỗi xảy ra khi cập nhật dịch vụ con: ' + (error.message || 'Lỗi không xác định'));
+    }
   };
 
   const calculateTotalPrice = () => (packageTasks || []).reduce((sum, t) => sum + (t.price * t.quantity), 0);
@@ -556,20 +622,34 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
                           <div>
                             <label className="block text-gray-600 mb-1">Mô tả</label>
                             <textarea
-                              className="w-full px-3 py-2 border rounded-lg"
+                              className="w-full px-3 py-2 border rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
                               rows="3"
                               value={draft.description}
-                              onChange={(e) => updateEditDraft(taskId, 'description', e.target.value)}
+                              readOnly
                             />
+                            <p className="text-xs text-gray-500 mt-1">Không thể chỉnh sửa mô tả</p>
                           </div>
                           <div className="grid grid-cols-2 gap-3 text-sm">
                             <div>
                               <label className="block text-gray-600 mb-1">Giá (VNĐ)</label>
-                              <input type="number" className="w-full px-3 py-2 border rounded-lg" value={draft.price} onChange={(e) => updateEditDraft(taskId, 'price', e.target.value)} />
+                              <input 
+                                type="number" 
+                                className="w-full px-3 py-2 border rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed" 
+                                value={draft.price} 
+                                readOnly
+                              />
+                              <p className="text-xs text-gray-500 mt-1">Không thể sửa giá</p>
                             </div>
                             <div>
-                              <label className="block text-gray-600 mb-1">Số lượng</label>
-                              <input type="number" className="w-full px-3 py-2 border rounded-lg" value={draft.quantity} onChange={(e) => updateEditDraft(taskId, 'quantity', e.target.value)} />
+                              <label className="block text-gray-600 mb-1">Số lượng <span className="text-red-500">*</span></label>
+                              <input 
+                                type="number" 
+                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                                value={draft.quantity} 
+                                onChange={(e) => updateEditDraft(taskId, 'quantity', e.target.value)}
+                                min="1"
+                                required
+                              />
                             </div>
                             {childService && (
                               <div className="col-span-2 flex items-end">
@@ -624,10 +704,19 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
                   <select
                     value={selectedServiceId}
                     onChange={(e) => {
-                      setSelectedServiceId(e.target.value);
-                      const selected = availableServices.find(s => s.serviceID == e.target.value);
-                      if (selected) {
-                        setTaskFormData({ ...taskFormData, price: selected.price, description: selected.description || '' });
+                      const serviceId = e.target.value;
+                      setSelectedServiceId(serviceId);
+                      if (serviceId) {
+                        const selected = availableServices.find(s => s.serviceID == serviceId);
+                        if (selected) {
+                          setTaskFormData({ 
+                            description: selected.description || selected.serviceName || '', 
+                            price: selected.price || 0, 
+                            quantity: 1 
+                          });
+                        }
+                      } else {
+                        setTaskFormData({ description: '', price: 0, quantity: 1 });
                       }
                     }}
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -648,24 +737,17 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
                     })}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Mô tả <span className="text-red-500">*</span></label>
-                  <textarea
-                    value={taskFormData.description}
-                    onChange={(e) => setTaskFormData({ ...taskFormData, description: e.target.value })}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    rows="3"
-                    placeholder="Mô tả chi tiết dịch vụ con..."
-                  />
-                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Giá (VNĐ)</label>
-                    <input type="number" value={taskFormData.price} onChange={(e) => setTaskFormData({ ...taskFormData, price: e.target.value })} className="w-full px-3 py-2 border rounded-lg" min="0" />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">Số lượng</label>
-                    <input type="number" value={taskFormData.quantity} onChange={(e) => setTaskFormData({ ...taskFormData, quantity: e.target.value })} className="w-full px-3 py-2 border rounded-lg" min="1" />
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Số lượng <span className="text-red-500">*</span></label>
+                    <input 
+                      type="number" 
+                      value={taskFormData.quantity} 
+                      onChange={(e) => setTaskFormData({ ...taskFormData, quantity: e.target.value })} 
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
+                      min="1"
+                      required
+                    />
                   </div>
                 </div>
                 <div className="flex space-x-3 pt-4">

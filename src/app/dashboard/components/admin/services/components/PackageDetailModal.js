@@ -12,6 +12,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
   const [loading, setLoading] = useState(true);
   const [showAddTaskModal, setShowAddTaskModal] = useState(false); // legacy state, no longer used in read-only view
   const [availableServices, setAvailableServices] = useState([]);
+  const [allServices, setAllServices] = useState([]); // Lưu tất cả services để lookup tên
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [taskFormData, setTaskFormData] = useState({
     description: '',
@@ -37,6 +38,8 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
     const loadAvailableServices = async () => {
       try {
         const services = await serviceTypeService.getServiceTypes();
+        // Lưu tất cả services để lookup tên
+        setAllServices(services);
         // Chỉ lấy các dịch vụ con (isPackage: false) và chưa được thêm vào gói này
         const singleServices = services.filter(service =>
           !service.isPackage &&
@@ -46,6 +49,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
       } catch (error) {
         console.error('Error loading available services:', error);
         setAvailableServices([]);
+        setAllServices([]);
       }
     };
 
@@ -92,8 +96,8 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
 
   const calculateTotalDuration = () => {
     return packageTasks.reduce((total, task) => {
-      // Lấy thời gian từ dịch vụ con
-      const childService = availableServices.find(s => s.serviceID === task.child_ServiceID);
+      // Lấy thời gian từ dịch vụ con trong allServices
+      const childService = allServices.find(s => s.serviceID === task.child_ServiceID);
       return total + ((childService?.duration || 0) * task.quantity);
     }, 0);
   };
@@ -168,9 +172,9 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
             ) : (
               <div className="space-y-4">
                 {packageTasks.map((task, index) => {
-                  const childService = availableServices.find(s => s.serviceID === task.child_ServiceID);
+                  const childService = allServices.find(s => s.serviceID === task.child_ServiceID);
                   return (
-                    <div key={task.serviceTaskID || task.taskID} className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div key={task.serviceTaskID || task.taskID} className={`bg-white border border-gray-200 rounded-lg p-4 ${childService?.status === 'removed' ? 'opacity-75' : ''}`}>
                       <div className="flex items-center justify-between">
                         <div className="flex-1">
                           <div className="flex items-center mb-2">
@@ -180,17 +184,38 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
                             <h5 className="font-semibold text-gray-800">
                               {childService?.serviceName || `Dịch vụ #${task.child_ServiceID}`}
                             </h5>
-                          </div>
-                          <p className="text-gray-600 text-sm mb-2">{task.description}</p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3 text-sm text-gray-600">
-                            <span>Giá: {task.price?.toLocaleString()} VNĐ</span>
-                            <span>Số lượng: {task.quantity}</span>
-                            {childService && (
-                              <span>Thời gian: {childService.duration} phút</span>
+                            {childService?.status === 'removed' && (
+                              <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-600 rounded-full">
+                                Đã xóa
+                              </span>
+                            )}
+                            {childService?.major && (
+                              <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                                {childService.major === 'Nurse' ? 'Chăm sóc' : 'Tư vấn'}
+                              </span>
                             )}
                           </div>
-                        </div>
-                        <div className="ml-4 text-gray-300">
+                          <p className="text-gray-600 text-sm mb-3">{task.description || childService?.description}</p>
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                            <div className="flex items-center text-green-600">
+                              <FontAwesomeIcon icon={faDollarSign} className="mr-1" />
+                              <span className="font-medium">{task.price?.toLocaleString()} VNĐ</span>
+                            </div>
+                            <div className="flex items-center text-blue-600">
+                              <span className="mr-1">Số lượng:</span>
+                              <span className="font-medium">{task.quantity}</span>
+                            </div>
+                            {childService && (
+                              <div className="flex items-center text-purple-600">
+                                <FontAwesomeIcon icon={faClock} className="mr-1" />
+                                <span className="font-medium">{childService.duration} phút</span>
+                              </div>
+                            )}
+                            <div className="flex items-center text-orange-600">
+                              <span className="mr-1">Tổng:</span>
+                              <span className="font-medium">{(task.price * task.quantity).toLocaleString()} VNĐ</span>
+                            </div>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -199,6 +224,43 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
               </div>
             )}
           </div>
+
+          {/* Package Summary */}
+          {packageTasks.length > 0 && (
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6">
+              <h4 className="text-lg font-semibold text-gray-800 mb-4">Tóm tắt gói dịch vụ</h4>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="flex items-center">
+                  <FontAwesomeIcon icon={faDollarSign} className="text-green-500 mr-3 text-xl" />
+                  <div>
+                    <p className="text-sm text-gray-600">Tổng giá trị các dịch vụ</p>
+                    <p className="font-bold text-xl text-green-700">{calculateTotalPrice().toLocaleString()} VNĐ</p>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <FontAwesomeIcon icon={faClock} className="text-blue-500 mr-3 text-xl" />
+                  <div>
+                    <p className="text-sm text-gray-600">Tổng thời gian dự kiến</p>
+                    <p className="font-bold text-xl text-blue-700">{calculateTotalDuration()} phút</p>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <FontAwesomeIcon icon={faList} className="text-purple-500 mr-3 text-xl" />
+                  <div>
+                    <p className="text-sm text-gray-600">Tiết kiệm được</p>
+                    <p className="font-bold text-xl text-purple-700">
+                      {(calculateTotalPrice() - (packageService.price || 0)).toLocaleString()} VNĐ
+                    </p>
+                    {calculateTotalPrice() > 0 && (
+                      <p className="text-xs text-purple-600">
+                        ({(((calculateTotalPrice() - (packageService.price || 0)) / calculateTotalPrice()) * 100).toFixed(1)}% giảm giá)
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>

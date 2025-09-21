@@ -183,6 +183,15 @@ const ServicesTab = () => {
   };
 
   const handleDelete = async (serviceId) => {
+    // Find the service to check if it's already deleted
+    const allServices = [...services, ...packages];
+    const serviceToDelete = allServices.find(s => s.serviceID === serviceId);
+    
+    if (serviceToDelete && serviceToDelete.status === 'Remove') {
+      alert('Dịch vụ này đã được xóa trước đó');
+      return;
+    }
+    
     if (window.confirm('Bạn có chắc chắn muốn xóa dịch vụ này?')) {
       try {
         await serviceTypeService.softDeleteServiceType(serviceId);
@@ -190,7 +199,7 @@ const ServicesTab = () => {
       } catch (error) {
         console.error('Error deleting service:', error);
 
-        // Kiểm tra nếu dịch vụ đã được đánh dấu removed
+        // Kiểm tra nếu dịch vụ đã được đánh dấu Remove
         if (error.message.includes('already marked as removed')) {
           alert('Dịch vụ này đã được xóa trước đó. Đang tải lại danh sách...');
           loadServices(); // Reload để cập nhật trạng thái
@@ -202,6 +211,12 @@ const ServicesTab = () => {
   };
 
   const openEditModal = (service) => {
+    // Prevent editing deleted services
+    if (service.status === 'Remove') {
+      alert('Không thể chỉnh sửa dịch vụ đã xóa');
+      return;
+    }
+    
     setSelectedService(service);
     setFormData({
       serviceName: service.serviceName,
