@@ -35,7 +35,7 @@ const AnimatedCounter = ({ targetValue }) => {
 const StatsSection = () => {
   const stats = [
     { value: '500+', label: 'Khách hàng hài lòng' },
-    { value: '50+', label: 'Chuyên gia y tế' },
+    { value: '50+', label: 'Chuyên viên y tế' },
     { value: '500+', label: 'Khách hàng được hỗ trợ' },
     { value: '98%', label: 'Đánh giá tích cực' }
   ];

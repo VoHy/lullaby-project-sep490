@@ -144,8 +144,8 @@ const Sidebar = ({ user }) => {
       { name: 'Hồ sơ cá nhân', path: '/dashboard?tab=profile', icon: faUser, color: 'text-pink-500', tab: 'profile' },
     ],
     3: [ // Manager
-      { name: 'Quản lý chuyên gia chăm sóc', path: '/dashboard?tab=nurse', icon: faUserNurse, color: 'text-blue-500', tab: 'nurse' },
-      { name: 'Quản lý Chuyên viên tư vấn', path: '/dashboard?tab=specialist', icon: faUserMd, color: 'text-pink-500', tab: 'specialist' },
+      { name: 'Quản lý chuyên viên chăm sóc', path: '/dashboard?tab=nurse', icon: faUserNurse, color: 'text-blue-500', tab: 'nurse' },
+      { name: 'Quản lý chuyên viên tư vấn', path: '/dashboard?tab=specialist', icon: faUserMd, color: 'text-pink-500', tab: 'specialist' },
       { name: 'Quản lý lịch hẹn', path: '/dashboard?tab=booking', icon: faCalendarAlt, color: 'text-green-500', tab: 'booking' },
     ],
   };
@@ -154,7 +154,7 @@ const Sidebar = ({ user }) => {
   const getRoleName = (role_id) => {
     const roleMap = {
       1: 'Quản trị viên',
-      2: 'Chuyên gia',
+      2: 'Chuyên viên',
       3: 'Quản lý',
     };
     return roleMap[role_id] || 'Unauthorized';

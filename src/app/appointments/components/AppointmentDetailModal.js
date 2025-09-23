@@ -295,7 +295,7 @@ const AppointmentDetailModal = ({
       experience: nurse.experience
     } : {
       id: nursingId,
-      name: 'Y tá không xác định',
+      name: 'Chuyên viên chăm sóc không xác định',
       phone: null,
       experience: null
     };
@@ -482,7 +482,17 @@ const AppointmentDetailModal = ({
   const renderFeedbackForm = (service) => {
     const taskId = getCustomizeTaskId(service);
     if (!taskId) return null;
-    return <FeedbackForm customizeTaskId={taskId} />;
+    
+    // Check if booking is cancelled
+    const bookingStatus = appointment.status;
+    const isBookingCancelled = String(bookingStatus).toLowerCase() === 'cancelled' || 
+                              String(bookingStatus).toLowerCase() === 'canceled';
+    
+    return <FeedbackForm 
+      customizeTaskId={taskId} 
+      isBookingCancelled={isBookingCancelled}
+      bookingStatus={bookingStatus}
+    />;
   };
 
   const renderServiceItem = (service, index, isDone, hasNurse, nurseInfo) => (

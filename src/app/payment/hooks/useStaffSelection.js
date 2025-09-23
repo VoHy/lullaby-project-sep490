@@ -209,7 +209,7 @@ export const useStaffSelection = (booking, bookingData, customizeTasks = []) => 
           const nurse = booking?.nursingSpecialists?.find(n => 
             String(n.nursingID || n.NursingID) === String(nid)
           );
-          const nurseName = nurse?.FullName || nurse?.fullName || `Y tá ID ${nid}`;
+          const nurseName = nurse?.FullName || nurse?.fullName || `Chuyên viên chăm sóc ID ${nid}`;
           const task = (bookingCustomizeTasks || []).find(t => t.customizeTaskID === changedKey);
           const service = booking?.serviceTypes?.find(s => s.serviceID === task?.serviceID);
           const serviceName = service?.serviceName || "dịch vụ";

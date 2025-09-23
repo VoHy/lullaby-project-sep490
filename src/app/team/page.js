@@ -266,7 +266,7 @@ export default function TeamPage() {
     }
   };
 
-  // Phân biệt Y tá và Chuyên gia
+  // Phân biệt Chuyên viên chăm sóc và Chuyên viên
   const nurses = nursingSpecialists.filter(m => m && (m.Major || m.major) && (m.Major || m.major).toLowerCase().includes('nurse'));
   const specialists = nursingSpecialists.filter(m => m && (m.Major || m.major) && !(m.Major || m.major).toLowerCase().includes('nurse'));
 
@@ -398,7 +398,7 @@ export default function TeamPage() {
     );
   }
 
-  // Card member (dùng cho cả Y tá và Chuyên gia)
+  // Card member (dùng cho cả Chuyên viên chăm sóc và Chuyên viên)
   const MemberCard = ({ member, onViewDetail }) => (
     <motion.div
       key={member.NursingID}
@@ -438,7 +438,7 @@ export default function TeamPage() {
           {(member.Major || member.major)?.toLowerCase() === "nurse"
             ? "Chăm sóc"
             : (member.Major || member.major)?.toLowerCase() === "specialist"
-              ? "Tư vấn"
+              ? "Chuyên viên tư vấn"
               : member.Major || member.major}
         </span>
       </div>
@@ -486,7 +486,7 @@ export default function TeamPage() {
             Đội ngũ chuyên nghiệp
           </h1>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto">
-            Đội ngũ y tá và chuyên gia giàu kinh nghiệm, tận tâm chăm sóc sức khỏe cho gia đình bạn
+            Đội ngũ Chuyên viên chăm sóc và Chuyên viên giàu kinh nghiệm, tận tâm chăm sóc sức khỏe cho gia đình bạn
           </p>
         </div>
 
@@ -561,7 +561,7 @@ export default function TeamPage() {
             {filteredNurses.length === 0 && (
               <div className="text-center py-12">
                 <FaUser className="text-gray-400 text-6xl mb-4 inline-block" />
-                <p className="text-gray-600">Không tìm thấy y tá nào phù hợp</p>
+                <p className="text-gray-600">Không tìm thấy Chuyên viên chăm sóc nào phù hợp</p>
               </div>
             )}
           </div>
@@ -577,7 +577,7 @@ export default function TeamPage() {
             {filteredSpecialists.length === 0 && (
               <div className="text-center py-12">
                 <FaUserMd className="text-gray-400 text-6xl mb-4 inline-block" />
-                <p className="text-gray-600">Không tìm thấy chuyên gia nào phù hợp</p>
+                <p className="text-gray-600">Không tìm thấy chuyên viên tư vấn nào phù hợp</p>
               </div>
             )}
           </div>
@@ -650,9 +650,9 @@ export default function TeamPage() {
                       <span className="text-gray-600">Chuyên môn:</span>
                       <span className="font-semibold text-blue-700">
                         {(detailData.Major || detailData.major)?.toLowerCase() === "nurse"
-                          ? "Y tá"
+                          ? "Chuyên viên chăm sóc"
                           : (detailData.Major || detailData.major)?.toLowerCase() === "specialist"
-                            ? "Chuyên gia"
+                            ? "Chuyên viên"
                             : detailData.Major || detailData.major || "N/A"}
                       </span>
                     </div>

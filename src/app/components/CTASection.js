@@ -12,8 +12,8 @@ const CTASection = () => {
   const trustIndicators = [
     {
       icon: <FaUserMd className="text-white text-2xl" />,
-      title: 'Chuyên gia y tế',
-      description: 'Đội ngũ y tá và chuyên gia được đào tạo chuyên nghiệp'
+      title: 'Chuyên viên y tế',
+      description: 'Đội ngũ Chuyên viên chăm sóc và Chuyên viên được đào tạo chuyên nghiệp'
     },
     {
       icon: <FaCalendarAlt className="text-white text-2xl" />,
@@ -22,8 +22,8 @@ const CTASection = () => {
     },
     {
       icon: <FaPhone className="text-white text-2xl" />,
-      title: 'Tư vấn 24/7',
-      description: 'Hỗ trợ tư vấn y tế từ xa mọi lúc'
+      title: 'Chuyên viên tư vấn 24/7',
+      description: 'Hỗ trợ Chuyên viên tư vấn y tế từ xa mọi lúc'
     }
   ];
 

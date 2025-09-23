@@ -7,7 +7,7 @@ const SpecialistList = ({ specialists, onEdit, onDelete }) => {
   const [selectedSpecialistForDetail, setSelectedSpecialistForDetail] = useState(null);
 
   const handleDelete = (specialist) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa chuyên gia "${specialist.fullName}"?`)) {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa Chuyên viên "${specialist.fullName}"?`)) {
       onDelete(specialist.nursingID, specialist.accountID);
     }
   };

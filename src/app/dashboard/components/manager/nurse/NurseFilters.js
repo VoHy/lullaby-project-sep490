@@ -49,7 +49,7 @@ const NurseFilters = ({
                 {filteredCount} / {totalNurses}
               </span>
             </div>
-            <p className="text-xs text-gray-500 mt-1">chuyên gia chăm sóc được tìm thấy</p>
+            <p className="text-xs text-gray-500 mt-1">Chuyên viên chăm sóc được tìm thấy</p>
           </div>
         </div>
       </div>

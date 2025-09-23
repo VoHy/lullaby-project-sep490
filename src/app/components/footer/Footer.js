@@ -111,7 +111,7 @@ export default function Footer() {
                   href="/team"
                   className="hover:text-pink-600 transition-colors"
                 >
-                  Chuyên làm y tá
+                  Chuyên làm Chuyên viên chăm sóc
                 </a>
               </li>
               <li>
@@ -119,7 +119,7 @@ export default function Footer() {
                   href="/team"
                   className="hover:text-pink-600 transition-colors"
                 >
-                  Chuyên gia trị liệu
+                  Chuyên viên trị liệu
                 </a>
               </li>
               <li>

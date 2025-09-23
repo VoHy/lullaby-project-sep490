@@ -191,7 +191,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
                             )}
                             {childService?.major && (
                               <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
-                                {childService.major === 'Nurse' ? 'Chăm sóc' : 'Tư vấn'}
+                                {childService.major === 'Nurse' ? 'Chăm sóc' : 'Chuyên viên tư vấn'}
                               </span>
                             )}
                           </div>

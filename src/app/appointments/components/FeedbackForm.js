@@ -8,8 +8,9 @@ import feedbackService from '@/services/api/feedbackService';
  * FeedbackForm
  * - Tự load feedback theo customizeTaskId (nếu có)
  * - Cho phép tạo mới hoặc cập nhật feedback (POST/PUT)
+ * - Disable feedback khi booking đã bị hủy
  */
-const FeedbackForm = ({ customizeTaskId }) => {
+const FeedbackForm = ({ customizeTaskId, isBookingCancelled = false, bookingStatus }) => {
   const [rate, setRate] = useState(0);
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,6 +41,10 @@ const FeedbackForm = ({ customizeTaskId }) => {
 
   const handleSave = async () => {
     if (!customizeTaskId) return;
+    if (isBookingCancelled) {
+      alert('Không thể đánh giá dịch vụ khi booking đã bị hủy.');
+      return;
+    }
     if (!rate && !content) {
       alert('Vui lòng chọn sao hoặc nhập nội dung đánh giá.');
       return;
@@ -67,34 +72,54 @@ const FeedbackForm = ({ customizeTaskId }) => {
   if (!customizeTaskId) return null;
 
   return (
-    <div className="mt-2 p-3 bg-gray-50 rounded border border-gray-200">
-      <div className="text-xs font-semibold text-gray-700 mb-2">Đánh giá dịch vụ</div>
+    <div className={`mt-2 p-3 rounded border ${isBookingCancelled ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
+      <div className={`text-xs font-semibold mb-2 ${isBookingCancelled ? 'text-red-700' : 'text-gray-700'}`}>
+        Đánh giá dịch vụ
+        {isBookingCancelled && (
+          <span className="ml-2 text-red-600 font-normal">(Không khả dụng - lịch hẹn đã hủy)</span>
+        )}
+      </div>
+      
       <div className="flex items-center gap-1 mb-2">
         {[1, 2, 3, 4, 5].map((s) => (
           <button
             key={s}
             type="button"
-            onClick={() => setRate(s)}
+            onClick={() => !isBookingCancelled && setRate(s)}
             className="focus:outline-none"
-            disabled={loading || saving}
+            disabled={loading || saving || isBookingCancelled}
           >
-            <FaStar className={(rate || 0) >= s ? 'text-yellow-400' : 'text-gray-300'} />
+            <FaStar className={`${
+              (rate || 0) >= s 
+                ? (isBookingCancelled ? 'text-gray-400' : 'text-yellow-400')
+                : (isBookingCancelled ? 'text-gray-200' : 'text-gray-300')
+            }`} />
           </button>
         ))}
       </div>
+      
       <textarea
         rows={2}
-        placeholder="Nội dung (không bắt buộc)"
+        placeholder={isBookingCancelled ? "Không thể đánh giá - Booking đã hủy" : "Nội dung (không bắt buộc)"}
         value={content}
-        onChange={(e) => setContent(e.target.value)}
-        className="w-full text-sm p-2 border rounded mb-2 focus:outline-none focus:ring-1 focus:ring-gray-300"
-        disabled={loading || saving}
+        onChange={(e) => !isBookingCancelled && setContent(e.target.value)}
+        className={`w-full text-sm p-2 border rounded mb-2 focus:outline-none focus:ring-1 ${
+          isBookingCancelled 
+            ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed' 
+            : 'border-gray-300 focus:ring-gray-300'
+        }`}
+        disabled={loading || saving || isBookingCancelled}
       />
+      
       <div className="flex items-center gap-3">
         <button
           onClick={handleSave}
-          disabled={saving || loading}
-          className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-60"
+          disabled={saving || loading || isBookingCancelled}
+          className={`px-3 py-1.5 text-sm rounded ${
+            isBookingCancelled
+              ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
+              : 'bg-blue-600 text-white hover:bg-blue-700'
+          } disabled:opacity-60`}
         >
           {saving ? 'Đang lưu...' : (existing ? 'Cập nhật feedback' : 'Gửi feedback')}
         </button>

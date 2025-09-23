@@ -73,13 +73,13 @@ const StaffViewModal = ({
             </div>
           </div>
 
-          {/* Y tá và Chuyên gia 2 cột*/}
+          {/* Chuyên viên chăm sóc và Chuyên viên 2 cột*/}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Nurses */}
             <div className="bg-gradient-to-br from-green-50 to-green-100 rounded-xl p-4 border border-green-200">
               <div className="flex items-center space-x-2 mb-3">
                 <FontAwesomeIcon icon={faUserMd} className="text-green-600 text-lg" />
-                <h4 className="font-semibold text-green-800">Y tá ({nurses.length})</h4>
+                <h4 className="font-semibold text-green-800">Chuyên viên chăm sóc ({nurses.length})</h4>
               </div>
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {nurses.length > 0 ? (
@@ -105,7 +105,7 @@ const StaffViewModal = ({
                   ))
                 ) : (
                   <div className="bg-white rounded-lg p-3 border border-green-200 text-center text-gray-500">
-                    Chưa có y tá nào được phân công
+                    Chưa có Chuyên viên chăm sóc nào được phân công
                   </div>
                 )}
               </div>
@@ -115,7 +115,7 @@ const StaffViewModal = ({
             <div className="bg-gradient-to-br from-purple-50 to-purple-100 rounded-xl p-4 border border-purple-200">
               <div className="flex items-center space-x-2 mb-3">
                 <FontAwesomeIcon icon={faUsers} className="text-purple-600 text-lg" />
-                <h4 className="font-semibold text-purple-800">Chuyên gia ({specialists.length})</h4>
+                <h4 className="font-semibold text-purple-800">Chuyên viên ({specialists.length})</h4>
               </div>
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {specialists.length > 0 ? (
@@ -141,7 +141,7 @@ const StaffViewModal = ({
                   ))
                 ) : (
                   <div className="bg-white rounded-lg p-3 border border-purple-200 text-center text-gray-500">
-                    Chưa có chuyên gia nào được phân công
+                    Chưa có Chuyên viên nào được phân công
                   </div>
                 )}
               </div>

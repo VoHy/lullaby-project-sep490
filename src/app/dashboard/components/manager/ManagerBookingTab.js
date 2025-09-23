@@ -29,10 +29,10 @@ const statusLabels = {
 };
 
 const nurseRoleLabels = {
-  nurse: 'Y tá',
-  specialist: 'Chuyên gia',
-  Nurse: 'Y tá',
-  Specialist: 'Chuyên gia'
+  nurse: 'Chuyên viên chăm sóc',
+  specialist: 'Chuyên viên',
+  Nurse: 'Chuyên viên chăm sóc',
+  Specialist: 'Chuyên viên'
 
 };
 
@@ -630,8 +630,8 @@ const ManagerBookingTab = () => {
                                 const specialistId = taskAssignments[task.customizeTaskId]?.specialist;
                                 const nurse = eligibleByTask[task.customizeTaskId]?.nurses?.find(n => (n.NursingID || n.nursingID) === nurseId);
                                 const specialist = eligibleByTask[task.customizeTaskId]?.specialists?.find(s => (s.NursingID || s.nursingID) === specialistId);
-                                if (nurse) return `${nurse.Full_Name || nurse.fullName} (Y tá)`;
-                                if (specialist) return `${specialist.Full_Name || specialist.fullName} (Chuyên gia)`;
+                                if (nurse) return `${nurse.Full_Name || nurse.fullName} (Chuyên viên chăm sóc)`;
+                                if (specialist) return `${specialist.Full_Name || specialist.fullName} (Chuyên viên)`;
                                 return 'Đã chọn nhân sự';
                               })()}
                             </span>
@@ -670,9 +670,9 @@ const ManagerBookingTab = () => {
                     <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl" onClick={() => setShowStaffModal(false)}>&times;</button>
                     <h4 className="text-lg font-bold mb-4 text-purple-700">Chọn nhân sự cho dịch vụ</h4>
                     <div className="mb-3">
-                      <div className="font-semibold mb-2">Y tá</div>
+                      <div className="font-semibold mb-2">Chuyên viên chăm sóc</div>
                       <ul className="space-y-2">
-                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.nurses || [])).length === 0 && <li className="text-gray-400 text-xs">Không có Y tá phù hợp</li>}
+                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.nurses || [])).length === 0 && <li className="text-gray-400 text-xs">Không có Chuyên viên chăm sóc phù hợp</li>}
                         {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.nurses || [])).map(n => (
                           <li key={n.NursingID || n.nursingID}>
                             <button
@@ -684,9 +684,9 @@ const ManagerBookingTab = () => {
                       </ul>
                     </div>
                     <div className="mb-3">
-                      <div className="font-semibold mb-2">Chuyên gia</div>
+                      <div className="font-semibold mb-2">Chuyên viên</div>
                       <ul className="space-y-2">
-                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.specialists || [])).length === 0 && <li className="text-gray-400 text-xs">Không có Chuyên gia phù hợp</li>}
+                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.specialists || [])).length === 0 && <li className="text-gray-400 text-xs">Không có Chuyên viên phù hợp</li>}
                         {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.specialists || [])).map(s => (
                           <li key={s.NursingID || s.nursingID}>
                             <button

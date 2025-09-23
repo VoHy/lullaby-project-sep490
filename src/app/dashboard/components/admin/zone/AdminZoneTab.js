@@ -90,9 +90,9 @@ const AdminZoneTab = () => {
   const staffCountMap = useMemo(() => {
     const nurses = {}, specialists = {};
     nursingSpecialists.forEach(n => {
-      if (n.major === 'nurse' || n.major === 'Y tá' || n.major === 'Nurse') {
+      if (n.major === 'nurse' || n.major === 'Chuyên viên chăm sóc' || n.major === 'Nurse') {
         nurses[n.zoneID] = (nurses[n.zoneID] || 0) + 1;
-      } else if (n.major === 'Chuyên gia' || n.major === 'specialist' || n.major === 'Specialist') {
+      } else if (n.major === 'Chuyên viên' || n.major === 'specialist' || n.major === 'Specialist') {
         specialists[n.zoneID] = (specialists[n.zoneID] || 0) + 1;
       }
     });
@@ -139,7 +139,7 @@ const AdminZoneTab = () => {
       subtitle: 'Số thành phố'
     },
     {
-      title: 'Chuyên gia chăm sóc',
+      title: 'Chuyên viên chăm sóc',
       value: Object.values(staffCountMap.nurses).reduce((a, b) => a + b, 0),
       icon: faUsers,
       color: 'from-purple-500 to-pink-500',
@@ -363,7 +363,7 @@ const AdminZoneTab = () => {
                       Quản lý: {getManagerByZone(zone.zoneID)?.fullName || 'Chưa có'}
                     </div>
 
-                    <div className="text-sm">Chuyên gia chăm sóc: {staffCountMap.nurses[zone.zoneID] || 0}</div>
+                    <div className="text-sm">Chuyên viên chăm sóc: {staffCountMap.nurses[zone.zoneID] || 0}</div>
                     <div className="text-sm">Chuyên viên tư vấn: {staffCountMap.specialists[zone.zoneID] || 0}</div>
 
                     <button
@@ -420,8 +420,8 @@ const AdminZoneTab = () => {
           showStaffModal={!!selectedZone}
           setShowStaffModal={() => setSelectedZone(null)}
           selectedZone={zones.find(z => z.zoneID === selectedZone)}
-          getNursesByZone={(id) => nursingSpecialists.filter(n => n.zoneID === id && (n.major === 'nurse' || n.major === 'Y tá' || n.major === 'Nurse'))}
-          getSpecialistsByZone={(id) => nursingSpecialists.filter(n => n.zoneID === id && (n.major === 'Chuyên gia' || n.major === 'specialist' || n.major === 'Specialist'))}
+          getNursesByZone={(id) => nursingSpecialists.filter(n => n.zoneID === id && (n.major === 'nurse' || n.major === 'Chuyên viên chăm sóc' || n.major === 'Nurse'))}
+          getSpecialistsByZone={(id) => nursingSpecialists.filter(n => n.zoneID === id && (n.major === 'Chuyên viên' || n.major === 'specialist' || n.major === 'Specialist'))}
           getManagerByZone={getManagerByZone}
         />
       )}

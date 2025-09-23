@@ -54,10 +54,10 @@ const BookingsTab = ({ bookings }) => {
   };
 
   const nurseRoleLabels = {
-    nurse: 'Y tá',
-    specialist: 'Chuyên gia',
-    Nurse: 'Y tá',
-    Specialist: 'Chuyên gia'
+    nurse: 'Chuyên viên chăm sóc',
+    specialist: 'Chuyên viên',
+    Nurse: 'Chuyên viên chăm sóc',
+    Specialist: 'Chuyên viên'
   };
   // Load data từ API
   useEffect(() => {

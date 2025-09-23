@@ -23,12 +23,12 @@ export default function StaffSelectionModal({
           Chọn nhân sự cho dịch vụ
         </h2>
         <div className="flex gap-6 flex-col md:flex-row">
-          {/* Y tá */}
+          {/* Chuyên viên chăm sóc */}
           <div className="flex-1">
-            <h3 className="font-semibold text-blue-700 mb-2">Y tá</h3>
+            <h3 className="font-semibold text-blue-700 mb-2">Chuyên viên chăm sóc</h3>
             <ul className="space-y-2">
               {getAvailableStaff(staffPopup.serviceId)
-                .filter((n) => n.major && n.major.toLowerCase().includes("y tá"))
+                .filter((n) => n.major && n.major.toLowerCase().includes("Chuyên viên chăm sóc"))
                 .map((n) => (
                   <li
                     key={n.nursingID}
@@ -52,20 +52,20 @@ export default function StaffSelectionModal({
                   </li>
                 ))}
               {getAvailableStaff(staffPopup.serviceId).filter(
-                (n) => n.major && n.major.toLowerCase().includes("y tá")
+                (n) => n.major && n.major.toLowerCase().includes("Chuyên viên chăm sóc")
               ).length === 0 && (
                 <li className="text-xs text-gray-400">
-                  Không có y tá nào rảnh thời điểm này.
+                  Không có Chuyên viên chăm sóc nào rảnh thời điểm này.
                 </li>
               )}
             </ul>
           </div>
-          {/* Chuyên gia */}
+          {/* Chuyên viên */}
           <div className="flex-1">
-            <h3 className="font-semibold text-pink-700 mb-2">Chuyên gia</h3>
+            <h3 className="font-semibold text-pink-700 mb-2">Chuyên viên</h3>
             <ul className="space-y-2">
               {getAvailableStaff(staffPopup.serviceId)
-                .filter((n) => n.major && !n.major.toLowerCase().includes("y tá"))
+                .filter((n) => n.major && !n.major.toLowerCase().includes("Chuyên viên chăm sóc"))
                 .map((n) => (
                   <li
                     key={n.nursingID}
@@ -89,10 +89,10 @@ export default function StaffSelectionModal({
                   </li>
                 ))}
               {getAvailableStaff(staffPopup.serviceId).filter(
-                (n) => n.major && !n.major.toLowerCase().includes("y tá")
+                (n) => n.major && !n.major.toLowerCase().includes("Chuyên viên chăm sóc")
               ).length === 0 && (
                 <li className="text-xs text-gray-400">
-                  Không có chuyên gia nào rảnh thời điểm này.
+                  Không có Chuyên viên nào rảnh thời điểm này.
                 </li>
               )}
             </ul>

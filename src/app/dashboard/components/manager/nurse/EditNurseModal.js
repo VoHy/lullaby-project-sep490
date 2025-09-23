@@ -138,7 +138,7 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
         ...formData,
         serviceID: cleanServiceID
       });
-      // Gọi callback reload danh sách y tá nếu có
+      // Gọi callback reload danh sách Chuyên viên chăm sóc nếu có
       if (typeof refetchNurses === 'function') {
         await refetchNurses();
       }

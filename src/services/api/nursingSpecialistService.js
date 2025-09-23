@@ -4,9 +4,9 @@ import { apiGet, apiPut, apiDelete } from './serviceUtils';
 const base = API_ENDPOINTS.NURSING_SPECIALISTS; // '/nursingspecialists'
 
 const nursingSpecialistService = {
-  getAllFreeNursingSpecialists: async (customizeTaskId) => apiGet(`${base}/GetAllFree/${customizeTaskId}`, 'Không thể lấy danh sách y tá/chuyên gia'),
-  getNursingSpecialists: async () => apiGet(`${base}/getall`, 'Không thể lấy danh sách y tá/chuyên gia'),
-  getAllNursingSpecialists: async () => apiGet(`${base}/getall`, 'Không thể lấy danh sách y tá/chuyên gia'),
+  getAllFreeNursingSpecialists: async (customizeTaskId) => apiGet(`${base}/GetAllFree/${customizeTaskId}`, 'Không thể lấy danh sách Chuyên viên chăm sóc/Chuyên viên'),
+  getNursingSpecialists: async () => apiGet(`${base}/getall`, 'Không thể lấy danh sách Chuyên viên chăm sóc/Chuyên viên'),
+  getAllNursingSpecialists: async () => apiGet(`${base}/getall`, 'Không thể lấy danh sách Chuyên viên chăm sóc/Chuyên viên'),
   getNursingSpecialistById: async (id) => apiGet(`${base}/get/${id}`, 'Không thể lấy thông tin'),
   updateNursingSpecialist: async (id, data) => apiPut(`${base}/update/${id}`, data, 'Cập nhật hồ sơ thất bại'),
   changeNursingSpecialistStatus: async (id, status) => apiPut(`${base}/changestatus/${id}`, { status }, 'Đổi trạng thái thất bại'),
