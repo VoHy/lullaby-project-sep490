@@ -267,6 +267,7 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
                     {Array.isArray(serviceTypes) &&
                       serviceTypes
                         .filter(service => service.isPackage === false)
+                        .filter(service => service.status === 'active')
                         .filter(service => !service.major || String(service.major) === String(formData.major))
                         .map(service => {
                           const isChecked = Array.isArray(formData.serviceID) && formData.serviceID.includes(String(service.serviceID));
