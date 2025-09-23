@@ -18,8 +18,8 @@ import notificationService from '@/services/api/notificationService';
 import { AuthContext } from '@/context/AuthContext';
 
 const TABS = [
-  { id: 'nurse', label: 'Quản lý chuyên gia chăm sóc', icon: FaUserNurse },
-  { id: 'specialist', label: 'Quản lý Chuyên viên tư vấn', icon: FaUserMd },
+  { id: 'nurse', label: 'Quản lý chuyên viên chăm sóc', icon: FaUserNurse },
+  { id: 'specialist', label: 'Quản lý chuyên viên tư vấn', icon: FaUserMd },
   { id: 'booking', label: 'Quản lý lịch hẹn', icon: FaCalendarAlt },
 ];
 
@@ -284,7 +284,7 @@ const ManagerDashboard = ({ user }) => {
                 <FaUserNurse className="text-2xl" />
               </div>
               <div className="ml-4">
-                <p className="text-sm opacity-90">Tổng số chuyên gia chăm sóc</p>
+                <p className="text-sm opacity-90">Tổng số chuyên viên chăm sóc</p>
                 <p className="text-2xl font-bold">{stats.nurses}</p>
               </div>
             </div>
@@ -296,7 +296,7 @@ const ManagerDashboard = ({ user }) => {
                 <FaUserMd className="text-2xl" />
               </div>
               <div className="ml-4">
-                <p className="text-sm opacity-90">Tổng số Chuyên viên tư vấn</p>
+                <p className="text-sm opacity-90">Tổng số chuyên viên tư vấn</p>
                 <p className="text-2xl font-bold">{stats.specialists}</p>
               </div>
             </div>

@@ -133,7 +133,7 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
           serviceIDs: formData.serviceID
         });
       }
-      // Gọi callback reload danh sách chuyên gia nếu có
+      // Gọi callback reload danh sách Chuyên viên nếu có
       if (typeof refetchSpecialists === 'function') {
         await refetchSpecialists();
       }
@@ -150,7 +150,7 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[80vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-100 px-8 py-6">
           <div className="flex justify-between items-center">
-            <h3 className="text-2xl font-bold text-gray-900">Sửa thông tin Chuyên viên tư vấn</h3>
+            <h3 className="text-2xl font-bold text-gray-900">Sửa thông tin chuyên viên tư vấn</h3>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-2 rounded-full hover:bg-gray-100"
@@ -260,6 +260,7 @@ const EditSpecialistModal = ({ specialist, onClose, onUpdate, zones, refetchSpec
                     {Array.isArray(serviceTypes) &&
                       serviceTypes
                         .filter(service => service.isPackage === false)
+                        .filter(service => service.status === 'active')
                         .filter(service => !service.major || String(service.major) === String(formData.major))
                         .map(service => {
                           const isChecked = Array.isArray(formData.serviceID) && formData.serviceID.includes(String(service.serviceID));

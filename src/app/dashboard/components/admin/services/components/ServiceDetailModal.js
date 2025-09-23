@@ -37,19 +37,18 @@ const ServiceDetailModal = ({ isOpen, onClose, service }) => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Trạng thái</label>
-                <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  service.status === 'active' 
-                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white' 
+                <span className={`px-3 py-1 rounded-full text-sm font-medium ${service.status === 'active'
+                    ? 'bg-gradient-to-r from-green-500 to-emerald-500 text-white'
                     : 'bg-gradient-to-r from-red-500 to-pink-500 text-white'
-                }`}>
+                  }`}>
                   {service.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
                 </span>
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-600 mb-1">Chuyên môn</label>
                 <p className="text-gray-800">
-                  {service.major === 'Nurse' ? 'Chuyên viên chăm sóc' : 
-                   service.major === 'Specialist' ? 'Chuyên viên tư vấn' : service.major}
+                  {service.major === 'Nurse' ? 'Chuyên viên chăm sóc' :
+                    service.major === 'Specialist' ? 'Chuyên viên tư vấn' : service.major}
                 </p>
               </div>
               <div>
@@ -80,7 +79,7 @@ const ServiceDetailModal = ({ isOpen, onClose, service }) => {
             <div className="px-6 py-4 border-b border-gray-200">
               <h4 className="text-lg font-semibold text-gray-800">Thống kê dịch vụ</h4>
             </div>
-            
+
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center">
@@ -90,7 +89,7 @@ const ServiceDetailModal = ({ isOpen, onClose, service }) => {
                   <h5 className="text-lg font-semibold text-gray-800">{service.duration}</h5>
                   <p className="text-sm text-gray-600">Phút</p>
                 </div>
-                
+
                 <div className="text-center">
                   <div className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
                     <FontAwesomeIcon icon={faDollarSign} className="text-white text-xl" />
@@ -98,7 +97,7 @@ const ServiceDetailModal = ({ isOpen, onClose, service }) => {
                   <h5 className="text-lg font-semibold text-gray-800">{service.price?.toLocaleString()}</h5>
                   <p className="text-sm text-gray-600">VNĐ</p>
                 </div>
-                
+
                 <div className="text-center">
                   <div className="bg-gradient-to-r from-purple-500 to-pink-500 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
                     <FontAwesomeIcon icon={faList} className="text-white text-xl" />

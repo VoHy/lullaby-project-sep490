@@ -30,7 +30,7 @@ const HeroSection = () => {
       image: "/images/hero-bg.jpg",
       alt: "Chăm sóc bé sơ sinh",
       icon: <FaUserMd className="text-blue-400 text-lg" />,
-      badge: "Chuyên gia nuôi dưỡng",
+      badge: "Chuyên viên nuôi dưỡng",
       title: "Chăm sóc bé sơ sinh",
       subtitle: "an toàn và yêu thương",
       description:
@@ -42,10 +42,10 @@ const HeroSection = () => {
     {
       id: 3,
       image: "/images/hero-bg.jpg",
-      alt: "Tư vấn dinh dưỡng mẹ và bé",
+      alt: "Chuyên viên tư vấn dinh dưỡng mẹ và bé",
       icon: <FaPhone className="text-green-400 text-lg" />,
       badge: "Hỗ trợ 24/7",
-      title: "Tư vấn dinh dưỡng",
+      title: "Chuyên viên tư vấn dinh dưỡng",
       subtitle: "cho mẹ và bé",
       description:
         "Cung cấp thực đơn khoa học giúp mẹ nhanh phục hồi và bé phát triển khỏe mạnh, thông minh.",

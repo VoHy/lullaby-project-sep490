@@ -155,7 +155,7 @@ export default function ProfilePage() {
   const getRoleName = (roleID) => {
     const roles = {
       1: "Quản trị viên",
-      2: "Y tá/Chuyên gia",
+      2: "Chuyên viên chăm sóc/Chuyên viên",
       3: "Quản lý",
       4: "Khách hàng"
     };

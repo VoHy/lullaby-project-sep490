@@ -128,32 +128,32 @@ const ManagerTab = () => {
 
   const stats = [
     {
-      title: 'Tổng Manager',
+      title: 'Tổng quản lý',
       value: managers.length,
       icon: faUserMd,
       color: 'from-blue-500 to-cyan-500',
-      subtitle: 'Tổng số Manager (trừ đã xóa)'
+      subtitle: 'Tổng số quản lý (trừ đã xóa)'
     },
     {
       title: 'Đang hoạt động',
       value: managers.filter(m => m.status === MANAGER_STATUS.ACTIVE && !m.deletedAt).length,
       icon: faUsers,
       color: 'from-green-500 to-emerald-500',
-      subtitle: 'Manager hoạt động bình thường'
+      subtitle: 'quản lý hoạt động bình thường'
     },
     {
       title: 'Đã khôi phục',
       value: managers.filter(m => isRestoredManager(m)).length,
       icon: faChartLine,
       color: 'from-yellow-500 to-orange-500',
-      subtitle: 'Manager đã khôi phục sau xóa'
+      subtitle: 'Quản lý đã khôi phục sau xóa'
     },
     {
       title: 'Bị cấm',
       value: managers.filter(m => m.status === MANAGER_STATUS.BANNED).length,
       icon: faExclamationTriangle,
       color: 'from-orange-500 to-red-500',
-      subtitle: 'Manager bị cấm (banned)'
+      subtitle: 'Quản lý bị cấm (banned)'
     }
   ];
 
@@ -163,7 +163,7 @@ const ManagerTab = () => {
       await fetchManagers();
     } catch (error) {
       console.error('ManagerTab: Error in handleCreateManager:', error);
-      alert('Có lỗi xảy ra khi refresh danh sách Manager!');
+      alert('Có lỗi xảy ra khi refresh danh sách quản lý!');
     } finally {
       setSaving(false);
     }
@@ -179,10 +179,10 @@ const ManagerTab = () => {
       setSaving(true);
       await accountService.updateManager(managerId, updatedData);
       await fetchManagers();
-      alert('Cập nhật Manager thành công!');
+      alert('Cập nhật quản lý thành công!');
     } catch (error) {
       console.error('Error updating manager:', error);
-      alert(`Có lỗi xảy ra khi cập nhật Manager: ${error.message}`);
+      alert(`Có lỗi xảy ra khi cập nhật quản lý: ${error.message}`);
     } finally {
       setSaving(false);
     }
@@ -190,10 +190,10 @@ const ManagerTab = () => {
 
   const handleDeleteManager = async (managerId) => {
     const managerToDelete = managers.find(m => m.accountID === managerId);
-    const managerName = managerToDelete?.fullName || 'Manager';
+    const managerName = managerToDelete?.fullName || 'quản lý';
     const isRestored = isRestoredManager(managerToDelete);
 
-    let confirmMessage = `Bạn có chắc chắn muốn xóa Manager "${managerName}"? Hành động này sẽ đánh dấu Manager là đã xóa (soft delete).`;
+    let confirmMessage = `Bạn có chắc chắn muốn xóa quản lý "${managerName}"? Hành động này sẽ đánh dấu quản lý là đã xóa (soft delete).`;
 
     if (isRestored) {
       confirmMessage = `Manager "${managerName}" đã được khôi phục trước đó. Bạn có chắc chắn muốn xóa lại? Lưu ý: Manager này có thể không thể xóa được do đã bị xóa trước đó.`;

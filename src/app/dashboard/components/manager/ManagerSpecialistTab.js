@@ -79,7 +79,7 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
     return matchesSearch && matchesStatus;
   });
 
-  // Xử lý thêm chuyên gia mới
+  // Xử lý thêm Chuyên viên mới
   const handleAddSpecialist = async (specialistData) => {
     try {
       await accountService.registerNursingSpecialist({
@@ -96,7 +96,7 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
         slogan: specialistData.slogan,
         zoneID: managedZone.zoneID
       });
-      // Gán dịch vụ cho chuyên gia nếu có
+      // Gán dịch vụ cho Chuyên viên nếu có
       if (Array.isArray(specialistData.serviceID) && specialistData.serviceID.length > 0) {
         // Lấy specialist vừa tạo (cần lấy lại danh sách hoặc từ API trả về)
         await nursingSpecialistServiceTypeService.create({
@@ -110,11 +110,11 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
       setShowAddModal(false);
     } catch (error) {
       console.error('Error adding specialist:', error);
-      throw new Error('Không thể thêm chuyên gia. Vui lòng thử lại.');
+      throw new Error('Không thể thêm Chuyên viên. Vui lòng thử lại.');
     }
   };
 
-  // Xử lý cập nhật chuyên gia
+  // Xử lý cập nhật Chuyên viên
   const handleUpdateSpecialist = async (specialistId, specialistData) => {
     try {
       await nursingSpecialistService.updateNursingSpecialist(specialistId, {
@@ -128,7 +128,7 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
         major: specialistData.major.charAt(0).toUpperCase() + specialistData.major.slice(1).toLowerCase(),
         status: specialistData.status
       });
-      // Gán lại dịch vụ cho chuyên gia
+      // Gán lại dịch vụ cho Chuyên viên
       const serviceIDs = Array.isArray(specialistData.serviceID)
         ? specialistData.serviceID.filter(id => id && id !== "").map(id => Number(id))
         : specialistData.serviceID ? [Number(specialistData.serviceID)] : [];
@@ -143,11 +143,11 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
       setSelectedSpecialist(null);
     } catch (error) {
       console.error('Error updating specialist:', error);
-      throw new Error('Không thể cập nhật chuyên gia. Vui lòng thử lại.');
+      throw new Error('Không thể cập nhật Chuyên viên. Vui lòng thử lại.');
     }
   };
 
-  // Xử lý xóa chuyên gia
+  // Xử lý xóa Chuyên viên
   const handleDeleteSpecialist = async (specialistId, accountId) => {
     try {
       await nursingSpecialistService.deleteNursingSpecialist(specialistId);
@@ -156,7 +156,7 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
       }
     } catch (error) {
       console.error('Error deleting specialist:', error);
-      throw new Error('Không thể xóa chuyên gia. Vui lòng thử lại.');
+      throw new Error('Không thể xóa Chuyên viên. Vui lòng thử lại.');
     }
   };
 
@@ -165,7 +165,7 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
     return (
       <div className="text-center py-12">
         <div className="w-16 h-16 border-4 border-purple-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-600">Đang tải dữ liệu chuyên gia...</p>
+        <p className="text-gray-600">Đang tải dữ liệu Chuyên viên...</p>
       </div>
     );
   }
@@ -190,7 +190,7 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h3 className="text-2xl font-bold text-gray-900">Quản lý chuyên gia tu vấn</h3>
+          <h3 className="text-2xl font-bold text-gray-900">Quản lý chuyên viên tư vấn</h3>
           <p className="text-gray-600">
             Khu vực: {managedZone?.zoneName || 'N/A'}
           </p>

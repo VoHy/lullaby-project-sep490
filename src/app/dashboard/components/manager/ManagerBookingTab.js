@@ -11,6 +11,7 @@ import serviceTaskService from '@/services/api/serviceTaskService';
 import zoneDetailService from '@/services/api/zoneDetailService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import zoneService from '@/services/api/zoneService';
+import workScheduleService from '@/services/api/workScheduleService';
 import notificationService from '@/services/api/notificationService';
 import invoiceService from '@/services/api/invoiceService';
 
@@ -29,10 +30,10 @@ const statusLabels = {
 };
 
 const nurseRoleLabels = {
-  nurse: 'Y tá',
-  specialist: 'Chuyên gia',
-  Nurse: 'Y tá',
-  Specialist: 'Chuyên gia'
+  nurse: 'Chuyên viên chăm sóc',
+  specialist: 'Chuyên viên',
+  Nurse: 'Chuyên viên chăm sóc',
+  Specialist: 'Chuyên viên'
 
 };
 
@@ -69,9 +70,13 @@ const ManagerBookingTab = () => {
   const [eligibleByTask, setEligibleByTask] = useState({}); // { [customizeTaskId]: { nurses: [], specialists: [] } }
   const [loadingEligible, setLoadingEligible] = useState(false);
   const [localInvoice, setLocalInvoice] = useState(null);
+  const [detailCustomizeTasks, setDetailCustomizeTasks] = useState([]); // Dữ liệu từ API GetAllByBooking
   // State cho popup chọn nhân sự
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [modalTaskId, setModalTaskId] = useState(null);
+  // State cho kiểm tra trùng lịch
+  const [scheduleConflicts, setScheduleConflicts] = useState({}); // { [nursingId]: { hasConflict: boolean, conflictDetails: string } }
+  const [checkingConflicts, setCheckingConflicts] = useState(false);
   
 
   // Load data từ API
@@ -168,6 +173,9 @@ const ManagerBookingTab = () => {
         description: serviceType.description || serviceType.serviceName || 'Dịch vụ',
         serviceId: serviceId,
         status: task.status,
+        startTime: task.startTime,
+        endTime: task.endTime,
+        taskOrder: task.taskOrder,
         assignedNurseId: nurseId || null,
         assignedNurseName: assignedAccount?.fullName || assignedNurse?.fullName || null,
         assignedNurseRole: assignedNurse?.major || null,
@@ -217,11 +225,75 @@ const ManagerBookingTab = () => {
       const nurses = (list || []).filter(p => String(p.major).toLowerCase() === 'nurse');
       const specialists = (list || []).filter(p => String(p.major).toLowerCase() === 'specialist');
       setEligibleByTask(prev => ({ ...prev, [customizeTaskId]: { nurses, specialists } }));
+      
+      // Kiểm tra trùng lịch cho tất cả nhân sự
+      await checkScheduleConflictsForStaff([...nurses, ...specialists]);
     } catch (e) {
       // keep empty on error
       setEligibleByTask(prev => ({ ...prev, [customizeTaskId]: { nurses: [], specialists: [] } }));
     } finally {
       setLoadingEligible(false);
+    }
+  }
+
+  // Helper functions for time formatting
+  const parseDT = (x) => (x ? new Date(x) : null);
+  const fmtTime = (x) => (x ? parseDT(x).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) : '');
+  const timeRange = (start, end) => `${fmtTime(start)} - ${fmtTime(end)}`;
+
+  // Kiểm tra trùng lịch cho danh sách nhân sự
+  async function checkScheduleConflictsForStaff(staffList) {
+    if (!detailData?.workdate || !Array.isArray(staffList)) return;
+    
+    setCheckingConflicts(true);
+    const conflicts = {};
+    
+    try {
+      // Kiểm tra từng nhân sự
+      await Promise.all(staffList.map(async (staff) => {
+        const nursingId = staff.nursingID || staff.NursingID;
+        if (!nursingId) return;
+        
+        try {
+          const schedules = await workScheduleService.getAllByNursing(nursingId);
+          const bookingDate = new Date(detailData.workdate).toISOString().split('T')[0];
+          
+          // Tìm lịch trùng ngày
+          const conflictingSchedule = Array.isArray(schedules) ? schedules.find(schedule => {
+            const scheduleDate = new Date(schedule.workDate || schedule.workdate).toISOString().split('T')[0];
+            return scheduleDate === bookingDate;
+          }) : null;
+          
+          if (conflictingSchedule) {
+            const startTime = conflictingSchedule.workDate || conflictingSchedule.workdate;
+            const endTime = conflictingSchedule.endTime || conflictingSchedule.endtime;
+            const timeInfo = timeRange(startTime, endTime);
+            const bookingId = conflictingSchedule.bookingID || conflictingSchedule.booking_ID || conflictingSchedule.BookingID;
+            
+            conflicts[nursingId] = {
+              hasConflict: true,
+              conflictDetails: `Lịch hẹn #${bookingId}: ${timeInfo}`
+            };
+          } else {
+            conflicts[nursingId] = {
+              hasConflict: false,
+              conflictDetails: ''
+            };
+          }
+        } catch (error) {
+          console.error(`Error checking schedule for nurse ${nursingId}:`, error);
+          conflicts[nursingId] = {
+            hasConflict: false,
+            conflictDetails: ''
+          };
+        }
+      }));
+      
+      setScheduleConflicts(conflicts);
+    } catch (error) {
+      console.error('Error checking schedule conflicts:', error);
+    } finally {
+      setCheckingConflicts(false);
     }
   }
 
@@ -231,20 +303,31 @@ const ManagerBookingTab = () => {
     setTaskAssignments({});
     setShowDetail(true);
 
-    // Prefetch invoice and eligible staff per service
+    // Prefetch invoice and get detailed customize tasks
     (async () => {
       try {
         const bookingId = booking?.bookingID || booking?.BookingID;
         if (bookingId) {
           try {
+            // Lấy invoice
             const inv = await invoiceService.getInvoiceByBooking(bookingId);
             setLocalInvoice(inv);
           } catch (_) {
             setLocalInvoice(null);
           }
+
+          try {
+            // Lấy chi tiết customize tasks với thời gian từ API mới
+            const detailTasks = await customizeTaskService.getAllByBooking(bookingId);
+            setDetailCustomizeTasks(detailTasks || []);
+          } catch (error) {
+            console.error('Error fetching detailed customize tasks:', error);
+            setDetailCustomizeTasks([]);
+          }
         }
-        // Reset eligible cache when opening detail
+        // Reset eligible cache and schedule conflicts when opening detail
         setEligibleByTask({});
+        setScheduleConflicts({});
       } catch (_) {
         // ignore
       }
@@ -254,9 +337,89 @@ const ManagerBookingTab = () => {
   const handleCloseDetail = () => {
     setShowDetail(false);
     setDetailData(null);
+    setScheduleConflicts({});
+    setDetailCustomizeTasks([]);
   };
 
+  // Hàm mới để lấy thông tin chi tiết từ API GetAllByBooking
+  function getDetailedBookingInfo(booking) {
+    const careProfile = booking.careProfile;
+    const account = accounts.find(a => a.accountID === careProfile?.accountID);
+
+    // Sử dụng dữ liệu từ API GetAllByBooking thay vì customizeTasks cũ
+    const serviceTasksOfBooking = detailCustomizeTasks.map(task => {
+      const serviceId = task.serviceID;
+      const serviceType = serviceTypes.find(s => (s.serviceID) === serviceId) || {};
+
+      const nurseId = task.nursingID;
+      const assignedNurse = nurseId ? nursingSpecialists.find(n => (n.nursingID) === nurseId) : null;
+      const assignedAccount = assignedNurse ? accounts.find(acc => (acc.accountID) === (assignedNurse.accountID)) : null;
+
+      return {
+        customizeTaskId: task.customizeTaskID,
+        description: serviceType.description || serviceType.serviceName || 'Dịch vụ',
+        serviceId: serviceId,
+        status: task.status,
+        startTime: task.startTime,
+        endTime: task.endTime,
+        taskOrder: task.taskOrder,
+        assignedNurseId: nurseId || null,
+        assignedNurseName: assignedAccount?.fullName || assignedNurse?.fullName || null,
+        assignedNurseRole: assignedNurse?.major || null,
+        hasAssignedNurse: !!nurseId
+      };
+    });
+
+    return { careProfile, account, serviceTasksOfBooking };
+  }
+
   const handleTaskAssign = (taskId, type, value) => {
+    // Kiểm tra trùng giờ với các task khác trong cùng booking trước khi assign
+    const currentTask = detailCustomizeTasks.find(t => t.customizeTaskID === taskId);
+    if (currentTask && currentTask.startTime && currentTask.endTime) {
+      const currentStart = new Date(currentTask.startTime);
+      const currentEnd = new Date(currentTask.endTime);
+      
+      // Kiểm tra với các task đã có nhân sự và task đã được chọn nhân sự
+      const conflicts = [];
+      const { serviceTasksOfBooking } = getDetailedBookingInfo(detailData);
+      
+      serviceTasksOfBooking.forEach(task => {
+        if (task.customizeTaskId === taskId) return; // Bỏ qua task hiện tại
+        
+        let taskNursingId = null;
+        // Task đã có nurse
+        if (task.hasAssignedNurse && task.assignedNurseId) {
+          taskNursingId = task.assignedNurseId;
+        }
+        // Task đã được chọn nurse trong session này
+        else if (taskAssignments[task.customizeTaskId]) {
+          taskNursingId = taskAssignments[task.customizeTaskId]?.nurse || taskAssignments[task.customizeTaskId]?.specialist;
+        }
+        
+        // Nếu cùng nurse và có thời gian
+        if (taskNursingId == value && task.startTime && task.endTime) {
+          const taskStart = new Date(task.startTime);
+          const taskEnd = new Date(task.endTime);
+          
+          // Kiểm tra trùng giờ
+          if (currentStart < taskEnd && currentEnd > taskStart) {
+            const formatTime = (date) => date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+            conflicts.push(
+              `Trùng giờ với: ${task.description}\n` +
+              `  • Giờ chọn hiện tại: ${formatTime(currentStart)} - ${formatTime(currentEnd)}\n` +
+              `  • Giờ đã có: ${formatTime(taskStart)} - ${formatTime(taskEnd)}`
+            );
+          }
+        }
+      });
+      
+      if (conflicts.length > 0) {
+        alert(`Không thể gán nhân sự này do trùng giờ trong cùng lịch hẹn:\n\n${conflicts.join('\n\n')}\n\nVui lòng chọn nhân sự khác hoặc điều chỉnh thời gian!`);
+        return;
+      }
+    }
+
     setTaskAssignments(prev => {
       // Chỉ lưu lại nhân sự đã chọn
       if (type === 'nurse') {
@@ -277,8 +440,17 @@ const ManagerBookingTab = () => {
 
   const handleAccept = async () => {
     if (detailData) {
-      const { serviceTasksOfBooking, careProfile, account } = getBookingDetail(detailData);
-      // Kiểm tra xem tất cả dịch vụ đã có nhân sự chưa
+      // Sử dụng hàm mới để lấy thông tin chi tiết
+      const { serviceTasksOfBooking, careProfile, account } = getDetailedBookingInfo(detailData);
+      
+      // Kiểm tra trạng thái booking phải là "paid" (đã thanh toán)
+      const bookingStatus = String(detailData.status ?? detailData.Status).toLowerCase();
+      if (bookingStatus !== 'paid') {
+        alert('Chỉ có thể gán nhân sự cho lịch hẹn đã thanh toán. Vui lòng kiểm tra trạng thái thanh toán.');
+        return;
+      }
+
+      // Kiểm tra xem tất cả dịch vụ đã có nhân sự chưa (bao gồm cả nhân sự đã có và mới chọn)
       const unassignedTasks = serviceTasksOfBooking.filter(task => {
         const hasExistingNurse = task.hasAssignedNurse;
         const hasNewAssignment = (taskAssignments[task.customizeTaskId]?.nurse || taskAssignments[task.customizeTaskId]?.specialist);
@@ -286,13 +458,103 @@ const ManagerBookingTab = () => {
       });
 
       if (unassignedTasks.length > 0) {
-        alert(`Vui lòng chọn nhân sự cho các dịch vụ sau:\n${unassignedTasks.map(task => `- ${task.description}`).join('\n')}`);
+        const unassignedList = unassignedTasks.map(task => {
+          const timeInfo = task.startTime && task.endTime 
+            ? ` (${new Date(task.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(task.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})`
+            : '';
+          return `- ${task.description}${timeInfo}`;
+        }).join('\n');
+        
+        alert(`Vui lòng chọn nhân sự cho TẤT CẢ các dịch vụ sau:\n${unassignedList}\n\nKhông thể cập nhật khi còn dịch vụ chưa có nhân sự!`);
+        return;
+      }
+
+      // Kiểm tra trùng giờ trong cùng booking
+      const timeConflictsInBooking = [];
+      const nurseTaskMap = new Map(); // { nursingId: [tasks] }
+
+      // Thu thập tất cả task của từng nurse (bao gồm đã có và mới chọn)
+      serviceTasksOfBooking.forEach(task => {
+        let nursingId = null;
+        
+        // Task đã có nurse
+        if (task.hasAssignedNurse && task.assignedNurseId) {
+          nursingId = task.assignedNurseId;
+        }
+        // Task mới được chọn nurse
+        else if (taskAssignments[task.customizeTaskId]) {
+          nursingId = taskAssignments[task.customizeTaskId]?.nurse || taskAssignments[task.customizeTaskId]?.specialist;
+        }
+
+        if (nursingId && task.startTime && task.endTime) {
+          if (!nurseTaskMap.has(nursingId)) {
+            nurseTaskMap.set(nursingId, []);
+          }
+          nurseTaskMap.get(nursingId).push({
+            taskId: task.customizeTaskId,
+            description: task.description,
+            startTime: new Date(task.startTime),
+            endTime: new Date(task.endTime),
+            nursingId: nursingId
+          });
+        }
+      });
+
+      // Kiểm tra trùng giờ cho từng nurse
+      nurseTaskMap.forEach((tasks, nursingId) => {
+        if (tasks.length > 1) {
+          // Sắp xếp theo thời gian bắt đầu
+          tasks.sort((a, b) => a.startTime - b.startTime);
+          
+          for (let i = 0; i < tasks.length - 1; i++) {
+            const currentTask = tasks[i];
+            const nextTask = tasks[i + 1];
+            
+            // Kiểm tra trùng giờ: task hiện tại kết thúc sau khi task tiếp theo bắt đầu
+            if (currentTask.endTime > nextTask.startTime) {
+              const staff = [...Object.values(eligibleByTask).flatMap(e => [...e.nurses || [], ...e.specialists || []])]
+                .find(s => (s.nursingID || s.NursingID) == nursingId);
+              const staffName = staff?.fullName || staff?.Full_Name || `ID ${nursingId}`;
+              
+              const formatTime = (date) => date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+              
+              timeConflictsInBooking.push(
+                `${staffName} bị trùng giờ:\n` +
+                `  • ${currentTask.description}: ${formatTime(currentTask.startTime)} - ${formatTime(currentTask.endTime)}\n` +
+                `  • ${nextTask.description}: ${formatTime(nextTask.startTime)} - ${formatTime(nextTask.endTime)}`
+              );
+            }
+          }
+        }
+      });
+
+      if (timeConflictsInBooking.length > 0) {
+        alert(`Không thể gán nhân sự do trùng giờ trong cùng booking:\n\n${timeConflictsInBooking.join('\n\n')}\n\nMột nhân sự chỉ có thể làm nhiều task nếu thời gian không trùng nhau!`);
+        return;
+      }
+
+      // Kiểm tra trùng lịch với các booking khác
+      const assignments = Object.entries(taskAssignments);
+      const conflicts = [];
+      
+      for (const [taskId, sel] of assignments) {
+        const nursingId = sel.nurse || sel.specialist;
+        if (nursingId && scheduleConflicts[nursingId]?.hasConflict) {
+          const staff = [...eligibleByTask[taskId]?.nurses || [], ...eligibleByTask[taskId]?.specialists || []]
+            .find(s => (s.nursingID || s.NursingID) === nursingId);
+          const staffName = staff?.fullName || staff?.Full_Name || `ID ${nursingId}`;
+          const conflictDetails = scheduleConflicts[nursingId].conflictDetails;
+          conflicts.push(`${staffName} đã có lịch trùng với booking khác: ${conflictDetails}`);
+        }
+      }
+
+      if (conflicts.length > 0) {
+        alert(`Không thể gán nhân sự do trùng lịch với booking khác:\n\n${conflicts.join('\n')}`);
         return;
       }
 
       try {
         // Thực hiện assign đối với các task đã chọn
-        const assignments = Object.entries(taskAssignments);
         if (assignments.length > 0) {
           await Promise.all(assignments.map(async ([taskId, sel]) => {
             const nursingId = sel.nurse || sel.specialist;
@@ -302,10 +564,13 @@ const ManagerBookingTab = () => {
         }
 
         setShowDetail(false);
-        alert('Đã gán nhân sự cho các dịch vụ!');
+        alert('Đã gán nhân sự cho tất cả các dịch vụ thành công!');
+        
+        // Refresh dữ liệu để cập nhật trạng thái mới
+        window.location.reload();
       } catch (error) {
         console.error('Error accepting booking:', error);
-        alert('Có lỗi xảy ra khi gán nhân sự');
+        alert('Có lỗi xảy ra khi gán nhân sự. Vui lòng thử lại.');
       }
     }
   };
@@ -501,13 +766,13 @@ const ManagerBookingTab = () => {
 
       {/* Popup chi tiết booking */}
       {showDetail && detailData && (() => {
-        const { careProfile, account, service, packageInfo, serviceTasksOfBooking } = getBookingDetail(detailData);
+        const { careProfile, account, serviceTasksOfBooking } = getDetailedBookingInfo(detailData);
         const isPackage = !!detailData.Package_ServiceID;
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-white rounded-lg shadow-xl w-full max-w-5xl p-8 relative max-h-[90vh] overflow-y-auto">
               <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl" onClick={handleCloseDetail}>&times;</button>
-              <h3 className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 mb-4">Chi tiết Booking #{detailData.bookingID}</h3>
+              <h3 className="text-2xl font-bold text-center text-transparent bg-clip-text bg-gradient-to-r from-purple-500 to-pink-500 mb-4">Chi tiết lịch hẹn #{detailData.bookingID}</h3>
               <div className="bg-gray-50 rounded-lg p-6 mb-6">
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                   {/* Thông tin khách hàng */}
@@ -580,6 +845,11 @@ const ManagerBookingTab = () => {
                   {serviceTasksOfBooking.map((task, idx) => (
                     <li key={idx} className="text-sm">
                       {task?.description}
+                      {task.startTime && task.endTime && (
+                        <span className="ml-2 text-xs text-blue-600 font-medium">
+                          ({new Date(task.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - {new Date(task.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})
+                        </span>
+                      )}
                       {task.assignedNurseName && (
                         <span className="ml-2 text-xs text-blue-700">- {task.assignedNurseName} ({nurseRoleLabels[task.assignedNurseRole] || task.assignedNurseRole})</span>
                       )}
@@ -609,7 +879,7 @@ const ManagerBookingTab = () => {
                   <thead>
                     <tr className="bg-gradient-to-r from-purple-100 to-pink-100 text-purple-700">
                       <th className="p-2 text-left">Dịch vụ</th>
-                      <th className="p-2 text-left">Giá</th>
+                      <th className="p-2 text-left">Thời gian</th>
                       <th className="p-2 text-left">Nhân sự đã chọn</th>
                       <th className="p-2 text-left">Chọn nhân sự</th>
                       <th className="p-2 text-left">Trạng thái</th>
@@ -619,7 +889,18 @@ const ManagerBookingTab = () => {
                     {serviceTasksOfBooking.map((task) => (
                       <tr key={task.customizeTaskId}>
                         <td className="p-2">{task?.description}</td>
-                        <td className="p-2">{/* giá nếu có */}</td>
+                        <td className="p-2">
+                          {task.startTime && task.endTime ? (
+                            <div className="text-xs">
+                              <div className="text-blue-600 font-medium">
+                                {new Date(task.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - {new Date(task.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })}
+                              </div>
+                              <div className="text-gray-500">
+                                {new Date(task.startTime).toLocaleDateString('vi-VN')}
+                              </div>
+                            </div>
+                          ) : '-'}
+                        </td>
                         <td className="p-2">
                           {task.assignedNurseName ? (
                             <span className="text-green-600 font-medium">{task.assignedNurseName} ({nurseRoleLabels[task.assignedNurseRole] || task.assignedNurseRole}) </span>
@@ -630,8 +911,8 @@ const ManagerBookingTab = () => {
                                 const specialistId = taskAssignments[task.customizeTaskId]?.specialist;
                                 const nurse = eligibleByTask[task.customizeTaskId]?.nurses?.find(n => (n.NursingID || n.nursingID) === nurseId);
                                 const specialist = eligibleByTask[task.customizeTaskId]?.specialists?.find(s => (s.NursingID || s.nursingID) === specialistId);
-                                if (nurse) return `${nurse.Full_Name || nurse.fullName} (Y tá)`;
-                                if (specialist) return `${specialist.Full_Name || specialist.fullName} (Chuyên gia)`;
+                                if (nurse) return `${nurse.Full_Name || nurse.fullName} (Chuyên viên chăm sóc)`;
+                                if (specialist) return `${specialist.Full_Name || specialist.fullName} (Chuyên viên)`;
                                 return 'Đã chọn nhân sự';
                               })()}
                             </span>
@@ -641,10 +922,14 @@ const ManagerBookingTab = () => {
                         </td>
                         <td className="p-2">
                           {!task.assignedNurseName ? (
+                            String(detailData.status ?? detailData.Status).toLowerCase() === 'paid' ? (
                             <button
                               className="px-3 py-1 rounded bg-purple-100 text-purple-700 hover:bg-purple-200 text-xs"
                               onClick={() => { setShowStaffModal(true); setModalTaskId(task.customizeTaskId); fetchEligibleForTask(task.customizeTaskId); }}
                             >Chọn nhân sự</button>
+                            ) : (
+                              <span className="text-gray-400 text-xs">Chỉ gán được khi đã thanh toán</span>
+                            )
                           ) : (
                             <span className="text-gray-400 text-xs">Đã có nhân sự</span>
                           )}
@@ -660,7 +945,7 @@ const ManagerBookingTab = () => {
                   onClick={handleAccept}
                   className="px-8 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg"
                 >
-                  Accept
+                  Cập nhật
                 </button>
               </div>
               {/* Popup chọn nhân sự */}
@@ -669,32 +954,85 @@ const ManagerBookingTab = () => {
                   <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-6 relative">
                     <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl" onClick={() => setShowStaffModal(false)}>&times;</button>
                     <h4 className="text-lg font-bold mb-4 text-purple-700">Chọn nhân sự cho dịch vụ</h4>
+                    {checkingConflicts && (
+                      <div className="mb-3 p-2 bg-blue-50 border border-blue-200 rounded text-blue-700 text-sm">
+                        Đang kiểm tra trùng lịch...
+                      </div>
+                    )}
                     <div className="mb-3">
-                      <div className="font-semibold mb-2">Y tá</div>
+                      <div className="font-semibold mb-2">Chuyên viên chăm sóc</div>
                       <ul className="space-y-2">
-                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.nurses || [])).length === 0 && <li className="text-gray-400 text-xs">Không có Y tá phù hợp</li>}
-                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.nurses || [])).map(n => (
-                          <li key={n.NursingID || n.nursingID}>
+                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.nurses || [])).length === 0 && <li className="text-gray-400 text-xs">Không có Chuyên viên chăm sóc phù hợp</li>}
+                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.nurses || [])).map(n => {
+                          const nursingId = n.NursingID || n.nursingID;
+                          const conflictInfo = scheduleConflicts[nursingId];
+                          const hasConflict = conflictInfo?.hasConflict;
+                          return (
+                            <li key={nursingId}>
                             <button
-                              className="w-full text-left px-3 py-2 rounded border hover:bg-purple-100"
-                              onClick={() => handleTaskAssign(modalTaskId, 'nurse', n.NursingID || n.nursingID)}
-                            >{n.Full_Name || n.fullName}</button>
+                                className={`w-full text-left px-3 py-2 rounded border ${
+                                  hasConflict 
+                                    ? 'bg-red-50 border-red-200 text-red-600 cursor-not-allowed' 
+                                    : 'hover:bg-purple-100'
+                                }`}
+                                onClick={() => !hasConflict && handleTaskAssign(modalTaskId, 'nurse', nursingId)}
+                                disabled={hasConflict}
+                              >
+                                <div className="flex flex-col">
+                                  <div className="flex items-center justify-between">
+                                    <span>{n.Full_Name || n.fullName}</span>
+                                    {hasConflict && (
+                                      <span className="text-xs text-red-500">(Trùng lịch)</span>
+                                    )}
+                                  </div>
+                                  {hasConflict && conflictInfo.conflictDetails && (
+                                    <div className="text-xs text-red-600 mt-1">
+                                      {conflictInfo.conflictDetails}
+                                    </div>
+                                  )}
+                                </div>
+                              </button>
                           </li>
-                        ))}
+                          );
+                        })}
                       </ul>
                     </div>
                     <div className="mb-3">
-                      <div className="font-semibold mb-2">Chuyên gia</div>
+                      <div className="font-semibold mb-2">Chuyên viên</div>
                       <ul className="space-y-2">
-                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.specialists || [])).length === 0 && <li className="text-gray-400 text-xs">Không có Chuyên gia phù hợp</li>}
-                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.specialists || [])).map(s => (
-                          <li key={s.NursingID || s.nursingID}>
+                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.specialists || [])).length === 0 && <li className="text-gray-400 text-xs">Không có Chuyên viên phù hợp</li>}
+                        {(loadingEligible ? [] : (eligibleByTask[modalTaskId]?.specialists || [])).map(s => {
+                          const nursingId = s.NursingID || s.nursingID;
+                          const conflictInfo = scheduleConflicts[nursingId];
+                          const hasConflict = conflictInfo?.hasConflict;
+                          return (
+                            <li key={nursingId}>
                             <button
-                              className="w-full text-left px-3 py-2 rounded border hover:bg-pink-100"
-                              onClick={() => handleTaskAssign(modalTaskId, 'specialist', s.NursingID || s.nursingID)}
-                            >{s.Full_Name || s.fullName}</button>
+                                className={`w-full text-left px-3 py-2 rounded border ${
+                                  hasConflict 
+                                    ? 'bg-red-50 border-red-200 text-red-600 cursor-not-allowed' 
+                                    : 'hover:bg-pink-100'
+                                }`}
+                                onClick={() => !hasConflict && handleTaskAssign(modalTaskId, 'specialist', nursingId)}
+                                disabled={hasConflict}
+                              >
+                                <div className="flex flex-col">
+                                  <div className="flex items-center justify-between">
+                                    <span>{s.Full_Name || s.fullName}</span>
+                                    {hasConflict && (
+                                      <span className="text-xs text-red-500">(Trùng lịch)</span>
+                                    )}
+                                  </div>
+                                  {hasConflict && conflictInfo.conflictDetails && (
+                                    <div className="text-xs text-red-600 mt-1">
+                                      {conflictInfo.conflictDetails}
+                                    </div>
+                                  )}
+                                </div>
+                              </button>
                           </li>
-                        ))}
+                          );
+                        })}
                       </ul>
                     </div>
                   </div>

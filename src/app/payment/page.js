@@ -350,12 +350,6 @@ function PaymentContent() {
               )}
             </div>
 
-            {/* Error display for staff assignment */}
-            {assignError && (
-              <div className="mb-4 p-4 bg-red-100 border border-red-300 rounded-lg">
-                <div className="text-red-700 font-semibold text-center">{assignError}</div>
-              </div>
-            )}
           </div>
 
 

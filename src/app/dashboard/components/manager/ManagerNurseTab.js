@@ -79,7 +79,7 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
     return matchesSearch && matchesStatus;
   });
 
-  // Xử lý thêm y tá mới
+  // Xử lý thêm Chuyên viên chăm sóc mới
   const handleAddNurse = async (nurseData) => {
     try {
       await accountService.registerNursingSpecialist({
@@ -102,11 +102,11 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
       setShowAddModal(false);
     } catch (error) {
       console.error('Error adding nurse:', error);
-      throw new Error('Không thể thêm y tá. Vui lòng thử lại.');
+      throw new Error('Không thể thêm Chuyên viên chăm sóc. Vui lòng thử lại.');
     }
   };
 
-  // Xử lý cập nhật y tá
+  // Xử lý cập nhật Chuyên viên chăm sóc
   const handleUpdateNurse = async (nurseId, nurseData) => {
     try {
       // Chỉ gọi 1 API update
@@ -131,7 +131,7 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
         serviceIDs: serviceIDs
       });
 
-      // Gọi callback từ cha để reload lại danh sách y tá toàn hệ thống
+      // Gọi callback từ cha để reload lại danh sách Chuyên viên chăm sóc toàn hệ thống
       if (typeof refetchNurses === 'function') {
         await refetchNurses();
       }
@@ -140,11 +140,11 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
       setSelectedNurse(null);
     } catch (error) {
       console.error('Error updating nurse:', error);
-      throw new Error('Không thể cập nhật y tá. Vui lòng thử lại.');
+      throw new Error('Không thể cập nhật Chuyên viên chăm sóc. Vui lòng thử lại.');
     }
   };
 
-  // Xử lý xóa y tá
+  // Xử lý xóa Chuyên viên chăm sóc
   const handleDeleteNurse = async (nurseId, accountId) => {
     try {
       await nursingSpecialistService.deleteNursingSpecialist(nurseId);
@@ -153,7 +153,7 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
       }
     } catch (error) {
       console.error('Error deleting nurse:', error);
-      throw new Error('Không thể xóa y tá. Vui lòng thử lại.');
+      throw new Error('Không thể xóa Chuyên viên chăm sóc. Vui lòng thử lại.');
     }
   };
 
@@ -165,7 +165,7 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
     return (
       <div className="text-center py-12">
         <div className="w-16 h-16 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-        <p className="text-gray-600">Đang tải dữ liệu y tá...</p>
+        <p className="text-gray-600">Đang tải dữ liệu Chuyên viên chăm sóc...</p>
       </div>
     );
   }
@@ -190,7 +190,7 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h3 className="text-2xl font-bold text-gray-900">Quản lý chuyên gia chăm sóc</h3>
+          <h3 className="text-2xl font-bold text-gray-900">Quản lý chuyên viên chăm sóc</h3>
           <p className="text-gray-600">
             Khu vực: {managedZone?.zoneName || 'N/A'}
           </p>
@@ -200,7 +200,7 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
           className="bg-gradient-to-r from-purple-500 to-pink-600 hover:from-purple-600 hover:to-pink-700 text-white px-4 py-2 rounded-lg transition-all duration-200 flex items-center gap-2 shadow-lg hover:shadow-xl"
         >
           <FaPlus />
-          <span>Thêm chuyên gia chăm sóc</span>
+          <span>Thêm Chuyên viên chăm sóc</span>
         </button>
       </div>
 

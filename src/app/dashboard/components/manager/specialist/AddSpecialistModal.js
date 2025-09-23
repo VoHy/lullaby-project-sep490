@@ -51,7 +51,7 @@ const AddSpecialistModal = ({ onClose, onAdd, managedZone }) => {
   <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[80vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-100 px-8 py-6">
           <div className="flex justify-between items-center">
-            <h3 className="text-2xl font-bold text-gray-900">Thêm Chuyên viên tư vấn mới</h3>
+            <h3 className="text-2xl font-bold text-gray-900">Thêm chuyên viên tư vấn mới</h3>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-2 rounded-full hover:bg-gray-100"
@@ -267,7 +267,7 @@ const AddSpecialistModal = ({ onClose, onAdd, managedZone }) => {
                 {loading ? (
                   <span className="inline-flex items-center gap-2"><FaHourglassHalf /> Đang thêm...</span>
                 ) : (
-                  <span className="inline-flex items-center gap-2"><FaPlus /> Thêm Chuyên viên tư vấn</span>
+                  <span className="inline-flex items-center gap-2"><FaPlus /> Thêm chuyên viên tư vấn</span>
                 )}
               </button>
             </div>

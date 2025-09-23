@@ -14,6 +14,7 @@ import customizePackageService from '@/services/api/customizePackageService';
 import customizeTaskService from '@/services/api/customizeTaskService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
+import workScheduleService from '@/services/api/workScheduleService';
 
 import invoiceService from '@/services/api/invoiceService';
 
@@ -54,10 +55,10 @@ const BookingsTab = ({ bookings }) => {
   };
 
   const nurseRoleLabels = {
-    nurse: 'Y tá',
-    specialist: 'Chuyên gia',
-    Nurse: 'Y tá',
-    Specialist: 'Chuyên gia'
+    nurse: 'Chuyên viên chăm sóc',
+    specialist: 'Chuyên viên',
+    Nurse: 'Chuyên viên chăm sóc',
+    Specialist: 'Chuyên viên'
   };
   // Load data từ API
   useEffect(() => {
@@ -179,32 +180,188 @@ const BookingsTab = ({ bookings }) => {
     const [localNursesByTaskId, setLocalNursesByTaskId] = useState({});
     const [localInvoice, setLocalInvoice] = useState(null);
     const [selectedNurseByTask, setSelectedNurseByTask] = useState({});
+    const [detailCustomizeTasks, setDetailCustomizeTasks] = useState([]); // Dữ liệu từ API GetAllByBooking
+
+    // Kiểm tra trùng giờ khi chọn nurse
+    const handleNurseSelection = (taskId, nurseId) => {
+      // Kiểm tra trùng giờ với các task khác trong cùng booking trước khi assign
+      const currentTaskDetail = detailCustomizeTasks.find(t => t.customizeTaskID === taskId);
+      if (currentTaskDetail && currentTaskDetail.startTime && currentTaskDetail.endTime) {
+        const currentStart = new Date(currentTaskDetail.startTime);
+        const currentEnd = new Date(currentTaskDetail.endTime);
+        
+        // Kiểm tra với các task khác
+        const conflicts = [];
+        serviceTasksOfBooking.forEach(task => {
+          if (task.customizeTaskID === taskId) return; // Bỏ qua task hiện tại
+          
+          let taskNursingId = null;
+          // Task đã có nurse
+          if (task.nursingID) {
+            taskNursingId = task.nursingID;
+          }
+          // Task đã được chọn nurse trong session này
+          else if (selectedNurseByTask[task.customizeTaskID]) {
+            taskNursingId = selectedNurseByTask[task.customizeTaskID];
+          }
+          
+          // Nếu cùng nurse và có thời gian
+          if (taskNursingId == nurseId) {
+            const otherTaskDetail = detailCustomizeTasks.find(t => t.customizeTaskID === task.customizeTaskID);
+            if (otherTaskDetail && otherTaskDetail.startTime && otherTaskDetail.endTime) {
+              const taskStart = new Date(otherTaskDetail.startTime);
+              const taskEnd = new Date(otherTaskDetail.endTime);
+              
+              // Kiểm tra trùng giờ
+              if (currentStart < taskEnd && currentEnd > taskStart) {
+                const formatTime = (date) => date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                conflicts.push(
+                  `Trùng giờ với: ${task.description}\n` +
+                  `  • Giờ hiện tại: ${formatTime(currentStart)} - ${formatTime(currentEnd)}\n` +
+                  `  • Giờ đã có: ${formatTime(taskStart)} - ${formatTime(taskEnd)}`
+                );
+              }
+            }
+          }
+        });
+        
+        if (conflicts.length > 0) {
+          alert(`Không thể chọn nhân sự này do trùng giờ trong cùng lịch hẹn:\n\n${conflicts.join('\n\n')}\n\nVui lòng chọn nhân sự khác!`);
+          return false;
+        }
+      }
+      
+      // Nếu không có conflict, cập nhật selection
+      setSelectedNurseByTask((prev) => ({ ...prev, [taskId]: Number(nurseId) }));
+      return true;
+    };
 
     // Assign nurse to a task function
-    const handleAssignNurse = async (task) => {
+    const handleAssignAllNurses = async () => {
       try {
-        const nurseId = selectedNurseByTask[task.customizeTaskID];
-        if (!nurseId) return;
-
-        // Gọi API UpdateNursing để phân công nurse và tạo lịch
-        await customizeTaskService.updateNursing(
-          task.customizeTaskID,
-          nurseId
-        );
-
-        // Clear selection for this task
-        setSelectedNurseByTask((prev) => {
-          const newState = { ...prev };
-          delete newState[task.customizeTaskID];
-          return newState;
+        // Kiểm tra xem tất cả task đã có nhân sự chưa (bao gồm cả nhân sự đã có và mới chọn)
+        const unassignedTasks = serviceTasksOfBooking.filter(task => {
+          const hasExistingNurse = !!task.nursingID;
+          const hasNewAssignment = selectedNurseByTask[task.customizeTaskID];
+          return !hasExistingNurse && !hasNewAssignment;
         });
 
-        // Refresh nurses list for this task to reflect the change
-        setLocalNursesByTaskId((prev) => {
-          const newState = { ...prev };
-          delete newState[task.customizeTaskID];
-          return newState;
+        if (unassignedTasks.length > 0) {
+          const unassignedList = unassignedTasks.map(task => {
+            const taskDetail = detailCustomizeTasks.find(t => t.customizeTaskID === task.customizeTaskID);
+            const timeInfo = taskDetail && taskDetail.startTime && taskDetail.endTime 
+              ? ` (${new Date(taskDetail.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(taskDetail.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})`
+              : '';
+            return `- ${task.description}${timeInfo}`;
+          }).join('\n');
+
+          alert(`Vui lòng chọn nhân sự cho TẤT CẢ các nhiệm vụ sau:\n${unassignedList}\n\nKhông thể cập nhật khi còn nhiệm vụ chưa có nhân sự!`);
+          return;
+        }
+
+        // Kiểm tra trùng giờ trong cùng booking cho tất cả các assignment
+        const allAssignments = Object.entries(selectedNurseByTask);
+        const timeConflictsInBooking = [];
+        const nurseTaskMap = new Map(); // { nursingId: [tasks] }
+
+        // Thu thập tất cả task của từng nurse (bao gồm đã có và mới chọn)
+        serviceTasksOfBooking.forEach(task => {
+          let nursingId = null;
+          
+          // Task đã có nurse
+          if (task.nursingID) {
+            nursingId = task.nursingID;
+          }
+          // Task mới được chọn nurse
+          else if (selectedNurseByTask[task.customizeTaskID]) {
+            nursingId = selectedNurseByTask[task.customizeTaskID];
+          }
+
+          if (nursingId) {
+            const taskDetail = detailCustomizeTasks.find(t => t.customizeTaskID === task.customizeTaskID);
+            if (taskDetail && taskDetail.startTime && taskDetail.endTime) {
+              if (!nurseTaskMap.has(nursingId)) {
+                nurseTaskMap.set(nursingId, []);
+              }
+              nurseTaskMap.get(nursingId).push({
+                taskId: task.customizeTaskID,
+                description: task.description,
+                startTime: new Date(taskDetail.startTime),
+                endTime: new Date(taskDetail.endTime),
+                nursingId: nursingId
+              });
+            }
+          }
         });
+
+        // Kiểm tra trùng giờ cho từng nurse
+        nurseTaskMap.forEach((tasks, nursingId) => {
+          if (tasks.length > 1) {
+            // Sắp xếp theo thời gian bắt đầu
+            tasks.sort((a, b) => a.startTime - b.startTime);
+            
+            for (let i = 0; i < tasks.length - 1; i++) {
+              const currentTask = tasks[i];
+              const nextTask = tasks[i + 1];
+              
+              // Kiểm tra trùng giờ: task hiện tại kết thúc sau khi task tiếp theo bắt đầu
+              if (currentTask.endTime > nextTask.startTime) {
+                const formatTime = (date) => date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                
+                timeConflictsInBooking.push(
+                  `Nhân sự ID ${nursingId} bị trùng giờ:\n` +
+                  `  • ${currentTask.description}: ${formatTime(currentTask.startTime)} - ${formatTime(currentTask.endTime)}\n` +
+                  `  • ${nextTask.description}: ${formatTime(nextTask.startTime)} - ${formatTime(nextTask.endTime)}`
+                );
+              }
+            }
+          }
+        });
+
+        if (timeConflictsInBooking.length > 0) {
+          alert(`Không thể gán nhân sự do trùng giờ trong cùng lịch hẹn:\n\n${timeConflictsInBooking.join('\n\n')}\n\nMột nhân sự chỉ có thể làm nhiều nhiệm vụ nếu thời gian không trùng nhau!`);
+          return;
+        }
+
+        // Kiểm tra trùng lịch với các booking khác cho các nhân sự mới chọn
+        const conflicts = [];
+        for (const [taskId, nurseId] of allAssignments) {
+          try {
+            const schedules = await workScheduleService.getAllByNursing(nurseId);
+            const bookingDate = new Date(booking?.workdate).toISOString().split('T')[0];
+            
+            const conflictingSchedule = Array.isArray(schedules) ? schedules.find(schedule => {
+              const scheduleDate = new Date(schedule.workDate || schedule.workdate).toISOString().split('T')[0];
+              return scheduleDate === bookingDate;
+            }) : null;
+            
+            if (conflictingSchedule) {
+              const startTime = conflictingSchedule.workDate || conflictingSchedule.workdate;
+              const endTime = conflictingSchedule.endTime || conflictingSchedule.endtime;
+              const formatTime = (date) => new Date(date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+              const timeInfo = `${formatTime(startTime)} - ${formatTime(endTime)}`;
+              const conflictBookingId = conflictingSchedule.bookingID || conflictingSchedule.booking_ID || conflictingSchedule.BookingID;
+              
+              conflicts.push(`Nhân sự ID ${nurseId} đã có lịch trùng với lịch hẹn khác:\nLịch hẹn #${conflictBookingId}: ${timeInfo}`);
+            }
+          } catch (scheduleError) {
+            console.warn('Could not check schedule conflicts for nurse', nurseId, ':', scheduleError);
+          }
+        }
+
+        if (conflicts.length > 0) {
+          alert(`Không thể gán nhân sự do trùng lịch với lịch hẹn khác:\n\n${conflicts.join('\n\n')}`);
+          return;
+        }
+
+        // Thực hiện assign cho tất cả các task đã chọn
+        await Promise.all(allAssignments.map(async ([taskId, nurseId]) => {
+          await customizeTaskService.updateNursing(taskId, nurseId);
+        }));
+
+        // Clear all selections
+        setSelectedNurseByTask({});
+        setLocalNursesByTaskId({});
 
         // Force re-render of the modal to show updated status
         onClose();
@@ -213,7 +370,7 @@ const BookingsTab = ({ bookings }) => {
         // Hiển thị thông báo thành công
         const successMessage = document.createElement('div');
         successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-        successMessage.textContent = '✓ Phân công điều dưỡng thành công!';
+        successMessage.textContent = '✓ Đã phân công điều dưỡng cho tất cả nhiệm vụ thành công!';
         document.body.appendChild(successMessage);
 
         setTimeout(() => {
@@ -222,7 +379,7 @@ const BookingsTab = ({ bookings }) => {
           }
         }, 3000);
       } catch (e) {
-        console.error('Assign nurse failed:', e);
+        console.error('Assign nurses failed:', e);
         // Hiển thị thông báo lỗi
         const errorMessage = document.createElement('div');
         errorMessage.className = 'fixed top-4 right-4 bg-red-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
@@ -268,6 +425,17 @@ const BookingsTab = ({ bookings }) => {
               // ignore
             }
           }
+
+          // Lấy chi tiết customize tasks với thời gian từ API mới
+          if (bookingId && detailCustomizeTasks.length === 0) {
+            try {
+              const detailTasks = await customizeTaskService.getAllByBooking(bookingId);
+              if (isMounted) setDetailCustomizeTasks(detailTasks || []);
+            } catch (error) {
+              console.error('Error fetching detailed customize tasks:', error);
+              if (isMounted) setDetailCustomizeTasks([]);
+            }
+          }
         } finally {
           // noop
         }
@@ -275,7 +443,7 @@ const BookingsTab = ({ bookings }) => {
       load();
 
       return () => { isMounted = false; };
-    }, [booking?.BookingID, booking?.bookingID, serviceTasksOfBooking, localNursesByTaskId, localInvoice]);
+    }, [booking?.BookingID, booking?.bookingID, serviceTasksOfBooking, localNursesByTaskId, localInvoice, detailCustomizeTasks]);
 
     return (
       <div className="fixed inset-0 backdrop-blur-sm flex items-center justify-center z-50 backdrop-blur-sm p-4">
@@ -487,6 +655,22 @@ const BookingsTab = ({ bookings }) => {
                                       <h6 className="font-semibold text-gray-900 text-lg">{task.description}</h6>
                                     </div>
                                     <div className="flex items-center gap-4 text-sm text-gray-600">
+                                      {(() => {
+                                        const taskDetail = detailCustomizeTasks.find(t => t.customizeTaskID === task.customizeTaskID);
+                                        if (taskDetail && taskDetail.startTime && taskDetail.endTime) {
+                                          const formatTime = (date) => new Date(date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
+                                          return (
+                                            <div className="flex items-center gap-1 text-blue-600 font-medium">
+                                              <FontAwesomeIcon icon={faClock} className="text-blue-500" />
+                                              <span>{formatTime(taskDetail.startTime)} - {formatTime(taskDetail.endTime)}</span>
+                                              <span className="text-gray-500 ml-2">
+                                                ({new Date(taskDetail.startTime).toLocaleDateString('vi-VN')})
+                                              </span>
+                                            </div>
+                                          );
+                                        }
+                                        return null;
+                                      })()}
                                     </div>
                                   </div>
                                   <div className="flex items-center gap-3 ml-4">
@@ -563,7 +747,14 @@ const BookingsTab = ({ bookings }) => {
                                         <select
                                           className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-48"
                                           value={selectedNurseByTask[task.customizeTaskID] ?? ''}
-                                          onChange={(e) => setSelectedNurseByTask((prev) => ({ ...prev, [task.customizeTaskID]: Number(e.target.value) }))}
+                                          onChange={(e) => {
+                                            const nurseId = e.target.value;
+                                            if (nurseId) {
+                                              handleNurseSelection(task.customizeTaskID, nurseId);
+                                            } else {
+                                              setSelectedNurseByTask((prev) => ({ ...prev, [task.customizeTaskID]: '' }));
+                                            }
+                                          }}
                                           disabled={!localNursesByTaskId[task.customizeTaskID]}
                                         >
                                           <option value="">
@@ -586,29 +777,6 @@ const BookingsTab = ({ bookings }) => {
                                             ));
                                           })()}
                                         </select>
-                                        <button
-                                          onClick={() => handleAssignNurse(task)}
-                                          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                                          disabled={!selectedNurseByTask[task.customizeTaskID] || (() => {
-                                            const taskId = task.customizeTaskID;
-                                            const pool = localNursesByTaskId[taskId] || [];
-                                            const zoneId = careProfile?.zoneDetailID ?? careProfile?.zoneDetail_ID;
-                                            const filtered = Array.isArray(pool) ? pool.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
-                                            return filtered.length === 0;
-                                          })()}
-                                          title={(() => {
-                                            const taskId = task.customizeTaskID;
-                                            const pool = localNursesByTaskId[taskId] || [];
-                                            const zoneId = careProfile?.zoneDetailID ?? careProfile?.zoneDetail_ID;
-                                            const filtered = Array.isArray(pool) ? pool.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
-                                            if (filtered.length === 0 && localNursesByTaskId[taskId]) {
-                                              return 'Không có điều dưỡng phù hợp cho task này';
-                                            }
-                                            return '';
-                                          })()}
-                                        >
-                                          Phân công
-                                        </button>
                                       </div>
                                     </div>
                                   </div>
@@ -618,6 +786,38 @@ const BookingsTab = ({ bookings }) => {
                           );
                         })}
                       </div>
+
+                      {/* Nút cập nhật tất cả */}
+                      {serviceTasksOfBooking.some(task => !task.nursingID) && (
+                        <div className="mt-6 flex justify-end">
+                          <button
+                            onClick={handleAssignAllNurses}
+                            className="px-8 py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                            disabled={(() => {
+                              // Kiểm tra xem có task nào chưa có nhân sự (cả đã có và mới chọn) không
+                              const unassigned = serviceTasksOfBooking.filter(task => {
+                                const hasExistingNurse = !!task.nursingID;
+                                const hasNewAssignment = selectedNurseByTask[task.customizeTaskID];
+                                return !hasExistingNurse && !hasNewAssignment;
+                              });
+                              return unassigned.length > 0;
+                            })()}
+                            title={(() => {
+                              const unassigned = serviceTasksOfBooking.filter(task => {
+                                const hasExistingNurse = !!task.nursingID;
+                                const hasNewAssignment = selectedNurseByTask[task.customizeTaskID];
+                                return !hasExistingNurse && !hasNewAssignment;
+                              });
+                              if (unassigned.length > 0) {
+                                return `Còn ${unassigned.length} task chưa chọn nhân sự`;
+                              }
+                              return 'Cập nhật phân công cho tất cả task';
+                            })()}
+                          >
+                            Cập nhật tất cả
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

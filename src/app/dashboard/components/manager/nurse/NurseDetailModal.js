@@ -8,7 +8,7 @@ const NurseDetailModal = ({ nurse, onClose }) => {
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-5xl max-h-[80vh] overflow-y-auto">
         <div className="sticky top-0 bg-white border-b border-gray-100 px-8 py-6">
           <div className="flex justify-between items-center">
-            <h3 className="text-2xl font-bold text-gray-900">Chi tiết chuyên gia chăm sóc</h3>
+            <h3 className="text-2xl font-bold text-gray-900">Chi tiết Chuyên viên chăm sóc</h3>
             <button
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-2 rounded-full hover:bg-gray-100"
@@ -36,7 +36,7 @@ const NurseDetailModal = ({ nurse, onClose }) => {
               <h2 className="text-3xl font-bold text-gray-900 mb-2">{nurse.fullName}</h2>
               <div className="flex items-center space-x-4">
                 <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800 gap-2">
-                  {nurse.major === 'Nurse' ? (<><FaUser /> Chuyên gia chăm sóc</>) : (<><FaUserMd /> Chuyên viên tư vấn</>)}
+                  {nurse.major === 'Nurse' ? (<><FaUser /> Chuyên viên chăm sóc</>) : (<><FaUserMd /> Chuyên viên tư vấn</>)}
                 </span>
                 <span className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
                   nurse.status === 'active' 
@@ -102,7 +102,7 @@ const NurseDetailModal = ({ nurse, onClose }) => {
                 <div className="bg-white rounded-lg p-0">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Chuyên môn</label>
                   <p className="text-base font-medium text-gray-900 inline-flex items-center gap-2">
-                    {nurse.major === 'Nurse' ? (<><FaUser /> Chuyên gia chăm sóc</>) : (<><FaUserMd /> Chuyên viên tư vấn</>)}
+                    {nurse.major === 'Nurse' ? (<><FaUser /> Chuyên viên chăm sóc</>) : (<><FaUserMd /> Chuyên viên tư vấn</>)}
                   </p>
                 </div>
                 <div className="bg-white rounded-lg p-0">

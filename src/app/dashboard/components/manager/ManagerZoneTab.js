@@ -36,8 +36,8 @@
 
 //     // Lọc nurse và specialist theo khu vực và địa chỉ
 //     useEffect(() => {
-//         let nurses = nursingSpecialists.filter(n => n.NursingID && n.Major === 'Y tá');
-//         let specialists = nursingSpecialists.filter(s => s.NursingID && s.Major === 'Chuyên gia');
+//         let nurses = nursingSpecialists.filter(n => n.NursingID && n.Major === 'Chuyên viên chăm sóc');
+//         let specialists = nursingSpecialists.filter(s => s.NursingID && s.Major === 'Chuyên viên');
 //         if (selectedZone) {
 //             nurses = nurses.filter(n => n.ZoneID == selectedZone);
 //             specialists = specialists.filter(s => s.ZoneID == selectedZone);

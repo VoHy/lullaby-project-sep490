@@ -6,7 +6,7 @@ const NurseList = ({ nurses, onEdit, onDelete }) => {
   const [showDetailModal, setShowDetailModal] = useState(false);
   const [selectedNurseForDetail, setSelectedNurseForDetail] = useState(null);
   const handleDelete = (nurse) => {
-    if (window.confirm(`Bạn có chắc chắn muốn xóa y tá "${nurse.fullName}"?`)) {
+    if (window.confirm(`Bạn có chắc chắn muốn xóa Chuyên viên chăm sóc "${nurse.fullName}"?`)) {
       onDelete(nurse.nursingID, nurse.accountID);
     }
   };
@@ -17,10 +17,10 @@ const NurseList = ({ nurses, onEdit, onDelete }) => {
         <div className="text-center py-16">
       <FaUserNurse className="text-gray-300 text-8xl mb-6 mx-auto" />
           <h3 className="text-2xl font-bold text-gray-800 mb-3">
-            Chưa có chuyên gia chăm sóc nào
+            Chưa có Chuyên viên chăm sóc nào
           </h3>
           <p className="text-gray-500 text-lg">
-            Hãy thêm chuyên gia chăm sóc đầu tiên vào khu vực quản lý của bạn.
+            Hãy thêm Chuyên viên chăm sóc đầu tiên vào khu vực quản lý của bạn.
           </p>
         </div>
       ) : (

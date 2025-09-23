@@ -1,6 +1,6 @@
 # Lullaby - Home Healthcare Platform
 
-Lullaby là nền tảng chăm sóc sức khỏe tại nhà hiện đại, kết nối giữa mẹ và bé với các y tá chuyên nghiệp, hỗ trợ đặt lịch dịch vụ, quản lý hồ sơ bệnh án, thanh toán trực tuyến và nhiều tiện ích khác.
+Lullaby là nền tảng chăm sóc sức khỏe tại nhà hiện đại, kết nối giữa mẹ và bé với các Chuyên viên chăm sóc chuyên nghiệp, hỗ trợ đặt lịch dịch vụ, quản lý hồ sơ bệnh án, thanh toán trực tuyến và nhiều tiện ích khác.
 
 ## 🚀 Tính năng nổi bật
 
@@ -8,14 +8,14 @@ Lullaby là nền tảng chăm sóc sức khỏe tại nhà hiện đại, kết
 - Đăng ký, đăng nhập với email/số điện thoại
 - Đăng nhập với Google OAuth 2.0
 - Quên mật khẩu và đặt lại mật khẩu
-- Phân quyền theo vai trò: Admin, Y tá, Manager, Khách hàng
+- Phân quyền theo vai trò: Admin, Chuyên viên chăm sóc, Manager, Khách hàng
 - JWT token authentication với auto-refresh
 
 ### 🏥 **Dịch vụ chăm sóc**
 - Đặt lịch dịch vụ chăm sóc tại nhà
 - Quản lý hồ sơ bệnh nhân (Care Profile)
 - Báo cáo y tế và ghi chú điều dưỡng
-- Quản lý công việc và chấm công cho y tá
+- Quản lý công việc và chấm công cho Chuyên viên chăm sóc
 - Phản hồi và đánh giá dịch vụ
 
 ### 💰 **Thanh toán & Ví điện tử**
@@ -28,7 +28,7 @@ Lullaby là nền tảng chăm sóc sức khỏe tại nhà hiện đại, kết
 ### 📊 **Dashboard & Báo cáo**
 - Dashboard theo vai trò với charts và thống kê
 - Quản lý đặt lịch và doanh thu (Admin/Manager)
-- Lịch làm việc và nhiệm vụ (Y tá)
+- Lịch làm việc và nhiệm vụ (Chuyên viên chăm sóc)
 - Thông tin dịch vụ và lịch hẹn (Khách hàng)
 
 ## 🛠️ Công nghệ sử dụng

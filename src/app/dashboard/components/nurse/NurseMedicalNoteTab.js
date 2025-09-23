@@ -375,7 +375,7 @@ const NurseMedicalNoteTab = () => {
                   </div>
                   <div className="flex items-center gap-1">
                     <FaUser />
-                    Y tá: {nurse ? (nurse.fullName ?? nurse.FullName) : 'Không có'}
+                    Chuyên viên chăm sóc: {nurse ? (nurse.fullName ?? nurse.FullName) : 'Không có'}
                   </div>
                   <div className="text-sm text-gray-600 space-y-1">
                     <div className="flex items-center gap-2">
@@ -409,7 +409,7 @@ const NurseMedicalNoteTab = () => {
                     Xem chi tiết
                   </button>
                 </div>
-                {canEdit ? null : <div className="ml-3 text-xs text-gray-400 self-center">Chỉ chuyên gia phụ trách có thể sửa</div>}
+                {canEdit ? null : <div className="ml-3 text-xs text-gray-400 self-center">Chỉ Chuyên viên phụ trách có thể sửa</div>}
               </div>
             );
           })}
