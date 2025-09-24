@@ -81,25 +81,49 @@ export default function CareProfileSelector({
                         Ngày sinh: {formatDateToDDMMYYYY(profile.dateOfBirth)}
                       </div>
                     )}
-                    {Array.isArray(relatives) && relatives.length > 0 && (
-                      <div className="pt-2 text-xs text-gray-600">
-                        <div className="font-semibold text-gray-700 mb-1">Con:</div>
-                        <ul className="list-disc pl-5 space-y-0.5">
-                          {relatives
-                            .filter(r => (r.careProfileID || r.CareProfileID) === profile.careProfileID)
-                            .slice(0, 3)
-                            .map(r => (
-                              <li key={(r.relativeID || r.RelativeID || r.relativeid) + '_' + (r.relativeName || r.name)}>
-                                {(r.relativeName || r.name) || 'Người thân'}
-                                {r.dateOfBirth || r.DateOfBirth ? ` - ${formatDateToDDMMYYYY(r.dateOfBirth || r.DateOfBirth)}` : ''}
-                              </li>
-                            ))}
-                          {relatives.filter(r => (r.careProfileID || r.CareProfileID) === profile.careProfileID).length > 3 && (
-                            <li>...</li>
-                          )}
-                        </ul>
-                      </div>
-                    )}
+                    {/* Show relatives section */}
+                    {(() => {
+                      const profileRelatives = Array.isArray(relatives) 
+                        ? relatives.filter(r => (r.careProfileID || r.CareProfileID) === profile.careProfileID)
+                        : [];
+                      
+                      if (profileRelatives.length > 0) {
+                        return (
+                          <div className="pt-2 text-xs text-gray-600">
+                            <div className="font-semibold text-gray-700 mb-1">Con:</div>
+                            <ul className="list-disc pl-5 space-y-0.5">
+                              {profileRelatives.slice(0, 3).map(r => (
+                                <li key={(r.relativeID || r.RelativeID || r.relativeid) + '_' + (r.relativeName || r.name)}>
+                                  {(r.relativeName || r.name) || 'Người thân'}
+                                  {r.dateOfBirth || r.DateOfBirth ? ` - ${formatDateToDDMMYYYY(r.dateOfBirth || r.DateOfBirth)}` : ''}
+                                </li>
+                              ))}
+                              {profileRelatives.length > 3 && (
+                                <li>...</li>
+                              )}
+                            </ul>
+                          </div>
+                        );
+                      } else {
+                        return (
+                          <div className="pt-2">
+                            <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-lg p-2">
+                              <HiExclamationTriangle className="text-orange-500 flex-shrink-0" size={14} />
+                              <span className="text-orange-700 text-xs flex-1">Chưa có thông tin của con</span>
+                              <button
+                                className="text-xs bg-orange-500 hover:bg-orange-600 text-white px-2 py-1 rounded transition-colors flex-shrink-0"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  window.open('/profile/patient', '_blank');
+                                }}
+                              >
+                                Thêm
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      }
+                    })()}
                   </div>
                 </div>
                 {selectedCareProfile?.careProfileID === profile.careProfileID && (
@@ -115,9 +139,23 @@ export default function CareProfileSelector({
         </div>
       )}
 
-      {error && selectedCareProfile === null && (
-        <div className="text-red-500 text-sm mt-2">
-          Vui lòng chọn hồ sơ người thân để tiếp tục
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-lg p-3 mt-3">
+          <div className="flex items-start gap-2">
+            <HiExclamationTriangle className="text-red-500 flex-shrink-0 mt-0.5" size={16} />
+            <div className="flex-1">
+              <div className="text-red-700 text-sm font-medium mb-1">Không thể tiếp tục</div>
+              <div className="text-red-600 text-sm">{error}</div>
+              {error.includes("người thân") && (
+                <button
+                  className="mt-2 text-xs bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded transition-colors"
+                  onClick={() => window.open('/profile/patient', '_blank')}
+                >
+                  Thêm con ngay
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </section>

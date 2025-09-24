@@ -494,6 +494,25 @@ function BookingContent() {
       setCareProfileError("Hồ sơ người thân không hoạt động. Vui lòng chọn hồ sơ khác hoặc kích hoạt hồ sơ này.");
       return;
     }
+
+    // Validate if CareProfile has relatives
+    const profileRelatives = relatives.filter(r => 
+      (r.careProfileID || r.CareProfileID) === selectedCareProfile.careProfileID
+    );
+    if (profileRelatives.length === 0) {
+      setCareProfileError("Hồ sơ này chưa có thông tin của con. Vui lòng thêm ít nhất một người con để có thể đặt dịch vụ.");
+      return;
+    }
+
+    // Validate service quantity against relatives count
+    const totalServicesQuantity = displayServicesList.reduce((total, service) => {
+      return total + (service.quantity || 1);
+    }, 0);
+
+    if (totalServicesQuantity > profileRelatives.length) {
+      setCareProfileError(`Bạn đã chọn ${totalServicesQuantity} dịch vụ nhưng hồ sơ "${selectedCareProfile.profileName}" chỉ có ${profileRelatives.length} người con. Vui lòng giảm số lượng dịch vụ hoặc thêm thêm người con vào hồ sơ.`);
+      return;
+    }
     
     if (!datetime || !isDatetimeValid) {
       setError("Vui lòng chọn ngày giờ hợp lệ (cách hiện tại ít nhất 2h phút)");
