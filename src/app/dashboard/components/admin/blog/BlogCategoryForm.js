@@ -41,7 +41,7 @@ const BlogCategoryForm = ({ category, onSubmit, onCancel }) => {
       <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-lg">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold text-gray-800">
-            {category ? 'Sửa Danh Mục' : 'Thêm Danh Mục Mới'}
+            {category ? 'Sửa Danh Mục' : 'Thêm danh mục mới'}
           </h3>
           <button
             onClick={onCancel}

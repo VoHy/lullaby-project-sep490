@@ -3,7 +3,7 @@
 import React, { useContext, useEffect, useState } from 'react';
 import { AuthContext } from '@/context/AuthContext';
 import notificationService from '@/services/api/notificationService';
-import { FaCheck, FaClock, FaInfoCircle, FaBell, FaEnvelope, FaCalendarAlt, FaCreditCard } from 'react-icons/fa';
+import { FaCheck, FaClock, FaInfoCircle, FaBell, FaEnvelope, FaCalendarAlt, FaCreditCard, FaTimes } from 'react-icons/fa';
 
 export default function NotificationsPage() {
   const { user } = useContext(AuthContext);
@@ -333,9 +333,9 @@ export default function NotificationsPage() {
                   </div>
                   <button
                     onClick={() => setSelectedNotification(null)}
-                    className="text-gray-400 hover:text-gray-600 text-3xl transition-colors duration-200 hover:scale-110"
+                    className="text-gray-400 hover:text-gray-600 transition-colors duration-200 hover:scale-110"
                   >
-                    ×
+                    <FaTimes size={20} />
                   </button>
                 </div>
 

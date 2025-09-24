@@ -3,7 +3,7 @@
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faEye, faEdit, faTrash, faSearch, faCalendarAlt,
-  faMoneyBill, faUser, faClock, faCheckCircle, faTimesCircle, faExclamationTriangle
+  faMoneyBill, faUser, faClock, faCheckCircle, faTimesCircle, faExclamationTriangle, faClipboardList
 } from '@fortawesome/free-solid-svg-icons';
 import { useState, useEffect } from 'react';
 import careProfileService from '@/services/api/careProfileService';
@@ -962,7 +962,7 @@ const BookingsTab = ({ bookings }) => {
       {/* No data message */}
       {!Array.isArray(bookings) || bookings.length === 0 ? (
         <div className="text-center py-12">
-          <div className="text-gray-400 text-6xl mb-4">📋</div>
+          <FontAwesomeIcon icon={faClipboardList} className="text-gray-400 text-6xl mb-4" />
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Không có dữ liệu booking</h3>
           <p className="text-gray-600">Chưa có booking nào được tạo trong hệ thống.</p>
         </div>

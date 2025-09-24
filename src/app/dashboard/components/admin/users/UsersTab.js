@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faPlus, faSearch, faEye, faUserPlus, faEdit, faTrash,
-  faUsers, faUserCheck, faUserTimes, faClock
+  faUsers, faUserCheck, faUserTimes, faClock, faTimes
 } from '@fortawesome/free-solid-svg-icons';
 import CreateUserModal from './CreateUserModal';
 import UserDetailModal from './UserDetailModal';
@@ -557,7 +557,7 @@ const EditUserModal = ({ show, account, onClose, onSave }) => {
               onClick={onClose}
               className="text-gray-400 hover:text-gray-600 transition-colors duration-200 p-2 rounded-full hover:bg-gray-100"
             >
-              <span className="text-xl">✕</span>
+              <FontAwesomeIcon icon={faTimes} size="lg" />
             </button>
           </div>
         </div>

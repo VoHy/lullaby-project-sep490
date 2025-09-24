@@ -696,7 +696,9 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
             <div className="p-6">
               <div className="flex items-center justify-between mb-4">
                 <h4 className="text-lg font-semibold text-gray-800">Thêm dịch vụ con</h4>
-                <button type="button" onClick={() => setShowAddTaskModal(false)} className="text-gray-400 hover:text-gray-600">×</button>
+                <button type="button" onClick={() => setShowAddTaskModal(false)} className="text-gray-400 hover:text-gray-600">
+                  <FontAwesomeIcon icon={faTimes} />
+                </button>
               </div>
               <div className="space-y-4">
                 <div>

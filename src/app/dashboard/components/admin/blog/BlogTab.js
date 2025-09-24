@@ -175,7 +175,7 @@ const BlogTab = () => {
       setConfirmDelete(null);
       setDeleteType('');
       setRefreshTrigger(prev => prev + 1); // Trigger refresh
-      alert(`${deleteType === 'blog' ? 'Blog' : 'Danh mục'} đã được xóa thành công!`);
+      alert(`${deleteType === 'blog' ? 'Tin tức' : 'Danh mục'} đã được xóa thành công!`);
     } catch (error) {
       console.error('Lỗi khi xóa:', error);
       alert('Có lỗi xảy ra khi xóa');
@@ -192,10 +192,10 @@ const BlogTab = () => {
           <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div>
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text mb-2">
-                Quản lý Blog & Danh mục
+                Quản lý tin tức & Danh mục
               </h1>
               <p className="text-gray-600 text-lg">
-                Tạo và quản lý nội dung blog cho website
+                Tạo và quản lý nội dung tin tức cho website
               </p>
             </div>
             
@@ -203,7 +203,7 @@ const BlogTab = () => {
              <div className="flex gap-4">
                <div className="bg-white rounded-xl shadow-sm border border-purple-100 p-4 min-w-[120px]">
                  <div className="text-2xl font-bold text-purple-600">{stats.blogs}</div>
-                 <div className="text-sm text-gray-600">Blog đã tạo</div>
+                 <div className="text-sm text-gray-600">Tin tức đã tạo</div>
                </div>
                <div className="bg-white rounded-xl shadow-sm border border-pink-100 p-4 min-w-[120px]">
                  <div className="text-2xl font-bold text-pink-600">{stats.categories}</div>
@@ -228,7 +228,7 @@ const BlogTab = () => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
                 </svg>
-                Blog
+                Tin tức
               </span>
             </button>
             <button
@@ -276,7 +276,7 @@ const BlogTab = () => {
                 <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                 </svg>
-                Thêm {activeTab === 'blogs' ? 'Blog' : 'Danh mục'}
+                Thêm {activeTab === 'blogs' ? 'tin tức' : 'danh mục'}
               </>
             )}
           </button>

@@ -25,9 +25,6 @@ import accountService from '@/services/api/accountService';
 import feedbackService from '@/services/api/feedbackService';
 import wishlistService from '@/services/api/wishlistService';
 import { AuthContext } from '@/context/AuthContext';
-// import customizeTaskService from '@/services/api/customizeTaskService';
-// import bookingService from '@/services/api/bookingService';
-// import serviceTaskService from '@/services/api/serviceTaskService';
 
 export default function TeamPage() {
   const { user } = useContext(AuthContext);
@@ -62,12 +59,6 @@ export default function TeamPage() {
   const clearTeamCache = () => {
     localStorage.removeItem('team_data');
     localStorage.removeItem('team_cache_time');
-    localStorage.removeItem('team_ratings_data');
-    localStorage.removeItem('team_ratings_cache_time');
-  };
-
-  // Utility function to refresh only ratings cache
-  const refreshRatingsCache = () => {
     localStorage.removeItem('team_ratings_data');
     localStorage.removeItem('team_ratings_cache_time');
   };
@@ -142,13 +133,12 @@ export default function TeamPage() {
                 // Sử dụng API mới để lấy rating trung bình trực tiếp
                 const ratingResult = await feedbackService.getAverageRatingByNursing(nursingId);
                 
-                // API trả về object có dạng { averageRating: number, totalFeedbacks: number }
-                const rating = ratingResult?.averageRating || 0;
-                const count = ratingResult?.totalFeedbacks || 0;
+                // API trả về số trực tiếp (ví dụ: 4.8)
+                const rating = typeof ratingResult === 'number' ? ratingResult : 0;
                 
                 return [nursingId, { 
                   rating: parseFloat(rating.toFixed(1)), 
-                  count: count 
+                  count: 0 // API chỉ trả rating, không có count
                 }];
               } catch (error) {
                 // Fallback về cách cũ nếu API mới không hoạt động
@@ -316,20 +306,11 @@ export default function TeamPage() {
 
   // Lấy rate trung bình cho mỗi member từ ratingsMap
   const getAverageRate = (nursingID) => {
-    if (!nursingID) return 0;
+    if (!nursingID) return "0.0";
     const ratingData = ratingsMap[nursingID];
-    return ratingData ? ratingData.rating : 0;
-  };
-
-  // Lấy số ca hoàn thành từ ratingsMap hoặc fallback về feedbacks
-  const getCompletedCases = (nursingID) => {
-    if (!nursingID) return 0;
-    const ratingData = ratingsMap[nursingID];
-    if (ratingData) return ratingData.count;
-    
-    // Fallback về cách cũ nếu không có trong ratingsMap
-    if (!feedbacks.length) return 0;
-    return feedbacks.filter(fb => (fb.nursingID || fb.NursingID) === nursingID).length;
+    if (!ratingData) return "0.0";
+    // Đảm bảo rating luôn là string với 1 chữ số thập phân
+    return typeof ratingData.rating === 'number' ? ratingData.rating.toFixed(1) : String(ratingData.rating);
   };
 
   // Lấy danh sách feedback content cho member
@@ -455,16 +436,13 @@ export default function TeamPage() {
         </span>
       </div>
 
-      {/* Stats */}
+      {/* Rating */}
       <div className="text-center mb-4">
-        <div className="text-2xl font-bold text-pink-600">
-          {getCompletedCases(member.NursingID || member.nursingID)}
-        </div>
-        <div className="text-xs text-gray-500">Ca hoàn thành</div>
-        <div className="flex items-center justify-center gap-1 mt-1 text-yellow-600 font-bold">
+        <div className="flex items-center justify-center gap-1 text-yellow-600 font-bold text-lg">
           <FaStar className="text-yellow-500" />
           <span>{getAverageRate(member.NursingID || member.nursingID)}/5</span>
         </div>
+        <div className="text-xs text-gray-500 mt-1">Đánh giá</div>
       </div>
 
       {/* Button */}
@@ -698,10 +676,6 @@ export default function TeamPage() {
                     Thống kê & Đánh giá
                   </h4>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b border-yellow-200/70">
-                      <span className="text-gray-600">Ca hoàn thành:</span>
-                      <span className="font-bold text-blue-600 text-xl">{getCompletedCases(detailData.NursingID || detailData.nursingID)}</span>
-                    </div>
                     <div className="flex justify-between items-center py-2 border-b border-yellow-200/70">
                       <span className="text-gray-600">Đánh giá trung bình:</span>
                       <span className="font-bold text-yellow-600 text-xl">{getAverageRate(detailData.NursingID || detailData.nursingID)}/5</span>

@@ -74,32 +74,23 @@ const AdminDashboard = ({ user, initialTab }) => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [accountData, specialistData, bookingData, feedbackData] = await Promise.all([
+      const [accountData, specialistData, bookingData] = await Promise.all([
         accountService.getAllAccounts(),
         nursingSpecialistService.getNursingSpecialists(),
-        bookingService.getAllBookings(),
-        // feedbackService.getFeedbacks()
+        bookingService.getAllBookings()
       ]);
 
       setAccounts(accountData);
       setNursingSpecialists(specialistData);
       setBookings(bookingData);
-      // setFeedbacks(feedbackData);
 
-      // Calculate revenue
+      // Calculate revenue - chỉ tính tổng thực từ bookings
       const totalRevenue = (bookingData || []).reduce((sum, booking) => sum + (booking.total_price || 0), 0);
       setRevenue({
         total: totalRevenue,
-        monthly: totalRevenue * 0.8,
-        daily: totalRevenue * 0.1
+        monthly: 0, // TODO: Tính toán thực từ API theo tháng
+        daily: 0    // TODO: Tính toán thực từ API theo ngày
       });
-
-      // Mock notifications
-      setNotifications([
-        { id: 1, message: 'Có 5 booking mới trong ngày', type: 'info', time: '2 phút trước' },
-        { id: 2, message: '3 người dùng mới đăng ký', type: 'success', time: '10 phút trước' },
-        { id: 3, message: 'Cập nhật dịch vụ thành công', type: 'warning', time: '1 giờ trước' }
-      ]);
     } catch (error) {
       console.error('Error loading data:', error);
     } finally {

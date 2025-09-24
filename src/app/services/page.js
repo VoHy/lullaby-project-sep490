@@ -1,7 +1,6 @@
 'use client';
 import { useEffect, useState, useContext } from 'react';
 import { motion } from "framer-motion";
-// import customizePackageService from '@/services/api/customizePackageService';
 import serviceTypeService from '@/services/api/serviceTypeService';
 import serviceTaskService from '@/services/api/serviceTaskService';
 import feedbackService from '@/services/api/feedbackService';
@@ -68,19 +67,6 @@ export const clearServicesCache = () => {
   localStorage.removeItem('careProfiles_cache_time');
   localStorage.removeItem('relatives_data');
   localStorage.removeItem('relatives_cache_time');
-};
-
-// Utility function to refresh only ratings cache
-export const refreshRatingsCache = () => {
-  const cachedData = localStorage.getItem('services_data');
-  if (cachedData) {
-    const parsedData = JSON.parse(cachedData);
-    // Xóa ratingsMap khỏi cache để force refresh
-    delete parsedData.ratingsMap;
-    localStorage.setItem('services_data', JSON.stringify(parsedData));
-  }
-  // Set cache time cũ để trigger reload
-  localStorage.setItem('services_cache_time', '0');
 };
 
 // Bỏ tính năng gửi feedback; chỉ giữ dữ liệu để hiển thị rating
@@ -159,22 +145,21 @@ export default function ServicesPage() {
             services.map(async (s) => {
               try {
                 // Sử dụng API mới để lấy rating trung bình trực tiếp
-                const ratingData = await feedbackService.getAverageRatingByService(s.serviceID);
+                const ratingResult = await feedbackService.getAverageRatingByService(s.serviceID);
                 
-                // API trả về object có dạng { averageRating: number, totalFeedbacks: number }
-                const rating = ratingData?.averageRating || 5.0;
-                const count = ratingData?.totalFeedbacks || 0;
+                // API trả về số trực tiếp (ví dụ: 4.5)
+                const rating = typeof ratingResult === 'number' ? ratingResult : 5.0;
                 
                 return [s.serviceID, { 
                   rating: parseFloat(rating.toFixed(1)), 
-                  count: count 
+                  count: 0 // API chỉ trả rating, không có count
                 }];
               } catch (error) {
                 // Fallback về cách cũ nếu API mới không hoạt động
                 console.warn(`Fallback to old method for service ${s.serviceID}:`, error);
                 const list = await feedbackService.getAllByService(s.serviceID);
                 if (!Array.isArray(list) || list.length === 0) {
-                  return [s.serviceID, { rating: 5.0, count: 0 }];
+                  return [s.serviceID, { rating: parseFloat(5.0.toFixed(1)), count: 0 }];
                 }
                 const sum = list.reduce((acc, f) => acc + Number(f.rate || f.Rate || 0), 0);
                 const avg = parseFloat((sum / list.length).toFixed(1));
@@ -351,8 +336,10 @@ export default function ServicesPage() {
   // Lấy rating trực tiếp theo dịch vụ từ ratingsMap (được tạo từ API Feedback/GetAllByService)
   const getRating = (serviceId) => {
     const info = ratingsMap[serviceId];
-    if (!info) return { rating: 5.0, count: 0 };
-    return info;
+    if (!info) return { rating: "5.0", count: 0 };
+    // Đảm bảo rating luôn là string với 1 chữ số thập phân
+    const rating = typeof info.rating === 'number' ? info.rating.toFixed(1) : String(info.rating);
+    return { ...info, rating };
   };
 
   // Handle booking

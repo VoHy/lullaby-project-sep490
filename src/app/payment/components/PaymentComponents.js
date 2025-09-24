@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   FaCreditCard, FaCalendarAlt, FaStickyNote, FaUser, FaPhone,
-  FaMapMarkerAlt, FaBirthdayCake, FaWallet, FaCheckCircle, FaHistory, FaHome
+  FaMapMarkerAlt, FaBirthdayCake, FaWallet, FaCheckCircle, FaHistory, FaHome, FaTimes
 } from 'react-icons/fa';
 import { HiOutlineUserGroup, HiOutlineCheck } from 'react-icons/hi2';
 import customizeTaskService from '@/services/api/customizeTaskService';
@@ -542,9 +542,11 @@ export function StaffSelection({
                           <h4 className="text-lg font-bold mb-4">Chọn điều dưỡng cho dịch vụ:
                             <span className="text-blue-600">{row.serviceName}</span></h4>
                           <button
-                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
+                            className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
                             onClick={() => setOpenTaskId(null)}
-                          >×</button>
+                          >
+                            <FaTimes size={16} />
+                          </button>
                           
                           <div className="space-y-4 max-h-[400px] overflow-y-auto">
                             {isLoading && (
@@ -591,7 +593,7 @@ export function StaffSelection({
                                   }}
                                 >
                                   <img
-                                    src={account?.avatarUrl || 'https://via.placeholder.com/48'}
+                                    src={account?.avatarUrl || '/images/logo.png'}
                                     alt="avatar"
                                     className="w-12 h-12 rounded-full object-cover border"
                                   />
@@ -610,7 +612,7 @@ export function StaffSelection({
                                     </div>
                                   </div>
                                   {isSelected && (
-                                    <div className="text-green-600 text-2xl">✓</div>
+                                    <FaCheckCircle className="text-green-600" size={20} />
                                   )}
                                 </div>
                               );

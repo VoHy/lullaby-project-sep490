@@ -877,7 +877,9 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
               }
             }}
           >
-            <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl" onClick={() => setEditNoteModal(false)} type="button" title="Đóng">✕</button>
+            <button className="absolute top-2 right-2 text-gray-400 hover:text-gray-700" onClick={() => setEditNoteModal(false)} type="button" title="Đóng">
+              <FaTimes size={18} />
+            </button>
             <h4 className="text-xl font-bold mb-4 text-purple-700">Xem/Sửa ghi chú y tế</h4>
             <div className="mb-2"><span className="font-semibold">Khách hàng:</span> {editNoteMeta.careProfile?.profileName || editNoteMeta.careProfile?.ProfileName}</div>
             <div className="mb-2"><span className="font-semibold">Mã lịch hẹn:</span> #{editNoteMeta.booking?.bookingID || editNoteMeta.booking?.BookingID}</div>

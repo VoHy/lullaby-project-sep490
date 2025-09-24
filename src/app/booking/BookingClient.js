@@ -15,6 +15,7 @@ import {
   BookingForm
 } from './components';
 import { AuthContext } from "@/context/AuthContext";
+import { HiExclamationTriangle } from "react-icons/hi2";
 
 // Utility function to clear booking cache
 const clearBookingCache = () => {
@@ -605,7 +606,7 @@ function BookingContent() {
         <div className="max-w-5xl mx-auto px-2 md:px-4">
           <div className="bg-white rounded-2xl shadow-xl p-4 md:p-8 relative overflow-hidden">
             <div className="text-center py-12">
-              <div className="text-red-500 text-6xl mb-4">⚠️</div>
+              <HiExclamationTriangle className="text-red-500 text-6xl mb-4 mx-auto" />
               <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
               <p className="text-gray-600 mb-4">{error}</p>
               <div className="flex gap-3 justify-center">

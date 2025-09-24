@@ -7,47 +7,42 @@ import ServiceRatingDisplay from './ServiceRatingDisplay';
 const ServicesRatingStats = ({ serviceTypes = [], ratingsMap = {}, feedbacks = [] }) => {
   // Tính toán thống kê tổng hợp từ ratingsMap
   const calculateStats = () => {
-    if (!serviceTypes.length) {
+    // Chỉ đếm các dịch vụ có status active
+    const activeServices = serviceTypes.filter(s => s.status === 'active');
+    
+    if (!activeServices.length) {
       return {
         totalServices: 0,
         totalFeedbacks: 0,
-        averageRating: 5.0,
         topRatedServices: []
       };
     }
 
-    const totalServices = serviceTypes.length;
+    const totalServices = activeServices.length;
     const totalFeedbacks = feedbacks.length;
     
-    // Tính rating trung bình tổng hợp từ ratingsMap
-    let totalRating = 0;
-    let ratedServices = 0;
+
     
-    serviceTypes.forEach(service => {
-      const serviceRating = ratingsMap[service.serviceID];
-      if (serviceRating && serviceRating.count > 0) {
-        totalRating += serviceRating.rating;
-        ratedServices++;
-      }
+    // Tìm các dịch vụ có rating cao nhất từ ratingsMap (chỉ active services)
+    const serviceRatings = activeServices.map(service => {
+      const rating = ratingsMap[service.serviceID] || { rating: "5.0", count: 0 };
+      return { service, rating: parseFloat(rating.rating), count: rating.count };
     });
     
-    const averageRating = ratedServices > 0 ? totalRating / ratedServices : 5.0;
-    
-    // Tìm các dịch vụ có rating cao nhất từ ratingsMap
-    const serviceRatings = serviceTypes.map(service => {
-      const rating = ratingsMap[service.serviceID] || { rating: 5.0, count: 0 };
-      return { service, rating: rating.rating, count: rating.count };
-    });
-    
+    // Ưu tiên services có feedback, nhưng vẫn hiển thị services chưa có feedback
     const topRatedServices = serviceRatings
-      .filter(item => item.count > 0)
-      .sort((a, b) => b.rating - a.rating)
+      .sort((a, b) => {
+        // Ưu tiên services có count > 0 trước
+        if (a.count > 0 && b.count === 0) return -1;
+        if (a.count === 0 && b.count > 0) return 1;
+        // Nếu cùng có hoặc cùng không có feedback, sort theo rating
+        return b.rating - a.rating;
+      })
       .slice(0, 3);
     
     return {
       totalServices,
       totalFeedbacks,
-      averageRating: parseFloat(averageRating.toFixed(1)),
       topRatedServices
     };
   };
@@ -68,7 +63,7 @@ const ServicesRatingStats = ({ serviceTypes = [], ratingsMap = {}, feedbacks = [
         Thống kê đánh giá dịch vụ
       </h3>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
         <div className="text-center p-4 bg-blue-50 rounded-xl">
           <FaUsers className="text-blue-500 text-2xl mx-auto mb-2" />
           <div className="text-2xl font-bold text-blue-600">{stats.totalServices}</div>
@@ -79,12 +74,6 @@ const ServicesRatingStats = ({ serviceTypes = [], ratingsMap = {}, feedbacks = [
           <FaThumbsUp className="text-green-500 text-2xl mx-auto mb-2" />
           <div className="text-2xl font-bold text-green-600">{stats.totalFeedbacks}</div>
           <div className="text-sm text-gray-600">Đánh giá</div>
-        </div>
-        
-        <div className="text-center p-4 bg-yellow-50 rounded-xl">
-          <FaStar className="text-yellow-500 text-2xl mx-auto mb-2" />
-          <div className="text-2xl font-bold text-yellow-600">{stats.averageRating}</div>
-          <div className="text-sm text-gray-600">Rating TB</div>
         </div>
       </div>
       

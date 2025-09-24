@@ -9,7 +9,7 @@ const ServiceRatingDisplay = ({ rating, count, size = 'sm' }) => {
     <div className="flex items-center gap-1">
       <FaStar className={`text-yellow-400 ${starSize}`} />
       <span className={`font-semibold text-gray-700 ${starSize}`}>
-        {rating.toFixed(1)}
+        {typeof rating === 'number' ? rating.toFixed(1) : rating}
       </span>
       {count > 0 && (
         <span className={`text-gray-400 ${starSize === 'text-lg' ? 'text-sm' : 'text-xs'}`}>

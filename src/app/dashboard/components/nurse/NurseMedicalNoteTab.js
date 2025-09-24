@@ -6,7 +6,7 @@ import bookingService from '@/services/api/bookingService';
 import careProfileService from '@/services/api/careProfileService';
 import customizeTaskService from '@/services/api/customizeTaskService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
-import { FaUser, FaClipboardList, FaStethoscope, FaPhone, FaMapMarkerAlt, FaSearch } from 'react-icons/fa';
+import { FaUser, FaClipboardList, FaStethoscope, FaPhone, FaMapMarkerAlt, FaSearch, FaTimes } from 'react-icons/fa';
 
 const NurseMedicalNoteTab = () => {
   const { user } = useContext(AuthContext);
@@ -424,12 +424,12 @@ const NurseMedicalNoteTab = () => {
             onSubmit={handleUpdateNote}
           >
             <button
-              className="absolute top-2 right-2 text-gray-400 hover:text-gray-700 text-xl"
+              className="absolute top-2 right-2 text-gray-400 hover:text-gray-700"
               onClick={() => { setSelectedNoteId(null); setDetailNote(null); setServiceTask(null); }}
               type="button"
               title="Đóng"
             >
-              ✕
+              <FaTimes size={18} />
             </button>
 
             <h4 className="text-xl font-bold mb-4 text-purple-700">Xem / Sửa ghi chú y tế</h4>

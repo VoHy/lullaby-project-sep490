@@ -64,7 +64,7 @@ const BlogForm = ({ blog, onSubmit, onCancel }) => {
       <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold text-gray-800">
-            {blog ? 'Sửa Blog' : 'Thêm Blog Mới'}
+            {blog ? 'Sửa tin tức' : 'Thêm tin tức mới'}
           </h3>
           <button
             onClick={onCancel}
@@ -89,7 +89,7 @@ const BlogForm = ({ blog, onSubmit, onCancel }) => {
               onChange={handleChange}
               required
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent"
-              placeholder="Nhập tiêu đề blog..."
+              placeholder="Nhập tiêu đề tin tức..."
             />
           </div>
 
@@ -125,7 +125,7 @@ const BlogForm = ({ blog, onSubmit, onCancel }) => {
               required
               rows={8}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent resize-vertical"
-              placeholder="Nhập nội dung blog..."
+              placeholder="Nhập nội dung tin tức..."
             />
           </div>
 

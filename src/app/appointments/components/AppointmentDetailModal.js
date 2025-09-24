@@ -1,7 +1,7 @@
 ﻿'use client';
 
 import React, { useEffect, useState } from 'react';
-import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaUserMd, FaPlus, FaFileInvoice, FaCreditCard } from 'react-icons/fa';
+import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMoneyBillWave, FaUserMd, FaPlus, FaFileInvoice, FaCreditCard, FaCheck } from 'react-icons/fa';
 // Customer view only: hide interactive nurse selection on appointments page
 // import NurseSelectionModal from './NurseSelectionModal';
 import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
@@ -529,10 +529,18 @@ const AppointmentDetailModal = ({
           <div className="ml-4 flex-shrink-0">
             {/* Hidden nurse selection button for customer view */}
             {isDone && (
-              <div className="text-sm text-gray-600 font-medium whitespace-nowrap">
-                {String(service.status || '').toLowerCase() === 'completed'
-                  ? '✓ ' + getBookingStatusText('completed')
-                  : '✗ ' + getBookingStatusText('cancelled')}
+              <div className="text-sm text-gray-600 font-medium whitespace-nowrap flex items-center gap-1">
+                {String(service.status || '').toLowerCase() === 'completed' ? (
+                  <>
+                    <FaCheck className="text-green-600" size={12} />
+                    {getBookingStatusText('completed')}
+                  </>
+                ) : (
+                  <>
+                    <FaTimes className="text-red-600" size={12} />
+                    {getBookingStatusText('cancelled')}
+                  </>
+                )}
               </div>
             )}
           </div>

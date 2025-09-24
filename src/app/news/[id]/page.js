@@ -181,7 +181,7 @@ export default function NewsDetailPage() {
                   <span>{blog.views?.toLocaleString() || 0} lượt xem</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-purple-500">⏱️</span>
+                  <span className="text-purple-500"></span>
                   <span>5 phút đọc</span>
                 </div>
               </div>
@@ -278,7 +278,7 @@ export default function NewsDetailPage() {
             </div>
           ) : (
             <div className="text-center py-8">
-              <div className="text-4xl mb-4">📰</div>
+              <div className="text-4xl mb-4"></div>
               <p className="text-gray-600">Chưa có bài viết liên quan</p>
             </div>
           )}

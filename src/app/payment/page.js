@@ -22,7 +22,7 @@ import notificationService from '@/services/api/notificationService';
 import wishlistService from '@/services/api/wishlistService';
 
 // Icons
-import { Clock, Calendar } from 'lucide-react';
+import { Clock, Calendar, X, Check } from 'lucide-react';
 import { FaHeart } from 'react-icons/fa';
 
 function PaymentContent() {
@@ -722,9 +722,11 @@ const ServiceInfoCard = ({
               <h4 className="text-lg font-bold mb-4">Chọn điều dưỡng cho dịch vụ:
                 <span className="text-blue-600">{service.name}</span></h4>
               <button
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
                 onClick={() => setOpenTaskId(null)}
-              >×</button>
+              >
+                <X size={20} />
+              </button>
 
               <div className="space-y-4 max-h-[400px] overflow-y-auto">
                 {isLoading && (
@@ -770,7 +772,7 @@ const ServiceInfoCard = ({
                       }}
                     >
                       <img
-                        src={account?.avatarUrl || 'https://via.placeholder.com/48'}
+                        src={account?.avatarUrl || '/images/logo.png'}
                         alt="avatar"
                         className="w-12 h-12 rounded-full object-cover border"
                       />
@@ -790,7 +792,7 @@ const ServiceInfoCard = ({
                         </div>
                       </div>
                       {isSelected && (
-                        <div className="text-green-600 text-2xl">✓</div>
+                        <Check className="text-green-600" size={24} />
                       )}
                     </div>
                   );
@@ -810,9 +812,11 @@ const ServiceInfoCard = ({
             <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-xl relative">
               <h4 className="text-lg font-bold mb-4">Chọn con cho dịch vụ</h4>
               <button
-                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700 text-xl"
+                className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
                 onClick={() => setRelativeModalTaskId(null)}
-              >×</button>
+              >
+                <X size={20} />
+              </button>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto">
                 {relatives.map((relative) => {
@@ -836,7 +840,11 @@ const ServiceInfoCard = ({
                       {relative.dateOfBirth && (
                         <div className="text-sm text-gray-600">{new Date(relative.dateOfBirth).toLocaleDateString('vi-VN')}</div>
                       )}
-                      {isSelected && <div className="text-green-600 mt-1">✓ Đã chọn</div>}
+                      {isSelected && (
+                        <div className="text-green-600 mt-1 flex items-center gap-1">
+                          <Check size={16} /> Đã chọn
+                        </div>
+                      )}
                     </div>
                   );
                 })}

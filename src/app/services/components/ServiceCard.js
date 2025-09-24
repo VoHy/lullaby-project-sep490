@@ -83,7 +83,7 @@ const ServiceCard = ({
   careProfiles,
   relatives
 }) => {
-  const rating = getRating ? getRating(service.serviceID) : { rating: 5.0, count: 0 };
+  const rating = getRating ? getRating(service.serviceID) : { rating: "5.0", count: 0 };
 
   return (
     <motion.div

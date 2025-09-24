@@ -68,7 +68,7 @@ const BlogList = ({ onEdit, onDelete, onActivate, onDeactivate, refreshTrigger }
             </div>
             <input
               type="text"
-              placeholder="Tìm kiếm blog theo tiêu đề hoặc nội dung..."
+              placeholder="Tìm kiếm tin tức theo tiêu đề hoặc nội dung..."
               className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -95,7 +95,7 @@ const BlogList = ({ onEdit, onDelete, onActivate, onDeactivate, refreshTrigger }
       {/* Results Count */}
       <div className="mb-4">
         <p className="text-sm text-gray-600">
-          Hiển thị {filteredBlogs.length} blog{filteredBlogs.length !== 1 ? 's' : ''}
+          Hiển thị {filteredBlogs.length} tin tức{filteredBlogs.length !== 1 ? 's' : ''}
         </p>
       </div>
 

@@ -1,4 +1,4 @@
-import { HiOutlineUserGroup, HiOutlinePhone, HiOutlineMapPin } from "react-icons/hi2";
+import { HiOutlineUserGroup, HiOutlinePhone, HiOutlineMapPin, HiExclamationTriangle } from "react-icons/hi2";
 import { formatDateToDDMMYYYY } from '@/app/profile/utils/dateUtils';
 
 export default function CareProfileSelector({
@@ -17,7 +17,7 @@ export default function CareProfileSelector({
 
       {careProfiles.length === 0 ? (
         <div className="text-center py-6">
-          <div className="text-gray-400 text-6xl mb-4">👥</div>
+          <HiOutlineUserGroup className="text-gray-400 text-6xl mb-4 mx-auto" />
           <p className="text-gray-600 mb-4">Bạn chưa có hồ sơ người thân nào</p>
           <button
             className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition"
@@ -28,7 +28,7 @@ export default function CareProfileSelector({
         </div>
       ) : careProfiles.filter(p => p.status === 'active' || p.status === 'Active').length === 0 ? (
         <div className="text-center py-6">
-          <div className="text-gray-400 text-6xl mb-4">⚠️</div>
+          <HiExclamationTriangle className="text-gray-400 text-6xl mb-4 mx-auto" />
           <p className="text-gray-600 mb-2">Tất cả hồ sơ người thân đều không hoạt động</p>
           <p className="text-gray-500 text-sm mb-4">Vui lòng kích hoạt hồ sơ để có thể đặt dịch vụ</p>
           <button

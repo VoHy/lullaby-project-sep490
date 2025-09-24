@@ -87,7 +87,7 @@ export default function Header() {
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           <div className="flex items-center">
-            <Link href="/" className="flex items-center gap-2 group" id="logo-icon">
+            <Link href="/" className="flex items-center gap-2 group">
               {/* Logo hình ảnh */}
               <img
                 src="/images/logo.png"

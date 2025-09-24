@@ -5,6 +5,7 @@ import customizeTaskService from '@/services/api/customizeTaskService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import { AuthContext } from '@/context/AuthContext';
 import { formatDateToDDMMYYYY, formatDateTimeToVN } from '@/app/profile/utils/dateUtils';
+import { FaTimes } from 'react-icons/fa';
 
 const NursePatientsTab = () => {
   const [filterStatus, setFilterStatus] = useState('all');
@@ -222,10 +223,12 @@ const NursePatientsTab = () => {
         <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
           <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-xl relative animate-fadeIn">
             <button
-              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl"
+              className="absolute top-4 right-4 text-gray-400 hover:text-gray-700"
               onClick={() => setSelectedPatient(null)}
               aria-label="Đóng"
-            >✕</button>
+            >
+              <FaTimes size={18} />
+            </button>
             <div className="mb-4">
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-blue-700 font-bold text-lg">Lịch hẹn #{selectedPatient.booking.bookingID || selectedPatient.booking.BookingID}</span>

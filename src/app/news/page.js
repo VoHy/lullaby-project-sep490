@@ -124,7 +124,7 @@ export default function NewsPage() {
           <div className="flex items-center justify-center gap-3 mb-4">
             <FaNewspaper className="text-4xl text-purple-600" />
             <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 via-pink-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
-              Tin tức & Blog
+              Tin tức & Danh mục
             </h1>
           </div>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">

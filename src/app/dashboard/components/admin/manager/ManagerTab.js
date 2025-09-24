@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { 
   faUserMd, faPlus, faEye, faTrash, faSearch, faFilter,
-  faUsers, faChartLine, faExclamationTriangle, faExclamationCircle
+  faUsers, faChartLine, faExclamationTriangle, faExclamationCircle, faTimes
 } from '@fortawesome/free-solid-svg-icons';
 import CreateManagerModal from './CreateManagerModal';
 import ManagerDetailModal from './ManagerDetailModal';
@@ -239,7 +239,7 @@ const ManagerTab = () => {
   if (error) {
     return (
       <div className="text-center py-12">
-        <div className="text-red-500 text-6xl mb-4">⚠️</div>
+        <FontAwesomeIcon icon={faExclamationTriangle} className="text-red-500 text-6xl mb-4" />
         <h3 className="text-xl font-semibold text-gray-800 mb-2">Có lỗi xảy ra</h3>
         <p className="text-gray-600 mb-4">{error}</p>
         <button 
@@ -266,7 +266,7 @@ const ManagerTab = () => {
             onClick={() => setShowDeletedNotification(false)}
             className="ml-4 text-white hover:text-gray-200"
           >
-            ×
+            <FontAwesomeIcon icon={faTimes} />
           </button>
         </div>
       )}

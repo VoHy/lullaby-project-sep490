@@ -8,6 +8,7 @@ import accountService from '@/services/api/accountService';
 import nursingSpecialistService from '@/services/api/nursingSpecialistService';
 import careProfileService from '@/services/api/careProfileService';
 import { AuthContext } from '@/context/AuthContext';
+import { FaTimes } from 'react-icons/fa';
 
 const NurseBookingsTab = () => {
   const [filterStatus, setFilterStatus] = useState('all');
@@ -270,10 +271,12 @@ const NurseBookingsTab = () => {
           <div className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
             <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-xl relative animate-fadeIn">
               <button
-                className="absolute top-4 right-4 text-gray-400 hover:text-gray-700 text-xl"
+                className="absolute top-4 right-4 text-gray-400 hover:text-gray-700"
                 onClick={() => setSelectedBooking(null)}
                 aria-label="Đóng"
-              >✕</button>
+              >
+                <FaTimes size={18} />
+              </button>
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-2">
                   <span className="text-purple-700 font-bold text-lg">Lịch hẹn #{selectedBooking.bookingID || selectedBooking.BookingID}</span>

@@ -52,9 +52,6 @@ export { default as payOSService } from './payOSService';
 // Relatives Services
 export { default as relativesService } from './relativesService';
 
-// Role Services
-export { default as roleService } from './roleService';
-
 // Service Task Services
 export { default as serviceTaskService } from './serviceTaskService';
 
