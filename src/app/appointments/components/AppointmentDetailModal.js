@@ -129,41 +129,97 @@ const AppointmentDetailModal = ({
       // Get service tasks (child services) for this package
       // Use package_ServiceID from ServiceTasks to match with the main package service ID
       const packageServiceTasks = serviceTasks?.filter(task => {
-        const packageServiceId = task.package_ServiceID || task.packageServiceID || task.Package_ServiceID;
-        const mainServiceId = mainPackageService.serviceID || mainPackageService.serviceTypeID || mainPackageService.ServiceID;
-        return packageServiceId === mainServiceId;
+        const packageServiceId = task.package_ServiceID ?? task.packageServiceID ?? task.Package_Service_ID;
+        const mainServiceId = mainPackageService.serviceID ?? mainPackageService.serviceTypeID ?? mainPackageService.ServiceID;
+        return String(packageServiceId) === String(mainServiceId);
       }) || [];
 
       // Map service tasks to actual services with customize task info
       const childServices = [];
       packageServiceTasks.forEach((serviceTask) => {
-        const childServiceId = serviceTask.child_ServiceID || serviceTask.childServiceID || serviceTask.Child_ServiceID;
+        const childServiceId = serviceTask.child_ServiceID ?? serviceTask.childServiceID ?? serviceTask.Child_Service_ID;
         const childService = serviceTypes.find(s =>
-          s.serviceID === childServiceId ||
-          s.serviceTypeID === childServiceId ||
-          s.ServiceID === childServiceId
+          String(s.serviceID) === String(childServiceId) ||
+          String(s.serviceTypeID) === String(childServiceId) ||
+          String(s.ServiceID) === String(childServiceId)
         );
 
-        if (childService) {
-          // Find corresponding customize task for this child service
-          const correspondingTask = bookingCustomizeTasks.find(task => {
-            const taskServiceId = task.serviceID || task.service_ID || task.Service_ID;
-            return taskServiceId === childServiceId;
+        // Find all corresponding customize tasks for this child service (match by serviceID and optional serviceTaskID)
+        const correspondingTasks = bookingCustomizeTasks.filter(task => {
+          const taskServiceId = task.serviceID ?? task.service_ID ?? task.Service_ID;
+          const taskServiceTaskId = task.serviceTaskID ?? task.serviceTaskID ?? task.ServiceTaskID ?? task.serviceTaskID ?? null;
+          const serviceTaskId = serviceTask.serviceTaskID ?? serviceTask.serviceTaskID ?? serviceTask.ServiceTaskID ?? null;
+          if (String(taskServiceId) !== String(childServiceId)) return false;
+          if (taskServiceTaskId != null && serviceTaskId != null) {
+            return String(taskServiceTaskId) === String(serviceTaskId);
+          }
+          return true;
+        });
+
+        if (correspondingTasks.length > 0) {
+          // Create one child entry per customize task (to reflect assigned relatives and duplicates)
+          correspondingTasks.forEach((corTask) => {
+            const customizeTaskId = corTask.customizeTaskID ?? corTask.customize_TaskID;
+            const taskOrder = corTask.taskOrder ?? corTask.task_Order ?? corTask.Task_Order ?? serviceTask.taskOrder ?? 1;
+            if (childService) {
+              childServices.push({
+                ...childService,
+                serviceTask: serviceTask,
+                customizeTask: corTask,
+                customizeTaskId: customizeTaskId,
+                nursingID: corTask?.nursingID,
+                status: corTask?.status || 'pending',
+                taskOrder: taskOrder,
+                serviceInstanceKey: `package-child-${childServiceId}-${customizeTaskId}`,
+                isPackageChild: true
+              });
+            } else {
+              const fallbackName = serviceTask.child_ServiceName || serviceTask.childServiceName || serviceTask.Child_ServiceName || `Dịch vụ #${childServiceId}`;
+              childServices.push({
+                serviceName: fallbackName,
+                description: serviceTask.description || serviceTask.Description || '',
+                serviceTask: serviceTask,
+                customizeTask: corTask,
+                customizeTaskId: customizeTaskId,
+                nursingID: corTask?.nursingID,
+                status: corTask?.status || 'pending',
+                taskOrder: taskOrder,
+                serviceInstanceKey: `package-child-${childServiceId}-${customizeTaskId}`,
+                isPackageChild: true,
+                _fallback: true
+              });
+            }
           });
-
-
-
-          childServices.push({
-            ...childService,
-            serviceTask: serviceTask,
-            customizeTask: correspondingTask,
-            customizeTaskId: correspondingTask?.customizeTaskID || correspondingTask?.customize_TaskID,
-            nursingID: correspondingTask?.nursingID,
-            status: correspondingTask?.status || 'pending',
-            taskOrder: serviceTask.taskOrder || serviceTask.task_Order || serviceTask.Task_Order || 1,
-            serviceInstanceKey: `package-child-${childServiceId}-${serviceTask.taskOrder || 0}`,
-            isPackageChild: true
-          });
+        } else {
+          // No customize tasks matched: include a single placeholder child service
+          if (childService) {
+            childServices.push({
+              ...childService,
+              serviceTask: serviceTask,
+              customizeTask: null,
+              customizeTaskId: null,
+              nursingID: null,
+              status: 'pending',
+              taskOrder: serviceTask.taskOrder || serviceTask.task_Order || serviceTask.Task_Order || 1,
+              serviceInstanceKey: `package-child-${childServiceId}-${serviceTask.taskOrder || 0}`,
+              isPackageChild: true
+            });
+          } else {
+            const fallbackName = serviceTask.child_ServiceName || serviceTask.childServiceName || serviceTask.Child_ServiceName || `Dịch vụ #${childServiceId}`;
+            childServices.push({
+              serviceName: fallbackName,
+              description: serviceTask.description || serviceTask.Description || '',
+              serviceTask: serviceTask,
+              customizeTask: null,
+              customizeTaskId: null,
+              nursingID: null,
+              status: 'pending',
+              taskOrder: serviceTask.taskOrder || serviceTask.task_Order || serviceTask.Task_Order || 1,
+              serviceInstanceKey: `package-child-${childServiceId}-${serviceTask.taskOrder || 0}`,
+              isPackageChild: true,
+              _fallback: true
+            });
+          }
         }
       });
 
