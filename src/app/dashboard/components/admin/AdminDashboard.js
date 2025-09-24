@@ -31,7 +31,7 @@ const AdminDashboard = ({ user, initialTab }) => {
     { id: 'overview', label: 'Tổng quan', icon: faChartLine, color: 'from-blue-500 to-cyan-500' },
     { id: 'users', label: 'Quản lý người dùng', icon: faUsers, color: 'from-purple-500 to-pink-500' },
     { id: 'managers', label: 'Quản lý', icon: faUserMd, color: 'from-indigo-500 to-purple-500' },
-    { id: 'zone', label: 'Quản lý Khu vực', icon: faMapMarkerAlt, color: 'from-green-500 to-emerald-500' },
+    { id: 'zone', label: 'Quản lý khu vực', icon: faMapMarkerAlt, color: 'from-green-500 to-emerald-500' },
     { id: 'bookings', label: 'Quản lý lịch hẹn', icon: faCalendar, color: 'from-orange-500 to-red-500' },
     { id: 'services', label: 'Quản lý dịch vụ', icon: faStethoscope, color: 'from-teal-500 to-cyan-500' },
     { id: 'revenue', label: 'Doanh thu', icon: faMoneyBill, color: 'from-yellow-500 to-orange-500' },
