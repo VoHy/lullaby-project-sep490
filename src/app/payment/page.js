@@ -479,7 +479,7 @@ const handleAssignNurseToTask = async (customizeTaskId, nursingId) => {
     return true;
   } catch (error) {
     console.error(`Error selecting nurse ${nursingId} for task ${customizeTaskId}:`, error);
-    throw new Error(`Không thể chọn điều dưỡng: ${error.message || 'Lỗi không xác định'}`);
+    throw new Error(`Không thể chọn chuyên viên: ${error.message || 'Lỗi không xác định'}`);
   }
 };
 
@@ -666,7 +666,7 @@ const ServiceInfoCard = ({
                           >
                             {selectedNurse
                               ? `Đã chọn: ${selectedNurse.Full_Name || selectedNurse.fullName || selectedNurse.FullName || selectedNurse.name || 'Điều dưỡng'}`
-                              : 'Chọn điều dưỡng'}
+                              : 'Chọn chuyên viên'}
                           </button>
                         )}
                         {!service.forMom && (
@@ -719,7 +719,7 @@ const ServiceInfoCard = ({
         return (
           <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
             <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-xl max-h-3xl relative">
-              <h4 className="text-lg font-bold mb-4">Chọn điều dưỡng cho dịch vụ:
+              <h4 className="text-lg font-bold mb-4">Chọn chuyên viên cho dịch vụ:
                 <span className="text-blue-600">{service.name}</span></h4>
               <button
                 className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"

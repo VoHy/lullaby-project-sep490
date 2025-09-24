@@ -504,13 +504,30 @@ function BookingContent() {
       return;
     }
 
-    // Validate service quantity against relatives count
-    const totalServicesQuantity = displayServicesList.reduce((total, service) => {
-      return total + (service.quantity || 1);
-    }, 0);
+    // Validate per-serviceID: ensure no service group exceeds the number of relatives
+    
+    // Nâng cao: kiểm tra từng loại dịch vụ nếu quantity của cùng 1 service (theo id/name) > số lượng relative
+    const serviceCountMap = {};
+    const serviceNameMap = {};
+    displayServicesList.forEach(service => {
+      if (!service || service.isPackage) return; // skip package header
 
-    if (totalServicesQuantity > profileRelatives.length) {
-      setCareProfileError(`Bạn đã chọn ${totalServicesQuantity} dịch vụ nhưng hồ sơ "${selectedCareProfile.profileName}" chỉ có ${profileRelatives.length} người con. Vui lòng giảm số lượng dịch vụ hoặc thêm thêm người con vào hồ sơ.`);
+      // Determine a stable key: prefer numeric IDs, fallback to child IDs, then to service name
+      const rawKey = service.serviceID ?? service.serviceTypeID ?? service.child_ServiceID ?? service.childServiceID ?? service.ServiceID ?? service.ServiceTypeID;
+      const nameFallback = service.serviceName || service.ServiceName || service.name || service.Name || '';
+      const key = rawKey != null ? String(rawKey) : `name:${nameFallback}`;
+
+      if (!serviceCountMap[key]) serviceCountMap[key] = 0;
+      serviceCountMap[key] += parseInt(service.quantity || 1, 10) || 1;
+
+      if (!serviceNameMap[key]) serviceNameMap[key] = nameFallback || (serviceNameMap[key] || 'Dịch vụ');
+    });
+
+    const overLimitEntry = Object.entries(serviceCountMap).find(([k, qty]) => qty > profileRelatives.length);
+    if (overLimitEntry) {
+      const [badKey, badQty] = overLimitEntry;
+      const badName = serviceNameMap[badKey] || '';
+      setCareProfileError(`Dịch vụ "${badName}" có số lượng (${badQty}) vượt quá số người con (${profileRelatives.length}). Vui lòng giảm số lượng dịch vụ hoặc thêm người con vào hồ sơ.`);
       return;
     }
     

@@ -491,7 +491,7 @@ export function StaffSelection({
 
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6">
-      <h3 className="text-lg font-bold text-gray-800 mb-4">Chọn điều dưỡng cho từng dịch vụ</h3>
+      <h3 className="text-lg font-bold text-gray-800 mb-4">Chọn chuyên viên cho từng dịch vụ</h3>
       
       {/* Hiển thị thông báo lỗi nếu có */}
       {assignError && (
@@ -505,7 +505,7 @@ export function StaffSelection({
           <thead>
             <tr className="bg-gray-50">
               <th className="px-4 py-2 text-left">Dịch vụ</th>
-              <th className="px-4 py-2 text-left">Chọn điều dưỡng</th>
+              <th className="px-4 py-2 text-left">Chọn chuyên viên</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -527,19 +527,19 @@ export function StaffSelection({
                     >
                       {selectedNurse
                         ? `Đã chọn: ${selectedNurse.Full_Name || selectedNurse.fullName || selectedNurse.FullName || selectedNurse.name || 'Điều dưỡng'}`
-                        : 'Chọn điều dưỡng'}
+                        : 'Chọn chuyên viên'}
                     </button>
                     
                     {/* Debug info */}
                     <div className="text-xs text-gray-500 mt-1">
-                      {isLoading ? 'Đang tải...' : `${candidates.length} điều dưỡng có sẵn`}
+                      {isLoading ? 'Đang tải...' : `${candidates.length} chuyên viên có sẵn`}
                     </div>
-                    
-                    {/* Popup/modal chọn điều dưỡng */}
+
+                    {/* Popup/modal chọn chuyên viên */}
                     {openTaskId === row.customizeTaskId && (
                       <div className="fixed inset-0 z-50 flex items-center justify-center backdrop-blur-sm">
                         <div className="bg-white rounded-xl shadow-xl p-8 w-full max-w-xl max-h-3xl relative">
-                          <h4 className="text-lg font-bold mb-4">Chọn điều dưỡng cho dịch vụ:
+                          <h4 className="text-lg font-bold mb-4">Chọn chuyên viên cho dịch vụ:
                             <span className="text-blue-600">{row.serviceName}</span></h4>
                           <button
                             className="absolute top-2 right-2 text-gray-500 hover:text-gray-700"
