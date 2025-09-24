@@ -59,10 +59,16 @@ export default function useCareProfileManager(router) {
       setSuccessMessage(result.message);
       modalManager.closeModal('careProfileForm');
       formManager.resetForm('careProfile');
-      // Không refetch toàn bộ; state đã được cập nhật optimistically trong dataManager
+      // Reload data after successful save to ensure UI is updated
+      await dataManager.loadData();
     } catch (err) {
       console.error('Error saving care profile:', err);
-      setSuccessMessage(err.message || 'Có lỗi khi xử lý hồ sơ.');
+      if (err.validationErrors && err.validationErrors.length > 0) {
+        // Set validation errors to form manager
+        formManager.setFormValidationErrors('careProfile', err.validationErrors);
+      } else {
+        setSuccessMessage(err.message || 'Có lỗi khi xử lý hồ sơ.');
+      }
     } finally {
       formManager.updateLoading('careProfile', false);
     }
@@ -83,10 +89,16 @@ export default function useCareProfileManager(router) {
       setSuccessMessage(result.message);
       modalManager.closeModal('relativeForm');
       formManager.resetForm('relative');
-      // Không refetch; đã cập nhật optimistically
+      // Reload data after successful save to ensure UI is updated
+      await dataManager.loadData();
     } catch (err) {
       console.error('Error saving relative:', err);
-      setSuccessMessage(err.message || 'Có lỗi khi xử lý người thân.');
+      if (err.validationErrors && err.validationErrors.length > 0) {
+        // Set validation errors to form manager
+        formManager.setFormValidationErrors('relative', err.validationErrors);
+      } else {
+        setSuccessMessage(err.message || 'Có lỗi khi xử lý người thân.');
+      }
     } finally {
       formManager.updateLoading('relative', false);
     }
@@ -100,11 +112,20 @@ export default function useCareProfileManager(router) {
     formManager.updateLoading('delete', true);
     try {
       const result = await dataManager.deleteCareProfile(modalManager.deleteIds.careProfile);
-      setSuccessMessage(result.message);
+      // Đóng modal trước khi hiển thị message
       modalManager.closeModal('deleteCareProfile');
-      // Không cần refetch; đã loại khỏi state
+      // Reload data after successful delete
+      await dataManager.loadData();
+      // Delay một chút để đảm bảo modal đã đóng
+      setTimeout(() => {
+        setSuccessMessage(result.message);
+      }, 100);
     } catch (err) {
-      setSuccessMessage(err.message || 'Có lỗi khi xóa hồ sơ.');
+      // Đóng modal ngay cả khi có lỗi
+      modalManager.closeModal('deleteCareProfile');
+      setTimeout(() => {
+        setSuccessMessage(err.message || 'Có lỗi khi xóa hồ sơ.');
+      }, 100);
     } finally {
       formManager.updateLoading('delete', false);
     }
@@ -118,11 +139,20 @@ export default function useCareProfileManager(router) {
     formManager.updateLoading('delete', true);
     try {
       const result = await dataManager.deleteRelative(modalManager.deleteIds.relative);
-      setSuccessMessage(result.message);
+      // Đóng modal trước khi hiển thị message
       modalManager.closeModal('deleteRelative');
-      // Không cần refetch; đã loại khỏi state
+      // Reload data after successful delete
+      await dataManager.loadData();
+      // Delay một chút để đảm bảo modal đã đóng
+      setTimeout(() => {
+        setSuccessMessage(result.message);
+      }, 100);
     } catch (err) {
-      setSuccessMessage(err.message || 'Có lỗi khi xóa người thân.');
+      // Đóng modal ngay cả khi có lỗi
+      modalManager.closeModal('deleteRelative');
+      setTimeout(() => {
+        setSuccessMessage(err.message || 'Có lỗi khi xóa người thân.');
+      }, 100);
     } finally {
       formManager.updateLoading('delete', false);
     }
@@ -204,6 +234,12 @@ export default function useCareProfileManager(router) {
     // Close delete modals (backward compatibility)
     setShowDeleteCareProfile: (show) => show ? null : modalManager.closeModal('deleteCareProfile'),
     setShowDeleteRelative: (show) => show ? null : modalManager.closeModal('deleteRelative'),
+    
+    // Validation errors
+    careProfileValidationErrors: formManager.validationErrors.careProfile,
+    relativeValidationErrors: formManager.validationErrors.relative,
+    clearCareProfileErrors: () => formManager.clearValidationErrors('careProfile'),
+    clearRelativeErrors: () => formManager.clearValidationErrors('relative'),
     
     // Utilities
     loadData: dataManager.loadData

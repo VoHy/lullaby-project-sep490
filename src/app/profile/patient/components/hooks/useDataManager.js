@@ -72,7 +72,9 @@ export const useDataManager = (user, router) => {
     // Validate
     const errors = validateCareProfile(data);
     if (errors.length) {
-      throw new Error(errors[0]);
+      const error = new Error(errors.join('\n'));
+      error.validationErrors = errors;
+      throw error;
     }
 
     // Normalize and prepare
@@ -81,35 +83,17 @@ export const useDataManager = (user, router) => {
     let result;
     if (editItem) {
       // Update
-  result = await careProfileService.updateCareProfile(
+      result = await careProfileService.updateCareProfile(
         editItem.careProfileID || editItem.CareProfileID,
         submitData
-      );
-
-      // Update state optimistically
-      setCareProfiles(prevProfiles =>
-        prevProfiles.map(profile => {
-          const profileId = profile.careProfileID || profile.CareProfileID;
-          const editId = editItem.careProfileID || editItem.CareProfileID;
-          return profileId === editId
-            ? { ...profile, ...submitData, careProfileID: profileId }
-            : profile;
-        })
       );
 
       return { success: true, message: 'Cập nhật hồ sơ thành công!' };
     } else {
       // Create
-  result = await careProfileService.createCareProfile(submitData);
-
-      // Add to state optimistically
-      if (result && (result.careProfileID || result.CareProfileID)) {
-        setCareProfiles(prevProfiles => [
-          ...prevProfiles,
-          { ...submitData, ...result }
-        ]);
-      }
-
+      result = await careProfileService.createCareProfile(submitData);
+      
+      // Return success, let caller handle data refresh
       return { success: true, message: 'Tạo hồ sơ thành công!' };
     }
   };
@@ -118,16 +102,21 @@ export const useDataManager = (user, router) => {
     // Kiểm tra xem hồ sơ có booking nào không
     const bookings = await bookingService.getAllByCareProfile(id).catch(() => []);
     if (Array.isArray(bookings) && bookings.length > 0) {
-      throw new Error('Hồ sơ này có booking nên không thể xóa.');
+      // Kiểm tra xem có booking nào đang active không (chưa hoàn thành hoặc hủy)
+      const activeBookings = bookings.filter(booking => {
+        const status = booking.status || booking.Status;
+        return status && !['completed', 'cancelled', 'Completed', 'Cancelled'].includes(status);
+      });
+      
+      if (activeBookings.length > 0) {
+        throw new Error(`Không thể xóa hồ sơ này vì đang có ${activeBookings.length} booking chưa hoàn thành. Vui lòng hoàn thành hoặc hủy các booking trước khi xóa.`);
+      }
+      
+      // Nếu chỉ có booking đã hoàn thành/hủy, vẫn không cho phép xóa để bảo toàn lịch sử
+      throw new Error(`Hồ sơ này có ${bookings.length} lịch sử booking nên không thể xóa để bảo toàn dữ liệu.`);
     }
 
     await careProfileService.deleteCareProfile(id);
-    // Remove from state optimistically
-    setCareProfiles(prev =>
-      prev.filter(profile =>
-        (profile.careProfileID || profile.CareProfileID) !== id
-      )
-    );
     return { success: true, message: 'Xóa hồ sơ thành công!' };
   };
 
@@ -136,7 +125,9 @@ export const useDataManager = (user, router) => {
     // Validate
     const errors = validateRelative(data);
     if (errors.length) {
-      throw new Error(errors[0]);
+      const error = new Error(errors.join('\n'));
+      error.validationErrors = errors;
+      throw error;
     }
 
     // Prepare
@@ -144,28 +135,12 @@ export const useDataManager = (user, router) => {
 
     if (editItem) {
       const editId = editItem.relativeID || editItem.RelativeID || editItem.relativeid;
-  const result = await relativesService.updateRelative(editId, submitData);
-
-      // Update state optimistically
-      setRelativesList(prevRelatives =>
-        prevRelatives.map(relative => {
-          const relativeId = relative.relativeID || relative.RelativeID || relative.relativeid;
-          return relativeId === editId
-            ? { ...relative, ...submitData, ...(result || {}), relativeID: relativeId }
-            : relative;
-        })
-      );
+      const result = await relativesService.updateRelative(editId, submitData);
 
       clearServicesCache(); // Clear cache sau khi cập nhật
       return { success: true, message: 'Cập nhật người thân thành công!' };
     } else {
-  const result = await relativesService.createRelative(submitData);
-
-      // Add to state optimistically
-      setRelativesList(prevRelatives => [
-        ...prevRelatives,
-        { ...submitData, ...(result || {}) }
-      ]);
+      const result = await relativesService.createRelative(submitData);
 
       clearServicesCache(); // Clear cache sau khi thêm
       return { success: true, message: 'Thêm người thân thành công!' };
@@ -173,13 +148,30 @@ export const useDataManager = (user, router) => {
   };
 
   const deleteRelative = async (id) => {
-    await relativesService.deleteRelative(id);
-    // Remove from state optimistically
-    setRelativesList(prevRelatives =>
-      prevRelatives.filter(relative =>
-        (relative.relativeID || relative.RelativeID || relative.relativeid) !== id
-      )
+    // Tìm relative để lấy careProfileID
+    const relative = relativesList.find(r => 
+      (r.relativeID || r.RelativeID || r.relativeid) === id
     );
+    
+    if (relative) {
+      // Kiểm tra xem care profile của relative có booking nào không
+      const careProfileId = relative.careProfileID || relative.CareProfileID || relative.careprofileID;
+      const bookings = await bookingService.getAllByCareProfile(careProfileId).catch(() => []);
+      
+      if (Array.isArray(bookings) && bookings.length > 0) {
+        // Kiểm tra xem có booking nào đang active không (chưa hoàn thành hoặc hủy)
+        const activeBookings = bookings.filter(booking => {
+          const status = booking.status || booking.Status;
+          return status && !['completed', 'cancelled', 'Completed', 'Cancelled'].includes(status);
+        });
+        
+        if (activeBookings.length > 0) {
+          throw new Error(`Không thể xóa người thân này vì hồ sơ đang có ${activeBookings.length} booking chưa hoàn thành. Vui lòng hoàn thành hoặc hủy các booking trước khi xóa.`);
+        }
+      }
+    }
+
+    await relativesService.deleteRelative(id);
     clearServicesCache(); // Clear cache sau khi xóa
     return { success: true, message: 'Xóa người thân thành công!' };
   };

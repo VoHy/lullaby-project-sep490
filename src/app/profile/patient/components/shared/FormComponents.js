@@ -11,7 +11,8 @@ export function FormField({
   required = false,
   options = [],
   className = '',
-  placeholder = ''
+  placeholder = '',
+  error = ''
 }) {
   const baseClassName = `
   w-full px-3 py-2 rounded-xl border border-gray-300 
@@ -31,7 +32,7 @@ export function FormField({
           name={name}
           value={value}
           onChange={onChange}
-          className={baseClassName}
+          className={`${baseClassName} ${error ? 'border-red-300 focus:ring-red-400 focus:border-red-400' : ''}`}
           required={required}
         >
           {placeholder && <option value="">{placeholder}</option>}
@@ -46,7 +47,7 @@ export function FormField({
           name={name}
           value={value}
           onChange={onChange}
-          className={`${baseClassName} resize-none`}
+          className={`${baseClassName} resize-none ${error ? 'border-red-300 focus:ring-red-400 focus:border-red-400' : ''}`}
           required={required}
           rows={3}
         />
@@ -56,9 +57,14 @@ export function FormField({
           name={name}
           value={value}
           onChange={onChange}
-          className={baseClassName}
+          className={`${baseClassName} ${error ? 'border-red-300 focus:ring-red-400 focus:border-red-400' : ''}`}
           required={required}
         />
+      )}
+      {error && (
+        <p className="mt-1 text-sm text-red-600">
+          {error}
+        </p>
       )}
     </div>
   );
@@ -69,7 +75,8 @@ export function AvatarUpload({
   currentImage,
   onImageChange,
   size = 'w-24 h-24',
-  name = 'image'
+  name = 'image',
+  error = ''
 }) {
   return (
     <div className="flex flex-col items-center gap-2">
@@ -78,9 +85,14 @@ export function AvatarUpload({
         <img
           src={(currentImage && currentImage !== 'string' && currentImage.trim() !== '') ? currentImage : '/images/hero-bg.jpg'}
           alt="avatar"
-          className={`${size} rounded-full object-cover border-2 border-purple-200`}
+          className={`${size} rounded-full object-cover border-2 ${error ? 'border-red-300' : 'border-purple-200'}`}
         />
       </div>
+      {error && (
+        <p className="mt-1 text-sm text-red-600 text-center">
+          {error}
+        </p>
+      )}
     </div>
   );
 }

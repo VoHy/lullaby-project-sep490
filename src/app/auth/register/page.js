@@ -44,23 +44,34 @@ export default function RegisterPage() {
 
     // Validate phía client trước khi gọi API
     const newErrors = {};
-    // Họ tên (optional: không để trống)
+    // Họ tên: không để trống và phải từ 2 ký tự trở lên
     if (!formData.fullName.trim()) {
       newErrors.fullName = 'Vui lòng nhập họ tên';
+    } else if (formData.fullName.trim().length < 2) {
+      newErrors.fullName = 'Họ tên phải từ 2 ký tự trở lên';
     }
-    // Số điện thoại: 9-11 chữ số
+    // Số điện thoại: bắt đầu từ 0 và có 9-10 chữ số
     const digitsPhone = formData.phoneNumber.replace(/\D/g, '');
-    if (!/^\d{9,11}$/.test(digitsPhone)) {
-      newErrors.phoneNumber = 'Số điện thoại phải gồm 9–11 chữ số';
+    if (!/^0\d{8,9}$/.test(digitsPhone)) {
+      newErrors.phoneNumber = 'Số điện thoại phải bắt đầu từ số 0 và có 9-10 chữ số';
     }
     // Email format
     const emailRegex = /[^\s@]+@[^\s@]+\.[^\s@]+/;
     if (!emailRegex.test(formData.email)) {
       newErrors.email = 'Email không hợp lệ';
     }
-    // Mật khẩu tối thiểu 6 ký tự
-    if ((formData.password || '').length < 6) {
-      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+    // Validation mật khẩu mạnh
+    const password = formData.password || '';
+    if (password.length < 8) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 8 ký tự';
+    } else if (!/[a-z]/.test(password)) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 1 chữ thường [a-z]';
+    } else if (!/[A-Z]/.test(password)) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 1 chữ hoa [A-Z]';
+    } else if (!/[0-9]/.test(password)) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 1 số [0-9]';
+    } else if (!/[!@#$%^&*]/.test(password)) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt [!@#$%^&*]';
     }
     // Xác nhận mật khẩu trùng khớp
     if (formData.password !== formData.confirmPassword) {
@@ -171,7 +182,7 @@ export default function RegisterPage() {
               <input
                 type="tel"
                 name="phoneNumber"
-                placeholder="Nhập số điện thoại"
+                placeholder="Nhập số điện thoại (VD: 0901234567)"
                 className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
                 value={formData.phoneNumber}
                 onChange={handleChange}
@@ -197,12 +208,17 @@ export default function RegisterPage() {
               <input
                 type="password"
                 name="password"
-                placeholder="Nhập mật khẩu"
+                placeholder="Nhập mật khẩu (tối thiểu 8 ký tự)"
                 className="block w-full rounded-md border border-mint-green focus:border-pink-500 focus:outline-none focus:ring-1 focus:ring-pink-400 py-2 px-3 text-gray-700"
                 value={formData.password}
                 onChange={handleChange}
                 required
               />
+              {!fieldErrors.password && (
+                <p className="text-gray-500 text-xs mt-1">
+                  Mật khẩu phải có: 8+ ký tự, 1 chữ thường, 1 chữ hoa, 1 số, 1 ký tự đặc biệt (!@#$%^&*)
+                </p>
+              )}
               {fieldErrors.password && <p className="text-red-500 text-xs mt-1">{fieldErrors.password}</p>}
             </div>
             <div>
@@ -248,4 +264,4 @@ export default function RegisterPage() {
       </div>
     </motion.div>
   );
-} 
+}

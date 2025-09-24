@@ -1,25 +1,30 @@
 import React from 'react';
 import BaseModal from './shared/BaseModal';
 import { FormField, AvatarUpload, FormActions } from './shared/FormComponents';
-import { validateRelative, prepareRelativeData, normalizeFieldNames } from '../utils/formUtils';
+import ErrorDisplay from './shared/ErrorDisplay';
+import { validateRelative, validateRelativeFields, prepareRelativeData, normalizeFieldNames } from '../utils/formUtils';
 
-export default function RelativeFormModal({ open, onClose, onSave, formData, onChange, loading, isEdit, currentCareID }) {
+export default function RelativeFormModal({ 
+  open, 
+  onClose, 
+  onSave, 
+  formData, 
+  onChange, 
+  loading, 
+  isEdit, 
+  currentCareID,
+  validationErrors = [],
+  onClearErrors
+}) {
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Validation using utility function
-    const errors = validateRelative(formData);
-    if (errors.length > 0) {
-      alert(errors[0]);
-      return;
-    }
-
-    // Prepare data using utility function
-    const submitData = prepareRelativeData(formData, currentCareID);
-    onSave(submitData);
+    onSave(formData);
   };
 
   const normalized = normalizeFieldNames(formData);
+  
+  // Get field-specific errors
+  const fieldErrors = validateRelativeFields(formData);
 
   const genderOptions = [
     { value: 'male', label: 'Nam' },
@@ -27,10 +32,7 @@ export default function RelativeFormModal({ open, onClose, onSave, formData, onC
     { value: 'other', label: 'Khác' }
   ];
 
-  const statusOptions = [
-    { value: 'active', label: 'Hoạt động' },
-    { value: 'inactive', label: 'Ngừng hoạt động' }
-  ];
+
 
   return (
     <BaseModal
@@ -48,6 +50,7 @@ export default function RelativeFormModal({ open, onClose, onSave, formData, onC
               value={normalized.relativeName || ''}
               onChange={onChange}
               required={true}
+              error={fieldErrors.relativeName}
             />
             
             <FormField
@@ -57,6 +60,7 @@ export default function RelativeFormModal({ open, onClose, onSave, formData, onC
               value={normalized.dateOfBirth || ''}
               onChange={onChange}
               required={true}
+              error={fieldErrors.dateOfBirth}
             />
             
             <FormField
@@ -67,6 +71,8 @@ export default function RelativeFormModal({ open, onClose, onSave, formData, onC
               onChange={onChange}
               placeholder="Chọn giới tính"
               options={genderOptions}
+              required={true}
+              error={fieldErrors.gender}
             />
           </div>
           
@@ -76,22 +82,16 @@ export default function RelativeFormModal({ open, onClose, onSave, formData, onC
               onImageChange={onChange}
               size="w-24 h-24"
               name="image"
+              error={fieldErrors.image}
             />
             
             <FormField
               label="Ghi chú"
               name="note"
+              type="textarea"
               value={normalized.note || ''}
               onChange={onChange}
-            />
-            
-            <FormField
-              label="Trạng thái"
-              name="status"
-              type="select"
-              value={normalized.status || 'active'}
-              onChange={onChange}
-              options={statusOptions}
+              error={fieldErrors.note}
             />
           </div>
         </div>

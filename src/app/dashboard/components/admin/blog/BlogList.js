@@ -95,7 +95,7 @@ const BlogList = ({ onEdit, onDelete, onActivate, onDeactivate, refreshTrigger }
       {/* Results Count */}
       <div className="mb-4">
         <p className="text-sm text-gray-600">
-          Hiển thị {filteredBlogs.length} tin tức{filteredBlogs.length !== 1 ? 's' : ''}
+          Hiển thị {filteredBlogs.length} tin tức{filteredBlogs.length !== 1 ? '' : ''}
         </p>
       </div>
 

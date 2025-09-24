@@ -101,7 +101,7 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
           </div>
         </div>
 
-        <div className="max-h-60 overflow-y-auto pr-1"> {/* 👈 thêm container có scroll */}
+        <div className="max-h-60 overflow-y-auto pr-1">
           {filteredRelatives.length === 0 ? (
             <p className="text-sm text-gray-500 italic">Chưa có người thân nào.</p>
           ) : (

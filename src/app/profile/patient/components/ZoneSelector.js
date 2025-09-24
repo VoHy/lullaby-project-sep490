@@ -7,7 +7,8 @@ export default function ZoneSelector({
   onChange,
   required = false,
   label = "Khu vực",
-  placeholder = "Chọn khu vực"
+  placeholder = "Chọn khu vực",
+  error = ''
 }) {
   const [selectedZoneID, setSelectedZoneID] = useState('');
   const [filteredZoneDetails, setFilteredZoneDetails] = useState([]);
@@ -97,7 +98,9 @@ export default function ZoneSelector({
         <select
           value={selectedZoneDetailID || ''}
           onChange={handleZoneDetailChange}
-          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+          className={`w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+            error ? 'border-red-300 focus:ring-red-400 focus:border-red-400' : 'border-gray-300'
+          }`}
           disabled={!selectedZoneID}
           required={required}
         >
@@ -110,6 +113,11 @@ export default function ZoneSelector({
             </option>
           ))}
         </select>
+        {error && (
+          <p className="mt-1 text-sm text-red-600">
+            {error}
+          </p>
+        )}
       </div>
     </div>
   );

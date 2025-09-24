@@ -146,6 +146,8 @@ export default function PatientProfilePage(props) {
           zones={manager.zones}
           zoneDetails={manager.zoneDetails}
           user={manager.user} // truyền user vào modal
+          validationErrors={manager.careProfileValidationErrors}
+          onClearErrors={manager.clearCareProfileErrors}
         />
         {/* Modal form người thân */}
         <RelativeFormModal
@@ -157,6 +159,8 @@ export default function PatientProfilePage(props) {
           loading={manager.relativeLoading}
           isEdit={!!manager.editRelative}
           currentCareID={manager.currentCareID}
+          validationErrors={manager.relativeValidationErrors}
+          onClearErrors={manager.clearRelativeErrors}
         />
         {/* Modal xác nhận xoá hồ sơ */}
         <ConfirmDeleteModal

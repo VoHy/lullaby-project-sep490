@@ -1,26 +1,33 @@
 import React from 'react';
 import BaseModal from './shared/BaseModal';
 import { FormField, AvatarUpload, FormActions } from './shared/FormComponents';
+import ErrorDisplay from './shared/ErrorDisplay';
 import ZoneSelector from './ZoneSelector';
-import { validateCareProfile, prepareCareProfileData, normalizeFieldNames } from '../utils/formUtils';
+import { validateCareProfile, validateCareProfileFields, prepareCareProfileData, normalizeFieldNames } from '../utils/formUtils';
 
-export default function CareProfileFormModal({ open, onClose, onSave, formData, onChange, loading, isEdit, zones = [], zoneDetails = [], user }) {
+export default function CareProfileFormModal({ 
+  open, 
+  onClose, 
+  onSave, 
+  formData, 
+  onChange, 
+  loading, 
+  isEdit, 
+  zones = [], 
+  zoneDetails = [], 
+  user,
+  validationErrors = [],
+  onClearErrors
+}) {
   const handleSubmit = (e) => {
     e.preventDefault();
-
-    // Validation using utility function
-    const errors = validateCareProfile(formData);
-    if (errors.length > 0) {
-      alert(errors[0]);
-      return;
-    }
-
-    // Prepare data using utility function
-    const submitData = prepareCareProfileData(formData, user);
-    onSave(submitData);
+    onSave(formData);
   };
 
   const normalized = normalizeFieldNames(formData);
+  
+  // Get field-specific errors
+  const fieldErrors = validateCareProfileFields(formData);
 
   return (
     <BaseModal
@@ -40,6 +47,7 @@ export default function CareProfileFormModal({ open, onClose, onSave, formData, 
                 value={normalized.profileName || ''}
                 onChange={onChange}
                 required={true}
+                error={fieldErrors.profileName}
               />
 
               <FormField
@@ -49,6 +57,7 @@ export default function CareProfileFormModal({ open, onClose, onSave, formData, 
                 value={normalized.dateOfBirth || ''}
                 onChange={onChange}
                 required={true}
+                error={fieldErrors.dateOfBirth}
               />
 
               <FormField
@@ -57,6 +66,7 @@ export default function CareProfileFormModal({ open, onClose, onSave, formData, 
                 value={normalized.phoneNumber || ''}
                 onChange={onChange}
                 required={true}
+                error={fieldErrors.phoneNumber}
               />
 
               <ZoneSelector
@@ -64,8 +74,9 @@ export default function CareProfileFormModal({ open, onClose, onSave, formData, 
                 zoneDetails={zoneDetails}
                 selectedZoneDetailID={normalized.zoneDetailID || ''}
                 onChange={onChange}
-                required={false}
+                required={true}
                 label="Khu vực"
+                error={fieldErrors.zoneDetailID}
               />
 
               <FormField
@@ -75,6 +86,7 @@ export default function CareProfileFormModal({ open, onClose, onSave, formData, 
                 value={normalized.address || ''}
                 onChange={onChange}
                 required={true}
+                error={fieldErrors.address}
               />
 
               <FormField
@@ -83,16 +95,18 @@ export default function CareProfileFormModal({ open, onClose, onSave, formData, 
                 type="textarea"
                 value={normalized.note || ''}
                 onChange={onChange}
+                error={fieldErrors.note}
               />
             </div>
 
-            {/* Cột phải: Ảnh đại diện */}
+            {/* Cột phải: Thông tin bổ sung */}
             <div className="flex flex-col items-center justify-start gap-4 pt-2">
               <AvatarUpload
                 currentImage={formData.image}
                 onImageChange={onChange}
                 size="w-32 h-32"
                 name="image"
+                error={fieldErrors.image}
               />
             </div>
           </div>

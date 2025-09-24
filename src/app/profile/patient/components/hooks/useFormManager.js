@@ -47,6 +47,12 @@ export const useFormManager = () => {
     delete: false
   });
 
+  // Validation error states
+  const [validationErrors, setValidationErrors] = useState({
+    careProfile: [],
+    relative: []
+  });
+
   const [currentCareID, setCurrentCareID] = useState(null);
 
   // Generic form handlers
@@ -100,6 +106,15 @@ export const useFormManager = () => {
     const initialData = type === 'careProfile' ? INITIAL_CARE_PROFILE : INITIAL_RELATIVE;
     setForms(prev => ({ ...prev, [type]: initialData }));
     setEditItems(prev => ({ ...prev, [type]: null }));
+    setValidationErrors(prev => ({ ...prev, [type]: [] }));
+  };
+
+  const setFormValidationErrors = (type, errors) => {
+    setValidationErrors(prev => ({ ...prev, [type]: errors }));
+  };
+
+  const clearValidationErrors = (type) => {
+    setValidationErrors(prev => ({ ...prev, [type]: [] }));
   };
 
   return {
@@ -108,6 +123,7 @@ export const useFormManager = () => {
     editItems,
     loadingStates,
     currentCareID,
+    validationErrors,
     
     // Functions
     openForm,
@@ -115,6 +131,8 @@ export const useFormManager = () => {
     handleAvatarChange,
     updateLoading,
     resetForm,
-    setCurrentCareID
+    setCurrentCareID,
+    setFormValidationErrors,
+    clearValidationErrors
   };
 };
