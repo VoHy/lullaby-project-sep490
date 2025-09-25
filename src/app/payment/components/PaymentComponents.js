@@ -124,7 +124,7 @@ export function AppointmentInfo({
 }
 
 // Payment Breakdown Component for PaymentInfo
-const PaymentBreakdown = ({ paymentBreakdown, total }) => {
+const PaymentBreakdown = ({ paymentBreakdown, total, selectedHoliday }) => {
   if (!paymentBreakdown) return null;
 
   return (
@@ -150,9 +150,14 @@ const PaymentBreakdown = ({ paymentBreakdown, total }) => {
           </div>
         )}
         {paymentBreakdown.extra && paymentBreakdown.extra > 0 && (
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Phí phát sinh ({paymentBreakdown.extra * 1}%):</span>
-            <span className="text-orange-600 font-medium">+{paymentBreakdown.extraAmount.toLocaleString()}đ</span>
+          <div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">Phí phát sinh ({paymentBreakdown.extra * 1}%):</span>
+              <span className="text-orange-600 font-medium">+{paymentBreakdown.extraAmount.toLocaleString()}đ</span>
+            </div>
+            {selectedHoliday && (
+              <div className="mt-1 text-sm text-yellow-700">Ngày lễ: {selectedHoliday.holidayName || selectedHoliday.holidayName || selectedHoliday.name || selectedHoliday.Name || selectedHoliday.title || selectedHoliday.Title}</div>
+            )}
           </div>
         )}
         <div className="border-t border-gray-200 pt-2 mt-2">
@@ -311,7 +316,8 @@ export function PaymentInfo({
   paymentBreakdown,
   canConfirm,
   onCancel,
-  isCancelling
+  isCancelling,
+  selectedHoliday
 }) {
   return (
     <div className="bg-white rounded-2xl shadow-xl p-6">
@@ -323,7 +329,7 @@ export function PaymentInfo({
       </div>
 
       {/* Payment Breakdown */}
-      <PaymentBreakdown paymentBreakdown={paymentBreakdown} total={total} />
+  <PaymentBreakdown paymentBreakdown={paymentBreakdown} total={total} selectedHoliday={selectedHoliday} />
 
       {/* Total Amount */}
       <div className="bg-gradient-to-r from-pink-50 to-purple-50 rounded-xl p-6 mb-6">

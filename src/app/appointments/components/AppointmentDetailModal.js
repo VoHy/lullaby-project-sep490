@@ -6,6 +6,7 @@ import { FaTimes, FaCalendar, FaUser, FaUserCircle, FaBox, FaStethoscope, FaMone
 // import NurseSelectionModal from './NurseSelectionModal';
 import nursingSpecialistServiceTypeService from '@/services/api/nursingSpecialistServiceTypeService';
 import feedbackService from '@/services/api/feedbackService';
+import holidayService from '@/services/api/holidayService';
 import FeedbackForm from './FeedbackForm';
 import { getBookingStatusText, getBookingStatusColor } from '../utils/bookingStatus';
 
@@ -32,6 +33,57 @@ const AppointmentDetailModal = ({
   const [feedbackSubmitting, setFeedbackSubmitting] = useState({}); // { [customizeTaskId]: boolean }
   const [feedbackSubmitted, setFeedbackSubmitted] = useState({}); // { [customizeTaskId]: boolean }
   const [feedbackByTask, setFeedbackByTask] = useState({}); // { [customizeTaskId]: feedback }
+  const [holidays, setHolidays] = useState([]);
+
+  useEffect(() => {
+    let mounted = true;
+    const load = async () => {
+      try {
+        const data = await holidayService.getAllHolidays();
+        if (mounted) setHolidays(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error('Error loading holidays in appointment modal:', e);
+        if (mounted) setHolidays([]);
+      }
+    };
+    load();
+    return () => { mounted = false; };
+  }, []);
+
+  const selectedHoliday = React.useMemo(() => {
+    const toLocalDateKey = (d) => {
+      if (!(d instanceof Date)) d = new Date(d);
+      if (isNaN(d.getTime())) return null;
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    const workdate = appointment?.workdate || appointment?.Workdate || appointment?.workDate || appointment?.WorkDate;
+    if (!workdate || !holidays || holidays.length === 0) return null;
+    const selectedKey = toLocalDateKey(new Date(workdate));
+    if (!selectedKey) return null;
+
+    for (const h of holidays) {
+      const startRaw = h.startDate || h.StartDate || h.holidayStart || h.HolidayDate || h.date || h.Date || h.holiday_date || h.start_date;
+      const endRaw = h.endDate || h.EndDate || h.holidayEnd || h.end_date || h.endDate;
+
+      const sKey = startRaw ? toLocalDateKey(new Date(startRaw)) : null;
+      const eKey = endRaw ? toLocalDateKey(new Date(endRaw)) : null;
+
+      if (sKey && eKey) {
+        if (selectedKey >= sKey && selectedKey <= eKey) return h;
+      } else if (sKey) {
+        if (selectedKey === sKey) return h;
+      } else if (h.HolidayDate || h.holidayDate || h.holiday) {
+        const dKey = toLocalDateKey(new Date(h.HolidayDate || h.holidayDate || h.holiday));
+        if (dKey && selectedKey === dKey) return h;
+      }
+    }
+
+    return null;
+  }, [appointment, holidays]);
 
   if (!appointment) {
     return null;
@@ -714,7 +766,12 @@ const AppointmentDetailModal = ({
               <div className="text-sm text-gray-600 mt-2">
                 <div><strong>Số tiền cơ bản:</strong> {baseAmount.toLocaleString('vi-VN')}₫</div>
                 {extraAmount > 0 && (
-                  <div><strong>Phí thêm:</strong> {extraAmount.toLocaleString('vi-VN')}₫</div>
+                  <div>
+                    <div><strong>Phí thêm:</strong> {extraAmount.toLocaleString('vi-VN')}₫</div>
+                    {selectedHoliday && (
+                      <div className="text-sm text-yellow-700 mt-1">Ngày lễ: {selectedHoliday.holidayName || selectedHoliday.name || selectedHoliday.Title || selectedHoliday.title}</div>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

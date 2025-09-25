@@ -20,6 +20,7 @@ import customizeTaskService from '@/services/api/customizeTaskService';
 import bookingService from '@/services/api/bookingService';
 import notificationService from '@/services/api/notificationService';
 import wishlistService from '@/services/api/wishlistService';
+import holidayService from '@/services/api/holidayService';
 
 // Icons
 import { Clock, Calendar, X, Check } from 'lucide-react';
@@ -55,6 +56,56 @@ function PaymentContent() {
     zoneDetails,
     zones
   } = usePaymentData(bookingId, user);
+
+  const [holidays, setHolidays] = useState([]);
+
+  useEffect(() => {
+    const loadHolidays = async () => {
+      try {
+        const data = await holidayService.getAllHolidays();
+        setHolidays(Array.isArray(data) ? data : []);
+      } catch (e) {
+        console.error('Error loading holidays in payment page:', e);
+        setHolidays([]);
+      }
+    };
+    loadHolidays();
+  }, []);
+
+  const selectedHoliday = useMemo(() => {
+    if (!bookingData?.datetime || !holidays || holidays.length === 0) return null;
+
+    const toLocalDateKey = (d) => {
+      if (!(d instanceof Date)) d = new Date(d);
+      if (isNaN(d.getTime())) return null;
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    const selectedKey = toLocalDateKey(new Date(bookingData.datetime));
+    if (!selectedKey) return null;
+
+    for (const h of holidays) {
+      const startRaw = h.startDate || h.StartDate || h.holidayStart || h.HolidayDate || h.date || h.Date || h.holiday_date || h.start_date;
+      const endRaw = h.endDate || h.EndDate || h.holidayEnd || h.end_date || h.endDate;
+
+      const sKey = startRaw ? toLocalDateKey(new Date(startRaw)) : null;
+      const eKey = endRaw ? toLocalDateKey(new Date(endRaw)) : null;
+
+      if (sKey && eKey) {
+        if (selectedKey >= sKey && selectedKey <= eKey) return h;
+      } else if (sKey) {
+        if (selectedKey === sKey) return h;
+      } else if (h.HolidayDate || h.holidayDate || h.holiday) {
+        const dKey = toLocalDateKey(new Date(h.HolidayDate || h.holidayDate || h.holiday));
+        if (dKey && selectedKey === dKey) return h;
+      }
+    }
+
+    return null;
+  }, [bookingData?.datetime, holidays]);
 
   const {
     selectionMode,
@@ -359,6 +410,7 @@ function PaymentContent() {
               handleConfirm={handleConfirmWithNotify}
               isProcessingPayment={isProcessingPayment}
               paymentBreakdown={bookingData?.paymentCalculation}
+              selectedHoliday={selectedHoliday}
               canConfirm={canConfirm}
               onCancel={handleCancelBooking}
               isCancelling={isCancelling}

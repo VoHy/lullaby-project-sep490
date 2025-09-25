@@ -15,6 +15,7 @@ export default function BookingForm({
   setSelectedCareProfile,
   careProfileError,
   isProcessingPayment
+  ,selectedHoliday
 }) {
   return (
     <div className="flex flex-col gap-4">
@@ -43,6 +44,15 @@ export default function BookingForm({
         {!isDatetimeValid && datetime && (
           <div className="text-red-500 text-sm mt-1">
             Thời gian phải cách hiện tại ít nhất 120 phút
+          </div>
+        )}
+        {/* Holiday info inside the Chọn ngày giờ section */}
+        {selectedHoliday && (
+          <div className="mt-2 p-2 rounded-md bg-yellow-50 border border-yellow-100 text-yellow-700 text-sm">
+            <strong>Ngày lễ:</strong> {selectedHoliday.holidayName || selectedHoliday.holidayName || selectedHoliday.name || selectedHoliday.Name || selectedHoliday.title || selectedHoliday.Title}
+            {selectedHoliday.description && (
+              <div className="mt-1 text-xs text-yellow-800">{selectedHoliday.description}</div>
+            )}
           </div>
         )}
       </section>

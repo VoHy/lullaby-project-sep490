@@ -252,7 +252,7 @@ export default function RegisterPage() {
         <div className="hidden md:flex flex-col justify-center items-center w-1/2 bg-white">
           <div className="w-full h-full flex items-center justify-center">
             <Image
-              src="/images/hero-bg.jpg"
+              src="/images/login.jpg"
               alt="Banner Register"
               width={384}
               height={512}

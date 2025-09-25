@@ -52,6 +52,27 @@ export default function TeamPage() {
     Specialist: "Chuyên viên tư vấn"
   }
 
+  // Default avatars by gender (kept here to avoid creating new files)
+  const MALE_DEFAULT_AVATAR = 'https://i.ibb.co/zWchkWb9/bae8ac1e948df3e40f745095485a1351.jpg';
+  const FEMALE_DEFAULT_AVATAR = 'https://i.ibb.co/qX4Pprh/ae4af3fa63764c2b2d27ff9a35f7097a.jpg';
+
+  // Determine if a member is female based on common gender fields (loose matching)
+  const isFemaleMember = (m) => {
+    if (!m) return false;
+    const g = ((m.Gender || m.gender || m.sex || '') + '').toLowerCase();
+    return /female|f$|^f\b|nu|nữ|fem/i.test(g);
+  };
+
+  // Resolve avatar URL for a member: account avatar -> member avatar -> gendered default
+  const resolveAvatar = (m) => {
+    if (!m) return (MALE_DEFAULT_AVATAR);
+    const accountAv = accountsMap[m.accountID || m.AccountID]?.avatarUrl;
+    if (accountAv) return accountAv;
+    if (m.avatar_url) return m.avatar_url;
+    if (m.avatarUrl) return m.avatarUrl;
+    return isFemaleMember(m) ? FEMALE_DEFAULT_AVATAR : MALE_DEFAULT_AVATAR;
+  };
+
   // Cache duration - 5 phút để ratings được cập nhật định kỳ
   const CACHE_DURATION = 5 * 60 * 1000; // 5 phút
 
@@ -418,7 +439,7 @@ export default function TeamPage() {
   const MemberCard = ({ member, onViewDetail }) => (
     <motion.div
       key={member.NursingID}
-      className="bg-white rounded-xl shadow p-6 flex flex-col items-center hover:shadow-xl transition group relative"
+      className="bg-white rounded-xl shadow p-6 flex flex-col hover:shadow-xl transition group relative"
       initial={{ opacity: 0, y: 40 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, ease: 'easeOut' }}
@@ -431,64 +452,61 @@ export default function TeamPage() {
       >
         <FaHeart />
       </button>
-      {/* Avatar + Badge */}
-      <div className="relative mb-4">
-        <img
-          src={
-            accountsMap[member.accountID || member.AccountID]?.avatarUrl ||
-            member.avatar_url ||
-            member.avatarUrl ||
-            '/images/hero-bg.jpg'
-          }
-          alt={member.FullName || member.Nurse_Name || member.fullName}
-          className="w-24 h-24 rounded-full object-cover border-4 border-pink-200 group-hover:scale-105 transition"
-        />
-        {/* Badge Major ở góc phải */}
-        <span
-          className={`absolute top-0 right-0 translate-x-2 -translate-y-2 px-2 py-0.5 rounded-full text-xs font-semibold shadow-md
-            ${(member.Major || member.major)?.toLowerCase().includes("nurse")
-              ? "bg-blue-100 text-blue-700"
-              : "bg-pink-100 text-pink-700"
-            }`}
-        >
-          {(member.Major || member.major)?.toLowerCase() === "nurse"
-            ? "Chăm sóc"
-            : (member.Major || member.major)?.toLowerCase() === "specialist"
-              ? "Chuyên viên tư vấn"
-              : member.Major || member.major}
-        </span>
-      </div>
 
-      {/* Tên */}
-      <h3 className="text-lg font-bold text-blue-700 mb-1 flex items-center gap-2">
-        {member.FullName || member.Nurse_Name || member.fullName}
-      </h3>
-
-      {/* Zone */}
-      <div className="flex items-center gap-2 mb-2">
-        <span className="text-gray-600 text-sm">
-          {getZoneName(member.ZoneID || member.zoneID || member.Address || member.address)}
-        </span>
-      </div>
-
-      {/* Rating (hidden if no feedback) */}
-      {hasRating(member.NursingID || member.nursingID) && (
-        <div className="text-center mb-4">
-          <div className="flex items-center justify-center gap-1 text-yellow-600 font-bold text-lg">
-            <FaStar className="text-yellow-500" />
-            <span>{getAverageRate(member.NursingID || member.nursingID)}/5</span>
-          </div>
-          <div className="text-xs text-gray-500 mt-1">Đánh giá</div>
+      <div className="flex flex-col items-center gap-3 h-full">
+        <div className="relative mb-2">
+          <img
+            src={resolveAvatar(member)}
+            alt={member.FullName || member.Nurse_Name || member.fullName}
+            className="w-24 h-24 rounded-full object-cover border-4 border-pink-200 group-hover:scale-105 transition"
+          />
+          {/* Badge Major ở góc phải */}
+          <span
+            className={`absolute top-0 right-0 translate-x-2 -translate-y-2 px-2 py-0.5 rounded-full text-xs font-semibold shadow-md
+              ${(member.Major || member.major)?.toLowerCase().includes("nurse")
+                ? "bg-blue-100 text-blue-700"
+                : "bg-pink-100 text-pink-700"
+              }`}
+          >
+            {(member.Major || member.major)?.toLowerCase() === "nurse"
+              ? "Chuyên viên chăm sóc"
+              : (member.Major || member.major)?.toLowerCase() === "specialist"
+                ? "Chuyên viên tư vấn"
+                : member.Major || member.major}
+          </span>
         </div>
-      )}
 
-      {/* Button */}
-      <button
-        onClick={() => onViewDetail(member)}
-        className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:from-pink-600 hover:to-purple-600 transition-all duration-200"
-      >
-        Xem chi tiết
-      </button>
+        <div className="text-center flex-1 flex flex-col items-center justify-start">
+          <h3 className="text-lg font-bold text-blue-700 mb-1">
+            {member.FullName || member.Nurse_Name || member.fullName}
+          </h3>
+
+          <div className="flex items-center gap-2 mb-2">
+            <span className="text-gray-600 text-sm">
+              {getZoneName(member.ZoneID || member.zoneID || member.Address || member.address)}
+            </span>
+          </div>
+
+          {hasRating(member.NursingID || member.nursingID) && (
+            <div className="text-center mb-4">
+              <div className="flex items-center justify-center gap-1 text-yellow-600 font-bold text-lg">
+                <FaStar className="text-yellow-500" />
+                <span>{getAverageRate(member.NursingID || member.nursingID)}/5</span>
+              </div>
+              <div className="text-xs text-gray-500 mt-1">Đánh giá</div>
+            </div>
+          )}
+        </div>
+
+        <div className="mt-3">
+          <button
+            onClick={() => onViewDetail(member)}
+            className="bg-gradient-to-r from-pink-500 to-purple-500 text-white px-4 py-2 rounded-lg text-sm font-semibold hover:from-pink-600 hover:to-purple-600 transition-all duration-200"
+          >
+            Xem chi tiết
+          </button>
+        </div>
+      </div>
     </motion.div>
   );
 
@@ -613,14 +631,9 @@ export default function TeamPage() {
               {/* Header: Avatar + Name */}
               <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-6">
                 <div className="flex items-center gap-4">
-                  <div className="relative">
+                    <div className="relative">
                     <img
-                      src={
-                        accountsMap[detailData.accountID || detailData.AccountID]?.avatarUrl ||
-                        detailData.avatar_url ||
-                        detailData.avatarUrl ||
-                        '/images/hero-bg.jpg'
-                      }
+                      src={resolveAvatar(detailData)}
                       alt={detailData.FullName || detailData.Nurse_Name || detailData.fullName}
                       className="w-24 h-24 md:w-28 md:h-28 rounded-full object-cover border-4 border-pink-200 shadow-xl"
                     />

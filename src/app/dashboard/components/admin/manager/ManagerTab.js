@@ -30,6 +30,9 @@ const MANAGER_STATUS = {
   REMOVE: 'remove',
 };
 
+// Default avatar for managers when no avatar URL is provided
+const DEFAULT_MANAGER_AVATAR = 'https://i.ibb.co/6JYchKy9/396c741c3d37ad0199ac220d16169e3e.jpg';
+
 const ManagerTab = () => {
   const [managers, setManagers] = useState([]);
   const [zones, setZones] = useState([]);
@@ -355,8 +358,14 @@ const ManagerTab = () => {
                   <tr key={manager.accountID || `manager-${index}`} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4">
                       <div className="flex items-center">
-                        <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold mr-3">
-                            {manager.fullName?.charAt(0) || 'M'}
+                        {/* Avatar image with fallback to default */}
+                        <div className="w-10 h-10 rounded-full overflow-hidden mr-3 flex items-center justify-center bg-gray-100">
+                          <img
+                            src={manager.avatarUrl || DEFAULT_MANAGER_AVATAR}
+                            alt={manager.fullName || 'Manager'}
+                            className="w-10 h-10 object-cover"
+                            onError={(e) => { e.target.onerror = null; e.target.src = DEFAULT_MANAGER_AVATAR; }}
+                          />
                         </div>
                         <div>
                           <div className="font-semibold text-gray-800">{manager.fullName}</div>

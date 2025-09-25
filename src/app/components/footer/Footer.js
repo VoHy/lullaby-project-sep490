@@ -39,7 +39,7 @@ export default function Footer() {
             </p>
             <div className="flex space-x-4 mt-2">
               <a
-                href="#"
+                href="https://www.facebook.com/profile.php?id=61573104385818"
                 aria-label="Facebook"
                 className="text-gray-800 hover:text-blue-600 transition-colors"
               >
@@ -53,7 +53,7 @@ export default function Footer() {
                 </svg>
               </a>
               <a
-                href="#"
+                href="https://www.linkedin.com/in/lullaby-heathcare-82b062387?fbclid=IwY2xjawNCRNxleHRuA2FlbQIxMQABHtZXOmcPnS_e5y9ie93ZRSzbf7EEhDq9JQtjuXZgYseBnyxIM-wO2sfI-Qxe_aem_KC5jEu3jEtBWIAazowr7RA"
                 aria-label="LinkedIn"
                 className="text-gray-800 hover:text-blue-600 transition-colors"
               >

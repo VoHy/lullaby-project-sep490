@@ -180,7 +180,7 @@ export const useDataManager = (user, router) => {
         });
         
         if (activeBookings.length > 0) {
-          throw new Error(`Không thể xóa người thân này vì hồ sơ đang có ${activeBookings.length} booking chưa hoàn thành. Vui lòng hoàn thành hoặc hủy các booking trước khi xóa.`);
+          throw new Error(`Không thể xóa người thân này vì hồ sơ đang có lịch hẹn chưa hoàn thành. Vui lòng hoàn thành hoặc hủy các lịch hẹn trước khi xóa.`);
         }
       }
     }

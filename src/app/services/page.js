@@ -441,7 +441,7 @@ export default function ServicesPage() {
         {/* Service Packages Section */}
         {filteredPackagesForBaby.length > 0 && (
           <ServiceSection
-            title="Gói cho bé"
+            title="Gói dịch vụ"
             services={filteredPackagesForBaby}
             type="package"
             selectedItems={selectedPackage ? [selectedPackage] : []}

@@ -7,6 +7,7 @@ import careProfileService from '@/services/api/careProfileService';
 import relativesService from '@/services/api/relativesService';
 import bookingService from '@/services/api/bookingService';
 import customizePackageService from '@/services/api/customizePackageService';
+import holidayService from '@/services/api/holidayService';
 // Bỏ các thao tác hậu xử lý customizeTask để đơn giản hóa theo schema API
 import {
   BookingHeader,
@@ -134,6 +135,8 @@ function BookingContent() {
   const [servicesLoading, setServicesLoading] = useState(true);
   const [careProfilesLoading, setCareProfilesLoading] = useState(true);
   const [relativesLoading, setRelativesLoading] = useState(true);
+  const [holidays, setHolidays] = useState([]);
+  const [holidaysLoading, setHolidaysLoading] = useState(true);
 
   // Error states
   const [error, setError] = useState("");
@@ -244,13 +247,28 @@ function BookingContent() {
         loadServices(),
         loadPackages(),
         loadCareProfiles(),
-        loadRelatives()
+        loadRelatives(),
+        loadHolidays()
       ]);
       setLoading(false);
     };
 
     loadAllData();
   }, []);
+
+  // Load holidays
+  const loadHolidays = async () => {
+    try {
+      setHolidaysLoading(true);
+      const data = await holidayService.getAllHolidays();
+      setHolidays(Array.isArray(data) ? data : []);
+    } catch (error) {
+      console.error('Error loading holidays:', error);
+      setHolidays([]);
+    } finally {
+      setHolidaysLoading(false);
+    }
+  };
 
   // Load service tasks for package
   useEffect(() => {
@@ -472,6 +490,42 @@ function BookingContent() {
     return selectedDate >= minTime;
   }, [datetime]);
 
+  // Find holiday matching the selected datetime (supports single-date and date ranges)
+  const selectedHoliday = useMemo(() => {
+    if (!datetime || holidays.length === 0) return null;
+
+    const toLocalDateKey = (d) => {
+      if (!(d instanceof Date)) d = new Date(d);
+      if (isNaN(d.getTime())) return null;
+      const y = d.getFullYear();
+      const m = String(d.getMonth() + 1).padStart(2, '0');
+      const day = String(d.getDate()).padStart(2, '0');
+      return `${y}-${m}-${day}`;
+    };
+
+    const selectedKey = toLocalDateKey(new Date(datetime));
+    if (!selectedKey) return null;
+
+    for (const h of holidays) {
+      const startRaw = h.startDate || h.StartDate || h.holidayStart || h.HolidayDate || h.date || h.Date || h.holiday_date || h.start_date;
+      const endRaw = h.endDate || h.EndDate || h.holidayEnd || h.end_date || h.endDate;
+
+      const sKey = startRaw ? toLocalDateKey(new Date(startRaw)) : null;
+      const eKey = endRaw ? toLocalDateKey(new Date(endRaw)) : null;
+
+      if (sKey && eKey) {
+        if (selectedKey >= sKey && selectedKey <= eKey) return h;
+      } else if (sKey) {
+        if (selectedKey === sKey) return h;
+      } else if (h.HolidayDate || h.holidayDate || h.holiday) {
+        const dKey = toLocalDateKey(new Date(h.HolidayDate || h.holidayDate || h.holiday));
+        if (dKey && selectedKey === dKey) return h;
+      }
+    }
+
+    return null;
+  }, [datetime, holidays]);
+
   // Payment handling
   const handlePayment = async () => {
     setError("");
@@ -534,6 +588,82 @@ function BookingContent() {
     if (!datetime || !isDatetimeValid) {
       setError("Vui lòng chọn ngày giờ hợp lệ (cách hiện tại ít nhất 2h phút)");
       return;
+    }
+
+    // Validate service total duration does not exceed working hours (08:00 - 20:00)
+    try {
+      const getDurationMinutes = (svc) => {
+        // Try common fields for duration; assume value is in minutes. Fallback to 60 minutes if unknown.
+        const raw = svc.duration ?? svc.Duration ?? svc.time ?? svc.Time ?? svc.durationMinutes ?? svc.duration_minute;
+        const n = Number(raw);
+        if (!raw || isNaN(n) || n <= 0) return 60;
+        return Math.round(n);
+      };
+
+      // If booking is a package (there may be a package header in displayServicesList or packageData),
+      // prefer using the package duration. Otherwise sum each service duration.
+      let totalMinutes = 0;
+
+      const packageItem = (Array.isArray(displayServicesList) ? displayServicesList : []).find(it => it && (it.isPackage === true || it.isPackage));
+      // If packageData exists (package booking), prefer its duration. Otherwise fallback to package item in display list.
+      if (packageData && (packageData.isPackage === true || packageData.isPackage)) {
+        const rawPkgDuration = packageData.duration ?? packageData.Duration ?? packageItem?.duration ?? packageItem?.Duration;
+        const pkgDur = Number(rawPkgDuration);
+        totalMinutes = !isNaN(pkgDur) && pkgDur > 0 ? Math.round(pkgDur) : 60;
+        const pkgQty = parseInt(packageData.quantity || packageItem?.quantity || 1, 10) || 1;
+        totalMinutes = totalMinutes * pkgQty;
+      } else if (packageItem) {
+        // Use package duration from item
+        const rawPkgDuration = packageItem.duration ?? packageItem.Duration ?? packageData?.duration ?? packageData?.Duration;
+        const pkgDur = Number(rawPkgDuration);
+        totalMinutes = !isNaN(pkgDur) && pkgDur > 0 ? Math.round(pkgDur) : 60;
+        const pkgQty = parseInt(packageItem.quantity || packageItem.Quantity || 1, 10) || 1;
+        totalMinutes = totalMinutes * pkgQty;
+      } else {
+        // For individual services: services with the same serviceID are done concurrently.
+        // Group services by a stable key (prefer numeric IDs), take the max duration per group,
+        // then sum those maxima to get the total booking duration.
+        const list = Array.isArray(displayServicesList) ? displayServicesList : [];
+        const groups = {};
+        list.forEach((s) => {
+          if (!s) return;
+          if (s.isPackage) return; // skip package markers
+
+          // determine a stable key for grouping
+          const rawKey = s.serviceID ?? s.serviceTypeID ?? s.child_ServiceID ?? s.childServiceID ?? s.ServiceID ?? s.ServiceTypeID;
+          const nameFallback = s.serviceName || s.ServiceName || s.name || s.Name || '';
+          const key = rawKey != null ? String(rawKey) : `name:${nameFallback}`;
+
+          const dur = getDurationMinutes(s);
+          if (!groups[key]) groups[key] = { maxDur: dur, items: 1 };
+          else groups[key].maxDur = Math.max(groups[key].maxDur, dur);
+        });
+
+        totalMinutes = Object.values(groups).reduce((sum, g) => sum + (g.maxDur || 0), 0);
+      }
+
+      const start = new Date(datetime);
+      const end = new Date(start.getTime() + totalMinutes * 60 * 1000);
+
+      // normalize local dates and times
+      const startDay = start.getFullYear() + '-' + String(start.getMonth()+1).padStart(2,'0') + '-' + String(start.getDate()).padStart(2,'0');
+      const endDay = end.getFullYear() + '-' + String(end.getMonth()+1).padStart(2,'0') + '-' + String(end.getDate()).padStart(2,'0');
+
+      const startHour = start.getHours();
+      const startMin = start.getMinutes();
+      const endHour = end.getHours();
+      const endMin = end.getMinutes();
+
+      // Start must be at or after 08:00, and end must be on same day and <= 20:00:00
+      const startsBeforeOpen = (startHour < 8);
+      const endsAfterClose = (endDay !== startDay) || (endHour > 20) || (endHour === 20 && endMin > 0);
+
+      if (startsBeforeOpen || endsAfterClose) {
+        setError('Tổng thời lượng dịch vụ và giờ đặt không hợp lệ. Vui lòng chọn thời gian bắt đầu từ 08:00 trở đi và đảm bảo kết thúc trước hoặc bằng 20:00 cùng ngày.');
+        return;
+      }
+    } catch (vErr) {
+      console.warn('Validation error computing total duration:', vErr);
     }
 
     // Xác định loại booking dựa trên URL parameters
@@ -726,6 +856,7 @@ function BookingContent() {
                 setSelectedCareProfile={setSelectedCareProfile}
                 careProfileError={careProfileError}
                 isProcessingPayment={isProcessingPayment}
+                selectedHoliday={selectedHoliday}
               />
             </div>
           </div>
