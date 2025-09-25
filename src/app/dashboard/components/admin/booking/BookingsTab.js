@@ -56,9 +56,9 @@ const BookingsTab = ({ bookings }) => {
 
   const nurseRoleLabels = {
     nurse: 'Chuyên viên chăm sóc',
-    specialist: 'Chuyên viên',
+    specialist: 'Chuyên viên tư vấn',
     Nurse: 'Chuyên viên chăm sóc',
-    Specialist: 'Chuyên viên'
+    Specialist: 'Chuyên viên tư vấn'
   };
   // Load data từ API
   useEffect(() => {
@@ -791,11 +791,17 @@ const BookingsTab = ({ bookings }) => {
                                             const pool = localNursesByTaskId[taskId] || [];
                                             // Lọc theo zone nếu có
                                             const filtered = Array.isArray(pool) ? pool.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
-                                            return filtered.map((n) => (
-                                              <option key={n.nursingID ?? n.NursingID} value={n.nursingID ?? n.NursingID}>
-                                                {(n.nursingFullName ?? n.fullName ?? n.FullName) + (n.major ? ` — ${n.major}` : '')}
-                                              </option>
-                                            ));
+                                            return filtered.map((n) => {
+                                              const name = (n.nursingFullName ?? n.fullName ?? n.FullName) || '';
+                                              const majorRaw = (n.major ?? n.Major ?? '') + '';
+                                              const majorKey = majorRaw.trim().toLowerCase();
+                                              const majorLabel = nurseRoleLabels[majorKey] ?? majorRaw.trim();
+                                              return (
+                                                <option key={n.nursingID ?? n.NursingID} value={n.nursingID ?? n.NursingID}>
+                                                  {name}{majorLabel ? ` — ${majorLabel}` : ''}
+                                                </option>
+                                              );
+                                            });
                                           })()}
                                         </select>
                                       </div>
