@@ -51,24 +51,21 @@ const clearDashboardCache = () => {
 };
 
 export default function DashboardClient() {
-  const { user } = useContext(AuthContext);
+  const { user, isLoading: authLoading } = useContext(AuthContext);
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
-    const checkAuth = () => {
-      if (!user) {
-        router.push('/auth/login');
-        return;
-      }
-      setLoading(false);
-    };
+    // Wait until AuthContext finishes initializing from localStorage
+    if (authLoading) return;
 
-    // Delay để đảm bảo AuthContext đã load
-    const timer = setTimeout(checkAuth, 100);
-    return () => clearTimeout(timer);
-  }, [user, router]);
+    if (!user) {
+      router.push('/auth/login');
+      return;
+    }
+    setLoading(false);
+  }, [user, authLoading, router]);
 
   if (loading) {
     return <DashboardSkeleton />;
