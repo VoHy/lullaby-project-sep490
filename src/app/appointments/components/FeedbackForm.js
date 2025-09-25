@@ -10,7 +10,15 @@ import feedbackService from '@/services/api/feedbackService';
  * - Cho phép tạo mới hoặc cập nhật feedback (POST/PUT)
  * - Disable feedback khi booking đã bị hủy
  */
-const FeedbackForm = ({ customizeTaskId, isBookingCancelled = false, bookingStatus }) => {
+const FeedbackForm = ({
+  customizeTaskId,
+  isBookingCancelled = false,
+  bookingStatus,
+  canCreateFeedback = true,
+  canUpdateFeedback = true,
+  createFeedbackBlockedMessage = null,
+  updateFeedbackBlockedMessage = null
+}) => {
   const [rate, setRate] = useState(0);
   const [content, setContent] = useState('');
   const [loading, setLoading] = useState(false);
@@ -45,6 +53,19 @@ const FeedbackForm = ({ customizeTaskId, isBookingCancelled = false, bookingStat
       alert('Không thể đánh giá dịch vụ khi booking đã bị hủy.');
       return;
     }
+    // Enforce create/update policy
+    if (existing) {
+      if (!canUpdateFeedback) {
+        alert(updateFeedbackBlockedMessage || 'Không thể cập nhật đánh giá: thời hạn cập nhật đã hết.');
+        return;
+      }
+    } else {
+      if (!canCreateFeedback) {
+        alert(createFeedbackBlockedMessage || 'Không thể tạo đánh giá: thời hạn tạo đánh giá đã hết.');
+        return;
+      }
+    }
+
     if (!rate && !content) {
       alert('Vui lòng chọn sao hoặc nhập nội dung đánh giá.');
       return;
@@ -71,12 +92,20 @@ const FeedbackForm = ({ customizeTaskId, isBookingCancelled = false, bookingStat
 
   if (!customizeTaskId) return null;
 
+  const isBlockedDueToPolicy = (!existing && !canCreateFeedback) || (existing && !canUpdateFeedback);
+
   return (
     <div className={`mt-2 p-3 rounded border ${isBookingCancelled ? 'bg-red-50 border-red-200' : 'bg-gray-50 border-gray-200'}`}>
       <div className={`text-xs font-semibold mb-2 ${isBookingCancelled ? 'text-red-700' : 'text-gray-700'}`}>
         Đánh giá dịch vụ
         {isBookingCancelled && (
           <span className="ml-2 text-red-600 font-normal">(Không khả dụng - lịch hẹn đã hủy)</span>
+        )}
+        {isBlockedDueToPolicy && (
+          <div className="mt-1 text-xs text-yellow-700 font-normal">
+            {(!existing && createFeedbackBlockedMessage) ? createFeedbackBlockedMessage : null}
+            {(existing && updateFeedbackBlockedMessage) ? updateFeedbackBlockedMessage : null}
+          </div>
         )}
       </div>
       
@@ -85,9 +114,9 @@ const FeedbackForm = ({ customizeTaskId, isBookingCancelled = false, bookingStat
           <button
             key={s}
             type="button"
-            onClick={() => !isBookingCancelled && setRate(s)}
+            onClick={() => !isBookingCancelled && !isBlockedDueToPolicy && setRate(s)}
             className="focus:outline-none"
-            disabled={loading || saving || isBookingCancelled}
+            disabled={loading || saving || isBookingCancelled || isBlockedDueToPolicy}
           >
             <FaStar className={`${
               (rate || 0) >= s 
@@ -102,21 +131,21 @@ const FeedbackForm = ({ customizeTaskId, isBookingCancelled = false, bookingStat
         rows={2}
         placeholder={isBookingCancelled ? "Không thể đánh giá - Booking đã hủy" : "Nội dung (không bắt buộc)"}
         value={content}
-        onChange={(e) => !isBookingCancelled && setContent(e.target.value)}
+        onChange={(e) => !isBookingCancelled && !isBlockedDueToPolicy && setContent(e.target.value)}
         className={`w-full text-sm p-2 border rounded mb-2 focus:outline-none focus:ring-1 ${
           isBookingCancelled 
             ? 'bg-gray-100 border-gray-300 text-gray-500 cursor-not-allowed' 
             : 'border-gray-300 focus:ring-gray-300'
         }`}
-        disabled={loading || saving || isBookingCancelled}
+        disabled={loading || saving || isBookingCancelled || isBlockedDueToPolicy}
       />
       
       <div className="flex items-center gap-3">
         <button
           onClick={handleSave}
-          disabled={saving || loading || isBookingCancelled}
+          disabled={saving || loading || isBookingCancelled || isBlockedDueToPolicy}
           className={`px-3 py-1.5 text-sm rounded ${
-            isBookingCancelled
+            (isBookingCancelled || isBlockedDueToPolicy)
               ? 'bg-gray-400 text-gray-600 cursor-not-allowed'
               : 'bg-blue-600 text-white hover:bg-blue-700'
           } disabled:opacity-60`}

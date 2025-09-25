@@ -486,6 +486,44 @@ const AppointmentDetailModal = ({
     service?.customizeTaskId || service?.customizeTaskID || service?.customize_TaskID
   );
 
+  // Feedback time-window rules
+  // - Cannot create feedback after 30 days from the service/work date
+  // - Cannot update feedback after 48 hours from feedback creation
+  const _parseDateSafe = (v) => {
+    if (!v) return null;
+    const d = v instanceof Date ? v : new Date(v);
+    return isNaN(d.getTime()) ? null : d;
+  };
+
+  const canCreateFeedbackForTask = (taskId) => {
+    // If there's already feedback, creation isn't applicable
+    if (feedbackByTask && feedbackByTask[taskId]) return false;
+    const workdateRaw = appointment?.workdate || appointment?.Workdate || appointment?.workDate || appointment?.WorkDate;
+    const workdate = _parseDateSafe(workdateRaw);
+    if (!workdate) return true; // if unknown, allow creating
+    const now = new Date();
+    const msSince = now.getTime() - workdate.getTime();
+    const daysSince = msSince / (1000 * 60 * 60 * 24);
+    return daysSince <= 30; // allow within 30 days
+  };
+
+  const _getFeedbackCreatedAt = (fb) => {
+    if (!fb) return null;
+    const cand = fb.createdAt || fb.createdAtTime || fb.createdDate || fb.created_on || fb.created || fb.dateCreated || fb.DateCreated || fb.CreatedAt || fb.CreatedDate || fb.createdAtUTC || fb.createdUTC || fb.createdAtTime;
+    return _parseDateSafe(cand) || _parseDateSafe(fb.updatedAt) || _parseDateSafe(fb.updated) || null;
+  };
+
+  const canUpdateFeedbackForTask = (taskId) => {
+    const fb = feedbackByTask && feedbackByTask[taskId];
+    if (!fb) return true; // nothing to update
+    const created = _getFeedbackCreatedAt(fb);
+    if (!created) return true; // if we don't have a timestamp, be permissive
+    const now = new Date();
+    const msSince = now.getTime() - created.getTime();
+    const hoursSince = msSince / (1000 * 60 * 60);
+    return hoursSince <= 48; // allow updates within 48 hours of creation
+  };
+
   // Load existing feedbacks per task when services are ready
   useEffect(() => {
     const services = Array.isArray(serviceDetails?.services) ? serviceDetails.services : [];
@@ -551,6 +589,17 @@ const AppointmentDetailModal = ({
   const submitFeedback = async (taskId) => {
     try {
       if (!taskId) return;
+      // Enforce creation/update time-window rules
+      const existingFb = feedbackByTask?.[taskId];
+      const isCreating = !existingFb;
+      if (isCreating && !canCreateFeedbackForTask(taskId)) {
+        alert('Không thể tạo đánh giá: đã vượt quá 30 ngày kể từ ngày thực hiện.');
+        return;
+      }
+      if (!isCreating && !canUpdateFeedbackForTask(taskId)) {
+        alert('Không thể cập nhật đánh giá: đã vượt quá 48 giờ kể từ khi tạo đánh giá.');
+        return;
+      }
       const payload = {
         customizeTaskID: taskId,
         rate: Number(feedbackInputs?.[taskId]?.rate || 0),
@@ -596,11 +645,23 @@ const AppointmentDetailModal = ({
     const isBookingCancelled = String(bookingStatus).toLowerCase() === 'cancelled' || 
                               String(bookingStatus).toLowerCase() === 'canceled';
     
-    return <FeedbackForm 
-      customizeTaskId={taskId} 
-      isBookingCancelled={isBookingCancelled}
-      bookingStatus={bookingStatus}
-    />;
+    // Determine allowed actions and messages
+    const canCreate = canCreateFeedbackForTask(taskId);
+    const canUpdate = canUpdateFeedbackForTask(taskId);
+    const createBlockedMessage = canCreate ? null : 'Không thể tạo đánh giá: đã vượt quá 30 ngày kể từ ngày thực hiện.';
+    const updateBlockedMessage = canUpdate ? null : 'Không thể cập nhật đánh giá: đã vượt quá 48 giờ kể từ khi tạo đánh giá.';
+
+    return (
+      <FeedbackForm 
+        customizeTaskId={taskId} 
+        isBookingCancelled={isBookingCancelled}
+        bookingStatus={bookingStatus}
+        canCreateFeedback={canCreate}
+        canUpdateFeedback={canUpdate}
+        createFeedbackBlockedMessage={createBlockedMessage}
+        updateFeedbackBlockedMessage={updateBlockedMessage}
+      />
+    );
   };
 
   const renderServiceItem = (service, index, isDone, hasNurse, nurseInfo) => (

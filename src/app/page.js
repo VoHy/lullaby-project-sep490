@@ -33,7 +33,7 @@ function HomeContent() {
       {/* Welcome Notification */}
       {showWelcome && (
         <SuccessNotification 
-          message="Chào mừng bạn đến với Lullaby! 🎉"
+          message="Chào mừng bạn đến với Lullaby!"
           onClose={() => setShowWelcome(false)}
         />
       )}
