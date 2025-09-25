@@ -84,10 +84,28 @@ export default function TeamPage() {
           setZones(parsedData.zones);
           setFeedbacks(parsedData.feedbacks);
           setAccountsMap(parsedData.accountsMap);
-          
-          // Use cached ratings if available and fresh
+
+          // Use cached ratings if available and fresh. If ratings were cached without counts
+          // (API previously returned only average), derive counts from cached feedbacks when possible.
           if (cachedRatingsData && ratingsCacheTime && (now - parseInt(ratingsCacheTime)) < CACHE_DURATION) {
-            setRatingsMap(JSON.parse(cachedRatingsData));
+            try {
+              const parsedRatings = JSON.parse(cachedRatingsData) || {};
+              const feedbacksCached = Array.isArray(parsedData.feedbacks) ? parsedData.feedbacks : [];
+              // For each rating entry, if count is missing or 0, try to derive from cached feedbacks
+              Object.keys(parsedRatings).forEach(nId => {
+                const rd = parsedRatings[nId];
+                if (!rd) return;
+                // if count absent or zero, compute from feedbacksCached
+                if (!rd.count || rd.count === 0) {
+                  const nCount = feedbacksCached.filter(fb => (fb.nursingID || fb.NursingID) === (Number(nId) || nId)).length;
+                  parsedRatings[nId].count = nCount;
+                }
+              });
+              setRatingsMap(parsedRatings);
+            } catch (err) {
+              // fallback to raw cached ratings
+              setRatingsMap(JSON.parse(cachedRatingsData));
+            }
             setLoading(false);
             return;
           }
@@ -132,13 +150,23 @@ export default function TeamPage() {
               try {
                 // Sử dụng API mới để lấy rating trung bình trực tiếp
                 const ratingResult = await feedbackService.getAverageRatingByNursing(nursingId);
-                
-                // API trả về số trực tiếp (ví dụ: 4.8)
-                const rating = typeof ratingResult === 'number' ? ratingResult : 0;
-                
+
+                // API có thể trả về số (ví dụ: 4.8) hoặc object { rating, count }
+                let ratingVal = 0;
+                let countVal = 0;
+                if (typeof ratingResult === 'number') {
+                  ratingVal = ratingResult;
+                  // Derive count from local feedbacksData if available
+                  const nursingFeedbacks = Array.isArray(feedbacksData) ? feedbacksData.filter(fb => (fb.nursingID || fb.NursingID) === nursingId) : [];
+                  countVal = nursingFeedbacks.length;
+                } else if (ratingResult && typeof ratingResult === 'object') {
+                  ratingVal = typeof ratingResult.rating === 'number' ? ratingResult.rating : parseFloat((ratingResult.rating || 0));
+                  countVal = Number(ratingResult.count) || 0;
+                }
+
                 return [nursingId, { 
-                  rating: parseFloat(rating.toFixed(1)), 
-                  count: 0 // API chỉ trả rating, không có count
+                  rating: parseFloat((ratingVal || 0).toFixed(1)), 
+                  count: countVal
                 }];
               } catch (error) {
                 // Fallback về cách cũ nếu API mới không hoạt động
@@ -313,6 +341,13 @@ export default function TeamPage() {
     return typeof ratingData.rating === 'number' ? ratingData.rating.toFixed(1) : String(ratingData.rating);
   };
 
+  // Kiểm tra member có đánh giá hay không (count > 0)
+  const hasRating = (nursingID) => {
+    if (!nursingID) return false;
+    const ratingData = ratingsMap[nursingID];
+    return !!(ratingData && (ratingData.count || ratingData.count === 0) && ratingData.count > 0);
+  };
+
   // Lấy danh sách feedback content cho member
   const getFeedbackContents = (nursingID) => {
     if (!nursingID || !feedbacks.length) return [];
@@ -436,14 +471,16 @@ export default function TeamPage() {
         </span>
       </div>
 
-      {/* Rating */}
-      <div className="text-center mb-4">
-        <div className="flex items-center justify-center gap-1 text-yellow-600 font-bold text-lg">
-          <FaStar className="text-yellow-500" />
-          <span>{getAverageRate(member.NursingID || member.nursingID)}/5</span>
+      {/* Rating (hidden if no feedback) */}
+      {hasRating(member.NursingID || member.nursingID) && (
+        <div className="text-center mb-4">
+          <div className="flex items-center justify-center gap-1 text-yellow-600 font-bold text-lg">
+            <FaStar className="text-yellow-500" />
+            <span>{getAverageRate(member.NursingID || member.nursingID)}/5</span>
+          </div>
+          <div className="text-xs text-gray-500 mt-1">Đánh giá</div>
         </div>
-        <div className="text-xs text-gray-500 mt-1">Đánh giá</div>
-      </div>
+      )}
 
       {/* Button */}
       <button
@@ -676,10 +713,12 @@ export default function TeamPage() {
                     Thống kê & Đánh giá
                   </h4>
                   <div className="space-y-3">
-                    <div className="flex justify-between items-center py-2 border-b border-yellow-200/70">
-                      <span className="text-gray-600">Đánh giá trung bình:</span>
-                      <span className="font-bold text-yellow-600 text-xl">{getAverageRate(detailData.NursingID || detailData.nursingID)}/5</span>
-                    </div>
+                    {hasRating(detailData.NursingID || detailData.nursingID) && (
+                      <div className="flex justify-between items-center py-2 border-b border-yellow-200/70">
+                        <span className="text-gray-600">Đánh giá trung bình:</span>
+                        <span className="font-bold text-yellow-600 text-xl">{getAverageRate(detailData.NursingID || detailData.nursingID)}/5</span>
+                      </div>
+                    )}
                     <div className="flex justify-between items-center py-2">
                       <span className="text-gray-600">Trạng thái:</span>
                       <span

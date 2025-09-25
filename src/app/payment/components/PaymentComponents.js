@@ -78,7 +78,7 @@ export function AppointmentInfo({
 
       {/* Thông tin người được chăm sóc */}
       {selectedCareProfile && (
-        <div className="bg-blue-50 rounded-xl p-4 space-y-4">
+        <div className="bg-blue-50 rounded-xl p-2 space-y-1">
           <div className="flex items-center gap-2">
             <FaUser className="text-blue-600" />
             <h5 className="font-semibold text-gray-800">
@@ -338,19 +338,6 @@ export function PaymentInfo({
 
       {/* Error Display */}
       <ErrorDisplay error={error} />
-
-      {/* Process Information */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-        <div className="text-blue-800 text-sm">
-          <div className="font-semibold mb-2">Quy trình thanh toán:</div>
-          <div className="space-y-1 text-xs">
-            <div>1. Tạo hóa đơn (luôn luôn)</div>
-            <div>2. Kiểm tra số dư ví</div>
-            <div>3. Nếu đủ tiền: Thanh toán ngay</div>
-            <div>4. Nếu thiếu tiền: Chờ thanh toán sau</div>
-          </div>
-        </div>
-      </div>
 
       {/* Payment Button */}
       <PaymentButton

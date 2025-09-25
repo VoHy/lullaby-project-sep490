@@ -317,8 +317,10 @@ function PaymentContent() {
               setSelectedRelativeByTask={setSelectedRelativeByTask}
               favoriteMap={favoriteMap}
             />
+          </div>
 
-            {/* Cancel Booking Section */}
+          {/* Right Column */}
+          <div className="space-y-6">
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
               <div className="text-sm font-semibold text-purple-800 mb-2">Chọn cách phân công điều dưỡng</div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -349,12 +351,6 @@ function PaymentContent() {
                 </div>
               )}
             </div>
-
-          </div>
-
-
-          {/* Right Column */}
-          <div>
             <PaymentInfo
               total={bookingData?.total || 0}
               myWallet={contextWallet}
@@ -674,7 +670,7 @@ const ServiceInfoCard = ({
                             className="bg-purple-600 text-white border-purple-600 border text-white px-4 py-2 rounded transition-colors hover:bg-purple-700"
                             onClick={() => setRelativeModalTaskId(customizeTaskId)}
                           >
-                            {selectedRelative ? 'Đổi con' : 'Chọn con'}
+                            {selectedRelative ? 'Đổi' : 'Chọn'}
                           </button>
                         )}
                       </div>

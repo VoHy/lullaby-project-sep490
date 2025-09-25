@@ -311,8 +311,8 @@ export const useStaffSelection = (booking, bookingData, customizeTasks = []) => 
             const conflictBookingId = conflictingSchedule.bookingID || conflictingSchedule.booking_ID || conflictingSchedule.BookingID;
             
             const alertMessage = `Không thể chọn ${nurseName} cho dịch vụ "${serviceName}":\n\n` +
-              `Nhân sự này đã có lịch trùng với booking khác:\n` +
-              `• Booking #${conflictBookingId}\n` +
+              `Nhân sự này đã có lịch trùng với lịch hẹn khác:\n` +
+              `• lịch hẹn #${conflictBookingId}\n` +
               `• Thời gian: ${timeInfo}\n` +
               `• Ngày: ${new Date(bookingData?.datetime).toLocaleDateString('vi-VN')}\n\n` +
               `Vui lòng chọn nhân sự khác!`;
