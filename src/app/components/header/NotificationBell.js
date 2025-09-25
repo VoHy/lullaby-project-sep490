@@ -31,15 +31,14 @@ export default function NotificationBell() {
           const count = await notificationService.getUnreadCountByAccount(accountId);
           if (typeof count === 'number') {
             setUnreadCount(count);
-            return;
+            // continue to fetch recent notifications
           }
         } catch (_) {
           // ignore and try fetch unread list
+          const unread = await notificationService.getUnreadByAccount(accountId);
+          const unreadArray = Array.isArray(unread) ? unread : [];
+          setUnreadCount(unreadArray.length);
         }
-
-        const unread = await notificationService.getUnreadByAccount(accountId);
-        const unreadArray = Array.isArray(unread) ? unread : [];
-        setUnreadCount(unreadArray.length);
 
         // Get recent notifications for dropdown
         const allNotifications = await notificationService.getAllByAccount(accountId);
@@ -105,6 +104,55 @@ export default function NotificationBell() {
     }
   };
 
+  // Mark all unread notifications as read (user-provided implementation)
+  const [markingAll, setMarkingAll] = useState(false);
+  const [markAllMessage, setMarkAllMessage] = useState('');
+
+  const markAllAsRead = async (e) => {
+    // prevent dropdown close when clicking this button
+    if (e && e.stopPropagation) e.stopPropagation();
+
+    try {
+      if (!user) return;
+      const accountId = user.accountID || user.AccountID;
+      if (!accountId) return;
+
+      setMarkingAll(true);
+      setMarkAllMessage('Đang đánh dấu...');
+
+      // Prefer bulk API if available
+      if (typeof notificationService.markAllAsReadByAccount === 'function') {
+        await notificationService.markAllAsReadByAccount(accountId);
+      } else {
+        // Fallback: fetch unread list from server and mark individually
+        const unread = await notificationService.getUnreadByAccount(accountId);
+        const unreadArray = Array.isArray(unread) ? unread : [];
+        const ids = unreadArray
+          .map(n => n.notificationID || n.id || n.NotificationID)
+          .filter(Boolean);
+        await Promise.all(ids.map(id => notificationService.markAsRead(id)));
+      }
+
+      // Optimistically update local notifications and count
+      setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
+      setMarkAllMessage('Đã đánh dấu tất cả là đã đọc');
+      // Close dropdown after marking all
+      setShowDropdown(false);
+      setTimeout(() => {
+        setMarkAllMessage('');
+      }, 2000);
+
+      // Refresh to sync with backend
+      await refreshNotifications();
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+      setMarkAllMessage('Không thể đánh dấu tất cả');
+      setTimeout(() => setMarkAllMessage(''), 3000);
+    } finally {
+      setMarkingAll(false);
+    }
+  };
+
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -166,19 +214,31 @@ export default function NotificationBell() {
 
       {/* Dropdown */}
       {showDropdown && (
-        <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-purple-100 z-50 animate-pop-in">
+  <div className="absolute right-0 mt-2 w-96 bg-white rounded-2xl shadow-2xl border border-purple-100 z-50 animate-pop-in">
           <div className="p-4 border-b border-gray-100">
             <div className="flex items-center justify-between">
               <h3 className="text-lg font-semibold text-gray-900">Thông báo gần đây</h3>
-              <div className="flex gap-2">
+              <div className="flex gap-4">
                 <button
-                  onClick={() => router.push('/notifications')}
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); router.push('/notifications'); }}
                   className="text-sm text-purple-600 hover:text-purple-700 font-medium transition-colors duration-200"
                 >
                   Xem tất cả
                 </button>
+                <button
+                  type="button"
+                  onClick={markAllAsRead}
+                  disabled={markingAll}
+                  className={`text-sm ${markingAll ? 'text-gray-400' : 'text-purple-600 hover:text-purple-700'} font-medium transition-colors duration-200`}
+                >
+                  {markingAll ? 'Đang xử lý...' : 'Đọc tất cả'}
+                </button>
               </div>
             </div>
+            {markAllMessage && (
+              <div className="mt-2 text-sm text-gray-600">{markAllMessage}</div>
+            )}
             <p className="text-sm text-gray-500 mt-1">
               {unreadCount} thông báo chưa đọc
             </p>

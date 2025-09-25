@@ -1,6 +1,6 @@
 import React from 'react';
 import BaseModal from './shared/BaseModal';
-import { FormField, AvatarUpload, FormActions } from './shared/FormComponents';
+import { FormField, AvatarUpload, FormActions, RELATIVE_DEFAULT_AVATAR } from './shared/FormComponents';
 import ErrorDisplay from './shared/ErrorDisplay';
 import { validateRelative, validateRelativeFields, prepareRelativeData, normalizeFieldNames } from '../utils/formUtils';
 
@@ -79,6 +79,7 @@ export default function RelativeFormModal({
           <div className="col-span-1 flex flex-col gap-4 justify-between">
             <AvatarUpload
               currentImage={formData.image}
+              defaultImage={RELATIVE_DEFAULT_AVATAR}
               onImageChange={onChange}
               size="w-24 h-24"
               name="image"

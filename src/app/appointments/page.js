@@ -45,19 +45,28 @@ export default function AppointmentsPage() {
   // Helpers
   const formatDate = (dateStr) => new Date(dateStr).toLocaleDateString('vi-VN');
   const getStatusColor = (status) => {
+    // support calling with (status, isSchedule)
+    const isSchedule = arguments.length > 1 ? arguments[1] : undefined;
+    if ((status === 'paid' || status === 'paid') && isSchedule === false) return 'yellow';
+    if ((status === 'paid' || status === 'paid') && isSchedule === true) return 'blue';
     switch (status) {
       case 'pending': return 'yellow';
       case 'completed': return 'green';
       case 'cancelled': return 'red';
+      case 'isScheduled': return 'blue';
       default: return 'gray';
     }
   };
   const getStatusText = (status) => {
+    // support calling with (status, isSchedule)
+    const isSchedule = arguments.length > 1 ? arguments[1] : undefined;
+    if (isSchedule === false && status === 'paid') return 'Chưa lên lịch';
     switch (status) {
       case 'pending': return 'Chưa thanh toán';
       case 'completed': return 'Hoàn thành';
       case 'cancelled': return 'Đã hủy';
       case 'isScheduled': return 'Đã lên lịch';
+      case 'paid': return isSchedule ? 'Đã lên lịch' : 'Chưa lên lịch';
       default: return 'Không xác định';
     }
   };
@@ -72,9 +81,13 @@ export default function AppointmentsPage() {
     let filtered = userAppointments;
     if (statusFilter !== 'all') {
       if (statusFilter === 'isScheduled') {
-        filtered = filtered.filter(a => a.isSchedule === true);
+        // Only show bookings that are paid and have been scheduled
+        filtered = filtered.filter(a => (a.status === 'paid' || a.Status === 'paid') && a.isSchedule === true);
+      } else if (statusFilter === 'paid') {
+        // 'Chưa lên lịch' filter: paid but not scheduled
+        filtered = filtered.filter(a => (a.status === 'paid' || a.Status === 'paid') && a.isSchedule === false);
       } else {
-        filtered = filtered.filter(a => a.status === statusFilter);
+        filtered = filtered.filter(a => (a.status || a.Status) === statusFilter);
       }
     }
     if (searchText) {
@@ -96,7 +109,34 @@ export default function AppointmentsPage() {
       const diffMs = work.getTime() - now.getTime();
       return diffMs > twoHoursMs;
     });
-    return filtered;
+
+    // Sorting: priority then by workdate ascending
+    const getPriority = (b) => {
+      const status = String(b.status || b.Status || '').toLowerCase();
+      const isSchedule = !!b.isSchedule;
+
+      if (status === 'pending' || status === 'unpaid') return 0; // needs payment
+      if (status === 'paid' && isSchedule === false) return 1; // paid but not scheduled
+      if (isSchedule === true && (status === 'paid' || status === 'isscheduled')) return 2; // scheduled
+      if (status === 'completed') return 3;
+      if (status === 'cancelled') return 4;
+      return 5;
+    };
+
+    const toTime = (b) => {
+      const raw = b.workdate || b.Workdate || b.BookingDate;
+      const t = raw ? new Date(raw).getTime() : NaN;
+      return isNaN(t) ? Number.POSITIVE_INFINITY : t;
+    };
+
+    const sorted = filtered.slice().sort((a, b) => {
+      const pa = getPriority(a);
+      const pb = getPriority(b);
+      if (pa !== pb) return pa - pb;
+      return toTime(a) - toTime(b);
+    });
+
+    return sorted;
   }, [userAppointments, statusFilter, searchText]);
 
   const totalPages = Math.ceil(filteredAppointments.length / pageSize);
@@ -245,7 +285,7 @@ export default function AppointmentsPage() {
             <input
               type="text"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-400 pr-10"
-              placeholder="Tìm kiếm theo dịch vụ hoặc mã đặt lịch..."
+              placeholder="Tìm kiếm theo mã đặt lịch hoặc tên người thân..."
               value={searchText}
               onChange={e => setSearchText(e.target.value)}
             />
@@ -265,6 +305,7 @@ export default function AppointmentsPage() {
             <option value="completed">Hoàn thành</option>
             <option value="cancelled">Đã hủy</option>
             <option value="isScheduled">Đã lên lịch</option>
+            <option value="paid">Chưa lên lịch</option>
           </select>
         </div>
 

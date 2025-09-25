@@ -13,7 +13,7 @@ const HeroSection = () => {
   const slides = [
     {
       id: 1,
-      image: "/images/hero-bg.jpg",
+      image: "/images/caremom.png",
       alt: "Chăm sóc mẹ sau sinh",
       icon: <FaHeart className="text-pink-400 text-lg" />,
       badge: "Dịch vụ tận tâm tại nhà",
@@ -27,7 +27,7 @@ const HeroSection = () => {
     },
     {
       id: 2,
-      image: "/images/hero-bg.jpg",
+      image: "/images/carechild.jpg",
       alt: "Chăm sóc bé sơ sinh",
       icon: <FaUserMd className="text-blue-400 text-lg" />,
       badge: "Chuyên viên nuôi dưỡng",
@@ -41,7 +41,7 @@ const HeroSection = () => {
     },
     {
       id: 3,
-      image: "/images/hero-bg.jpg",
+      image: "/images/images-5.jpg",
       alt: "Chuyên viên tư vấn dinh dưỡng mẹ và bé",
       icon: <FaPhone className="text-green-400 text-lg" />,
       badge: "Hỗ trợ 24/7",

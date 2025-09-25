@@ -90,19 +90,37 @@ const NurseProfileTab = ({ nurseAccount }) => {
       setLoading(true);
       setError('');
       setSuccess('');
-
       if (nurseProfile?.nursingID) {
+        // Build payload exactly as API expects
         const payload = {
           zoneID: Number(profileFormData.zoneID) || nurseProfile.zoneID || 0,
           gender: profileFormData.gender || nurseProfile.gender || 'Nam',
           dateOfBirth: profileFormData.dateOfBirth ? new Date(profileFormData.dateOfBirth).toISOString() : (nurseProfile.dateOfBirth || new Date().toISOString()),
-          fullName: profileFormData.fullName || nurseProfile.fullName || '',
+          // prefer the account-level fullName (header input) if the user edited it
+          fullName: accountFormData.fullName || profileFormData.fullName || nurseProfile.fullName || '',
           address: profileFormData.address || nurseProfile.address || '',
           experience: profileFormData.experience || nurseProfile.experience || '',
           slogan: profileFormData.slogan || nurseProfile.slogan || '',
-          major: profileFormData.major || nurseProfile.major || 'Nurse'
+          major: nurseProfile?.major || profileFormData.major || 'Nurse'
         };
+
+        // Only call the nursing specialist update endpoint
         await nursingSpecialistService.updateNursingSpecialist(nurseProfile.nursingID, payload);
+
+        // Update local profileFormData with the saved payload (keep zoneID hidden in UI)
+        setProfileFormData(prev => ({ ...prev, ...{
+          zoneID: payload.zoneID,
+          gender: payload.gender,
+          dateOfBirth: payload.dateOfBirth ? payload.dateOfBirth.split('T')[0] : prev.dateOfBirth,
+          fullName: payload.fullName,
+          address: payload.address,
+          experience: payload.experience,
+          slogan: payload.slogan,
+          major: payload.major
+        }}));
+
+        // Keep the account header in sync so the displayed fullName updates immediately
+        setAccountFormData(prev => ({ ...prev, fullName: payload.fullName }));
       }
 
       setSuccess('Cập nhật thông tin thành công!');
@@ -191,7 +209,6 @@ const NurseProfileTab = ({ nurseAccount }) => {
           <div className="flex flex-col items-center gap-4 p-4 bg-gradient-to-br from-purple-50 to-pink-50 rounded-2xl shadow-inner">
             <div className="relative">
               <img src={accountFormData.avatarUrl !== 'string' ? accountFormData.avatarUrl : '/images/logo-eldora.png'} alt="avatar" className="w-32 h-32 rounded-full border-4 border-white shadow-md" />
-              {isEditing && <button className="absolute bottom-0 right-0 p-2 bg-blue-500 rounded-full text-white hover:bg-blue-600"><FaEdit /></button>}
             </div>
             {isEditing ? (
               <input type="text" name="fullName" value={accountFormData.fullName} onChange={handleAccountInputChange} className="text-center border-b-2 border-blue-300 focus:border-blue-500 outline-none text-lg font-semibold" />
@@ -208,9 +225,7 @@ const NurseProfileTab = ({ nurseAccount }) => {
               <InfoRow label="Email" value={accountFormData.email} icon={<FaEnvelope />} />
               <InfoRow label="Số điện thoại" value={accountFormData.phoneNumber} icon={<FaPhone />} />
               <InfoRow label="Ngày tạo" value={accountInfo?.createAt ? new Date(accountInfo.createAt).toLocaleDateString('vi-VN') : '-'} icon={<FaCalendar />} />
-              <InfoRow label="Trạng thái" value={isEditing ? (
-                <select name="status" value={accountFormData.status} onChange={handleAccountInputChange} className="w-full border px-2 py-1 rounded-lg">{['active', 'inactive'].map(s => <option key={s} value={s}>{s === 'active' ? 'Hoạt động' : 'Tạm khóa'}</option>)}</select>
-              ) : (
+              <InfoRow label="Trạng thái" value={(
                 <span className={`px-3 py-1 rounded-full text-xs font-semibold ${accountFormData.status?.toLowerCase() === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}`}>
                   {accountFormData.status?.toLowerCase() === 'active' ? 'Hoạt động' : 'Tạm khóa'}
                 </span>
@@ -238,20 +253,8 @@ const NurseProfileTab = ({ nurseAccount }) => {
               <InfoRow label="Kinh nghiệm" value={isEditing ? <input type="text" name="experience" value={profileFormData.experience} onChange={handleProfileInputChange} className="w-full border px-2 py-1 rounded-lg" /> : profileFormData.experience} />
               <InfoRow
                 label="Chuyên môn"
-                value={isEditing ? (
-                  <select
-                    name="major"
-                    value={profileFormData.major}
-                    onChange={handleProfileInputChange}
-                    className="w-full border px-2 py-1 rounded-lg"
-                  >
-                    <option value="Nurse">Chuyên viên chăm sóc</option>
-                    <option value="Specialist">Chuyên viên tư vấn</option>
-                  </select>
-                ) : (
-                  profileFormData.major === "Nurse" ? "Chuyên viên chăm sóc" :
-                    profileFormData.major === "Specialist" ? "Chuyên viên tư vấn" : "-"
-                )}
+                value={profileFormData.major === "Nurse" ? "Chuyên viên chăm sóc" :
+                  profileFormData.major === "Specialist" ? "Chuyên viên tư vấn" : "-"}
               />
               <InfoRow label="Slogan" value={isEditing ? <input type="text" name="slogan" value={profileFormData.slogan} onChange={handleProfileInputChange} className="w-full border px-2 py-1 rounded-lg" /> : profileFormData.slogan} icon={<FaQuoteLeft />} />
             </Card>

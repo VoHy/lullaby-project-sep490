@@ -80,6 +80,13 @@ export const useDataManager = (user, router) => {
     // Normalize and prepare
     const submitData = prepareCareProfileData({ ...data }, user);
 
+    // If creating (not editing) and no image provided, set default care profile avatar
+    if (!editItem) {
+      if (!submitData.image) {
+        submitData.image = 'https://i.ibb.co/zWSDrsBx/ae10a4719f321f9123ab1a3b7e02fa2b.jpg';
+      }
+    }
+
     let result;
     if (editItem) {
       // Update
@@ -132,6 +139,13 @@ export const useDataManager = (user, router) => {
 
     // Prepare
     const submitData = prepareRelativeData({ ...data }, currentCareID);
+
+    // If creating (not editing) and no image provided, set default relative avatar
+    if (!editItem) {
+      if (!submitData.image) {
+        submitData.image = 'https://i.ibb.co/MXjZs9F/4e2bc1c91a903b5b33e423c8ec64eaf3.jpg';
+      }
+    }
 
     if (editItem) {
       const editId = editItem.relativeID || editItem.RelativeID || editItem.relativeid;

@@ -21,6 +21,9 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
   const [errors, setErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmitted, setHasSubmitted] = useState(false);
+  const DEFAULT_AVATAR = 'https://i.ibb.co/6JYchKy9/396c741c3d37ad0199ac220d16169e3e.jpg';
+  const [previewUrl, setPreviewUrl] = useState(DEFAULT_AVATAR);
+  const [imageError, setImageError] = useState(false);
 
   const validateForm = () => {
     const newErrors = {};
@@ -29,22 +32,36 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
       newErrors.full_name = 'Tên không được để trống';
     }
 
+    if (String(formData.full_name).trim().length < 2) {
+      newErrors.full_name = 'Họ tên phải có ít nhất 2 ký tự';
+    }
+
     if (!formData.email.trim()) {
       newErrors.email = 'Email không được để trống';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+    } else if (!/[^\s@]+@[^\s@]+\.[^\s@]+/.test(formData.email)) {
       newErrors.email = 'Email không hợp lệ';
     }
 
     if (!formData.phone_number.trim()) {
       newErrors.phone_number = 'Số điện thoại không được để trống';
-    } else if (!/^[0-9]{10,11}$/.test(formData.phone_number)) {
-      newErrors.phone_number = 'Số điện thoại không hợp lệ';
+    } else if (!/^0\d{8,9}$/.test(formData.phone_number)) {
+      newErrors.phone_number = 'Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 và có 9-10 chữ số.';
     }
 
-    if (!formData.password) {
+    // Strong password checks (stepwise messages)
+    const pwd = formData.password || '';
+    if (!pwd) {
       newErrors.password = 'Mật khẩu không được để trống';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Mật khẩu phải có ít nhất 6 ký tự';
+    } else if (pwd.length < 8) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 8 ký tự';
+    } else if (!/[a-z]/.test(pwd)) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 1 chữ thường [a-z]';
+    } else if (!/[A-Z]/.test(pwd)) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 1 chữ hoa [A-Z]';
+    } else if (!/[0-9]/.test(pwd)) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 1 số [0-9]';
+    } else if (!/[!@#$%^&*]/.test(pwd)) {
+      newErrors.password = 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt [!@#$%^&*]';
     }
 
     if (formData.password !== formData.confirm_password) {
@@ -70,12 +87,27 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
     setHasSubmitted(true);
 
     try {
+      // duplicate email check
+      try {
+        const allAccounts = await accountService.getAllAccounts();
+        const exists = Array.isArray(allAccounts) && allAccounts.some(a => String(a.email || a.Email || '').toLowerCase() === String(formData.email).toLowerCase());
+        if (exists) {
+          alert('Email đã tồn tại trong hệ thống. Vui lòng sử dụng email khác.');
+          setIsSubmitting(false);
+          setHasSubmitted(false);
+          return;
+        }
+      } catch (err) {
+        console.error('Email check failed:', err);
+        // proceed; backend will validate
+      }
+
       const data = {
         fullName: formData.full_name,
         email: formData.email,
         phoneNumber: formData.phone_number,
         password: formData.password,
-        avatarUrl: formData.avatar_url || '',
+        avatarUrl: formData.avatar_url || DEFAULT_AVATAR,
       };
 
       // Gọi API để tạo manager
@@ -111,6 +143,12 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
       setErrors(prev => ({ ...prev, [field]: '' }));
     }
   };
+
+  useEffect(() => {
+    const url = formData.avatar_url && formData.avatar_url.trim() ? formData.avatar_url.trim() : DEFAULT_AVATAR;
+    setImageError(false);
+    setPreviewUrl(url);
+  }, [formData.avatar_url]);
 
   const handleClose = () => {
     setFormData({
@@ -232,8 +270,22 @@ const CreateManagerModal = ({ show, onClose, onSubmit }) => {
                   placeholder="https://example.com/avatar.jpg"
                 />
                 <p className="text-xs text-gray-500 mt-1">
-                  Để trống nếu không có avatar
+                  Để trống nếu không có ảnh đại diện
                 </p>
+                {/* Avatar preview */}
+                <div className="mt-3 flex justify-center">
+                  <div className="w-20 h-20 rounded-full overflow-hidden bg-gray-100 flex items-center justify-center border">
+                    <img
+                      src={previewUrl}
+                      alt="avatar preview"
+                      onError={() => setImageError(true)}
+                      className={`w-full h-full object-cover ${imageError ? 'hidden' : ''}`}
+                    />
+                    {imageError && (
+                      <div className="text-xs text-gray-500 px-2 text-center">Ảnh không hợp lệ</div>
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
             {/* Mật khẩu */}

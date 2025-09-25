@@ -1,6 +1,10 @@
 // Shared Form Components - Tái sử dụng các field thường gặp
 import React from 'react';
 
+// Default avatars (kept here to avoid creating a new config file)
+export const CARE_PROFILE_DEFAULT_AVATAR = 'https://i.ibb.co/zWSDrsBx/ae10a4719f321f9123ab1a3b7e02fa2b.jpg';
+export const RELATIVE_DEFAULT_AVATAR = 'https://i.ibb.co/MXjZs9F/4e2bc1c91a903b5b33e423c8ec64eaf3.jpg';
+
 // Form Field Component
 export function FormField({
   label,
@@ -76,14 +80,20 @@ export function AvatarUpload({
   onImageChange,
   size = 'w-24 h-24',
   name = 'image',
-  error = ''
+  error = '',
+  defaultImage = ''
 }) {
+  // Determine which image to show: prefer a real non-empty currentImage, otherwise fallback to defaultImage or empty string
+  const resolvedImage = (currentImage && typeof currentImage === 'string' && currentImage.trim() !== '')
+    ? currentImage
+    : (defaultImage || '');
+
   return (
     <div className="flex flex-col items-center gap-2">
       <label className="block text-sm font-medium mb-1 text-gray-700">Ảnh đại diện</label>
       <div className={`${size} mb-3`}>
         <img
-          src={(currentImage && currentImage !== 'string' && currentImage.trim() !== '') ? currentImage : '/images/hero-bg.jpg'}
+          src={resolvedImage}
           alt="avatar"
           className={`${size} rounded-full object-cover border-2 ${error ? 'border-red-300' : 'border-purple-200'}`}
         />

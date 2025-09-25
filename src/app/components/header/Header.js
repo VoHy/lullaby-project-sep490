@@ -63,7 +63,7 @@ export default function Header() {
           appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
         };
         if (firebaseConfig.apiKey && firebaseConfig.projectId && firebaseConfig.appId) {
-          try { await initFirebaseMessaging(firebaseConfig); } catch (_) {}
+          try { await initFirebaseMessaging(firebaseConfig); } catch (_) { }
         }
 
         // Ensure NotificationBell refreshes on events
@@ -73,9 +73,9 @@ export default function Header() {
         };
         window.addEventListener('notification:refresh', handler);
         unsub = () => window.removeEventListener('notification:refresh', handler);
-      } catch (_) {}
+      } catch (_) { }
     })();
-    return () => { try { unsub?.(); } catch (_) {} };
+    return () => { try { unsub?.(); } catch (_) { } };
   }, []);
 
   const toggleMenu = () => {
@@ -92,7 +92,7 @@ export default function Header() {
               <img
                 src="/images/logo.png"
                 alt="Lullaby Logo"
-                className="w-10 h-10 object-contain rounded-full"
+                className="h-full max-h-16 lg:max-h-20 w-auto object-contain rounded-full"
               />
               <span className="font-bold text-2xl bg-gradient-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text group-hover:from-purple-700 group-hover:to-pink-700 transition-all duration-300">
                 Lullaby
@@ -509,7 +509,7 @@ export default function Header() {
                     }`}
                   onClick={() => setIsMenuOpen(false)}
                 >
-                  Quản lý 
+                  Quản lý
                 </Link>
               </>
             )}

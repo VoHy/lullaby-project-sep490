@@ -87,11 +87,11 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
         phoneNumber: nurseData.phoneNumber,
         email: nurseData.email,
         password: nurseData.password,
-        avatarUrl: nurseData.avatarUrl || "string",
+        avatarUrl: nurseData.avatarUrl || undefined,
         dateOfBirth: nurseData.dateOfBirth,
         address: nurseData.address,
         gender: nurseData.gender,
-        major: nurseData.major || 'Nurse' || 'Nursing',
+        major: nurseData.major || 'Nurse',
         experience: nurseData.experience,
         slogan: nurseData.slogan,
         zoneID: managedZone.zoneID

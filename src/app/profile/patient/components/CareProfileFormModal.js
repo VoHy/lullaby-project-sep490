@@ -1,6 +1,6 @@
 import React from 'react';
 import BaseModal from './shared/BaseModal';
-import { FormField, AvatarUpload, FormActions } from './shared/FormComponents';
+import { FormField, AvatarUpload, FormActions, CARE_PROFILE_DEFAULT_AVATAR } from './shared/FormComponents';
 import ErrorDisplay from './shared/ErrorDisplay';
 import ZoneSelector from './ZoneSelector';
 import { validateCareProfile, validateCareProfileFields, prepareCareProfileData, normalizeFieldNames } from '../utils/formUtils';
@@ -103,6 +103,7 @@ export default function CareProfileFormModal({
             <div className="flex flex-col items-center justify-start gap-4 pt-2">
               <AvatarUpload
                 currentImage={formData.image}
+                defaultImage={CARE_PROFILE_DEFAULT_AVATAR}
                 onImageChange={onChange}
                 size="w-32 h-32"
                 name="image"

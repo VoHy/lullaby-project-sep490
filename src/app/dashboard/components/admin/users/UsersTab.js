@@ -340,25 +340,30 @@ const UsersTab = () => {
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2">
-                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isDeleted ? 'bg-gray-100 text-gray-500' : ROLE_STYLES[String(account.roleID)] || 'bg-red-100 text-red-700'
-                          }`}>
+                        {/* Vai trò */}
+                        <span
+                          className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${isDeleted
+                              ? 'bg-gray-100 text-gray-500'
+                              : ROLE_STYLES[String(account.roleID)] || 'bg-red-100 text-red-700'
+                            }`}
+                        >
                           {ROLE_LABELS[String(account.roleID)] || 'Không xác định'}
                         </span>
-                        {account.roleID === 4 && !isDeleted && (
-                          <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full font-medium">
-                            Chỉ xem
-                          </span>
-                        )}
-                        {account.roleID === 3 && !isDeleted && (
-                          <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full font-medium">
+
+                        {/* Badge "Chỉ xem" */}
+                        {(account.roleID === 4 || account.roleID === 3) && !isDeleted && (
+                          <span className="text-xs text-amber-600 bg-amber-50 px-2 py-1 rounded-full font-medium whitespace-nowrap">
                             Chỉ xem
                           </span>
                         )}
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className={`px-3 py-1 rounded-full text-xs font-semibold ${isDeleted ? 'bg-gray-100 text-gray-500' : STATUS_STYLES[account.status] || 'bg-red-100 text-red-700'
-                        }`}>
+                      <span
+                        className={`px-3 py-1 rounded-full text-xs font-semibold whitespace-nowrap ${isDeleted ? 'bg-gray-100 text-gray-500' :
+                          STATUS_STYLES[account.status] || 'bg-red-100 text-red-700'
+                          }`}
+                      >
                         {isDeleted ? 'Đã xóa' : STATUS_LABELS[account.status] || 'Không xác định'}
                       </span>
                     </td>

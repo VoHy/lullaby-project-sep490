@@ -87,7 +87,7 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
         phoneNumber: specialistData.phoneNumber,
         email: specialistData.email,
         password: specialistData.password,
-        avatarUrl: specialistData.avatarUrl || "string",
+        avatarUrl: specialistData.avatarUrl || undefined,
         dateOfBirth: specialistData.dateOfBirth,
         address: specialistData.address,
         gender: specialistData.gender,

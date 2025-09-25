@@ -24,7 +24,7 @@ export default function Footer() {
               <img
                 src="/images/logo.png"
                 alt="Lullaby"
-                className="h-12 w-12 mr-2 bg-transparent"
+                className="h-full max-h-16 lg:max-h-20 w-auto object-contain rounded-full"
               />
               <span className="text-2xl font-bold text-[#2d3a4e] tracking-wide">
                 Lullaby

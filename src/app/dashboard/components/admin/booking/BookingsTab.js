@@ -175,6 +175,8 @@ const BookingsTab = ({ bookings }) => {
   const BookingDetailModal = ({ booking, onClose }) => {
     if (!booking) return null;
     const { careProfile, account, service, packageInfo, serviceTasksOfBooking, packagesOfBooking, invoiceID } = getBookingDetail(booking);
+    const bookingStatus = String(booking?.status ?? booking?.Status ?? '').toLowerCase();
+    const isCancelled = bookingStatus === 'cancelled' || bookingStatus === 'canceled';
 
     // Local caches to avoid re-rendering entire tab and repeated fetches
     const [localNursesByTaskId, setLocalNursesByTaskId] = useState({});
@@ -184,6 +186,10 @@ const BookingsTab = ({ bookings }) => {
 
     // Kiểm tra trùng giờ khi chọn nurse
     const handleNurseSelection = (taskId, nurseId) => {
+      if (isCancelled) {
+        alert('Không thể chọn nhân sự cho lịch đã hủy.');
+        return false;
+      }
       // Kiểm tra trùng giờ với các task khác trong cùng booking trước khi assign
       const currentTaskDetail = detailCustomizeTasks.find(t => t.customizeTaskID === taskId);
       if (currentTaskDetail && currentTaskDetail.startTime && currentTaskDetail.endTime) {
@@ -238,6 +244,10 @@ const BookingsTab = ({ bookings }) => {
 
     // Assign nurse to a task function
     const handleAssignAllNurses = async () => {
+      if (isCancelled) {
+        alert('Không thể phân công nhân sự cho lịch đã hủy.');
+        return;
+      }
       try {
         // Kiểm tra xem tất cả task đã có nhân sự chưa (bao gồm cả nhân sự đã có và mới chọn)
         const unassignedTasks = serviceTasksOfBooking.filter(task => {
@@ -308,8 +318,11 @@ const BookingsTab = ({ bookings }) => {
               if (currentTask.endTime > nextTask.startTime) {
                 const formatTime = (date) => date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
                 
+                // Resolve nursing name if available
+                const nurseObj = nursingSpecialists.find(n => (n?.nursingID ?? n?.NursingID) === nursingId) || null;
+                const nurseName = nurseObj ? (nurseObj.nursingFullName ?? nurseObj.fullName ?? nurseObj.FullName) : String(nursingId);
                 timeConflictsInBooking.push(
-                  `Nhân sự ID ${nursingId} bị trùng giờ:\n` +
+                  `Nhân sự ${nurseName} bị trùng giờ:\n` +
                   `  • ${currentTask.description}: ${formatTime(currentTask.startTime)} - ${formatTime(currentTask.endTime)}\n` +
                   `  • ${nextTask.description}: ${formatTime(nextTask.startTime)} - ${formatTime(nextTask.endTime)}`
                 );
@@ -342,7 +355,10 @@ const BookingsTab = ({ bookings }) => {
               const timeInfo = `${formatTime(startTime)} - ${formatTime(endTime)}`;
               const conflictBookingId = conflictingSchedule.bookingID || conflictingSchedule.booking_ID || conflictingSchedule.BookingID;
               
-              conflicts.push(`Nhân sự ID ${nurseId} đã có lịch trùng với lịch hẹn khác:\nLịch hẹn #${conflictBookingId}: ${timeInfo}`);
+              // Resolve nursing name if available, fall back to selected map or id
+              const nurseObj = nursingSpecialists.find(n => (n?.nursingID ?? n?.NursingID) === (Number(nurseId) || nurseId)) || null;
+              const nurseName = nurseObj ? (nurseObj.nursingFullName ?? nurseObj.fullName ?? nurseObj.FullName) : (selectedNurseByTask ? (Object.values(selectedNurseByTask).find(v => String(v) === String(nurseId)) ? String(nurseId) : String(nurseId)) : String(nurseId));
+              conflicts.push(`Nhân sự ${nurseName} đã có lịch trùng với lịch hẹn khác:\nLịch hẹn #${conflictBookingId}: ${timeInfo}`);
             }
           } catch (scheduleError) {
             console.warn('Could not check schedule conflicts for nurse', nurseId, ':', scheduleError);
@@ -463,7 +479,12 @@ const BookingsTab = ({ bookings }) => {
           <div className="p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Thông tin khách hàng */}
-              <div className="space-y-4">
+                              <div className="space-y-4">
+                                {isCancelled && (
+                                  <div className="mb-4 p-4 rounded bg-red-50 border border-red-200 text-red-700">
+                                    Lịch đã hủy — không thể phân công nhân sự hoặc thay đổi phân công.
+                                  </div>
+                                )}
                 <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
                   <h4 className="font-semibold text-gray-900 mb-4 flex items-center text-lg">
                     <div className="p-2 bg-blue-100 rounded-lg mr-3">

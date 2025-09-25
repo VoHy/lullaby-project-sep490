@@ -9,19 +9,19 @@ const FeaturesSection = () => {
     {
       title: 'Chăm sóc mẹ sau sinh',
       desc: 'Dịch vụ hỗ trợ phục hồi sức khỏe, chăm sóc tinh thần và thể chất cho mẹ sau sinh một cách an toàn và khoa học.',
-      icon: '/images/hero-bg.jpg',
+      icon: '/images/caremom.png',
       badge: 'Nổi bật',
     },
     {
       title: 'Chăm sóc bé sơ sinh',
       desc: 'Chăm sóc bé từ những ngày đầu đời với sự tận tâm và chuyên nghiệp, đảm bảo bé khỏe mạnh và phát triển toàn diện.',
-      icon: '/images/hero-bg.jpg',
+      icon: '/images/carechild.jpg',
       badge: 'Phổ biến',
     },
     {
       title: 'Theo dõi sức khỏe mẹ & bé',
       desc: 'Theo dõi định kỳ tình trạng sức khỏe của mẹ và bé để phát hiện sớm và xử lý kịp thời các vấn đề tiềm ẩn.',
-      icon: '/images/hero-bg.jpg',
+      icon: '/images/images-5.jpg',
       badge: 'Mới',
     },
   ];

@@ -19,7 +19,7 @@ export default function PatientCareProfileCard({ care, relativesList, relFilter,
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => onViewDetailCareProfile && onViewDetailCareProfile(care)}>
           <img
-            src={(normalizedCare.image && normalizedCare.image.trim() !== '') ? normalizedCare.image : "/images/hero-bg.jpg"}
+            src={(normalizedCare.image && normalizedCare.image.trim() !== '') ? normalizedCare.image : 'https://i.ibb.co/zWSDrsBx/ae10a4719f321f9123ab1a3b7e02fa2b.jpg'}
             alt={normalizedCare.profileName}
             className="w-16 h-16 rounded-full object-cover border-2 border-purple-200"
           />
