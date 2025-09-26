@@ -9,6 +9,7 @@ export default function useCareProfileManager(router) {
   const [successMessage, setSuccessMessage] = useState('');
   const [showMedicalNotesModal, setShowMedicalNotesModal] = useState(false);
   const [selectedCareProfile, setSelectedCareProfile] = useState(null);
+  const [careProfileCreateReadonly, setCareProfileCreateReadonly] = useState(false);
 
   // Use custom hooks
   const modalManager = useModalManager();
@@ -25,7 +26,55 @@ export default function useCareProfileManager(router) {
 
   // Integrated handlers
   const handleOpenCareProfileForm = (item = null) => {
+    // Reset readonly flag by default
+    setCareProfileCreateReadonly(false);
     formManager.openForm('careProfile', item);
+
+    // If creating new (no item) and there is already at least one care profile,
+    // prefill the profileName to match and make profileName readonly
+    if (!item && Array.isArray(dataManager.careProfiles) && dataManager.careProfiles.length > 0) {
+      const first = dataManager.careProfiles[0];
+      const existingName = (first.profileName || first.ProfileName || '').toString().trim();
+      const existingDOBRaw = (first.dateOfBirth || first.DateOfBirth || first.dateofbirth || '').toString().trim();
+
+      if (existingName) {
+        formManager.setFormField('careProfile', 'profileName', existingName);
+        setCareProfileCreateReadonly(true);
+      }
+
+      // Prefill dateOfBirth formatted as yyyy-mm-dd for the date input
+      if (existingDOBRaw) {
+        try {
+          const d = new Date(existingDOBRaw);
+          if (!isNaN(d)) {
+            const y = d.getFullYear();
+            const m = ('' + (d.getMonth() + 1)).padStart(2, '0');
+            const dd = ('' + d.getDate()).padStart(2, '0');
+            const formatted = `${y}-${m}-${dd}`;
+            formManager.setFormField('careProfile', 'dateOfBirth', formatted);
+          } else {
+            // fallback: if raw looks like dd-mm-yyyy, try to convert
+            const dm = existingDOBRaw.match(/(\d{2})[-\/](\d{2})[-\/](\d{4})/);
+            if (dm) {
+              formManager.setFormField('careProfile', 'dateOfBirth', `${dm[3]}-${dm[2]}-${dm[1]}`);
+            }
+          }
+        } catch (e) {
+          // ignore formatting errors
+        }
+      }
+    }
+
+    // If editing an existing item, disallow editing name if the item is not the first care profile
+    if (item && Array.isArray(dataManager.careProfiles) && dataManager.careProfiles.length > 0) {
+      const firstCareId = dataManager.careProfiles[0].careProfileID || dataManager.careProfiles[0].CareProfileID || dataManager.careProfiles[0].careprofileID;
+      const editId = item.careProfileID || item.CareProfileID || item.careprofileID;
+      if (firstCareId && editId && firstCareId.toString() !== editId.toString()) {
+        // Not the first profile -> name should be readonly
+        setCareProfileCreateReadonly(true);
+      }
+    }
+
     modalManager.openModal('careProfileForm');
   };
 
@@ -224,7 +273,7 @@ export default function useCareProfileManager(router) {
     handleRelativeInputChange: (e) => formManager.handleInputChange('relative', e),
     
     // Modal handlers
-    handleCloseCareProfileForm: () => modalManager.closeModal('careProfileForm'),
+  handleCloseCareProfileForm: () => { setCareProfileCreateReadonly(false); modalManager.closeModal('careProfileForm'); },
     handleCloseRelativeForm: () => modalManager.closeModal('relativeForm'),
     handleOpenCareProfileDetail: (item) => modalManager.openModal('careProfileDetail', item),
     handleCloseCareProfileDetail: () => modalManager.closeModal('careProfileDetail'),
@@ -239,6 +288,8 @@ export default function useCareProfileManager(router) {
     careProfileValidationErrors: formManager.validationErrors.careProfile,
     relativeValidationErrors: formManager.validationErrors.relative,
     clearCareProfileErrors: () => formManager.clearValidationErrors('careProfile'),
+  // Readonly flags for create form (when second+ profiles are created)
+  careProfileCreateReadonly,
     clearRelativeErrors: () => formManager.clearValidationErrors('relative'),
     
     // Utilities

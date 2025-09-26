@@ -17,7 +17,8 @@ export default function CareProfileFormModal({
   zoneDetails = [], 
   user,
   validationErrors = [],
-  onClearErrors
+  onClearErrors,
+  careProfileCreateReadonly = false
 }) {
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -48,6 +49,7 @@ export default function CareProfileFormModal({
                 onChange={onChange}
                 required={true}
                 error={fieldErrors.profileName}
+                disabled={careProfileCreateReadonly && !isEdit}
               />
 
               <FormField
@@ -58,6 +60,7 @@ export default function CareProfileFormModal({
                 onChange={onChange}
                 required={true}
                 error={fieldErrors.dateOfBirth}
+                disabled={careProfileCreateReadonly && !isEdit}
               />
 
               <FormField

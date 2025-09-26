@@ -148,6 +148,7 @@ export default function PatientProfilePage(props) {
           user={manager.user} // truyền user vào modal
           validationErrors={manager.careProfileValidationErrors}
           onClearErrors={manager.clearCareProfileErrors}
+          careProfileCreateReadonly={manager.careProfileCreateReadonly}
         />
         {/* Modal form người thân */}
         <RelativeFormModal

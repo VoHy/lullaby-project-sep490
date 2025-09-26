@@ -90,6 +90,20 @@ export const useDataManager = (user, router) => {
     let result;
     if (editItem) {
       // Update
+      // If there is an existing first care profile, enforce its name for updates to non-first profiles
+      if (Array.isArray(careProfiles) && careProfiles.length > 0) {
+        const existingName = (careProfiles[0].profileName || careProfiles[0].ProfileName || '').toString().trim();
+        const existingDOB = (careProfiles[0].dateOfBirth || careProfiles[0].DateOfBirth || careProfiles[0].dateofbirth || '').toString().trim();
+        const firstCareId = careProfiles[0].careProfileID || careProfiles[0].CareProfileID || careProfiles[0].careprofileID;
+        const editId = editItem.careProfileID || editItem.CareProfileID || editItem.careprofileID;
+        if (existingName && firstCareId && editId && firstCareId.toString() !== editId.toString()) {
+          submitData.profileName = existingName;
+        }
+        if (existingDOB && firstCareId && editId && firstCareId.toString() !== editId.toString()) {
+          submitData.dateOfBirth = existingDOB;
+        }
+      }
+
       result = await careProfileService.updateCareProfile(
         editItem.careProfileID || editItem.CareProfileID,
         submitData
@@ -97,6 +111,18 @@ export const useDataManager = (user, router) => {
 
       return { success: true, message: 'Cập nhật hồ sơ thành công!' };
     } else {
+      // When creating a new care profile, if there is already at least one care profile,
+      // automatically assign the new profile's name to match the first profile's name (server expects this).
+      if (Array.isArray(careProfiles) && careProfiles.length > 0) {
+        const existingName = (careProfiles[0].profileName || careProfiles[0].ProfileName || '').toString().trim();
+        const existingDOB = (careProfiles[0].dateOfBirth || careProfiles[0].DateOfBirth || careProfiles[0].dateofbirth || '').toString().trim();
+        if (existingName) {
+          submitData.profileName = existingName;
+        }
+        if (existingDOB) {
+          submitData.dateOfBirth = existingDOB;
+        }
+      }
       // Create
       result = await careProfileService.createCareProfile(submitData);
       

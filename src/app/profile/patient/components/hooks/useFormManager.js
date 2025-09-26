@@ -109,6 +109,16 @@ export const useFormManager = () => {
     setValidationErrors(prev => ({ ...prev, [type]: [] }));
   };
 
+    const setFormField = (type, field, value) => {
+      setForms(prev => ({
+        ...prev,
+        [type]: {
+          ...prev[type],
+          [field]: value
+        }
+      }));
+    };
+
   const setFormValidationErrors = (type, errors) => {
     setValidationErrors(prev => ({ ...prev, [type]: errors }));
   };
@@ -131,6 +141,7 @@ export const useFormManager = () => {
     handleAvatarChange,
     updateLoading,
     resetForm,
+      setFormField,
     setCurrentCareID,
     setFormValidationErrors,
     clearValidationErrors
