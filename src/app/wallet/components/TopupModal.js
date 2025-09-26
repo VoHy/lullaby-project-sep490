@@ -50,6 +50,13 @@ export default function TopupModal({ open, onClose, wallet, accountId, onAfterRe
         return;
       }
 
+      // Yêu cầu số tiền phải lớn hơn 1000 VNĐ
+      if (value <= 1000) {
+        setError('Số tiền phải lớn hơn 1.000 VNĐ');
+        setSubmitting(false);
+        return;
+      }
+
       // Gọi API POST /api/TransactionHistory/AddMoneyToWallet với returnUrl
       const payload = {
         walletID: wallet?.walletID || wallet?.WalletID,
@@ -107,7 +114,7 @@ export default function TopupModal({ open, onClose, wallet, accountId, onAfterRe
               <label className="block text-base font-semibold text-gray-700 mb-2">Số tiền muốn nạp (VNĐ)</label>
               <input
                 type="number"
-                min="10000"
+                min="1000"
                 step="1000"
                 className="w-full px-5 py-4 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-400 text-lg font-medium bg-white/90 shadow-sm transition-all"
                 value={amount}
@@ -126,7 +133,7 @@ export default function TopupModal({ open, onClose, wallet, accountId, onAfterRe
               </button>
               <div className="flex items-center gap-2 text-sm text-gray-500 mt-2">
                 <svg width="18" height="18" fill="none" viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z" fill="#3b82f6"/></svg>
-                Hệ thống sẽ chuyển bạn đến trang thanh toán PayOS. Số tiền tối thiểu là 1.000 VNĐ.
+                Hệ thống sẽ chuyển bạn đến trang thanh toán PayOS. Số tiền phải lớn hơn 1.000 VNĐ.
               </div>
             </div>
           ) : (
