@@ -38,8 +38,11 @@ export default function ResetPasswordPage() {
       fe.oldPassword = 'Vui lòng nhập mật khẩu hiện tại';
       hasError = true;
     }
-    if (!form.newPassword || form.newPassword.length < 6) {
-      fe.newPassword = 'Mật khẩu mới phải có ít nhất 6 ký tự';
+    // Password policy: min 8 chars, at least one uppercase, one number, one special character
+    const pwd = form.newPassword || '';
+    const pwdPolicy = /^(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
+    if (!pwd || !pwdPolicy.test(pwd)) {
+      fe.newPassword = 'Mật khẩu mới phải có ít nhất 8 ký tự, bao gồm 1 chữ hoa, 1 chữ số và 1 ký tự đặc biệt';
       hasError = true;
     }
     if (form.newPassword !== form.confirmPassword) {
