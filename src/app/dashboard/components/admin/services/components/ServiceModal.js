@@ -27,6 +27,24 @@ function PackageBuilder({ formData, setFormData }) {
     load();
   }, []);
 
+  // Recompute package duration whenever child tasks or service durations change
+  // Rule: if the same child service (same serviceID) appears multiple times (or quantity >1),
+  // the duration should only be counted once (concurrent identical services count once).
+  useEffect(() => {
+    try {
+      const uniqueIds = Array.from(new Set(childTasks.map(r => parseInt(r.child_ServiceID)).filter(Boolean)));
+      const total = uniqueIds.reduce((sum, sid) => {
+        const svc = allSingles.find(s => s.serviceID === sid);
+        const dur = svc ? (Number(svc.duration) || 0) : 0;
+        return sum + dur;
+      }, 0);
+      // write back to shared formData so parent can display duration
+      setFormData(prev => ({ ...prev, duration: total }));
+    } catch (err) {
+      // ignore
+    }
+  }, [childTasks, allSingles, setFormData]);
+
   const addRow = () => {
     setFormData({
       ...formData,
@@ -35,6 +53,14 @@ function PackageBuilder({ formData, setFormData }) {
   };
 
   const updateRow = (idx, field, value) => {
+    // If updating quantity, and the selected service is marked forMom, force quantity to 1
+    if (field === 'quantity') {
+      const svcId = childTasks[idx]?.child_ServiceID;
+      const svc = allSingles.find(s => String(s.serviceID) === String(svcId));
+      if (svc && svc.forMom) {
+        value = 1;
+      }
+    }
     const next = childTasks.map((row, i) => i === idx ? { ...row, [field]: value } : row);
     setFormData({ ...formData, childServiceTasks: next });
   };
@@ -84,14 +110,22 @@ function PackageBuilder({ formData, setFormData }) {
             </select>
           </div>
           <div className="col-span-6 md:col-span-3">
-            <input
-              type="number"
-              placeholder="1"
-              value={row.quantity}
-              min={1}
-              onChange={(e) => updateRow(idx, 'quantity', e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg"
-            />
+            {(() => {
+              const selected = allSingles.find(s => String(s.serviceID) === String(row.child_ServiceID));
+              const isForMom = !!selected?.forMom;
+              return (
+                <input
+                  type="number"
+                  placeholder="1"
+                  value={isForMom ? 1 : row.quantity}
+                  min={1}
+                  max={isForMom ? 1 : undefined}
+                  onChange={(e) => updateRow(idx, 'quantity', e.target.value)}
+                  className={`w-full px-3 py-2 border rounded-lg ${isForMom ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                  disabled={isForMom}
+                />
+              );
+            })()}
           </div>
           <div className="col-span-5 md:col-span-2">
             <input
@@ -99,8 +133,9 @@ function PackageBuilder({ formData, setFormData }) {
               placeholder="1"
               value={row.taskOrder}
               min={1}
-              onChange={(e) => updateRow(idx, 'taskOrder', e.target.value)}
-              className="w-full px-3 py-2 border rounded-lg"
+              readOnly
+              disabled
+              className="w-full px-3 py-2 border rounded-lg bg-gray-50 text-gray-600 cursor-not-allowed"
             />
           </div>
           <div className="col-span-1 text-right">
@@ -217,7 +252,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Thời gian (phút) <span className="text-red-500">*</span>
+                      Thời gian (phút) { !formData.isPackage && <span className="text-red-500">*</span> }
                     </label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
@@ -225,16 +260,27 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
                       </span>
-                      <input
-                        type="number"
-                        value={formData.duration}
-                        onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
-                        className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                        placeholder="0"
-                        min="0"
-                        required
-                      />
+                      {/* If it's a package, show computed duration (read-only). For single services show editable input. */}
+                      {!formData.isPackage ? (
+                        <input
+                          type="number"
+                          value={formData.duration}
+                          onChange={(e) => setFormData({ ...formData, duration: e.target.value })}
+                          className="w-full pl-8 pr-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
+                          placeholder="0"
+                          min="0"
+                          required
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          value={`${Number(formData.duration || 0)} phút`}
+                          readOnly
+                          className="w-full pl-8 pr-4 py-3 border border-gray-200 rounded-lg bg-gray-50 text-gray-700 cursor-not-allowed"
+                        />
+                      )}
                     </div>
+                    {formData.isPackage && <p className="text-xs text-gray-500 mt-2">Thời gian được tính tự động dựa trên các dịch vụ con đã chọn.</p>}
                   </div>
 
                   {/* Discount & ForMom */}
@@ -536,10 +582,15 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
   };
 
   const calculateTotalPrice = () => (packageTasks || []).reduce((sum, t) => sum + (t.price * t.quantity), 0);
-  const calculateTotalDuration = () => (packageTasks || []).reduce((sum, t) => {
-    const svc = availableServices.find(s => s.serviceID === t.child_ServiceID);
-    return sum + ((svc?.duration || 0) * t.quantity);
-  }, 0);
+  // Calculate total duration for editing existing package. Group by child service ID and
+  // count duration per unique service once (ignore quantity for duration as per rule).
+  const calculateTotalDuration = () => {
+    const ids = Array.from(new Set((packageTasks || []).map(t => t.child_ServiceID).filter(Boolean)));
+    return ids.reduce((sum, sid) => {
+      const svc = availableServices.find(s => s.serviceID === sid);
+      return sum + (svc?.duration || 0);
+    }, 0);
+  };
 
   if (!isPackage) return null;
 
