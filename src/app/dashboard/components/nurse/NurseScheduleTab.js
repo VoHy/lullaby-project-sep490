@@ -292,6 +292,13 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
     } else if (now < endTime) {
       alert(`Chưa đến giờ điểm danh! Ca làm: ${workTimeStr}\nChỉ được điểm danh sau khi ca làm kết thúc.`);
       return;
+    } else {
+      // Disallow marking attended if more than 2 hours have passed since endTime
+      const twoHoursAfterEnd = new Date(endTime.getTime() + 2 * 60 * 60 * 1000);
+      if (now > twoHoursAfterEnd) {
+        alert(`Không thể điểm danh vì đã quá hạn (hơn 2 giờ) sau khi ca kết thúc.\nCa làm: ${workTimeStr}`);
+        return;
+      }
     }
 
     try {
