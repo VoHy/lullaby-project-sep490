@@ -41,8 +41,11 @@ export default function WalletPage() {
         setLoadingHistories(true);
         setHistoryError(null);
         const accountId = user.accountID || user.AccountID;
-        const data = await transactionHistoryService.getAllByAccount(accountId);
-        setHistories(Array.isArray(data) ? data : []);
+  const data = await transactionHistoryService.getAllByAccount(accountId);
+  const list = Array.isArray(data) ? data : [];
+  // Sort by transactionHistoryID (or TransactionHistoryID) descending so newest ID appears first
+  list.sort((a, b) => (b.transactionHistoryID || b.TransactionHistoryID || 0) - (a.transactionHistoryID || a.TransactionHistoryID || 0));
+  setHistories(list);
       } catch (e) {
         setHistoryError(e?.message || 'Không thể tải lịch sử giao dịch');
       } finally {
@@ -175,7 +178,9 @@ export default function WalletPage() {
               const accountId = user.accountID || user.AccountID;
               setLoadingHistories(true);
               const data = await transactionHistoryService.getAllByAccount(accountId);
-              setHistories(Array.isArray(data) ? data : []);
+              const list = Array.isArray(data) ? data : [];
+              list.sort((a, b) => (b.transactionHistoryID || b.TransactionHistoryID || 0) - (a.transactionHistoryID || a.TransactionHistoryID || 0));
+              setHistories(list);
               await refreshWalletData();
               setLoadingHistories(false);
             }}
@@ -224,7 +229,8 @@ export default function WalletPage() {
                 <tbody className="divide-y divide-gray-100">
                   {histories
                     .slice()
-                    .sort((a, b) => new Date(b.transactionDate || b.TransactionDate) - new Date(a.transactionDate || a.TransactionDate))
+                    // Ensure display order is by transactionHistoryID descending as requested
+                    .sort((a, b) => (b.transactionHistoryID || b.TransactionHistoryID || 0) - (a.transactionHistoryID || a.TransactionHistoryID || 0))
                     .map(h => {
                       const time = h.transactionDate || h.TransactionDate;
                       const note = h.note || h.Note || '';

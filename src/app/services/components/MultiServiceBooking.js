@@ -10,10 +10,7 @@ const MultiServiceBooking = ({
   selectedServices, 
   serviceQuantities, 
   serviceTypes,
-  getMaxQuantityForService,
   user,
-  careProfiles,
-  relatives
 }) => {
   const router = useRouter();
   const { token } = useContext(AuthContext);

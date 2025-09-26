@@ -256,9 +256,8 @@ export default function ServicesPage() {
       return;
     }
 
-    // Kiểm tra giới hạn số lượng cho dịch vụ bé
-    const maxQuantity = getMaxQuantityForService(serviceId);
-    const validQuantity = Math.min(Math.max(quantity, 1), maxQuantity);
+    // Accept requested quantity (ensure at least 1). Caller/server may validate further.
+    const validQuantity = Math.max(Math.floor(Number(quantity) || 1), 1);
 
     setServiceQuantities(prevQuantities => ({
       ...prevQuantities,
@@ -266,29 +265,7 @@ export default function ServicesPage() {
     }));
   };
 
-  // Hàm tính số lượng tối đa cho dịch vụ dựa trên số relative trong careProfile
-  const getMaxQuantityForService = (serviceId) => {
-    if (!user || !careProfiles.length || !relatives.length) return 10; // Default max
-
-    // Lấy careProfile của user hiện tại
-    const currentAccountId = user.accountID || user.AccountID;
-    const userCareProfiles = careProfiles.filter(cp => 
-      (cp.accountID || cp.AccountID) === currentAccountId
-    );
-
-    if (userCareProfiles.length === 0) return 1; // Không có careProfile thì chỉ được đặt 1
-
-    // Tính tổng số relative trong tất cả careProfile của user
-    const totalRelatives = relatives.filter(relative => {
-      const relativeCareProfileId = relative.careProfileID || relative.CareProfileID;
-      return userCareProfiles.some(cp => 
-        (cp.careProfileID || cp.CareProfileID) === relativeCareProfileId
-      );
-    }).length;
-
-    // Trả về số lượng tối đa là số relative, nhưng không quá 10
-    return Math.min(totalRelatives, 10);
-  };
+  // Removed getMaxQuantityForService — client no longer enforces profile-based limits
 
   // Tách dịch vụ lẻ và package
   // const singleServices = serviceTypes.filter(s => !s.isPackage && s.status === 'active');
@@ -489,7 +466,7 @@ export default function ServicesPage() {
             customizeTasks={customizeTasks}
             serviceQuantities={serviceQuantities}
             onQuantityChange={handleQuantityChange}
-            getMaxQuantityForService={getMaxQuantityForService}
+            
             user={user}
             careProfiles={careProfiles}
             relatives={relatives}
@@ -510,7 +487,7 @@ export default function ServicesPage() {
             customizeTasks={customizeTasks}
             serviceQuantities={serviceQuantities}
             onQuantityChange={handleQuantityChange}
-            getMaxQuantityForService={getMaxQuantityForService}
+            
             user={user}
             careProfiles={careProfiles}
             relatives={relatives}
@@ -536,7 +513,6 @@ export default function ServicesPage() {
           selectedServices={selectedServices}
           serviceQuantities={serviceQuantities}
           serviceTypes={serviceTypes}
-          getMaxQuantityForService={getMaxQuantityForService}
           user={user}
           careProfiles={careProfiles}
           relatives={relatives}

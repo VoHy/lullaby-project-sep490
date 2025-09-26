@@ -19,7 +19,6 @@ const ServiceSection = ({
   customizeTasks = [],
   serviceQuantities = {},
   onQuantityChange,
-  getMaxQuantityForService,
   user,
   careProfiles,
   relatives
@@ -62,7 +61,7 @@ const ServiceSection = ({
             customizeTasks={customizeTasks}
             quantity={serviceQuantities[service.serviceID] || 1}
             onQuantityChange={onQuantityChange}
-            getMaxQuantityForService={getMaxQuantityForService}
+            
             user={user}
             careProfiles={careProfiles}
             relatives={relatives}

@@ -152,8 +152,7 @@ const AppointmentCard = ({
       transition={{ duration: 0.6, delay: index * 0.1 }}
       className="group"
     >
-      <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 cursor-pointer"
-        onClick={() => onSelect?.(appointment)}>
+      <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2">
 
         {/* Header */}
         <div className="p-6">
@@ -221,6 +220,7 @@ const AppointmentCard = ({
               )}
               {isPaymentNeeded() && (
                 <div className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full">
+                  Cần thanh toán
                 </div>
               )}
             </div>
@@ -266,11 +266,7 @@ const AppointmentCard = ({
 
           {/* Action Buttons */}
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2 text-purple-600 font-medium text-sm">
-              <FaEye className="text-xs" />
-              <span>Xem chi tiết</span>
-            </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 justify-end w-full">
               {isPaymentNeeded() && (
                 <button
                   className="flex items-center gap-1 px-3 py-2 rounded-xl bg-orange-500 text-white font-medium text-sm hover:bg-orange-600 transition-colors"

@@ -1,7 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { FaStar, FaClock, FaEye, FaShoppingCart, FaCheck, FaTimes, FaTag } from 'react-icons/fa';
+import { FaClock, FaEye, FaShoppingCart, FaCheck, FaTimes, FaTag } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
 import QuantitySelector from './QuantitySelector';
 import ServiceRatingDisplay from './ServiceRatingDisplay';
@@ -75,13 +75,8 @@ const ServiceCard = ({
   onToggleExpand,
   getServicesOfPackage,
   getRating,
-  customizeTasks = [],
   quantity = 1,
   onQuantityChange,
-  getMaxQuantityForService,
-  user,
-  careProfiles,
-  relatives
 }) => {
   const rating = getRating ? getRating(service.serviceID) : { rating: "5.0", count: 0 };
 
@@ -141,15 +136,8 @@ const ServiceCard = ({
               quantity={quantity}
               onQuantityChange={(newQuantity) => onQuantityChange(service.serviceID, newQuantity)}
               min={1}
-              max={getMaxQuantityForService ? getMaxQuantityForService(service.serviceID) : 10}
             />
-            {/* Hiển thị thông tin về giới hạn số lượng */}
-            {getMaxQuantityForService && (
-              <div className="text-xs text-gray-500 text-center">
-                Giới hạn: Tối đa {getMaxQuantityForService(service.serviceID)} suất 
-                (theo số người thân trong hồ sơ)
-              </div>
-            )}
+            {/* Removed explicit UI showing max quantity per profile as requested */}
           </div>
         )}
 

@@ -9,15 +9,18 @@ const QuantitySelector = ({ quantity = 1, onQuantityChange, min = 1, max = 10 })
     }
   };
 
+  // Allow increasing without enforcing local `max` limit — parent can still pass `max` for display/disabled state if desired
   const handleIncrease = () => {
-    if (quantity < max) {
-      onQuantityChange(quantity + 1);
-    }
+    onQuantityChange(quantity + 1);
   };
 
   const handleInputChange = (e) => {
-    const value = parseInt(e.target.value) || min;
-    if (value >= min && value <= max) {
+    const value = parseInt(e.target.value);
+    // If input is not a number or less than min, fallback to min
+    if (Number.isNaN(value) || value < min) {
+      onQuantityChange(min);
+    } else {
+      // Accept values above previous `max` — caller may validate further
       onQuantityChange(value);
     }
   };
@@ -45,7 +48,6 @@ const QuantitySelector = ({ quantity = 1, onQuantityChange, min = 1, max = 10 })
         
         <button
           onClick={handleIncrease}
-          disabled={quantity >= max}
           className="w-6 h-6 rounded-full bg-blue-500 text-white flex items-center justify-center hover:bg-blue-600 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
         >
           <FaPlus className="text-xs" />
