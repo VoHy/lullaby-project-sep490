@@ -83,7 +83,7 @@ export default function Header() {
   };
 
   return (
-    <header className="bg-gradient-to-r from-pink-100 via-rose-50 to-pink-100 shadow-md text-gray-800 font-sans">
+    <header className="sticky top-0 z-50 bg-gradient-to-r from-pink-100 via-rose-50 to-pink-100 shadow-md text-gray-800 font-sans backdrop-blur-sm">
       <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           <div className="flex items-center">
