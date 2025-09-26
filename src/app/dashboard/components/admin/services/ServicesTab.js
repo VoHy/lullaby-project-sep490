@@ -108,6 +108,14 @@ const ServicesTab = () => {
   // CRUD Operations for Services
   const handleCreate = async () => {
     try {
+      // If creating a package, ensure discount is between 0 and 100
+      if (formData.isPackage) {
+        const disc = parseInt(formData.discount);
+        if (isNaN(disc) || disc < 0 || disc > 100) {
+          alert('Vui lòng nhập giá trị giảm giá hợp lệ cho gói (0 - 100)');
+          return;
+        }
+      }
       if (formData.isPackage) {
         // Build payload for /api/servicetypes/createpackage
         const payload = {
@@ -156,6 +164,14 @@ const ServicesTab = () => {
 
   const handleEdit = async () => {
     try {
+      // If updating a package, ensure discount is between 0 and 100
+      if (formData.isPackage) {
+        const disc = parseInt(formData.discount);
+        if (isNaN(disc) || disc < 0 || disc > 100) {
+          alert('Vui lòng nhập giá trị giảm giá hợp lệ cho gói (0 - 100)');
+          return;
+        }
+      }
       const updatedService = {
         ...formData,
         price: parseInt(formData.price),

@@ -226,7 +226,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                   <svg className="w-5 h-5 mr-2 text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
                   </svg>
-                  Giá cả & Thời gian
+                  Thời gian & Giảm giá
                 </h4>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -291,7 +291,7 @@ const ServiceModal = ({ isOpen, onClose, onSubmit, formData, setFormData, title,
                       value={formData.discount || 0}
                       onChange={(e) => setFormData({ ...formData, discount: e.target.value })}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors"
-                      placeholder="0"
+                      placeholder=""
                       min="0"
                     />
                   </div>
@@ -544,7 +544,15 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
   const updateEditDraft = (id, field, value) => {
     // Chỉ cho phép cập nhật quantity, các field khác readonly
     if (field === 'quantity') {
-      setEditDraftMap(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+      // Find the task to check if child service is forMom
+      const task = packageTasks.find(t => (t.serviceTaskID || t.taskID) === id);
+      const childService = availableServices.find(s => s.serviceID === task?.child_ServiceID);
+      if (childService?.forMom) {
+        // Ignore attempts to change quantity for forMom services — keep it as 1
+        setEditDraftMap(prev => ({ ...prev, [id]: { ...prev[id], [field]: 1 } }));
+      } else {
+        setEditDraftMap(prev => ({ ...prev, [id]: { ...prev[id], [field]: value } }));
+      }
     }
   };
 
@@ -554,14 +562,17 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
     
     try {
       // Gửi tất cả fields theo API spec, chỉ quantity có thể thay đổi
-      await serviceTaskService.updateServiceTask(id, {
-        child_ServiceID: task.child_ServiceID,
-        package_ServiceID: task.package_ServiceID || editingService.serviceID,
-        description: task.description || draft.description,
-        taskOrder: task.taskOrder,
-        price: task.price || draft.price,
-        quantity: parseInt(draft.quantity) || 1,
-      });
+        // Ensure forMom child services remain quantity = 1
+        const child = availableServices.find(s => s.serviceID === task.child_ServiceID);
+        const quantityToSave = child?.forMom ? 1 : (parseInt(draft.quantity) || 1);
+        await serviceTaskService.updateServiceTask(id, {
+          child_ServiceID: task.child_ServiceID,
+          package_ServiceID: task.package_ServiceID || editingService.serviceID,
+          description: task.description || draft.description,
+          taskOrder: task.taskOrder,
+          price: task.price || draft.price,
+          quantity: quantityToSave,
+        });
       
       // Refresh danh sách tasks
       try {
@@ -695,11 +706,14 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
                               <label className="block text-gray-600 mb-1">Số lượng <span className="text-red-500">*</span></label>
                               <input 
                                 type="number" 
-                                className="w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                                value={draft.quantity} 
+                                className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${childService?.forMom ? 'bg-gray-50 cursor-not-allowed' : ''}`} 
+                                value={childService?.forMom ? 1 : draft.quantity} 
                                 onChange={(e) => updateEditDraft(taskId, 'quantity', e.target.value)}
                                 min="1"
                                 required
+                                disabled={!!childService?.forMom}
+                                readOnly={!!childService?.forMom}
+                                title={childService?.forMom ? 'Dịch vụ dành cho mẹ luôn có số lượng 1' : ''}
                               />
                             </div>
                             {childService && (
@@ -793,14 +807,22 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">Số lượng <span className="text-red-500">*</span></label>
-                    <input 
-                      type="number" 
-                      value={taskFormData.quantity} 
-                      onChange={(e) => setTaskFormData({ ...taskFormData, quantity: e.target.value })} 
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" 
-                      min="1"
-                      required
-                    />
+                    {(() => {
+                      const sel = availableServices.find(s => s.serviceID == selectedServiceId);
+                      return (
+                        <input 
+                          type="number" 
+                          value={sel?.forMom ? 1 : taskFormData.quantity} 
+                          onChange={(e) => setTaskFormData({ ...taskFormData, quantity: e.target.value })} 
+                          className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${sel?.forMom ? 'bg-gray-50 cursor-not-allowed' : ''}`} 
+                          min="1"
+                          required
+                          disabled={!!sel?.forMom}
+                          readOnly={!!sel?.forMom}
+                          title={sel?.forMom ? 'Dịch vụ dành cho mẹ luôn có số lượng 1' : ''}
+                        />
+                      );
+                    })()}
                   </div>
                 </div>
                 <div className="flex space-x-3 pt-4">

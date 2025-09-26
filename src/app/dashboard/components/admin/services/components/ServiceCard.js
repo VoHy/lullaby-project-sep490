@@ -5,14 +5,13 @@ import {
   faTrash,
   faEye,
   faClock,
-  faDollarSign,
   faUserMd,
   faGift,
 } from '@fortawesome/free-solid-svg-icons';
 
 const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
   const isDeleted = item.status === 'Remove';
-  
+
   const getStatusColor = (status) => {
     switch (status) {
       case 'active':
@@ -43,11 +42,13 @@ const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-start justify-between mb-3">
           <div className="flex-1">
-            <div className="flex items-center mb-1">
+            <div className="flex items-start mb-1">
               <div className={`mr-3 p-2 rounded-lg ${item.isPackage ? 'bg-purple-100' : 'bg-blue-100'}`}>
                 <FontAwesomeIcon icon={item.isPackage ? faGift : faUserMd} className={`${item.isPackage ? 'text-purple-600' : 'text-blue-600'}`} />
               </div>
-              <h3 className="text-lg font-semibold text-gray-900">{item.serviceName}</h3>
+              <h3 className="text-lg font-semibold text-gray-900 whitespace-normal break-words break-all">
+                {item.serviceName}
+              </h3>
               {isDeleted && (
                 <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-600 rounded-full">
                   Đã xóa
@@ -58,15 +59,14 @@ const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
               <p className="text-sm text-gray-600 line-clamp-2">{item.description}</p>
             )}
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center space-x-2 self-start">
             <button
               onClick={isDeleted ? undefined : onEdit}
               disabled={isDeleted}
-              className={`p-2 rounded-lg transition-colors ${
-                isDeleted 
-                  ? 'text-gray-300 cursor-not-allowed' 
+              className={`p-1.5 rounded-lg transition-colors ${isDeleted
+                  ? 'text-gray-300 cursor-not-allowed'
                   : 'text-gray-400 hover:text-blue-600 hover:bg-blue-50'
-              }`}
+                }`}
               title={isDeleted ? 'Không thể chỉnh sửa dịch vụ đã xóa' : 'Chỉnh sửa'}
             >
               <FontAwesomeIcon icon={faEdit} className="w-4 h-4" />
@@ -74,11 +74,10 @@ const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
             <button
               onClick={isDeleted ? undefined : onDelete}
               disabled={isDeleted}
-              className={`p-2 rounded-lg transition-colors ${
-                isDeleted 
-                  ? 'text-gray-300 cursor-not-allowed' 
+              className={`p-1.5 rounded-lg transition-colors ${isDeleted
+                  ? 'text-gray-300 cursor-not-allowed'
                   : 'text-gray-400 hover:text-red-600 hover:bg-red-50'
-              }`}
+                }`}
               title={isDeleted ? 'Không thể xóa dịch vụ đã xóa' : 'Xóa'}
             >
               <FontAwesomeIcon icon={faTrash} className="w-4 h-4" />
@@ -90,9 +89,9 @@ const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
         <div className="flex flex-wrap gap-2">
           {item.status && (
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
-              {item.status === 'active' ? 'Hoạt động' : 
-               item.status === 'inactive' ? 'Không hoạt động' :
-               item.status === 'removed' ? 'Đã xóa' : item.status}
+              {item.status === 'active' ? 'Hoạt động' :
+                item.status === 'inactive' ? 'Không hoạt động' :
+                  item.status === 'removed' ? 'Đã xóa' : item.status}
             </span>
           )}
           {item.major && (
@@ -143,4 +142,4 @@ const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
   );
 };
 
-export default ServiceCard; 
+export default ServiceCard;
