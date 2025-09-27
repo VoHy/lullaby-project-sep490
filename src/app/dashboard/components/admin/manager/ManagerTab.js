@@ -205,7 +205,7 @@ const ManagerTab = () => {
     if (confirm(confirmMessage)) {
       try {
         setSaving(true);
-        await accountService.deleteAccount(managerId);
+        await accountService.removeAccount(managerId);
         await fetchManagers();
         setDeletedManagerName(managerName);
         setShowDeletedNotification(true);

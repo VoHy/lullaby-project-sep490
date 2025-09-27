@@ -56,8 +56,8 @@ const ServicesSkeleton = () => (
     </div>
   </div>
 );
-// Cache duration - giảm từ 10 phút xuống 3 phút để đồng bộ rating nhanh hơn
-const CACHE_DURATION = 3 * 60 * 1000; // 3 phút
+// Cache duration - giảm từ 10 phút xuống 30 giây để đồng bộ rating nhanh hơn
+const CACHE_DURATION = 30 * 1000; // 30 giây
 
 // Utility function to clear services cache
 export const clearServicesCache = () => {

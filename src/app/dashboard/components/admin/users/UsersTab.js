@@ -203,7 +203,7 @@ const UsersTab = () => {
 
     if (window.confirm(`Bạn có chắc chắn muốn xóa tài khoản "${account.fullName || account.full_name}"?`)) {
       try {
-        await accountService.deleteAccount(account.accountID);
+        await accountService.removeAccount(account.accountID);
         await fetchAccounts(); // Refresh data
       } catch (error) {
         console.error('Error deleting account:', error);

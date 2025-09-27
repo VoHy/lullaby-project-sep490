@@ -11,6 +11,7 @@ const MultiServiceBooking = ({
   serviceQuantities, 
   serviceTypes,
   user,
+  hasCareProfiles = false
 }) => {
   const router = useRouter();
   const { token } = useContext(AuthContext);
@@ -21,6 +22,12 @@ const MultiServiceBooking = ({
     // Kiểm tra nếu chưa đăng nhập
     if (!user || !token) {
       router.push('/auth/login');
+      return;
+    }
+
+    // If user is logged in but has no care profiles, send them to create a profile
+    if (user && token && !hasCareProfiles) {
+      router.push('/profile/patient');
       return;
     }
 

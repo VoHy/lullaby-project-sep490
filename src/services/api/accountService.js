@@ -13,6 +13,7 @@ const accountService = {
   getAccountById: async (id) => apiGet(`${base}/get/${id}`, 'Không thể lấy thông tin tài khoản'),
   updateAccount: async (id, data) => apiPut(`${base}/update/${id}`, data, 'Không thể cập nhật tài khoản'),
   deleteAccount: async (id) => apiDelete(`${base}/delete/${id}`, 'Không thể xóa tài khoản'),
+  removeAccount: async (id) => apiDelete(`${base}/remove/${id}`, 'Không thể xoá tài khoản'),
   banAccount: async (id) => apiPost(`${base}/ban/${id}`, {}, 'Không thể cấm tài khoản'),
 
   // Managers
