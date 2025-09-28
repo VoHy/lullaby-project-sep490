@@ -11,10 +11,15 @@ const MultiServiceBooking = ({
   serviceQuantities, 
   serviceTypes,
   user,
-  hasCareProfiles = false
+  hasCareProfiles = false,
+  careProfiles // page may pass the array under this name
 }) => {
   const router = useRouter();
   const { token } = useContext(AuthContext);
+
+  // Normalize hasCareProfiles: allow the parent to pass either a boolean
+  // `hasCareProfiles` or the array `careProfiles`.
+  const effectiveHasCareProfiles = Boolean(hasCareProfiles) || (Array.isArray(careProfiles) && careProfiles.length > 0);
 
   if (selectedServices.length <= 1) return null;
 
@@ -26,7 +31,7 @@ const MultiServiceBooking = ({
     }
 
     // If user is logged in but has no care profiles, send them to create a profile
-    if (user && token && !hasCareProfiles) {
+    if (user && token && !effectiveHasCareProfiles) {
       router.push('/profile/patient');
       return;
     }
@@ -34,11 +39,16 @@ const MultiServiceBooking = ({
     // Tạo danh sách dịch vụ với thông tin chi tiết và số lượng (mỗi suất là 1 object)
     let servicesData = [];
     selectedServices.forEach(serviceId => {
-      const serviceInfo = serviceTypes.find(s => s.serviceID === serviceId);
+      const serviceInfo = serviceTypes.find(s => s.serviceID === serviceId || s.serviceTypeID === serviceId) || null;
       const quantity = serviceQuantities[serviceId] || 1;
       for (let i = 0; i < quantity; i++) {
         servicesData.push({
-          ...serviceInfo,
+          serviceID: serviceInfo?.serviceID ?? serviceId,
+          serviceTypeID: serviceInfo?.serviceTypeID ?? serviceId,
+          serviceName: serviceInfo?.serviceName ?? serviceInfo?.ServiceName ?? 'Dịch vụ',
+          price: serviceInfo?.price ?? serviceInfo?.Price ?? 0,
+          duration: serviceInfo?.duration ?? serviceInfo?.Duration ?? 60,
+          forMom: serviceInfo?.forMom ?? false,
           quantity: 1
         });
       }

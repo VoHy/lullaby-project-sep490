@@ -91,16 +91,33 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
   const handleDeleteTask = async () => {};
 
   const calculateTotalPrice = () => {
-    return packageTasks.reduce((total, task) => total + (task.price * task.quantity), 0);
+    // Exclude tasks whose child service status indicates removal
+    const visibleTasks = packageTasks.filter(task => {
+      const childService = allServices.find(s => s.serviceID === task.child_ServiceID);
+      const status = (childService?.status || '').toString().toLowerCase();
+      return status !== 'remove' && status !== 'removed';
+    });
+    return visibleTasks.reduce((total, task) => total + (task.price * task.quantity), 0);
   };
 
   const calculateTotalDuration = () => {
-    return packageTasks.reduce((total, task) => {
-      // Lấy thời gian từ dịch vụ con trong allServices
+    const visibleTasks = packageTasks.filter(task => {
+      const childService = allServices.find(s => s.serviceID === task.child_ServiceID);
+      const status = (childService?.status || '').toString().toLowerCase();
+      return status === 'active';
+    });
+    return visibleTasks.reduce((total, task) => {
       const childService = allServices.find(s => s.serviceID === task.child_ServiceID);
       return total + ((childService?.duration || 0) * task.quantity);
     }, 0);
   };
+
+  // Visible tasks should only be active child services
+  const visibleTasks = packageTasks.filter(task => {
+    const childService = allServices.find(s => s.serviceID === task.child_ServiceID);
+    const status = (childService?.status || '').toString().toLowerCase();
+    return status === 'active';
+  });
 
   return (
     <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50">
@@ -147,7 +164,7 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
                 <FontAwesomeIcon icon={faList} className="text-purple-500 mr-2" />
                 <div>
                   <p className="text-sm text-gray-600">Số dịch vụ con</p>
-                  <p className="font-semibold text-lg">{packageTasks.length}</p>
+                  <p className="font-semibold text-lg">{visibleTasks.length}</p>
                 </div>
               </div>
             </div>
@@ -164,69 +181,64 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto"></div>
                 <p className="text-gray-600 mt-2">Đang tải...</p>
               </div>
-            ) : packageTasks.length === 0 ? (
+            ) : visibleTasks.length === 0 ? (
               <div className="text-center py-8 bg-gray-50 rounded-lg">
                 <FontAwesomeIcon icon={faList} className="text-gray-400 text-4xl mb-4" />
                 <p className="text-gray-600">Chưa có dịch vụ con nào trong gói</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {packageTasks.map((task, index) => {
-                  const childService = allServices.find(s => s.serviceID === task.child_ServiceID);
-                  return (
-                    <div key={task.serviceTaskID || task.taskID} className={`bg-white border border-gray-200 rounded-lg p-4 ${childService?.status === 'removed' ? 'opacity-75' : ''}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center mb-2">
-                            <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full mr-3">
-                              {index + 1}
-                            </span>
-                            <h5 className="font-semibold text-gray-800">
-                              {childService?.serviceName || `Dịch vụ #${task.child_ServiceID}`}
-                            </h5>
-                            {childService?.status === 'removed' && (
-                              <span className="ml-2 px-2 py-1 text-xs bg-red-100 text-red-600 rounded-full">
-                                Đã xóa
-                              </span>
-                            )}
-                            {childService?.major && (
-                              <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
-                                {childService.major === 'Nurse' ? 'Chăm sóc' : 'Chuyên viên tư vấn'}
-                              </span>
-                            )}
-                          </div>
-                          <p className="text-gray-600 text-sm mb-3">{task.description || childService?.description}</p>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                            <div className="flex items-center text-green-600">
-                              <FontAwesomeIcon icon={faDollarSign} className="mr-1" />
-                              <span className="font-medium">{task.price?.toLocaleString()} VNĐ</span>
-                            </div>
-                            <div className="flex items-center text-blue-600">
-                              <span className="mr-1">Số lượng:</span>
-                              <span className="font-medium">{task.quantity}</span>
-                            </div>
-                            {childService && (
-                              <div className="flex items-center text-purple-600">
-                                <FontAwesomeIcon icon={faClock} className="mr-1" />
-                                <span className="font-medium">{childService.duration} phút</span>
+                <div className="space-y-4">
+                  {visibleTasks.map((task, index) => {
+                      const childService = allServices.find(s => s.serviceID === task.child_ServiceID);
+                      return (
+                        <div key={task.serviceTaskID || task.taskID} className={`bg-white border border-gray-200 rounded-lg p-4`}>
+                          <div className="flex items-center justify-between">
+                            <div className="flex-1">
+                              <div className="flex items-center mb-2">
+                                <span className="bg-blue-100 text-blue-800 text-xs font-medium px-2 py-1 rounded-full mr-3">
+                                  {index + 1}
+                                </span>
+                                <h5 className="font-semibold text-gray-800">
+                                  {childService?.serviceName || `Dịch vụ #${task.child_ServiceID}`}
+                                </h5>
+                                {childService?.major && (
+                                  <span className="ml-2 px-2 py-1 text-xs bg-gray-100 text-gray-600 rounded-full">
+                                    {childService.major === 'Nurse' ? 'Chăm sóc' : 'Chuyên viên tư vấn'}
+                                  </span>
+                                )}
                               </div>
-                            )}
-                            <div className="flex items-center text-orange-600">
-                              <span className="mr-1">Tổng:</span>
-                              <span className="font-medium">{(task.price * task.quantity).toLocaleString()} VNĐ</span>
+                              <p className="text-gray-600 text-sm mb-3">{task.description || childService?.description}</p>
+                              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                                <div className="flex items-center text-green-600">
+                                  <FontAwesomeIcon icon={faDollarSign} className="mr-1" />
+                                  <span className="font-medium">{task.price?.toLocaleString()} VNĐ</span>
+                                </div>
+                                <div className="flex items-center text-blue-600">
+                                  <span className="mr-1">Số lượng:</span>
+                                  <span className="font-medium">{task.quantity}</span>
+                                </div>
+                                {childService && (
+                                  <div className="flex items-center text-purple-600">
+                                    <FontAwesomeIcon icon={faClock} className="mr-1" />
+                                    <span className="font-medium">{childService.duration} phút</span>
+                                  </div>
+                                )}
+                                <div className="flex items-center text-orange-600">
+                                  <span className="mr-1">Tổng:</span>
+                                  <span className="font-medium">{(task.price * task.quantity).toLocaleString()} VNĐ</span>
+                                </div>
+                              </div>
                             </div>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
+                      );
+                    })}
+                </div>
             )}
           </div>
 
           {/* Package Summary */}
-          {packageTasks.length > 0 && (
+          {visibleTasks.length > 0 && (
             <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6">
               <h4 className="text-lg font-semibold text-gray-800 mb-4">Tóm tắt gói dịch vụ</h4>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

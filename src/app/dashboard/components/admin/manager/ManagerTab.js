@@ -196,7 +196,7 @@ const ManagerTab = () => {
     const managerName = managerToDelete?.fullName || 'quản lý';
     const isRestored = isRestoredManager(managerToDelete);
 
-    let confirmMessage = `Bạn có chắc chắn muốn xóa quản lý "${managerName}"? Hành động này sẽ đánh dấu quản lý là đã xóa (soft delete).`;
+    let confirmMessage = `Bạn có chắc chắn muốn xóa quản lý "${managerName}"? Hành động này sẽ đánh dấu quản lý là đã xóa.`;
 
     if (isRestored) {
       confirmMessage = `Manager "${managerName}" đã được khôi phục trước đó. Bạn có chắc chắn muốn xóa lại? Lưu ý: Manager này có thể không thể xóa được do đã bị xóa trước đó.`;

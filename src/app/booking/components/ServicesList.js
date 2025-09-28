@@ -1,4 +1,5 @@
 import { HiOutlineUserGroup, HiOutlineCalendar, HiOutlineCurrencyDollar } from "react-icons/hi2";
+import { FaBox, FaList } from 'react-icons/fa';
 import { calculateBookingTotal, formatCurrency } from '../utils/paymentCalculation';
 
 export default function ServicesList({ 
@@ -35,9 +36,10 @@ export default function ServicesList({
               <li key={`${uniqueKey}-${idx}`} className={`bg-white rounded-xl shadow p-3 md:p-4 border flex flex-col gap-1 ${s.isPackage ? 'border-purple-300 bg-purple-50' : s.isServiceTask ? 'border-blue-200 bg-blue-50' : ''}`}>
                <div className="flex items-center justify-between">
                  <div className="flex items-center gap-2">
-                   <span className={`font-bold text-base md:text-lg ${s.isPackage ? 'text-purple-700' : s.isServiceTask ? 'text-blue-700' : 'text-blue-700'}`}>
-                     {s.isPackage ? '📦 ' : s.isServiceTask ? '🔹 ' : ''}{s.serviceName || s.ServiceName || s.taskName || s.TaskName || 'Dịch vụ con'}
-                   </span>
+                    <span className={`font-bold text-base md:text-lg flex items-center gap-2 ${s.isPackage ? 'text-purple-700' : s.isServiceTask ? 'text-blue-700' : 'text-blue-700'}`}>
+                      {s.isPackage ? <FaBox className="text-lg" /> : s.isServiceTask ? <FaList className="text-lg" /> : null}
+                      <span>{s.serviceName || s.ServiceName || s.taskName || s.TaskName || 'Dịch vụ con'}</span>
+                    </span>
                    {/* Hiển thị số lượng nếu có */}
                    {s.quantity && s.quantity > 1 && (
                      <span className="text-xs bg-orange-100 text-orange-700 px-2 py-1 rounded-full font-medium">

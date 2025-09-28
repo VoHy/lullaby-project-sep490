@@ -429,6 +429,7 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
   const [packageTasks, setPackageTasks] = useState([]);
   const [loading, setLoading] = useState(false);
   const [availableServices, setAvailableServices] = useState([]);
+  const [allServices, setAllServices] = useState([]);
   const [showAddTaskModal, setShowAddTaskModal] = useState(false);
   const [selectedServiceId, setSelectedServiceId] = useState('');
   const [taskFormData, setTaskFormData] = useState({ description: '', price: 0, quantity: 1 });
@@ -450,8 +451,12 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
         console.log('Loaded services:', allServices);
         
         setPackageTasks(Array.isArray(tasks) ? tasks : []);
-        const singles = Array.isArray(allServices) ? allServices.filter(s => !s.isPackage && (s.status === 'active' || !s.status)) : [];
-        setAvailableServices(singles);
+  // keep all services for status lookup and available list
+  const singlesAll = Array.isArray(allServices) ? allServices : [];
+  const singles = singlesAll.filter(s => !s.isPackage && (s.status === 'active' || !s.status));
+  setAvailableServices(singles);
+  // store all services for status checks
+  setAllServices(singlesAll);
       } catch (error) {
         console.error('Error loading package data:', error);
         setPackageTasks([]);
@@ -592,13 +597,13 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
     }
   };
 
-  const calculateTotalPrice = () => (packageTasks || []).reduce((sum, t) => sum + (t.price * t.quantity), 0);
+  const calculateTotalPrice = () => (visibleTasks || []).reduce((sum, t) => sum + (t.price * t.quantity), 0);
   // Calculate total duration for editing existing package. Group by child service ID and
   // count duration per unique service once (ignore quantity for duration as per rule).
   const calculateTotalDuration = () => {
-    const ids = Array.from(new Set((packageTasks || []).map(t => t.child_ServiceID).filter(Boolean)));
+    const ids = Array.from(new Set((visibleTasks || []).map(t => t.child_ServiceID).filter(Boolean)));
     return ids.reduce((sum, sid) => {
-      const svc = availableServices.find(s => s.serviceID === sid);
+      const svc = availableServices.find(s => s.serviceID === sid) || allServices.find(s => s.serviceID === sid);
       return sum + (svc?.duration || 0);
     }, 0);
   };
@@ -617,6 +622,15 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
   }
 
   // Editing existing package -> show detail-like UI with add/edit in two-row layout
+  // compute visible tasks (exclude removed child services)
+  const visibleTasks = (packageTasks || []).filter(task => {
+    const child = (availableServices || []).find(s => s.serviceID === task.child_ServiceID) || null;
+    // If not found in availableServices, try to find in allServices
+    const childFromAll = child || (allServices || []).find(s => s.serviceID === task.child_ServiceID) || null;
+    const status = (childFromAll?.status || '')?.toString?.().toLowerCase?.() || '';
+    return status !== 'remove' && status !== 'removed';
+  });
+
   return (
     <div className="mt-6 border-t pt-6">
       <div className="bg-blue-50 rounded-lg p-4 mb-4">
@@ -625,7 +639,7 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
             <FontAwesomeIcon icon={faList} className="text-blue-500 mr-2" />
             <div>
               <p className="text-sm text-gray-600">Số dịch vụ con</p>
-              <p className="font-semibold text-lg">{packageTasks.length}</p>
+              <p className="font-semibold text-lg">{visibleTasks.length}</p>
             </div>
           </div>
           <div className="flex items-center">
@@ -665,7 +679,7 @@ function PackageChildrenManager({ isOpen, isPackage, editingService, formData, s
         </div>
       ) : (
         <div className="space-y-3">
-          {packageTasks.map((task, index) => {
+          {visibleTasks.map((task, index) => {
             const childService = availableServices.find(s => s.serviceID === task.child_ServiceID);
             const taskId = task.serviceTaskID || task.taskID;
             const isEditing = !!editingTaskMap[taskId];

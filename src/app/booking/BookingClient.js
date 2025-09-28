@@ -553,7 +553,40 @@ function BookingContent() {
     const profileRelatives = relatives.filter(r => 
       (r.careProfileID || r.CareProfileID) === selectedCareProfile.careProfileID
     );
-    if (profileRelatives.length === 0) {
+
+    // Determine whether any selected service requires a relative (i.e., not a mom-only service)
+    const serviceRequiresRelative = (svc) => {
+      if (!svc) return false;
+      // Try to find the canonical service type in `services` list
+      const rawId = svc.serviceID ?? svc.serviceTypeID ?? svc.child_ServiceID ?? svc.childServiceID ?? svc.ServiceID ?? svc.ServiceTypeID;
+      let svcType = null;
+      if (rawId != null) {
+        svcType = services.find(s => s.serviceID === rawId || s.serviceTypeID === rawId || s.ServiceID === rawId || s.ServiceTypeID === rawId);
+      }
+      // If not found, try matching by name as fallback
+      if (!svcType) {
+        const name = svc.serviceName || svc.ServiceName || svc.name || svc.Name || '';
+        svcType = services.find(s => (s.serviceName || s.ServiceName || '').toString() === name.toString());
+      }
+
+      // If we found the service type, require relative only when forMom !== true
+      if (svcType) {
+        return !(svcType.forMom === true);
+      }
+
+      // If we can't determine type, be conservative and require a relative
+      return true;
+    };
+
+    // Check displayServicesList (the booking items) — if any item requires a relative, we need at least one relative.
+    const anyServiceNeedsRelative = (Array.isArray(displayServicesList) ? displayServicesList : []).some(item => {
+      // skip package header markers
+      if (!item) return false;
+      if (item.isPackage) return false;
+      return serviceRequiresRelative(item);
+    });
+
+    if (anyServiceNeedsRelative && profileRelatives.length === 0) {
       setCareProfileError("Hồ sơ này chưa có thông tin của con. Vui lòng thêm ít nhất một người con để có thể đặt dịch vụ.");
       return;
     }
@@ -565,6 +598,10 @@ function BookingContent() {
     const serviceNameMap = {};
     displayServicesList.forEach(service => {
       if (!service || service.isPackage) return; // skip package header
+
+      // Skip services that do NOT require a relative (e.g., mom-only services)
+      // serviceRequiresRelative is defined above and returns false for mom-only services
+      if (!serviceRequiresRelative(service)) return;
 
       // Determine a stable key: prefer numeric IDs, fallback to child IDs, then to service name
       const rawKey = service.serviceID ?? service.serviceTypeID ?? service.child_ServiceID ?? service.childServiceID ?? service.ServiceID ?? service.ServiceTypeID;
@@ -831,7 +868,7 @@ function BookingContent() {
           <div className="flex flex-col md:flex-row gap-4 md:gap-8">
             {/* LEFT COLUMN: Info, dịch vụ, tổng tiền */}
             <div className="md:w-1/2 flex flex-col gap-4">
-              {!packageId && <PackageInfo packageDetail={detail} />}
+              {(packageId || detail?.isPackage) && <PackageInfo packageDetail={detail} />}
               <ServicesList
                 selectedServicesList={displayServicesList}
                 packageId={packageId}

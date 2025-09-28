@@ -91,7 +91,7 @@ const ServiceCard = ({ item, type, onEdit, onDelete, onViewDetail }) => {
             <span className={`px-3 py-1 rounded-full text-xs font-medium ${getStatusColor(item.status)}`}>
               {item.status === 'active' ? 'Hoạt động' :
                 item.status === 'inactive' ? 'Không hoạt động' :
-                  item.status === 'removed' ? 'Đã xóa' : item.status}
+                  item.status === 'Remove' ? 'Đã xóa' : item.status}
             </span>
           )}
           {item.major && (
