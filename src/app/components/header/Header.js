@@ -51,8 +51,7 @@ export default function Header() {
     let unsub;
     (async () => {
       try {
-        const { initRealtimeNotifications, initFirebaseMessaging } = await import('@/lib/realtime');
-        await initRealtimeNotifications(() => localStorage.getItem('token') || '');
+  const { initFirebaseMessaging } = await import('@/lib/realtime');
 
         // Optional FCM init if env provided
         const firebaseConfig = {

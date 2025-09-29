@@ -132,4 +132,19 @@ export async function initFirebaseMessaging(firebaseConfig) {
   }
 }
 
+// Gracefully stop and cleanup the connection
+export async function disconnectRealtime() {
+  try {
+    if (connection) {
+      try { await connection.stop(); } catch (e) { /* ignore */ }
+      try { connection.off(); } catch (e) { /* ignore */ }
+      connection = null;
+    }
+  } catch (err) {
+    console.warn('[SignalR] disconnect error:', err);
+  } finally {
+    isConnecting = false;
+  }
+}
+
 

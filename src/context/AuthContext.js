@@ -1,6 +1,7 @@
 "use client";
 import React, { createContext, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { initRealtimeNotifications, disconnectRealtime } from '@/lib/realtime';
 
 export const AuthContext = createContext();
 
@@ -31,6 +32,12 @@ export const AuthProvider = ({ children }) => {
 
     initializeAuth();
   }, []);
+
+  // Initialize SignalR when token is available
+  useEffect(() => {
+    if (!token) return;
+    initRealtimeNotifications(() => token).catch(err => console.warn('Realtime init failed', err));
+  }, [token]);
 
   const login = (userData, authToken) => {
     setUser(userData);
@@ -79,6 +86,8 @@ export const AuthProvider = ({ children }) => {
       });
     };
     
+    // Disconnect realtime to avoid receiving events after logout
+    try { disconnectRealtime(); } catch (_) {}
     clearAllCache();
     router.push('/auth/login');
   };
