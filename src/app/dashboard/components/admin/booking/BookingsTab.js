@@ -9,6 +9,7 @@ import { useState, useEffect } from 'react';
 import careProfileService from '@/services/api/careProfileService';
 import accountService from '@/services/api/accountService';
 import serviceTypeService from '@/services/api/serviceTypeService';
+import notificationService from '@/services/api/notificationService'; // Import notificationService
 import bookingService from '@/services/api/bookingService';
 import customizePackageService from '@/services/api/customizePackageService';
 import customizeTaskService from '@/services/api/customizeTaskService';
@@ -34,6 +35,7 @@ const BookingsTab = ({ bookings }) => {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+
 
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(10); // Số booking mỗi trang
@@ -374,6 +376,65 @@ const BookingsTab = ({ bookings }) => {
         await Promise.all(allAssignments.map(async ([taskId, nurseId]) => {
           await customizeTaskService.updateNursing(taskId, nurseId);
         }));
+
+        // After assignments, send a single booking-level notification to the customer
+        try {
+          // Resolve account id from common variants
+          const resolveAccountId = () => {
+            const candidates = [
+              careProfile?.accountID,
+              careProfile?.accountId,
+              careProfile?.account_id,
+              careProfile?.AccountID,
+              careProfile?.AccountId,
+              account?.accountID,
+              account?.accountId,
+              account?.id,
+              account?.ID,
+              account?.AccountID,
+              booking?.accountID,
+              booking?.accountId,
+            ];
+            for (const c of candidates) {
+              if (c !== undefined && c !== null && String(c).trim() !== '' && String(c) !== '0') return c;
+            }
+            if (careProfile && careProfile.account) {
+              const cp = careProfile.account;
+              if (cp.accountID || cp.accountId || cp.id) return cp.accountID || cp.accountId || cp.id;
+            }
+            return null;
+          };
+
+          const customerAccountId = resolveAccountId();
+          const resolvedBookingId = booking?.BookingID ?? booking?.bookingID ?? booking?.id ?? booking?.ID ?? null;
+
+          if (!customerAccountId) {
+            console.warn('Không tìm thấy account id của customer; sẽ không gửi thông báo booking-level', { careProfile, account, booking });
+          } else {
+            try {
+              console.info('Gửi thông báo booking-level tới account:', customerAccountId, 'booking:', resolvedBookingId);
+              const res = await notificationService.createNotification({
+                accountID: customerAccountId,
+                message: `Lịch hẹn #${resolvedBookingId ?? 'N/A'} đã được cập nhật. Nhân sự đã được phân công cho các nhiệm vụ.`
+              });
+              console.info('Kết quả createNotification:', res);
+            } catch (firstErr) {
+              // retry with alternative key if backend expects different casing
+              try {
+                console.warn('createNotification failed with accountID, retrying with accountId...', firstErr);
+                const res2 = await notificationService.createNotification({
+                  accountId: customerAccountId,
+                  message: `Lịch hẹn #${resolvedBookingId ?? 'N/A'} đã được cập nhật. Vui lòng xem lịch sử lịch hẹn để biết thêm chi tiết.`
+                });
+                console.info('Kết quả createNotification (accountId):', res2);
+              } catch (secondErr) {
+                console.warn('Không thể gửi thông báo booking-level cho customer after retries:', secondErr);
+              }
+            }
+          }
+        } catch (notifyErr) {
+          console.warn('Không thể gửi thông báo booking-level cho customer (outer):', notifyErr);
+        }
 
         // Clear all selections
         setSelectedNurseByTask({});

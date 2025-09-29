@@ -205,7 +205,12 @@ function BookingContent() {
         })
       );
       
-      setServiceTasks(enrichedServiceTasks);
+      // Only keep active child service tasks so booking page doesn't show removed/inactive children
+      const activeTasks = enrichedServiceTasks.filter(t => {
+        const st = (t.status || t.Status || '').toString().toLowerCase();
+        return st === 'active' || st === 'hoạt động' || st === '1' || st === 'true' || st === 'active';
+      });
+      setServiceTasks(activeTasks);
     } catch (error) {
       console.error('Error loading service tasks for package:', error);
     }

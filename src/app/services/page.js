@@ -280,9 +280,23 @@ export default function ServicesPage() {
   async function getServicesOfPackage(packageId) {
     try {
       const tasks = await serviceTaskService.getServiceTasksByPackage(packageId);
+      // Merge task-level info (quantity, price, description, status) with the canonical service info
       return tasks.map(task => {
         const childServiceId = task.child_ServiceID || task.childServiceID;
-        return serviceTypes.find(s => s.serviceID === childServiceId);
+        const svc = serviceTypes.find(s => s.serviceID === childServiceId) || {};
+        return {
+          // preserve canonical service fields
+          ...svc,
+          // include task-level identifiers
+          serviceTaskID: task.serviceTaskID,
+          child_ServiceID: childServiceId,
+          package_ServiceID: task.package_ServiceID || packageId,
+          // task-level overrides / metadata
+          description: task.description || task.Description || svc.description || svc.Description,
+          price: task.price ?? task.Price ?? svc.price ?? svc.Price,
+          status: task.status || task.Status || svc.status || svc.Status,
+          quantity: task.quantity ?? task.Quantity ?? 1,
+        };
       }).filter(Boolean);
     } catch (error) {
       console.error('Error getting services of package:', error);

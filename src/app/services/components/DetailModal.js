@@ -42,20 +42,43 @@ const PackageServicesList = ({ packageId, getServicesOfPackage }) => {
       </div>
     );
   }
+  // Only show children with status 'active' (support multiple casing variants)
+  const activeChildren = services.filter(s => {
+    const st = (s?.status ?? s?.Status ?? '').toString().toLowerCase();
+    return st === 'active';
+  });
+
+  if (activeChildren.length === 0) {
+    return (
+      <div className="text-center py-4">
+        <p className="text-sm text-gray-500">Không có dịch vụ con đang hoạt động trong gói</p>
+      </div>
+    );
+  }
 
   return (
     <>
-      {services.map(child => (
-        <div key={child.serviceID} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-          <div>
-            <span className="font-medium text-blue-700">{child.serviceName}</span>
-            <p className="text-xs text-gray-500">{child.description}</p>
+      {activeChildren.map(child => {
+        const qty = parseInt(child.quantity ?? child.Quantity ?? 1, 10) || 1;
+        return (
+          <div key={child.serviceID || child.child_ServiceID || child.childServiceID || child.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+            <div>
+              <div className="flex items-center gap-2">
+                <span className="font-medium text-blue-700">{child.serviceName}</span>
+                {qty > 1 && (
+                  <span className="inline-block text-xs bg-orange-100 text-orange-700 px-2 py-0.5 rounded-full font-medium">
+                    x{qty}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-gray-500">{child.description}</p>
+            </div>
+            <span className="text-sm font-bold text-pink-600">
+              {child.price?.toLocaleString('vi-VN')} VNĐ
+            </span>
           </div>
-          <span className="text-sm font-bold text-pink-600">
-            {child.price?.toLocaleString('vi-VN')} VNĐ
-          </span>
-        </div>
-      ))}
+        );
+      })}
     </>
   );
 };
