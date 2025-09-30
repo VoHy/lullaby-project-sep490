@@ -197,12 +197,12 @@ const BookingsTab = ({ bookings }) => {
       if (currentTaskDetail && currentTaskDetail.startTime && currentTaskDetail.endTime) {
         const currentStart = new Date(currentTaskDetail.startTime);
         const currentEnd = new Date(currentTaskDetail.endTime);
-        
+
         // Kiểm tra với các task khác
         const conflicts = [];
         serviceTasksOfBooking.forEach(task => {
           if (task.customizeTaskID === taskId) return; // Bỏ qua task hiện tại
-          
+
           let taskNursingId = null;
           // Task đã có nurse
           if (task.nursingID) {
@@ -212,14 +212,14 @@ const BookingsTab = ({ bookings }) => {
           else if (selectedNurseByTask[task.customizeTaskID]) {
             taskNursingId = selectedNurseByTask[task.customizeTaskID];
           }
-          
+
           // Nếu cùng nurse và có thời gian
           if (taskNursingId == nurseId) {
             const otherTaskDetail = detailCustomizeTasks.find(t => t.customizeTaskID === task.customizeTaskID);
             if (otherTaskDetail && otherTaskDetail.startTime && otherTaskDetail.endTime) {
               const taskStart = new Date(otherTaskDetail.startTime);
               const taskEnd = new Date(otherTaskDetail.endTime);
-              
+
               // Kiểm tra trùng giờ
               if (currentStart < taskEnd && currentEnd > taskStart) {
                 const formatTime = (date) => date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
@@ -232,13 +232,13 @@ const BookingsTab = ({ bookings }) => {
             }
           }
         });
-        
+
         if (conflicts.length > 0) {
           alert(`Không thể chọn nhân sự này do trùng giờ trong cùng lịch hẹn:\n\n${conflicts.join('\n\n')}\n\nVui lòng chọn nhân sự khác!`);
           return false;
         }
       }
-      
+
       // Nếu không có conflict, cập nhật selection
       setSelectedNurseByTask((prev) => ({ ...prev, [taskId]: Number(nurseId) }));
       return true;
@@ -261,7 +261,7 @@ const BookingsTab = ({ bookings }) => {
         if (unassignedTasks.length > 0) {
           const unassignedList = unassignedTasks.map(task => {
             const taskDetail = detailCustomizeTasks.find(t => t.customizeTaskID === task.customizeTaskID);
-            const timeInfo = taskDetail && taskDetail.startTime && taskDetail.endTime 
+            const timeInfo = taskDetail && taskDetail.startTime && taskDetail.endTime
               ? ` (${new Date(taskDetail.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(taskDetail.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})`
               : '';
             return `- ${task.description}${timeInfo}`;
@@ -279,7 +279,7 @@ const BookingsTab = ({ bookings }) => {
         // Thu thập tất cả task của từng nurse (bao gồm đã có và mới chọn)
         serviceTasksOfBooking.forEach(task => {
           let nursingId = null;
-          
+
           // Task đã có nurse
           if (task.nursingID) {
             nursingId = task.nursingID;
@@ -311,15 +311,15 @@ const BookingsTab = ({ bookings }) => {
           if (tasks.length > 1) {
             // Sắp xếp theo thời gian bắt đầu
             tasks.sort((a, b) => a.startTime - b.startTime);
-            
+
             for (let i = 0; i < tasks.length - 1; i++) {
               const currentTask = tasks[i];
               const nextTask = tasks[i + 1];
-              
+
               // Kiểm tra trùng giờ: task hiện tại kết thúc sau khi task tiếp theo bắt đầu
               if (currentTask.endTime > nextTask.startTime) {
                 const formatTime = (date) => date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-                
+
                 // Resolve nursing name if available
                 const nurseObj = nursingSpecialists.find(n => (n?.nursingID ?? n?.NursingID) === nursingId) || null;
                 const nurseName = nurseObj ? (nurseObj.nursingFullName ?? nurseObj.fullName ?? nurseObj.FullName) : String(nursingId);
@@ -338,26 +338,44 @@ const BookingsTab = ({ bookings }) => {
           return;
         }
 
-        // Kiểm tra trùng lịch với các booking khác cho các nhân sự mới chọn
+        // Kiểm tra trùng lịch với các booking khác cho các nhân sự mới chọn (so sánh theo giờ, giống useStaffSelection)
         const conflicts = [];
         for (const [taskId, nurseId] of allAssignments) {
           try {
             const schedules = await workScheduleService.getAllByNursing(nurseId);
-            const bookingDate = new Date(booking?.workdate).toISOString().split('T')[0];
-            
-            const conflictingSchedule = Array.isArray(schedules) ? schedules.find(schedule => {
-              const scheduleDate = new Date(schedule.workDate || schedule.workdate).toISOString().split('T')[0];
-              return scheduleDate === bookingDate;
-            }) : null;
-            
+            // Lấy thời gian task hiện tại
+            const taskDetail = detailCustomizeTasks.find(t => t.customizeTaskID === taskId);
+            const curStart = taskDetail?.startTime ? new Date(taskDetail.startTime) : null;
+            const curEnd = taskDetail?.endTime ? new Date(taskDetail.endTime) : null;
+            // Lọc các lịch hợp lệ (không cancelled)
+            const validSchedules = (schedules || []).filter(sch => {
+              const sv = (sch.status || sch.Status || sch.bookingStatus || sch.booking_status || '').toString().toLowerCase();
+              return sv !== 'cancelled' && sv !== 'canceled';
+            });
+            // Tìm lịch trùng giờ thực sự
+            const conflictingSchedule = validSchedules.find(sch => {
+              const schStart = sch.startTime ? new Date(sch.startTime)
+                : sch.fromTime ? new Date(sch.fromTime)
+                  : sch.workDate ? new Date(sch.workDate)
+                    : sch.workdate ? new Date(sch.workdate)
+                      : null;
+              const schEnd = sch.endTime ? new Date(sch.endTime)
+                : sch.toTime ? new Date(sch.toTime)
+                  : (sch.workDate && sch.duration ? new Date(new Date(sch.workDate).getTime() + sch.duration * 60000)
+                    : sch.workdate && sch.duration ? new Date(new Date(sch.workdate).getTime() + sch.duration * 60000)
+                      : null);
+              if (curStart && curEnd && schStart && schEnd) {
+                return curStart < schEnd && curEnd > schStart;
+              }
+              // Nếu không có giờ, không báo trùng
+              return false;
+            });
             if (conflictingSchedule) {
-              const startTime = conflictingSchedule.workDate || conflictingSchedule.workdate;
-              const endTime = conflictingSchedule.endTime || conflictingSchedule.endtime;
+              const startTime = conflictingSchedule.startTime || conflictingSchedule.fromTime || conflictingSchedule.workDate || conflictingSchedule.workdate;
+              const endTime = conflictingSchedule.endTime || conflictingSchedule.toTime || (conflictingSchedule.workDate && conflictingSchedule.duration ? new Date(new Date(conflictingSchedule.workDate).getTime() + conflictingSchedule.duration * 60000) : conflictingSchedule.workdate && conflictingSchedule.duration ? new Date(new Date(conflictingSchedule.workdate).getTime() + conflictingSchedule.duration * 60000) : null);
               const formatTime = (date) => new Date(date).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
               const timeInfo = `${formatTime(startTime)} - ${formatTime(endTime)}`;
               const conflictBookingId = conflictingSchedule.bookingID || conflictingSchedule.booking_ID || conflictingSchedule.BookingID;
-              
-              // Resolve nursing name if available, fall back to selected map or id
               const nurseObj = nursingSpecialists.find(n => (n?.nursingID ?? n?.NursingID) === (Number(nurseId) || nurseId)) || null;
               const nurseName = nurseObj ? (nurseObj.nursingFullName ?? nurseObj.fullName ?? nurseObj.FullName) : (selectedNurseByTask ? (Object.values(selectedNurseByTask).find(v => String(v) === String(nurseId)) ? String(nurseId) : String(nurseId)) : String(nurseId));
               conflicts.push(`Nhân sự ${nurseName} đã có lịch trùng với lịch hẹn khác:\nLịch hẹn #${conflictBookingId}: ${timeInfo}`);
@@ -440,9 +458,8 @@ const BookingsTab = ({ bookings }) => {
         setSelectedNurseByTask({});
         setLocalNursesByTaskId({});
 
-        // Force re-render of the modal to show updated status
+        // Đóng popup hoàn toàn sau khi cập nhật thành công
         onClose();
-        setTimeout(() => setSelectedBooking(booking), 100);
 
         // Hiển thị thông báo thành công
         const successMessage = document.createElement('div');
@@ -540,12 +557,12 @@ const BookingsTab = ({ bookings }) => {
           <div className="p-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Thông tin khách hàng */}
-                              <div className="space-y-4">
-                                {isCancelled && (
-                                  <div className="mb-4 p-4 rounded bg-red-50 border border-red-200 text-red-700">
-                                    Lịch đã hủy — không thể phân công nhân sự hoặc thay đổi phân công.
-                                  </div>
-                                )}
+              <div className="space-y-4">
+                {isCancelled && (
+                  <div className="mb-4 p-4 rounded bg-red-50 border border-red-200 text-red-700">
+                    Lịch đã hủy — không thể phân công nhân sự hoặc thay đổi phân công.
+                  </div>
+                )}
                 <div className="bg-white rounded-lg p-5 border border-gray-200 shadow-sm">
                   <h4 className="font-semibold text-gray-900 mb-4 flex items-center text-lg">
                     <div className="p-2 bg-blue-100 rounded-lg mr-3">
@@ -806,12 +823,10 @@ const BookingsTab = ({ bookings }) => {
                                             {(() => {
                                               const taskId = task.customizeTaskID;
                                               const pool = localNursesByTaskId[taskId] || [];
-                                              const zoneId = careProfile?.zoneDetailID ?? careProfile?.zoneDetail_ID;
-                                              const filtered = Array.isArray(pool) ? pool.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
                                               return (
                                                 <span className="block mt-1 text-xs text-blue-600">
                                                   {localNursesByTaskId[taskId]
-                                                    ? (filtered.length > 0 ? `${filtered.length} điều dưỡng có sẵn` : 'Không có điều dưỡng phù hợp')
+                                                    ? (pool.length > 0 ? `${pool.length} điều dưỡng có sẵn` : 'Không có điều dưỡng phù hợp')
                                                     : (
                                                       <span className="flex items-center gap-1">
                                                         <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -847,12 +862,9 @@ const BookingsTab = ({ bookings }) => {
                                           </option>
                                           {(() => {
                                             const taskId = task.customizeTaskID;
-                                            // Lấy nurses rảnh cho task cụ thể này
-                                            const zoneId = careProfile?.zoneDetailID ?? careProfile?.zoneDetail_ID;
+                                            // Chỉ lấy danh sách nurse từ API getAllFreeNursingSpecialists, không cần lọc zone nữa
                                             const pool = localNursesByTaskId[taskId] || [];
-                                            // Lọc theo zone nếu có
-                                            const filtered = Array.isArray(pool) ? pool.filter(n => !zoneId || (n.zoneID ?? n.ZoneID) === zoneId) : [];
-                                            return filtered.map((n) => {
+                                            return Array.isArray(pool) ? pool.map((n) => {
                                               const name = (n.nursingFullName ?? n.fullName ?? n.FullName) || '';
                                               const majorRaw = (n.major ?? n.Major ?? '') + '';
                                               const majorKey = majorRaw.trim().toLowerCase();
@@ -862,7 +874,7 @@ const BookingsTab = ({ bookings }) => {
                                                   {name}{majorLabel ? ` — ${majorLabel}` : ''}
                                                 </option>
                                               );
-                                            });
+                                            }) : null;
                                           })()}
                                         </select>
                                       </div>
@@ -1188,12 +1200,6 @@ const BookingsTab = ({ bookings }) => {
                             className="text-pink-600 hover:text-pink-900 mr-3"
                           >
                             <FontAwesomeIcon icon={faEye} />
-                          </button>
-                          <button className="text-blue-600 hover:text-blue-900 mr-3">
-                            <FontAwesomeIcon icon={faEdit} />
-                          </button>
-                          <button className="text-red-600 hover:text-red-900">
-                            <FontAwesomeIcon icon={faTrash} />
                           </button>
                         </td>
                       </tr>

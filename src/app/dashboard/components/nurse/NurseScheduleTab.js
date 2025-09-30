@@ -591,62 +591,63 @@ export default function NurseScheduleTab({ workSchedules = [] }) {
                   <div className="mt-4 space-y-2 text-sm">
                     <div className="flex items-center justify-between">
                       <div className="text-gray-600">Trạng thái</div>
-                      {selectedEvent.status !== 'arrived' ? (
-                        <button
-                          className="px-3 py-1 rounded text-sm bg-blue-600 text-white hover:bg-blue-700 transition"
-                          onClick={async () => {
-                            try {
-                              // Validate time window: allowed from 15 minutes before workDate until endTime
-                              const start = parseDT(g(selectedEvent.workObj || {}, K.workDate));
-                              const end = parseDT(g(selectedEvent.workObj || {}, K.endTime));
-                              const now = new Date();
-
-                              if (start && !isNaN(start) && end && !isNaN(end)) {
-                                const minus15 = new Date(start.getTime() - 15 * 60 * 1000);
-                                if (now < minus15) {
-                                  alert('Chưa đến giờ để bấm "Đã đến". Bạn chỉ có thể bấm trước tối đa 15 phút so với giờ bắt đầu.');
-                                  return;
-                                }
-                                if (now > end) {
-                                  alert('Đã quá thời gian của ca làm, không thể bấm "Đã đến".');
-                                  return;
-                                }
-                              }
-
-                              await workScheduleService.updateStatus(
-                                selectedEvent.workObj?.workScheduleID || selectedEvent.workObj?.WorkScheduleID,
-                                'arrived'
-                              );
-                              setSelectedEvent(prev => ({
-                                ...prev,
-                                status: 'arrived'
-                              }));
-                              setShowSuccess(true); // Hiện toast thành công
-
-                              // Gửi thông báo cho user, lỗi thì chỉ log, không alert
-                              const accountID = selectedEvent.bookingDetail?.careProfile?.accountID
-                                || selectedEvent.bookingDetail?.careProfile?.AccountID;
-                              if (accountID && accountID !== 0) {
+                      {(() => {
+                        // Chỉ hiển thị nút "Đã đến" nếu chưa bấm và còn trong khoảng thời gian cho phép
+                        const start = parseDT(g(selectedEvent.workObj || {}, K.workDate));
+                        const end = parseDT(g(selectedEvent.workObj || {}, K.endTime));
+                        const now = new Date();
+                        const isArrived = selectedEvent.status === 'arrived';
+                        let canShowButton = false;
+                        if (!isArrived && start && !isNaN(start) && end && !isNaN(end)) {
+                          const minus15 = new Date(start.getTime() - 15 * 60 * 1000);
+                          if (now >= minus15 && now <= end) {
+                            canShowButton = true;
+                          }
+                        }
+                        if (canShowButton) {
+                          return (
+                            <button
+                              className="px-3 py-1 rounded text-sm bg-blue-600 text-white hover:bg-blue-700 transition"
+                              onClick={async () => {
                                 try {
-                                  await notificationService.createNotification({ accountID, message: 'Điều dưỡng đã đến lịch hẹn.' });
+                                  await workScheduleService.updateStatus(
+                                    selectedEvent.workObj?.workScheduleID || selectedEvent.workObj?.WorkScheduleID,
+                                    'arrived'
+                                  );
+                                  setSelectedEvent(prev => ({
+                                    ...prev,
+                                    status: 'arrived'
+                                  }));
+                                  setShowSuccess(true); // Hiện toast thành công
+
+                                  // Gửi thông báo cho user, lỗi thì chỉ log, không alert
+                                  const accountID = selectedEvent.bookingDetail?.careProfile?.accountID
+                                    || selectedEvent.bookingDetail?.careProfile?.AccountID;
+                                  if (accountID && accountID !== 0) {
+                                    try {
+                                      await notificationService.createNotification({ accountID, message: 'Điều dưỡng đã đến lịch hẹn.' });
+                                    } catch (err) {
+                                      console.error('Gửi thông báo thất bại', err);
+                                    }
+                                  } else {
+                                    console.warn('Không tìm thấy accountID hợp lệ để gửi thông báo!');
+                                  }
                                 } catch (err) {
-                                  console.error('Gửi thông báo thất bại', err);
+                                  alert('Không thể cập nhật trạng thái!');
                                 }
-                              } else {
-                                console.warn('Không tìm thấy accountID hợp lệ để gửi thông báo!');
-                              }
-                            } catch (err) {
-                              alert('Không thể cập nhật trạng thái!');
-                            }
-                          }}
-                        >
-                          Đã đến
-                        </button>
-                      ) : (
-                        <div className={`px-3 py-1 rounded text-sm ${getStatusView(selectedEvent.status).cls}`}>
-                          {getStatusView(selectedEvent.status).label}
-                        </div>
-                      )}
+                              }}
+                            >
+                              Đã đến
+                            </button>
+                          );
+                        }
+                        // Nếu đã bấm hoặc đã hết giờ thì chỉ hiển thị trạng thái
+                        return (
+                          <div className={`px-3 py-1 rounded text-sm ${getStatusView(selectedEvent.status).cls}`}>
+                            {getStatusView(selectedEvent.status).label}
+                          </div>
+                        );
+                      })()}
                     </div>
                     <div className="flex items-center justify-between">
                       <div className="text-gray-600">Đã tham gia</div>

@@ -61,9 +61,17 @@ export const useStaffSelection = (booking, bookingData, customizeTasks = []) => 
   const checkAndAlertTimeConflict = (staffSelections) => {
     if (!staffSelections || Object.keys(staffSelections).length === 0) return false;
 
-    // Tạo map thời gian cho các task
+    // Helper: consider cancelled markers on tasks/schedules
+    const isCancelled = (item) => {
+      if (!item) return false;
+      const v = (item.status || item.Status || item.bookingStatus || item.booking_status || '').toString().toLowerCase();
+      return v === 'cancelled' || v === 'canceled';
+    };
+
+    // Tạo map thời gian cho các task (bỏ qua task đã hủy)
     const taskTimes = {};
     bookingCustomizeTasks.forEach(task => {
+      if (isCancelled(task)) return; // skip cancelled tasks
       if (task.startTime && task.endTime) {
         taskTimes[task.customizeTaskID] = {
           start: new Date(task.startTime),
@@ -83,8 +91,8 @@ export const useStaffSelection = (booking, bookingData, customizeTasks = []) => 
         const nurseId1 = staffSelections[taskId1];
         const nurseId2 = staffSelections[taskId2];
         
-        // Nếu cùng nurse và có thông tin thời gian
-        if (nurseId1 === nurseId2 && taskTimes[taskId1] && taskTimes[taskId2]) {
+  // Nếu cùng nurse và có thông tin thời gian
+  if (nurseId1 === nurseId2 && taskTimes[taskId1] && taskTimes[taskId2]) {
           const time1 = taskTimes[taskId1];
           const time2 = taskTimes[taskId2];
           
@@ -125,13 +133,20 @@ export const useStaffSelection = (booking, bookingData, customizeTasks = []) => 
 
     console.log('useEffect checking conflicts for:', selectedStaffByTask);
 
-    // Sử dụng hàm kiểm tra mới
-    const hasConflict = checkAndAlertTimeConflict(selectedStaffByTask);
+  // Sử dụng hàm kiểm tra mới (bỏ qua task đã hủy)
+  const hasConflict = checkAndAlertTimeConflict(selectedStaffByTask);
     
     if (hasConflict) {
       // Tìm conflict đầu tiên để set error message
+      const isCancelled = (item) => {
+        if (!item) return false;
+        const v = (item.status || item.Status || item.bookingStatus || item.booking_status || '').toString().toLowerCase();
+        return v === 'cancelled' || v === 'canceled';
+      };
+
       const taskTimes = {};
       bookingCustomizeTasks.forEach(task => {
+        if (isCancelled(task)) return; // skip cancelled tasks
         if (task.startTime && task.endTime) {
           taskTimes[task.customizeTaskID] = {
             start: new Date(task.startTime),
@@ -186,13 +201,47 @@ export const useStaffSelection = (booking, bookingData, customizeTasks = []) => 
     }
     
     const conflicts = [];
+    const isCancelled = (item) => {
+      if (!item) return false;
+      const v = (item.status || item.Status || item.bookingStatus || item.booking_status || '').toString().toLowerCase();
+      return v === 'cancelled' || v === 'canceled';
+    };
+
     for (const t of bookingCustomizeTasks) {
+      if (isCancelled(t)) continue; // skip cancelled customize tasks
       const nid = selectedStaffByTask[t.customizeTaskID];
       if (!nid) continue;
       
       try {
         const nurseSchedules = await workScheduleService.getAllByNursing(nid);
-        const conflict = nurseSchedules.some(sch => sch.workDate === bookingData?.datetime);
+        // ignore cancelled schedules returned by service
+        const validSchedules = (nurseSchedules || []).filter(sch => {
+          const sv = (sch.status || sch.Status || sch.bookingStatus || sch.booking_status || '').toString().toLowerCase();
+          return sv !== 'cancelled' && sv !== 'canceled';
+        });
+        // Get current task's start/end
+        const currentTask = bookingCustomizeTasks.find(task => task.customizeTaskID === t.customizeTaskID);
+        const curStart = currentTask?.startTime ? new Date(currentTask.startTime) : null;
+        const curEnd = currentTask?.endTime ? new Date(currentTask.endTime) : null;
+        const conflict = validSchedules.some(sch => {
+          // Try to get schedule's start/end time from various possible fields
+          const schStart = sch.startTime ? new Date(sch.startTime)
+            : sch.fromTime ? new Date(sch.fromTime)
+            : sch.workDate ? new Date(sch.workDate)
+            : sch.workdate ? new Date(sch.workdate)
+            : null;
+          const schEnd = sch.endTime ? new Date(sch.endTime)
+            : sch.toTime ? new Date(sch.toTime)
+            : (sch.workDate && sch.duration ? new Date(new Date(sch.workDate).getTime() + sch.duration * 60000)
+              : sch.workdate && sch.duration ? new Date(new Date(sch.workdate).getTime() + sch.duration * 60000)
+              : null);
+          // If both have start/end, check overlap
+          if (curStart && curEnd && schStart && schEnd) {
+            return curStart < schEnd && curEnd > schStart;
+          }
+          // If only date, do NOT warn (allow selection)
+          return false;
+        });
         if (conflict) {
           conflicts.push({ taskId: t.customizeTaskID, nurseId: nid });
         }
@@ -222,18 +271,25 @@ export const useStaffSelection = (booking, bookingData, customizeTasks = []) => 
         // Kiểm tra trùng nurse trong cùng khung giờ
         const currentTask = bookingCustomizeTasks.find(t => t.customizeTaskID === changedKey);
         console.log('Current task:', currentTask);
-        if (currentTask && currentTask.startTime && currentTask.endTime) {
+        if (currentTask && currentTask.startTime && currentTask.endTime && !(currentTask.status || currentTask.Status || '').toString().toLowerCase().includes('cancel')) {
           const currentStart = new Date(currentTask.startTime);
           const currentEnd = new Date(currentTask.endTime);
           
           // Tìm các task khác có cùng nurse và trùng thời gian
+          const isCancelledTask = (item) => {
+            if (!item) return false;
+            const v = (item.status || item.Status || item.bookingStatus || item.booking_status || '').toString().toLowerCase();
+            return v === 'cancelled' || v === 'canceled';
+          };
+
           const conflictingTasks = Object.entries(next)
             .filter(([taskId, nurseId]) => taskId !== changedKey && nurseId === nid)
             .map(([taskId]) => {
               const task = bookingCustomizeTasks.find(t => t.customizeTaskID === taskId);
               return { taskId, task };
             })
-            .filter(({ task }) => task && task.startTime && task.endTime)
+            // ignore cancelled tasks
+            .filter(({ task }) => task && !isCancelledTask(task) && task.startTime && task.endTime)
             .filter(({ task }) => {
               const taskStart = new Date(task.startTime);
               const taskEnd = new Date(task.endTime);
@@ -289,12 +345,35 @@ export const useStaffSelection = (booking, bookingData, customizeTasks = []) => 
         
         // Kiểm tra trùng lịch
         workScheduleService.getAllByNursing(nid).then(nurseSchedules => {
-          const conflictingSchedule = nurseSchedules.find(sch => {
-            const scheduleDate = new Date(sch.workDate || sch.workdate).toISOString().split('T')[0];
-            const bookingDate = new Date(bookingData?.datetime).toISOString().split('T')[0];
-            return scheduleDate === bookingDate;
+          // ignore cancelled schedules returned by service
+          const validSchedules = (nurseSchedules || []).filter(sch => {
+            const sv = (sch.status || sch.Status || sch.bookingStatus || sch.booking_status || '').toString().toLowerCase();
+            return sv !== 'cancelled' && sv !== 'canceled';
           });
-          
+          // Get current task's start/end
+          const currentTask = bookingCustomizeTasks.find(task => task.customizeTaskID === changedKey);
+          const curStart = currentTask?.startTime ? new Date(currentTask.startTime) : null;
+          const curEnd = currentTask?.endTime ? new Date(currentTask.endTime) : null;
+          const conflictingSchedule = validSchedules.find(sch => {
+            // Try to get schedule's start/end time from various possible fields
+            const schStart = sch.startTime ? new Date(sch.startTime)
+              : sch.fromTime ? new Date(sch.fromTime)
+              : sch.workDate ? new Date(sch.workDate)
+              : sch.workdate ? new Date(sch.workdate)
+              : null;
+            const schEnd = sch.endTime ? new Date(sch.endTime)
+              : sch.toTime ? new Date(sch.toTime)
+              : (sch.workDate && sch.duration ? new Date(new Date(sch.workDate).getTime() + sch.duration * 60000)
+                : sch.workdate && sch.duration ? new Date(new Date(sch.workdate).getTime() + sch.duration * 60000)
+                : null);
+            // If both have start/end, check overlap
+            if (curStart && curEnd && schStart && schEnd) {
+              return curStart < schEnd && curEnd > schStart;
+            }
+            // If only date, do NOT warn (allow selection)
+            return false;
+          });
+        
           if (conflictingSchedule) {
             const nurse = booking?.nursingSpecialists?.find(n => 
               String(n.nursingID || n.NursingID) === String(nid)

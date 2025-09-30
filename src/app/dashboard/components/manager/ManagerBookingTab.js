@@ -77,7 +77,7 @@ const ManagerBookingTab = () => {
   // State cho kiểm tra trùng lịch
   const [scheduleConflicts, setScheduleConflicts] = useState({}); // { [nursingId]: { hasConflict: boolean, conflictDetails: string } }
   const [checkingConflicts, setCheckingConflicts] = useState(false);
-  
+
 
   // Load data từ API
   useEffect(() => {
@@ -170,7 +170,7 @@ const ManagerBookingTab = () => {
 
       return {
         customizeTaskId: task.customizeTaskID,
-        description: serviceType.description || serviceType.serviceName || 'Dịch vụ',
+        description: serviceType.serviceName || serviceType.description || 'Dịch vụ',
         serviceId: serviceId,
         status: task.status,
         startTime: task.startTime,
@@ -225,7 +225,7 @@ const ManagerBookingTab = () => {
       const nurses = (list || []).filter(p => String(p.major).toLowerCase() === 'nurse');
       const specialists = (list || []).filter(p => String(p.major).toLowerCase() === 'specialist');
       setEligibleByTask(prev => ({ ...prev, [customizeTaskId]: { nurses, specialists } }));
-      
+
       // Kiểm tra trùng lịch cho tất cả nhân sự
       await checkScheduleConflictsForStaff([...nurses, ...specialists]);
     } catch (e) {
@@ -244,32 +244,53 @@ const ManagerBookingTab = () => {
   // Kiểm tra trùng lịch cho danh sách nhân sự
   async function checkScheduleConflictsForStaff(staffList) {
     if (!detailData?.workdate || !Array.isArray(staffList)) return;
-    
     setCheckingConflicts(true);
     const conflicts = {};
-    
     try {
-      // Kiểm tra từng nhân sự
+      // Lấy tất cả task của booking hiện tại để lấy khung giờ
+      const currentTasks = Array.isArray(detailCustomizeTasks) ? detailCustomizeTasks : [];
       await Promise.all(staffList.map(async (staff) => {
         const nursingId = staff.nursingID || staff.NursingID;
         if (!nursingId) return;
-        
         try {
           const schedules = await workScheduleService.getAllByNursing(nursingId);
-          const bookingDate = new Date(detailData.workdate).toISOString().split('T')[0];
-          
-          // Tìm lịch trùng ngày
-          const conflictingSchedule = Array.isArray(schedules) ? schedules.find(schedule => {
-            const scheduleDate = new Date(schedule.workDate || schedule.workdate).toISOString().split('T')[0];
-            return scheduleDate === bookingDate;
-          }) : null;
-          
-          if (conflictingSchedule) {
-            const startTime = conflictingSchedule.workDate || conflictingSchedule.workdate;
-            const endTime = conflictingSchedule.endTime || conflictingSchedule.endtime;
+          // Lọc các lịch hợp lệ (không cancelled)
+          const validSchedules = (schedules || []).filter(sch => {
+            const sv = (sch.status || sch.Status || sch.bookingStatus || sch.booking_status || '').toString().toLowerCase();
+            return sv !== 'cancelled' && sv !== 'canceled';
+          });
+          // Kiểm tra trùng giờ với từng task của booking hiện tại
+          let foundConflict = null;
+          for (const task of currentTasks) {
+            const curStart = task?.startTime ? new Date(task.startTime) : null;
+            const curEnd = task?.endTime ? new Date(task.endTime) : null;
+            if (!curStart || !curEnd) continue;
+            const conflict = validSchedules.find(sch => {
+              const schStart = sch.startTime ? new Date(sch.startTime)
+                : sch.fromTime ? new Date(sch.fromTime)
+                  : sch.workDate ? new Date(sch.workDate)
+                    : sch.workdate ? new Date(sch.workdate)
+                      : null;
+              const schEnd = sch.endTime ? new Date(sch.endTime)
+                : sch.toTime ? new Date(sch.toTime)
+                  : (sch.workDate && sch.duration ? new Date(new Date(sch.workDate).getTime() + sch.duration * 60000)
+                    : sch.workdate && sch.duration ? new Date(new Date(sch.workdate).getTime() + sch.duration * 60000)
+                      : null);
+              if (schStart && schEnd) {
+                return curStart < schEnd && curEnd > schStart;
+              }
+              return false;
+            });
+            if (conflict) {
+              foundConflict = conflict;
+              break;
+            }
+          }
+          if (foundConflict) {
+            const startTime = foundConflict.startTime || foundConflict.fromTime || foundConflict.workDate || foundConflict.workdate;
+            const endTime = foundConflict.endTime || foundConflict.toTime || (foundConflict.workDate && foundConflict.duration ? new Date(new Date(foundConflict.workDate).getTime() + foundConflict.duration * 60000) : foundConflict.workdate && foundConflict.duration ? new Date(new Date(foundConflict.workdate).getTime() + foundConflict.duration * 60000) : null);
             const timeInfo = timeRange(startTime, endTime);
-            const bookingId = conflictingSchedule.bookingID || conflictingSchedule.booking_ID || conflictingSchedule.BookingID;
-            
+            const bookingId = foundConflict.bookingID || foundConflict.booking_ID || foundConflict.BookingID;
             conflicts[nursingId] = {
               hasConflict: true,
               conflictDetails: `Lịch hẹn #${bookingId}: ${timeInfo}`
@@ -288,7 +309,6 @@ const ManagerBookingTab = () => {
           };
         }
       }));
-      
       setScheduleConflicts(conflicts);
     } catch (error) {
       console.error('Error checking schedule conflicts:', error);
@@ -357,7 +377,7 @@ const ManagerBookingTab = () => {
 
       return {
         customizeTaskId: task.customizeTaskID,
-        description: serviceType.description || serviceType.serviceName || 'Dịch vụ',
+        description: serviceType.serviceName || serviceType.description || 'Dịch vụ',
         serviceId: serviceId,
         status: task.status,
         startTime: task.startTime,
@@ -379,14 +399,14 @@ const ManagerBookingTab = () => {
     if (currentTask && currentTask.startTime && currentTask.endTime) {
       const currentStart = new Date(currentTask.startTime);
       const currentEnd = new Date(currentTask.endTime);
-      
+
       // Kiểm tra với các task đã có nhân sự và task đã được chọn nhân sự
       const conflicts = [];
       const { serviceTasksOfBooking } = getDetailedBookingInfo(detailData);
-      
+
       serviceTasksOfBooking.forEach(task => {
         if (task.customizeTaskId === taskId) return; // Bỏ qua task hiện tại
-        
+
         let taskNursingId = null;
         // Task đã có nurse
         if (task.hasAssignedNurse && task.assignedNurseId) {
@@ -396,12 +416,12 @@ const ManagerBookingTab = () => {
         else if (taskAssignments[task.customizeTaskId]) {
           taskNursingId = taskAssignments[task.customizeTaskId]?.nurse || taskAssignments[task.customizeTaskId]?.specialist;
         }
-        
+
         // Nếu cùng nurse và có thời gian
         if (taskNursingId == value && task.startTime && task.endTime) {
           const taskStart = new Date(task.startTime);
           const taskEnd = new Date(task.endTime);
-          
+
           // Kiểm tra trùng giờ
           if (currentStart < taskEnd && currentEnd > taskStart) {
             const formatTime = (date) => date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
@@ -413,7 +433,7 @@ const ManagerBookingTab = () => {
           }
         }
       });
-      
+
       if (conflicts.length > 0) {
         alert(`Không thể gán nhân sự này do trùng giờ trong cùng lịch hẹn:\n\n${conflicts.join('\n\n')}\n\nVui lòng chọn nhân sự khác hoặc điều chỉnh thời gian!`);
         return;
@@ -457,7 +477,7 @@ const ManagerBookingTab = () => {
       } catch (err) {
         // ignore parsing errors and continue
       }
-      
+
       // Kiểm tra trạng thái booking phải là "paid" (đã thanh toán)
       const bookingStatus = String(detailData.status ?? detailData.Status).toLowerCase();
       if (bookingStatus !== 'paid') {
@@ -474,12 +494,12 @@ const ManagerBookingTab = () => {
 
       if (unassignedTasks.length > 0) {
         const unassignedList = unassignedTasks.map(task => {
-          const timeInfo = task.startTime && task.endTime 
+          const timeInfo = task.startTime && task.endTime
             ? ` (${new Date(task.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(task.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})`
             : '';
           return `- ${task.description}${timeInfo}`;
         }).join('\n');
-        
+
         alert(`Vui lòng chọn nhân sự cho TẤT CẢ các dịch vụ sau:\n${unassignedList}\n\nKhông thể cập nhật khi còn dịch vụ chưa có nhân sự!`);
         return;
       }
@@ -491,7 +511,7 @@ const ManagerBookingTab = () => {
       // Thu thập tất cả task của từng nurse (bao gồm đã có và mới chọn)
       serviceTasksOfBooking.forEach(task => {
         let nursingId = null;
-        
+
         // Task đã có nurse
         if (task.hasAssignedNurse && task.assignedNurseId) {
           nursingId = task.assignedNurseId;
@@ -520,19 +540,19 @@ const ManagerBookingTab = () => {
         if (tasks.length > 1) {
           // Sắp xếp theo thời gian bắt đầu
           tasks.sort((a, b) => a.startTime - b.startTime);
-          
+
           for (let i = 0; i < tasks.length - 1; i++) {
             const currentTask = tasks[i];
             const nextTask = tasks[i + 1];
-            
+
             // Kiểm tra trùng giờ: task hiện tại kết thúc sau khi task tiếp theo bắt đầu
             if (currentTask.endTime > nextTask.startTime) {
               const staff = [...Object.values(eligibleByTask).flatMap(e => [...e.nurses || [], ...e.specialists || []])]
                 .find(s => (s.nursingID || s.NursingID) == nursingId);
               const staffName = staff?.fullName || staff?.Full_Name || `ID ${nursingId}`;
-              
+
               const formatTime = (date) => date.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-              
+
               timeConflictsInBooking.push(
                 `${staffName} bị trùng giờ:\n` +
                 `  • ${currentTask.description}: ${formatTime(currentTask.startTime)} - ${formatTime(currentTask.endTime)}\n` +
@@ -551,7 +571,7 @@ const ManagerBookingTab = () => {
       // Kiểm tra trùng lịch với các booking khác
       const assignments = Object.entries(taskAssignments);
       const conflicts = [];
-      
+
       for (const [taskId, sel] of assignments) {
         const nursingId = sel.nurse || sel.specialist;
         if (nursingId && scheduleConflicts[nursingId]?.hasConflict) {
@@ -593,7 +613,7 @@ const ManagerBookingTab = () => {
 
         setShowDetail(false);
         alert('Đã gán nhân sự cho tất cả các dịch vụ thành công!');
-        
+
         // Refresh dữ liệu để cập nhật trạng thái mới
         window.location.reload();
       } catch (error) {
@@ -762,8 +782,8 @@ const ManagerBookingTab = () => {
                             </td>
                             <td className="px-6 py-4">
                               {serviceTasksOfBooking.length > 1
-                                ? <ul className="space-y-1">{serviceTasksOfBooking.map((t, i) => <li key={i} className="flex items-center text-sm text-gray-800"><span className="inline-block w-2 h-2 rounded-full bg-purple-400 mr-2"></span>{t.description}</li>)}</ul>
-                                : (serviceTasksOfBooking[0]?.description || '-')}
+                                ? <ul className="space-y-1">{serviceTasksOfBooking.map((t, i) => <li key={i} className="flex items-center text-sm text-gray-800"><span className="inline-block w-2 h-2 rounded-full bg-purple-400 mr-2"></span>{t.serviceName || t.description}</li>)}</ul>
+                                : (serviceTasksOfBooking[0]?.serviceName || serviceTasksOfBooking[0]?.description || '-')}
                             </td>
                             <td className="px-6 py-4">
                               <span className={`inline-block min-w-[80px] px-2 py-0.5 rounded-full text-xs font-semibold text-center shadow-sm ${statusClass}`}>
@@ -951,10 +971,10 @@ const ManagerBookingTab = () => {
                         <td className="p-2">
                           {!task.assignedNurseName ? (
                             String(detailData.status ?? detailData.Status).toLowerCase() === 'paid' ? (
-                            <button
-                              className="px-3 py-1 rounded bg-purple-100 text-purple-700 hover:bg-purple-200 text-xs"
-                              onClick={() => { setShowStaffModal(true); setModalTaskId(task.customizeTaskId); fetchEligibleForTask(task.customizeTaskId); }}
-                            >Chọn nhân sự</button>
+                              <button
+                                className="px-3 py-1 rounded bg-purple-100 text-purple-700 hover:bg-purple-200 text-xs"
+                                onClick={() => { setShowStaffModal(true); setModalTaskId(task.customizeTaskId); fetchEligibleForTask(task.customizeTaskId); }}
+                              >Chọn nhân sự</button>
                             ) : (
                               <span className="text-gray-400 text-xs">Chỉ gán được khi đã thanh toán</span>
                             )
@@ -1010,12 +1030,11 @@ const ManagerBookingTab = () => {
                           const hasConflict = conflictInfo?.hasConflict;
                           return (
                             <li key={nursingId}>
-                            <button
-                                className={`w-full text-left px-3 py-2 rounded border ${
-                                  hasConflict 
-                                    ? 'bg-red-50 border-red-200 text-red-600 cursor-not-allowed' 
+                              <button
+                                className={`w-full text-left px-3 py-2 rounded border ${hasConflict
+                                    ? 'bg-red-50 border-red-200 text-red-600 cursor-not-allowed'
                                     : 'hover:bg-purple-100'
-                                }`}
+                                  }`}
                                 onClick={() => !hasConflict && handleTaskAssign(modalTaskId, 'nurse', nursingId)}
                                 disabled={hasConflict}
                               >
@@ -1033,7 +1052,7 @@ const ManagerBookingTab = () => {
                                   )}
                                 </div>
                               </button>
-                          </li>
+                            </li>
                           );
                         })}
                       </ul>
@@ -1048,12 +1067,11 @@ const ManagerBookingTab = () => {
                           const hasConflict = conflictInfo?.hasConflict;
                           return (
                             <li key={nursingId}>
-                            <button
-                                className={`w-full text-left px-3 py-2 rounded border ${
-                                  hasConflict 
-                                    ? 'bg-red-50 border-red-200 text-red-600 cursor-not-allowed' 
+                              <button
+                                className={`w-full text-left px-3 py-2 rounded border ${hasConflict
+                                    ? 'bg-red-50 border-red-200 text-red-600 cursor-not-allowed'
                                     : 'hover:bg-pink-100'
-                                }`}
+                                  }`}
                                 onClick={() => !hasConflict && handleTaskAssign(modalTaskId, 'specialist', nursingId)}
                                 disabled={hasConflict}
                               >
@@ -1071,7 +1089,7 @@ const ManagerBookingTab = () => {
                                   )}
                                 </div>
                               </button>
-                          </li>
+                            </li>
                           );
                         })}
                       </ul>
