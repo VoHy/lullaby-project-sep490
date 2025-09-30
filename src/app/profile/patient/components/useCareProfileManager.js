@@ -120,6 +120,12 @@ export default function useCareProfileManager(router) {
       }
     } finally {
       formManager.updateLoading('careProfile', false);
+          // Always close the care profile modal whether save succeeded or failed
+      try {
+        modalManager.closeModal('careProfileForm');
+      } catch (e) {
+        // ignore any errors when closing modal
+      }
     }
   };
 
@@ -150,6 +156,12 @@ export default function useCareProfileManager(router) {
       }
     } finally {
       formManager.updateLoading('relative', false);
+          // Always close the relative modal whether save succeeded or failed
+      try {
+        modalManager.closeModal('relativeForm');
+      } catch (e) {
+        // ignore any errors when closing modal
+      }
     }
   };
 
