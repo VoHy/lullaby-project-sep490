@@ -241,19 +241,12 @@ const PackageDetailModal = ({ isOpen, onClose, packageService, onUpdate }) => {
           {visibleTasks.length > 0 && (
             <div className="bg-gradient-to-r from-green-50 to-blue-50 rounded-lg p-6">
               <h4 className="text-lg font-semibold text-gray-800 mb-4">Tóm tắt gói dịch vụ</h4>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="flex items-center">
                   <FontAwesomeIcon icon={faDollarSign} className="text-green-500 mr-3 text-xl" />
                   <div>
                     <p className="text-sm text-gray-600">Tổng giá trị các dịch vụ</p>
                     <p className="font-bold text-xl text-green-700">{calculateTotalPrice().toLocaleString()} VNĐ</p>
-                  </div>
-                </div>
-                <div className="flex items-center">
-                  <FontAwesomeIcon icon={faClock} className="text-blue-500 mr-3 text-xl" />
-                  <div>
-                    <p className="text-sm text-gray-600">Tổng thời gian dự kiến</p>
-                    <p className="font-bold text-xl text-blue-700">{calculateTotalDuration()} phút</p>
                   </div>
                 </div>
                 <div className="flex items-center">

@@ -41,11 +41,11 @@ export default function WalletPage() {
         setLoadingHistories(true);
         setHistoryError(null);
         const accountId = user.accountID || user.AccountID;
-  const data = await transactionHistoryService.getAllByAccount(accountId);
-  const list = Array.isArray(data) ? data : [];
-  // Sort by transactionHistoryID (or TransactionHistoryID) descending so newest ID appears first
-  list.sort((a, b) => (b.transactionHistoryID || b.TransactionHistoryID || 0) - (a.transactionHistoryID || a.TransactionHistoryID || 0));
-  setHistories(list);
+        const data = await transactionHistoryService.getAllByAccount(accountId);
+        const list = Array.isArray(data) ? data : [];
+        // Sort by transactionHistoryID (or TransactionHistoryID) descending so newest ID appears first
+        list.sort((a, b) => (b.transactionHistoryID || b.TransactionHistoryID || 0) - (a.transactionHistoryID || a.TransactionHistoryID || 0));
+        setHistories(list);
       } catch (e) {
         setHistoryError(e?.message || 'Không thể tải lịch sử giao dịch');
       } finally {
@@ -88,6 +88,19 @@ export default function WalletPage() {
 
   if (isLoading) return null;
   if (!user) return null;
+
+  const getStatusText = (status) => {
+    switch (status.toLowerCase()) {
+      case 'completed':
+        return 'Đã thanh toán';
+      case 'pending':
+        return 'Chờ xử lý';
+      case 'cancelled':
+        return 'Đã hủy';
+      default:
+        return status;
+    }
+  };
 
   return (
     <div className="max-w-6xl mx-auto p-6">
@@ -266,14 +279,12 @@ export default function WalletPage() {
                             {after.toLocaleString('vi-VN')}₫
                           </td>
                           <td className="px-5 py-4">
-                            <span
-                              className={`inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-bold border ${status === 'completed'
-                                  ? 'bg-green-50 text-green-700 border-green-200'
-                                  : 'bg-yellow-50 text-yellow-700 border-yellow-200'
-                                }`}
-                            >
-                              {status === 'completed' ? <FaCheckCircle /> : <FaClock />}
-                              {status === 'completed' ? 'Đã thanh toán' : 'Đang xử lý'}
+                            <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${status.toLowerCase() === 'completed'
+                              ? 'bg-green-50 text-green-700 border-green-200'
+                              : 'bg-red-50 text-red-700 border-red-200'
+                              }`}>
+                              {status.toLowerCase() === 'completed' ? <FaCheckCircle /> : <FaClock />}
+                              {getStatusText(status)}
                             </span>
                           </td>
                           <td className="px-5 py-4">

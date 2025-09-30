@@ -30,9 +30,11 @@ export default function TransactionDetailModal({ open, onClose, transaction }) {
   const getStatusText = (status) => {
     switch (status.toLowerCase()) {
       case 'completed':
-        return 'đã thanh toán';
+        return 'Đã thanh toán';
       case 'pending':
-        return 'chờ xử lý';
+        return 'Chờ xử lý';
+      case 'cancelled':
+        return 'Hủy';
       default:
         return status;
     }
@@ -90,7 +92,7 @@ export default function TransactionDetailModal({ open, onClose, transaction }) {
                     <div className="px-4 py-3">
                       <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium border ${status.toLowerCase() === 'completed'
                         ? 'bg-green-50 text-green-700 border-green-200'
-                        : 'bg-yellow-50 text-yellow-700 border-yellow-200'
+                        : 'bg-red-50 text-red-700 border-red-200'
                         }`}>
                         {status.toLowerCase() === 'completed' ? <FaCheckCircle /> : <FaClock />}
                         {getStatusText(status)}

@@ -150,7 +150,7 @@ const ManagerSpecialistTab = ({ refetchSpecialists, specialists, zones, managedZ
   // Xử lý xóa Chuyên viên
   const handleDeleteSpecialist = async (specialistId, accountId) => {
     try {
-      await nursingSpecialistService.deleteNursingSpecialist(specialistId);
+      await accountService.removeAccount(accountId);
       if (typeof refetchSpecialists === 'function') {
         await refetchSpecialists();
       }

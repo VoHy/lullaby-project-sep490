@@ -147,7 +147,7 @@ const ManagerNurseTab = ({ refetchNurses, nurses, zones, managedZone, loading, e
   // Xử lý xóa Chuyên viên chăm sóc
   const handleDeleteNurse = async (nurseId, accountId) => {
     try {
-      await nursingSpecialistService.deleteNursingSpecialist(nurseId);
+      await accountService.removeAccount(accountId);
       if (typeof refetchNurses === 'function') {
         await refetchNurses();
       }

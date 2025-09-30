@@ -28,6 +28,7 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
   });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [errors, setErrors] = useState({});
   const [registeredServiceIDs, setRegisteredServiceIDs] = useState([]);
   const [registeredMapByService, setRegisteredMapByService] = useState({}); // serviceID -> mappingID
 
@@ -102,6 +103,12 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
 
   const handleChange = (e) => {
     const { name, value, multiple, options } = e.target;
+    // clear field-specific error when user edits
+    setErrors(prev => {
+      const copy = { ...prev };
+      delete copy[name];
+      return copy;
+    });
     if (multiple) {
       const values = Array.from(options)
         .filter(option => option.selected)
@@ -122,11 +129,45 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
     e.preventDefault();
     setLoading(true);
     setError('');
+    setErrors({});
 
     try {
-      // Validate required fields
-      if (!formData.fullName) {
-        throw new Error('Vui lòng điền đầy đủ thông tin bắt buộc');
+      // Validate required fields and provide inline errors
+      const nextErrors = {};
+      if (!formData.fullName || String(formData.fullName).trim().length === 0) {
+        nextErrors.fullName = 'Vui lòng nhập Họ và tên.';
+      }
+      if (!formData.zoneID) {
+        nextErrors.zoneID = 'Vui lòng chọn khu vực.';
+      }
+      // dateOfBirth validation (if present) — ensure valid & age > 20
+      if (formData.dateOfBirth) {
+        const dobDate = new Date(formData.dateOfBirth);
+        if (Number.isNaN(dobDate.getTime())) {
+          nextErrors.dateOfBirth = 'Ngày sinh không hợp lệ.';
+        } else {
+          const now = new Date();
+          if (dobDate > now) {
+            nextErrors.dateOfBirth = 'Ngày sinh không được ở tương lai.';
+          } else {
+            let age = now.getFullYear() - dobDate.getFullYear();
+            const m = now.getMonth() - dobDate.getMonth();
+            if (m < 0 || (m === 0 && now.getDate() < dobDate.getDate())) {
+              age--;
+            }
+            if (age <= 20) {
+              nextErrors.dateOfBirth = 'Người dùng phải lớn hơn 20 tuổi.';
+            }
+          }
+        }
+      } else {
+        nextErrors.dateOfBirth = 'Vui lòng chọn ngày sinh.';
+      }
+
+      if (Object.keys(nextErrors).length > 0) {
+        setErrors(nextErrors);
+        setLoading(false);
+        return;
       }
 
       // Đảm bảo serviceID luôn là mảng string, không undefined/null
@@ -190,6 +231,9 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
                     required
                   />
+                  {errors.fullName && (
+                    <p className="text-red-500 text-sm mt-1">{errors.fullName}</p>
+                  )}
                 </div>
               </div>
               <h4 className="text-base font-semibold mb-4 text-gray-800 flex items-center gap-2">
@@ -256,6 +300,9 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
                       </option>
                     ))}
                   </select>
+                  {errors.zoneID && (
+                    <p className="text-red-500 text-sm mt-1">{errors.zoneID}</p>
+                  )}
                 </div>
 
                 {/* Thay thế phần chọn dịch vụ bằng checkbox group */}
@@ -358,6 +405,9 @@ const EditNurseModal = ({ nurse, onClose, onUpdate, zones, refetchNurses, servic
                     onChange={handleChange}
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
                   />
+                  {errors.dateOfBirth && (
+                    <p className="text-red-500 text-sm mt-1">{errors.dateOfBirth}</p>
+                  )}
                 </div>
 
                 <div className="bg-white rounded-lg p-0 md:col-span-2">

@@ -297,18 +297,8 @@ export default function NotificationBell() {
               })
             )}
           </div>
-
           {notifications.length > 0 && (
             <div className="p-4 border-t border-gray-100 bg-gray-50 rounded-b-2xl animate-slide-in-up">
-              <button
-                onClick={() => {
-                  setShowDropdown(false);
-                  router.push('/notifications');
-                }}
-                className="w-full bg-gradient-to-r from-purple-600 to-pink-600 text-white py-2 px-4 rounded-xl hover:from-purple-700 hover:to-pink-700 transition-all duration-300 text-sm font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
-              >
-                Xem tất cả thông báo
-              </button>
             </div>
           )}
         </div>

@@ -110,6 +110,28 @@ const CreateUserModal = ({ show, onClose, onSubmit }) => {
       if (!dob) {
         newErrors.dob = 'Vui lòng chọn Ngày sinh cho Nurse/Specialist.';
       }
+      else {
+        // Validate DOB: must be a valid date, not in future, and age must be > 20
+        const dobDate = new Date(dob);
+        if (Number.isNaN(dobDate.getTime())) {
+          newErrors.dob = 'Ngày sinh không hợp lệ.';
+        } else {
+          const now = new Date();
+          if (dobDate > now) {
+            newErrors.dob = 'Ngày sinh không được ở tương lai.';
+          } else {
+            // compute age in years
+            let age = now.getFullYear() - dobDate.getFullYear();
+            const m = now.getMonth() - dobDate.getMonth();
+            if (m < 0 || (m === 0 && now.getDate() < dobDate.getDate())) {
+              age--;
+            }
+            if (age <= 20) {
+              newErrors.dob = 'Người dùng phải lớn hơn 20 tuổi để đăng ký làm chuyên viên.';
+            }
+          }
+        }
+      }
       if (!zoneId) {
         newErrors.zoneId = 'Vui lòng chọn Khu vực làm việc cho Nurse/Specialist.';
       }

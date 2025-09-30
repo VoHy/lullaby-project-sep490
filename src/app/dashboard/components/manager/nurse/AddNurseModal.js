@@ -29,6 +29,16 @@ const AddNurseModal = ({ onClose, onAdd, managedZone, error }) => {
       ...prev,
       [name]: value
     }));
+    // clear field-specific error so it disappears when user edits the field
+    setErrors(prev => {
+      const copy = { ...prev };
+      if (name === 'dateOfBirth') {
+        delete copy.dateOfBirth;
+      } else {
+        delete copy[name];
+      }
+      return copy;
+    });
   };
 
   useEffect(() => {
@@ -57,6 +67,30 @@ const AddNurseModal = ({ onClose, onAdd, managedZone, error }) => {
     else if (!/[A-Z]/.test(pwd)) newErrors.password = 'Mật khẩu phải có ít nhất 1 chữ hoa [A-Z]';
     else if (!/[0-9]/.test(pwd)) newErrors.password = 'Mật khẩu phải có ít nhất 1 số [0-9]';
     else if (!/[!@#$%^&*]/.test(pwd)) newErrors.password = 'Mật khẩu phải có ít nhất 1 ký tự đặc biệt [!@#$%^&*]';
+
+    // DOB validation: require date, valid, not future, age > 20
+    if (!formData.dateOfBirth) {
+      newErrors.dateOfBirth = 'Vui lòng chọn ngày sinh.';
+    } else {
+      const dobDate = new Date(formData.dateOfBirth);
+      if (Number.isNaN(dobDate.getTime())) {
+        newErrors.dateOfBirth = 'Ngày sinh không hợp lệ.';
+      } else {
+        const now = new Date();
+        if (dobDate > now) {
+          newErrors.dateOfBirth = 'Ngày sinh không được ở tương lai.';
+        } else {
+          let age = now.getFullYear() - dobDate.getFullYear();
+          const m = now.getMonth() - dobDate.getMonth();
+          if (m < 0 || (m === 0 && now.getDate() < dobDate.getDate())) {
+            age--;
+          }
+          if (age <= 20) {
+            newErrors.dateOfBirth = 'Người dùng phải lớn hơn 20 tuổi.';
+          }
+        }
+      }
+    }
 
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
@@ -302,6 +336,9 @@ const AddNurseModal = ({ onClose, onAdd, managedZone, error }) => {
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-gray-300 focus:border-gray-300 transition-colors duration-200 bg-gray-50 focus:bg-white"
                     required
                   />
+                  {errors.dateOfBirth && (
+                    <p className="text-red-500 text-sm mt-1">{errors.dateOfBirth}</p>
+                  )}
                 </div>
 
                 <div className="bg-white rounded-lg p-0 md:col-span-2">
