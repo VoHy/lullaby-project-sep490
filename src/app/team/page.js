@@ -353,8 +353,8 @@ export default function TeamPage() {
   // Pagination state for Nurses and Specialists
   const [nursesPage, setNursesPage] = useState(1);
   const [specialistsPage, setSpecialistsPage] = useState(1);
-  const [nursesPageSize, setNursesPageSize] = useState(6);
-  const [specialistsPageSize, setSpecialistsPageSize] = useState(6);
+  const [nursesPageSize, setNursesPageSize] = useState(8);
+  const [specialistsPageSize, setSpecialistsPageSize] = useState(8);
 
   // Reset pages when filters/search change
   useEffect(() => {
