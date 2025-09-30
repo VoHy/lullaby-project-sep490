@@ -310,7 +310,7 @@ const BlogTab = () => {
       {/* Blog Form Modal */}
       {showBlogForm && (
         <BlogForm
-          blog={editingBlog}
+          initialValues={editingBlog || {}}
           onSubmit={handleBlogSubmit}
           onCancel={() => {
             setShowBlogForm(false);

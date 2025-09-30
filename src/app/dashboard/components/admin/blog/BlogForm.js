@@ -1,62 +1,86 @@
-import React, { useEffect, useState } from 'react';
-import blogCategoryService from '@/services/api/blogCategoryService';
+'use client';
+import { useState, useEffect } from 'react';
+import { EditorContent, useEditor } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 
-const BlogForm = ({ blog, onSubmit, onCancel }) => {
-  const [categories, setCategories] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({
-    title: '',
-    blogCategoryID: '',
-    content: '',
-    image: '',
-    createdByID: 1 // Mặc định là admin
+export default function BlogForm({ initialValues = {}, onSubmit, onCancel }) {
+  const [title, setTitle] = useState(initialValues.title || '');
+  const [category, setCategory] = useState(initialValues.category || '');
+  const [content, setContent] = useState(initialValues.content || '');
+  const [error, setError] = useState('');
+
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: initialValues.content || '',
+    onUpdate: ({ editor }) => {
+      setContent(editor.getHTML());
+    },
   });
 
+  // Helper: decode HTML entities if backend or pasted text is escaped
+  const decodeIfNeeded = (s) => {
+    if (!s) return '';
+    if (s.includes('&lt;') || s.includes('&gt;') || s.includes('&amp;')) {
+      try {
+        const doc = new DOMParser().parseFromString(s, 'text/html');
+        return doc.documentElement.textContent || '';
+      } catch (e) {
+        return s;
+      }
+    }
+    return s;
+  };
+
+  // Try to paste rich HTML from clipboard (best-effort). Requires HTTPS and permissions.
+  const pasteFromClipboard = async () => {
+    if (!editor) return;
+    try {
+      // Prefer reading clipboard as text/html when possible
+      if (navigator.clipboard && navigator.clipboard.readText) {
+        const txt = await navigator.clipboard.readText();
+        const html = decodeIfNeeded(txt);
+        // If it looks like HTML, insert as HTML, otherwise wrap in <p>
+        if (/<[a-z][\s\S]*>/i.test(html)) {
+          editor.commands.insertContent(html);
+        } else {
+          editor.commands.insertContent(`<p>${html}</p>`);
+        }
+        editor.commands.focus();
+        return;
+      }
+    } catch (e) {
+      // ignore and fallback to prompt
+    }
+    const fallback = prompt('Trình duyệt không cho phép đọc clipboard programmatically. Dán HTML vào đây:');
+    if (fallback) {
+      const html = decodeIfNeeded(fallback);
+      editor.commands.insertContent(/<[a-z][\s\S]*>/i.test(html) ? html : `<p>${html}</p>`);
+      editor.commands.focus();
+    }
+  };
+
   useEffect(() => {
-    fetchCategories();
-    if (blog) {
-      setForm({
-        title: blog.title || '',
-        blogCategoryID: blog.blogCategoryID || '',
-        content: blog.content || '',
-        image: blog.image || '',
-        createdByID: blog.createdByID || 1
-      });
+    if (editor && initialValues.content) {
+      editor.commands.setContent(initialValues.content);
     }
-  }, [blog]);
+  }, [editor, initialValues]);
 
-  const fetchCategories = async () => {
-    try {
-      const data = await blogCategoryService.getAllBlogCategories();
-      setCategories(data);
-    } catch (error) {
-      console.error('Lỗi khi tải danh mục:', error);
-    }
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async (e) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
-    setLoading(true);
-    try {
-      // Chuẩn bị data để gửi, chuyển empty string thành null cho blogCategoryID
-      const submitData = {
-        ...form,
-        blogCategoryID: form.blogCategoryID === '' ? null : parseInt(form.blogCategoryID)
-      };
-      await onSubmit(submitData);
-    } catch (error) {
-      console.error('Lỗi khi lưu blog:', error);
-    } finally {
-      setLoading(false);
+    setError('');
+
+    if (!title || !title.trim()) {
+      setError('Tiêu đề là bắt buộc.');
+      return;
     }
+
+    const htmlContent = editor ? editor.getHTML() : content;
+
+    onSubmit({
+      title: title.trim(),
+      category: category.trim(),
+      content: htmlContent,
+    });
   };
 
   return (
@@ -64,15 +88,10 @@ const BlogForm = ({ blog, onSubmit, onCancel }) => {
       <div className="bg-white rounded-xl shadow-xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-xl font-bold text-gray-800">
-            {blog ? 'Sửa tin tức' : 'Thêm tin tức mới'}
+            {initialValues && initialValues.title ? 'Sửa tin tức' : 'Thêm tin tức mới'}
           </h3>
-          <button
-            onClick={onCancel}
-            className="text-gray-500 hover:text-gray-700"
-          >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
+          <button onClick={onCancel} className="text-gray-500 hover:text-gray-700">
+            ✕
           </button>
         </div>
 
@@ -83,114 +102,99 @@ const BlogForm = ({ blog, onSubmit, onCancel }) => {
               Tiêu đề <span className="text-red-500">*</span>
             </label>
             <input
-              type="text"
-              name="title"
-              value={form.title}
-              onChange={handleChange}
-              required
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent"
-              placeholder="Nhập tiêu đề tin tức..."
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300"
+              placeholder="Nhập tiêu đề..."
             />
           </div>
 
           {/* Danh mục */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Danh mục
-            </label>
-            <select
-              name="blogCategoryID"
-              value={form.blogCategoryID}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent"
-            >
-              <option value="">Không chọn danh mục</option>
-              {categories.map(category => (
-                <option key={category.blogCategoryID} value={category.blogCategoryID}>
-                  {category.categoryName}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Nội dung */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nội dung <span className="text-red-500">*</span>
-            </label>
-            <textarea
-              name="content"
-              value={form.content}
-              onChange={handleChange}
-              required
-              rows={8}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent resize-vertical"
-              placeholder="Nhập nội dung tin tức..."
-            />
-          </div>
-
-          {/* Hình ảnh */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              URL Hình ảnh
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
             <input
-              type="url"
-              name="image"
-              value={form.image}
-              onChange={handleChange}
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300 focus:border-transparent"
-              placeholder="https://example.com/image.jpg"
+              value={category}
+              onChange={(e) => setCategory(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300"
+              placeholder="Ví dụ: Chăm sóc mẹ và bé"
             />
           </div>
 
-          {/* Preview hình ảnh */}
-          {form.image && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Xem trước hình ảnh
-              </label>
-              <div className="border border-gray-300 rounded-lg p-2">
-                <img
-                  src={form.image}
-                  alt="Preview"
-                  className="max-w-full h-32 object-cover rounded"
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                  }}
-                />
-              </div>
+          {/* Toolbar */}
+          {editor && (
+            <div className="flex flex-wrap gap-2 border p-2 rounded bg-gray-50">
+              <button
+                type="button"
+                onClick={() => {
+                  const html = prompt('Dán HTML vào đây:');
+                  if (html) {
+                    const decoded = decodeIfNeeded(html);
+                    editor.commands.insertContent(/<[a-z][\s\S]*>/i.test(decoded) ? decoded : `<p>${decoded}</p>`);
+                    editor.commands.focus();
+                  }
+                }}
+                className="px-2 bg-green-100 rounded text-sm"
+              >
+                Dán HTML
+              </button>
+              <button
+                type="button"
+                onClick={() => pasteFromClipboard()}
+                className="px-2 bg-blue-100 rounded text-sm"
+              >
+                Dán từ clipboard
+              </button>
+              <button type="button" onClick={() => editor.chain().focus().toggleBold().run()}
+                className={editor?.isActive('bold') ? 'bg-purple-200 px-2 rounded' : 'px-2'}>
+                B
+              </button>
+              <button type="button" onClick={() => editor.chain().focus().toggleItalic().run()}
+                className={editor?.isActive('italic') ? 'bg-purple-200 px-2 rounded' : 'px-2'}>
+                I
+              </button>
+              <button type="button" onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+                className={editor?.isActive('heading', { level: 2 }) ? 'bg-purple-200 px-2 rounded' : 'px-2'}>
+                H2
+              </button>
+              <button type="button" onClick={() => editor.chain().focus().toggleBulletList().run()}
+                className={editor?.isActive('bulletList') ? 'bg-purple-200 px-2 rounded' : 'px-2'}>
+                • List
+              </button>
+              <button type="button" onClick={() => editor.chain().focus().toggleOrderedList().run()}
+                className={editor?.isActive('orderedList') ? 'bg-purple-200 px-2 rounded' : 'px-2'}>
+                1. List
+              </button>
+              <button type="button" onClick={() => editor.chain().focus().undo().run()} className="px-2">
+                ↶ Undo
+              </button>
+              <button type="button" onClick={() => editor.chain().focus().redo().run()} className="px-2">
+                ↷ Redo
+              </button>
             </div>
           )}
 
-          {/* Nút hành động */}
+          {/* Editor */}
+          <div className="w-full border border-gray-300 rounded-lg p-4 min-h-[200px]">
+            <div className="prose prose-lg max-w-none">
+              <EditorContent editor={editor} />
+            </div>
+          </div>
+
+          {error && <p className="text-red-500 text-sm">{error}</p>}
+
+          {/* Buttons */}
           <div className="flex justify-end gap-3 pt-4">
-            <button
-              type="button"
-              onClick={onCancel}
-              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
-            >
+            <button type="button" onClick={onCancel}
+              className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
               Hủy
             </button>
-            <button
-              type="submit"
-              disabled={loading}
-              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg font-semibold shadow hover:scale-105 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="flex items-center gap-2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                  Đang lưu...
-                </div>
-              ) : (
-                blog ? 'Cập nhật' : 'Thêm mới'
-              )}
+            <button type="submit"
+              className="px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg">
+              Lưu
             </button>
           </div>
         </form>
       </div>
     </div>
   );
-};
-
-export default BlogForm; 
+}

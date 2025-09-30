@@ -47,6 +47,45 @@ const BlogList = ({ onEdit, onDelete, onActivate, onDeactivate, refreshTrigger }
     return matchesSearch && matchesCategory;
   });
 
+  // Helpers: decode HTML entities (if backend returned escaped HTML) and extract a small HTML excerpt
+  const decodeIfNeeded = (content) => {
+    if (!content) return '';
+    try {
+      if (content.includes('&lt;') && content.includes('&gt;') && typeof window !== 'undefined') {
+        const parser = new DOMParser();
+        return parser.parseFromString(content, 'text/html').documentElement.textContent;
+      }
+    } catch (err) {
+      // fallthrough to return original
+    }
+    return content;
+  };
+
+  const getExcerptHtml = (html, maxChars = 150) => {
+    const decoded = decodeIfNeeded(html);
+    if (!decoded) return '';
+
+    // Server-side fallback: strip tags and truncate
+    if (typeof window === 'undefined') {
+      const plain = decoded.replace(/<[^>]+>/g, '');
+      return plain.length > maxChars ? plain.slice(0, maxChars) + '...' : plain;
+    }
+
+    try {
+      const doc = new DOMParser().parseFromString(decoded, 'text/html');
+      const selector = 'p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote';
+      const first = doc.body.querySelector(selector) || doc.body.firstChild;
+      if (!first) return '';
+      const text = first.textContent || '';
+      if (text.length <= maxChars) return first.outerHTML || `<p>${text}</p>`;
+      return `<p>${text.slice(0, maxChars)}...</p>`;
+    } catch (err) {
+      // fallback to plain text
+      const plain = decoded.replace(/<[^>]+>/g, '');
+      return plain.length > maxChars ? plain.slice(0, maxChars) + '...' : plain;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
@@ -128,9 +167,9 @@ const BlogList = ({ onEdit, onDelete, onActivate, onDeactivate, refreshTrigger }
                     {blog.status === 'active' || blog.status === true ? 'Hoạt động' : 'Không hoạt động'}
                   </span>
                 </div>
-                <p className="text-gray-600 text-sm line-clamp-3 mb-4">
-                  {blog.content?.substring(0, 150)}...
-                </p>
+                <div className="text-gray-600 text-sm line-clamp-3 mb-4 prose prose-sm max-w-full">
+                  <div dangerouslySetInnerHTML={{ __html: getExcerptHtml(blog.content) }} />
+                </div>
                 <div className="flex items-center justify-between text-sm text-gray-500">
                   <span className="flex items-center gap-1">
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -266,8 +305,8 @@ const BlogList = ({ onEdit, onDelete, onActivate, onDeactivate, refreshTrigger }
                  {/* Content */}
                  <div>
                    <h4 className="text-lg font-semibold text-gray-900 mb-3">Nội dung</h4>
-                   <div className="bg-gray-50 rounded-xl p-4 max-h-64 overflow-y-auto">
-                     <p className="text-gray-700 whitespace-pre-wrap">{selectedBlog.content}</p>
+                   <div className="bg-gray-50 rounded-xl p-4 max-h-64 overflow-y-auto prose prose-sm max-w-full">
+                     <div dangerouslySetInnerHTML={{ __html: decodeIfNeeded(selectedBlog.content) }} />
                    </div>
                  </div>
 

@@ -10,6 +10,8 @@ export default function NewsPage() {
   const [blogs, setBlogs] = useState([]);
   const [categories, setCategories] = useState([]);
   const [filteredBlogs, setFilteredBlogs] = useState([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(6); // default items per page
   const [searchText, setSearchText] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [loading, setLoading] = useState(true);
@@ -30,11 +32,26 @@ export default function NewsPage() {
         // Ánh xạ blogCategoryID sang BlogCategory
         const processedBlogs = blogsData.map(blog => {
           const category = categoriesData.find(cat => cat.blogCategoryID === blog.blogCategoryID);
+
+          // decode escaped HTML entities if backend returned encoded HTML
+          const decodeIfNeeded = (s) => {
+            if (!s) return '';
+            if (s.includes('&lt;') || s.includes('&gt;') || s.includes('&amp;')) {
+              try {
+                const doc = new DOMParser().parseFromString(s, 'text/html');
+                return doc.documentElement.textContent || '';
+              } catch (e) {
+                return s;
+              }
+            }
+            return s;
+          };
+
           return {
             ...blog,
             BlogCategory: category || { categoryName: 'Tin tức' },
             title: blog.title || '',
-            content: blog.content || '',
+            content: decodeIfNeeded(blog.content || ''),
             Views: blog.Views || 0,
             Author: blog.Author || 'Lullaby Team'
           };
@@ -74,7 +91,20 @@ export default function NewsPage() {
     }
 
     setFilteredBlogs(filtered);
+    // reset to first page whenever filters change
+    setCurrentPage(1);
   }, [blogs, searchText, selectedCategory]);
+
+  // Pagination helpers
+  const totalPages = Math.max(1, Math.ceil((filteredBlogs?.length || 0) / pageSize));
+  const paginatedBlogs = filteredBlogs.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+
+  const goToPage = (p) => {
+    const page = Math.max(1, Math.min(totalPages, p));
+    setCurrentPage(page);
+    // scroll to top of list for better UX
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const getCategoryOptions = () => {
     const categoryNames = categories.map(cat => cat.categoryName).filter(Boolean);
@@ -94,6 +124,32 @@ export default function NewsPage() {
   const truncateText = (text, maxLength = 120) => {
     if (!text) return '';
     return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+  };
+
+  // Similar to detail page: prefer first block (p, ul, ol, h1..h6) and return its HTML truncated if needed
+  const excerptHtml = (html, maxChars = 120) => {
+    if (!html) return '';
+    try {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const selectors = ['p', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'ul', 'ol', 'div'];
+      for (const sel of selectors) {
+        const el = doc.querySelector(sel);
+        if (el && (el.textContent || el.innerText || '').trim()) {
+          const text = (el.textContent || el.innerText || '').trim();
+          if (text.length <= maxChars) {
+            return el.outerHTML;
+          }
+          const truncated = text.slice(0, maxChars).trim();
+          return `<p>${truncated}...</p>`;
+        }
+      }
+      const tmp = doc.body.textContent || doc.body.innerText || '';
+      const short = tmp.length > maxChars ? tmp.slice(0, maxChars).trim() + '...' : tmp;
+      return `<p>${short}</p>`;
+    } catch (e) {
+      const safe = html.length > maxChars ? html.slice(0, maxChars) + '...' : html;
+      return `<p>${safe}</p>`;
+    }
   };
 
   const getCategoryName = (blog) => {
@@ -202,13 +258,14 @@ export default function NewsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <div className="text-6xl mb-4">📰</div>
+            <div className="text-6xl mb-4"></div>
             <h3 className="text-xl font-semibold text-gray-800 mb-2">Không tìm thấy bài viết</h3>
             <p className="text-gray-600">Hãy thử tìm kiếm với từ khóa khác hoặc chọn danh mục khác</p>
           </motion.div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredBlogs.map((blog, idx) => (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {paginatedBlogs.map((blog, idx) => (
               <motion.div
                 key={blog.blogID}
                 initial={{ opacity: 0, y: 40 }}
@@ -216,9 +273,10 @@ export default function NewsPage() {
                 transition={{ duration: 0.6, delay: idx * 0.1 }}
                 className="group"
               >
-                <div className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden cursor-pointer"
-                  onClick={() => router.push(`/news/${blog.blogID}`)}>
-
+                <div
+                  onClick={() => router.push(`/news/${blog.blogID}`)}
+                  className="bg-white rounded-2xl shadow-lg hover:shadow-xl transition-all duration-300 transform hover:-translate-y-2 overflow-hidden cursor-pointer h-full flex flex-col"
+                >
                   {/* Image */}
                   <div className="relative overflow-hidden">
                     <img
@@ -233,15 +291,15 @@ export default function NewsPage() {
                     </div>
                   </div>
 
-                  {/* Content */}
-                  <div className="p-6">
+                  {/* Content (grow) */}
+                  <div className="p-6 flex-1 flex flex-col">
                     <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-2 group-hover:text-purple-600 transition-colors">
                       {blog.title}
                     </h3>
 
-                    <p className="text-gray-600 text-sm mb-4 line-clamp-3 leading-relaxed">
-                      {truncateText(blog.content || 'Nội dung đang được cập nhật...')}
-                    </p>
+                    <div className="text-gray-600 text-sm mb-4 leading-relaxed flex-1 overflow-hidden">
+                      <div className="prose prose-sm max-w-full" dangerouslySetInnerHTML={{ __html: excerptHtml(blog.content || 'Nội dung đang được cập nhật...', 220) }} />
+                    </div>
 
                     {/* Meta Info */}
                     <div className="flex items-center justify-between text-sm text-gray-500 mb-4">
@@ -256,7 +314,7 @@ export default function NewsPage() {
                     </div>
 
                     {/* Action Button */}
-                    <div className="flex items-center justify-between">
+                    <div className="flex items-center justify-between mt-auto">
                       <div className="flex items-center gap-2 text-purple-600 font-medium text-sm">
                         <FaUser className="text-xs" />
                         <span>{blog.Author || 'Lullaby Team'}</span>
@@ -275,8 +333,45 @@ export default function NewsPage() {
                   </div>
                 </div>
               </motion.div>
-            ))}
-          </div>
+              ))}
+            </div>
+
+            {/* Pagination Controls */}
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4 mt-10">
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => goToPage(currentPage - 1)}
+                  disabled={currentPage === 1}
+                  className={`px-4 py-2 rounded-lg border ${currentPage === 1 ? 'text-gray-400 border-gray-200' : 'text-purple-600 border-purple-200 hover:bg-purple-50'}`}
+                >
+                  Trước
+                </button>
+
+                <div className="hidden sm:flex items-center gap-2">
+                  {Array.from({ length: totalPages }).map((_, i) => {
+                    const p = i + 1;
+                    return (
+                      <button
+                        key={p}
+                        onClick={() => goToPage(p)}
+                        className={`px-3 py-2 rounded-lg ${currentPage === p ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                      >
+                        {p}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <button
+                  onClick={() => goToPage(currentPage + 1)}
+                  disabled={currentPage === totalPages}
+                  className={`px-4 py-2 rounded-lg border ${currentPage === totalPages ? 'text-gray-400 border-gray-200' : 'text-purple-600 border-purple-200 hover:bg-purple-50'}`}
+                >
+                  Sau
+                </button>
+              </div>
+            </div>
+          </>
         )}
 
         {/* Load More Button (if needed) */}
@@ -287,9 +382,6 @@ export default function NewsPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
           >
-            <button className="px-8 py-3 rounded-xl bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all duration-300 transform hover:scale-105">
-              Xem thêm tin tức
-            </button>
           </motion.div>
         )}
       </div>

@@ -350,6 +350,36 @@ export default function TeamPage() {
     filteredSpecialists = filteredSpecialists.filter(m => isFavorite(m.NursingID || m.nursingID));
   }
 
+  // Pagination state for Nurses and Specialists
+  const [nursesPage, setNursesPage] = useState(1);
+  const [specialistsPage, setSpecialistsPage] = useState(1);
+  const [nursesPageSize, setNursesPageSize] = useState(6);
+  const [specialistsPageSize, setSpecialistsPageSize] = useState(6);
+
+  // Reset pages when filters/search change
+  useEffect(() => {
+    setNursesPage(1);
+    setSpecialistsPage(1);
+  }, [selectedZone, searchText, showOnlyFavorites, zones]);
+
+  const nursesTotalPages = Math.max(1, Math.ceil((filteredNurses.length || 0) / nursesPageSize));
+  const specialistsTotalPages = Math.max(1, Math.ceil((filteredSpecialists.length || 0) / specialistsPageSize));
+
+  const paginatedNurses = filteredNurses.slice((nursesPage - 1) * nursesPageSize, nursesPage * nursesPageSize);
+  const paginatedSpecialists = filteredSpecialists.slice((specialistsPage - 1) * specialistsPageSize, specialistsPage * specialistsPageSize);
+
+  const gotoNursesPage = (p) => {
+    const page = Math.max(1, Math.min(nursesTotalPages, p));
+    setNursesPage(page);
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const gotoSpecialistsPage = (p) => {
+    const page = Math.max(1, Math.min(specialistsTotalPages, p));
+    setSpecialistsPage(page);
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   // Lấy danh sách zone unique
   const allZoneNames = Array.from(new Set(zones.map(z => z.Zone_name || z.zoneName || z.City || z.city).filter(Boolean)));
 
@@ -587,10 +617,12 @@ export default function TeamPage() {
           <div>
             <h2 className="text-3xl font-bold text-blue-700 mb-8 text-center">Đội ngũ chuyên viên chăm sóc</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredNurses.map((nurse) => (
+              {paginatedNurses.map((nurse) => (
                 <MemberCard key={nurse.NursingID || nurse.nursingID} member={nurse} onViewDetail={handleViewDetail} />
               ))}
             </div>
+
+            {/* Pagination for Nurses (moved to bottom of section) */}
             {filteredNurses.length === 0 && (
               <div className="text-center py-12">
                 <FaUser className="text-gray-400 text-6xl mb-4 inline-block" />
@@ -603,14 +635,50 @@ export default function TeamPage() {
           <div>
             <h2 className="text-3xl font-bold text-pink-700 mb-8 text-center">Đội ngũ chuyên viên tư vấn</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-              {filteredSpecialists.map((specialist) => (
+              {paginatedSpecialists.map((specialist) => (
                 <MemberCard key={specialist.NursingID || specialist.nursingID} member={specialist} onViewDetail={handleViewDetail} />
               ))}
             </div>
+
             {filteredSpecialists.length === 0 && (
               <div className="text-center py-12">
                 <FaUserMd className="text-gray-400 text-6xl mb-4 inline-block" />
                 <p className="text-gray-600">Không tìm thấy chuyên viên tư vấn nào phù hợp</p>
+              </div>
+            )}
+
+            {/* Combined pagination controls placed after both sections */}
+            {(filteredNurses.length > nursesPageSize || filteredSpecialists.length > specialistsPageSize) && (
+              <div className="flex flex-col items-center gap-6 mt-8">
+                {filteredNurses.length > nursesPageSize && (
+                  <div className="flex items-center justify-center gap-2">
+                    <button disabled={nursesPage === 1} onClick={() => gotoNursesPage(nursesPage - 1)} className={`px-3 py-2 rounded-lg border ${nursesPage === 1 ? 'text-gray-400 border-gray-200' : 'text-purple-600 border-purple-200 hover:bg-purple-50'}`}>Trước</button>
+                    <div className="flex items-center gap-2">
+                      {Array.from({ length: nursesTotalPages }).map((_, i) => {
+                        const p = i + 1;
+                        return (
+                          <button key={`n-${p}`} onClick={() => gotoNursesPage(p)} className={`px-3 py-2 rounded-lg ${nursesPage === p ? 'bg-purple-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>{p}</button>
+                        );
+                      })}
+                    </div>
+                    <button disabled={nursesPage === nursesTotalPages} onClick={() => gotoNursesPage(nursesPage + 1)} className={`px-3 py-2 rounded-lg border ${nursesPage === nursesTotalPages ? 'text-gray-400 border-gray-200' : 'text-purple-600 border-purple-200 hover:bg-purple-50'}`}>Sau</button>
+                  </div>
+                )}
+
+                {filteredSpecialists.length > specialistsPageSize && (
+                  <div className="flex items-center justify-center gap-2">
+                    <button disabled={specialistsPage === 1} onClick={() => gotoSpecialistsPage(specialistsPage - 1)} className={`px-3 py-2 rounded-lg border ${specialistsPage === 1 ? 'text-gray-400 border-gray-200' : 'text-pink-600 border-pink-200 hover:bg-pink-50'}`}>Trước</button>
+                    <div className="flex items-center gap-2">
+                      {Array.from({ length: specialistsTotalPages }).map((_, i) => {
+                        const p = i + 1;
+                        return (
+                          <button key={`s-${p}`} onClick={() => gotoSpecialistsPage(p)} className={`px-3 py-2 rounded-lg ${specialistsPage === p ? 'bg-pink-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}>{p}</button>
+                        );
+                      })}
+                    </div>
+                    <button disabled={specialistsPage === specialistsTotalPages} onClick={() => gotoSpecialistsPage(specialistsPage + 1)} className={`px-3 py-2 rounded-lg border ${specialistsPage === specialistsTotalPages ? 'text-gray-400 border-gray-200' : 'text-pink-600 border-pink-200 hover:bg-pink-50'}`}>Sau</button>
+                  </div>
+                )}
               </div>
             )}
           </div>

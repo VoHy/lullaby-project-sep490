@@ -3,6 +3,8 @@ import { useParams, useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import { FaArrowLeft, FaCalendar, FaUser, FaEye, FaShare, FaBookmark, FaFacebook, FaTwitter, FaLinkedin } from 'react-icons/fa';
 import { useState, useEffect } from 'react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 import blogService from '@/services/api/blogService';
 import blogCategoryService from '@/services/api/blogCategoryService';
 
@@ -22,6 +24,22 @@ export default function NewsDetailPage() {
         
         // Fetch blog detail
         const blogData = await blogService.getBlogById(id);
+
+        // If backend returned HTML escaped as entities (e.g. &lt;p&gt;), decode it here.
+        const decodeIfNeeded = (s) => {
+          if (!s) return '';
+          if (s.includes('&lt;') || s.includes('&gt;') || s.includes('&amp;')) {
+            try {
+              const doc = new DOMParser().parseFromString(s, 'text/html');
+              return doc.documentElement.textContent || '';
+            } catch (e) {
+              return s;
+            }
+          }
+          return s;
+        };
+
+        blogData.content = decodeIfNeeded(blogData.content || '');
         setBlog(blogData);
         
         // Fetch related blogs with same category
@@ -45,6 +63,24 @@ export default function NewsDetailPage() {
     fetchBlogData();
   }, [id]);
 
+  // TipTap read-only editor for displaying content
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: blog?.content || '',
+    editable: false
+  });
+
+  // When blog is updated, sync its content into the editor
+  useEffect(() => {
+    if (editor && blog) {
+      const html = blog.content || '';
+      const current = editor.getHTML();
+      if (current !== html) {
+        editor.commands.setContent(html);
+      }
+    }
+  }, [editor, blog]);
+
   const formatDate = (dateString) => {
     if (!dateString) return 'Chưa có ngày';
     const date = new Date(dateString);
@@ -57,7 +93,15 @@ export default function NewsDetailPage() {
 
   const truncateText = (text, maxLength = 120) => {
     if (!text) return '';
-    return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+    // Strip HTML tags for preview text
+    try {
+      const div = document.createElement('div');
+      div.innerHTML = text;
+      const stripped = div.textContent || div.innerText || '';
+      return stripped.length > maxLength ? stripped.slice(0, maxLength) + '...' : stripped;
+    } catch (e) {
+      return text.length > maxLength ? text.slice(0, maxLength) + '...' : text;
+    }
   };
 
   const getCategoryName = (blog) => {
@@ -101,7 +145,7 @@ export default function NewsDetailPage() {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 flex items-center justify-center">
         <div className="text-center">
-          <div className="text-6xl mb-4">📰</div>
+          <div className="text-6xl mb-4"></div>
           <h2 className="text-2xl font-bold text-gray-800 mb-2">Không tìm thấy bài viết</h2>
           <p className="text-gray-600 mb-6">Bài viết bạn đang tìm kiếm không tồn tại hoặc đã bị xóa.</p>
           <button
@@ -161,10 +205,6 @@ export default function NewsDetailPage() {
               <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4 leading-tight">
                 {blog.title}
               </h1>
-              
-              <p className="text-xl text-gray-600 mb-6 leading-relaxed">
-                {truncateText(blog.content, 200)}
-              </p>
 
               {/* Meta Information */}
               <div className="flex flex-wrap items-center gap-6 text-sm text-gray-500 mb-6 pb-6 border-b border-gray-200">
@@ -227,7 +267,11 @@ export default function NewsDetailPage() {
           className="bg-white rounded-2xl shadow-lg p-6 md:p-8"
         >
           <div className="prose prose-lg max-w-none">
-            <div dangerouslySetInnerHTML={{ __html: blog.content || 'Nội dung đang được cập nhật...' }} />
+            {editor ? (
+              <EditorContent editor={editor} />
+            ) : (
+              <div dangerouslySetInnerHTML={{ __html: blog.content || 'Nội dung đang được cập nhật...' }} />
+            )}
           </div>
         </motion.div>
 
