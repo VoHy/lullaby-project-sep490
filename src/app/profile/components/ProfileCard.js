@@ -9,7 +9,7 @@ const ProfileCard = React.memo(({ profile, isEditing, editData, onEditClick, onI
       <div className="text-center mb-6">
         <div className="relative inline-block">
           <img
-            src={(profile.avatarUrl) && (profile.avatarUrl) !== 'string' ? (profile.avatarUrl) : "/images/logo-eldora.png"}
+            src={profile.avatarUrl ? profile.avatarUrl : "https://i.ibb.co/zWSDrsBx/ae10a4719f321f9123ab1a3b7e02fa2b.jpg"}
             alt={profile.fullName}
             className="w-32 h-32 rounded-full object-cover border-4 border-white shadow-lg"
           />
