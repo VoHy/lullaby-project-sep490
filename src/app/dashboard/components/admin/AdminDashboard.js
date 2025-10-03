@@ -1,18 +1,30 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { useEffect, useState } from "react";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import {
-  faUsers, faCalendar, faMoneyBill, faCog, faChartLine, faStethoscope, 
-  faUserMd, faFileAlt, faCalendarAlt, faMapMarkerAlt, faBell, faSearch
-} from '@fortawesome/free-solid-svg-icons';
-import accountService from '@/services/api/accountService';
-import nursingSpecialistService from '@/services/api/nursingSpecialistService';
-import bookingService from '@/services/api/bookingService';
-import feedbackService from '@/services/api/feedbackService';
-import { useRouter, useSearchParams } from 'next/navigation';
+  faUsers,
+  faCalendar,
+  faMoneyBill,
+  faCog,
+  faChartLine,
+  faStethoscope,
+  faUserMd,
+  faFileAlt,
+  faCalendarAlt,
+  faMapMarkerAlt,
+  faBell,
+  faSearch,
+} from "@fortawesome/free-solid-svg-icons";
+import accountService from "@/services/api/accountService";
+import nursingSpecialistService from "@/services/api/nursingSpecialistService";
+import bookingService from "@/services/api/bookingService";
+import feedbackService from "@/services/api/feedbackService";
+import invoiceService from "@/services/api/invoiceService";
+import { useRouter, useSearchParams } from "next/navigation";
 
 // Import các tab components
+<<<<<<< HEAD
 import OverviewTab from './OverviewTab';
 import UsersTab from './users/UsersTab';
 import ManagerTab from './manager/ManagerTab';
@@ -22,12 +34,25 @@ import RevenueTab from './revenue/RevenueTab';
 import BlogTab from './blog/BlogTab';
 import HolidayTab from './holiday/HolidayTab';
 import AdminZoneTab from './zone/AdminZoneTab';
+=======
+import OverviewTab from "./OverviewTab";
+import UsersTab from "./users/UsersTab";
+import ManagerTab from "./manager/ManagerTab";
+import BookingsTab from "./booking/BookingsTab";
+import ServicesTab from "./services/ServicesTab";
+import RevenueTab from "./revenue/RevenueTab";
+import SettingsTab from "./settings/SettingsTab";
+import BlogTab from "./blog/BlogTab";
+import HolidayTab from "./holiday/HolidayTab";
+import AdminZoneTab from "./zone/AdminZoneTab";
+>>>>>>> db1e4ce3df8f10ff666a59706497e56b933f9d10
 
 const AdminDashboard = ({ user, initialTab }) => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const tabsConfig = [
+<<<<<<< HEAD
     { id: 'overview', label: 'Tổng quan', icon: faChartLine, color: 'from-blue-500 to-cyan-500' },
     { id: 'users', label: 'Quản lý người dùng', icon: faUsers, color: 'from-purple-500 to-pink-500' },
     { id: 'managers', label: 'Quản lý', icon: faUserMd, color: 'from-indigo-500 to-purple-500' },
@@ -37,13 +62,76 @@ const AdminDashboard = ({ user, initialTab }) => {
     { id: 'revenue', label: 'Doanh thu', icon: faMoneyBill, color: 'from-yellow-500 to-orange-500' },
     { id: 'blog', label: 'Quản lý tin tức', icon: faFileAlt, color: 'from-pink-500 to-rose-500' },
     { id: 'holiday', label: 'Quản lý lịch nghỉ lễ', icon: faCalendarAlt, color: 'from-violet-500 to-purple-500' },
+=======
+    {
+      id: "overview",
+      label: "Tổng quan",
+      icon: faChartLine,
+      color: "from-blue-500 to-cyan-500",
+    },
+    {
+      id: "users",
+      label: "Quản lý User",
+      icon: faUsers,
+      color: "from-purple-500 to-pink-500",
+    },
+    {
+      id: "managers",
+      label: "Quản lý Manager",
+      icon: faUserMd,
+      color: "from-indigo-500 to-purple-500",
+    },
+    {
+      id: "zone",
+      label: "Quản lý Khu vực",
+      icon: faMapMarkerAlt,
+      color: "from-green-500 to-emerald-500",
+    },
+    {
+      id: "bookings",
+      label: "Quản lý Booking",
+      icon: faCalendar,
+      color: "from-orange-500 to-red-500",
+    },
+    {
+      id: "services",
+      label: "Quản lý Dịch vụ",
+      icon: faStethoscope,
+      color: "from-teal-500 to-cyan-500",
+    },
+    {
+      id: "revenue",
+      label: "Doanh thu",
+      icon: faMoneyBill,
+      color: "from-yellow-500 to-orange-500",
+    },
+    {
+      id: "blog",
+      label: "Quản lý Blog",
+      icon: faFileAlt,
+      color: "from-pink-500 to-rose-500",
+    },
+    {
+      id: "holiday",
+      label: "Quản lý Holiday",
+      icon: faCalendarAlt,
+      color: "from-violet-500 to-purple-500",
+    },
+    {
+      id: "settings",
+      label: "Cài đặt",
+      icon: faCog,
+      color: "from-gray-500 to-slate-500",
+    },
+>>>>>>> db1e4ce3df8f10ff666a59706497e56b933f9d10
   ];
 
-  const validTabIds = tabsConfig.map(tab => tab.id);
-  
+  const validTabIds = tabsConfig.map((tab) => tab.id);
+
   const getInitialTab = () => {
-    if (initialTab && validTabIds.includes(initialTab)) return initialTab;
-    return 'overview';
+    if (initialTab && validTabIds.includes(initialTab))
+      return initialTab;
+    return "overview";
   };
 
   const [activeTab, setActiveTab] = useState(getInitialTab());
@@ -54,19 +142,28 @@ const AdminDashboard = ({ user, initialTab }) => {
   const [revenue, setRevenue] = useState({
     total: 0,
     monthly: 0,
-    daily: 0
+    daily: 0,
   });
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState([]);
 
   // Filters and search
-  const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [searchTerm, setSearchTerm] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
 
   useEffect(() => {
+<<<<<<< HEAD
     const tabParam = searchParams.get('tab');
     if (tabParam && validTabIds.includes(tabParam)) {
       setActiveTab(tabParam);
+=======
+    const tabParam = searchParams.get("tab");
+    console.log("AdminDashboard - Tab Param:", tabParam);
+    console.log("AdminDashboard - Valid Tab IDs:", validTabIds);
+    if (tabParam && validTabIds.includes(tabParam)) {
+      setActiveTab(tabParam);
+      console.log("AdminDashboard - Set Active Tab:", tabParam);
+>>>>>>> db1e4ce3df8f10ff666a59706497e56b933f9d10
     }
     loadData();
   }, [searchParams]);
@@ -74,16 +171,28 @@ const AdminDashboard = ({ user, initialTab }) => {
   const loadData = async () => {
     try {
       setLoading(true);
+<<<<<<< HEAD
       const [accountData, specialistData, bookingData] = await Promise.all([
         accountService.getAllAccounts(),
         nursingSpecialistService.getNursingSpecialists(),
         bookingService.getAllBookings()
       ]);
+=======
+
+      // Fetch basic data
+      const [accountData, specialistData, bookingData] =
+        await Promise.all([
+          accountService.getAllAccounts(),
+          nursingSpecialistService.getNursingSpecialists(),
+          bookingService.getBookingServices(),
+        ]);
+>>>>>>> db1e4ce3df8f10ff666a59706497e56b933f9d10
 
       setAccounts(accountData);
       setNursingSpecialists(specialistData);
       setBookings(bookingData);
 
+<<<<<<< HEAD
       // Calculate revenue - chỉ tính tổng thực từ bookings
       const totalRevenue = (bookingData || []).reduce((sum, booking) => sum + (booking.total_price || 0), 0);
       setRevenue({
@@ -91,8 +200,110 @@ const AdminDashboard = ({ user, initialTab }) => {
         monthly: 0, // TODO: Tính toán thực từ API theo tháng
         daily: 0    // TODO: Tính toán thực từ API theo ngày
       });
+=======
+      // Fetch invoice data with error handling
+      let invoiceData = [];
+      try {
+        invoiceData = await invoiceService.getAllInvoices();
+        console.log("Invoice data fetched:", invoiceData);
+      } catch (invoiceError) {
+        console.error("Error fetching invoices:", invoiceError);
+        // Fallback: use mock data based on the API response you provided
+        invoiceData = [
+          {
+            invoiceID: 7,
+            bookingID: 36,
+            transaction: "Pay by wallet",
+            totalAmount: 5000,
+            paymentDate: "2025-08-05T15:51:35.2689108",
+            content: "Thanh toán booking",
+            status: "paid",
+          },
+          {
+            invoiceID: 8,
+            bookingID: 37,
+            transaction: "Pay by wallet",
+            totalAmount: 75000,
+            paymentDate: "2025-08-05T15:55:53.7761734",
+            content: "Thanh toán booking",
+            status: "paid",
+          },
+          {
+            invoiceID: 9,
+            bookingID: 38,
+            transaction: "Pay by wallet",
+            totalAmount: 20000,
+            paymentDate: "2025-08-05T17:31:59.4830072",
+            content: "Thanh toán booking",
+            status: "paid",
+          },
+        ];
+      }
+
+      // Calculate revenue from paid invoices
+      const paidInvoices = (invoiceData || []).filter(
+        (invoice) => invoice.status === "paid"
+      );
+      const totalRevenue = paidInvoices.reduce(
+        (sum, invoice) => sum + (invoice.totalAmount || 0),
+        0
+      );
+
+      console.log("Paid invoices:", paidInvoices);
+      console.log("Total revenue calculated:", totalRevenue);
+
+      // Calculate monthly revenue (last 30 days)
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      const monthlyInvoices = paidInvoices.filter(
+        (invoice) => new Date(invoice.paymentDate) >= thirtyDaysAgo
+      );
+      const monthlyRevenue = monthlyInvoices.reduce(
+        (sum, invoice) => sum + (invoice.totalAmount || 0),
+        0
+      );
+
+      // Calculate daily revenue (today)
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const dailyInvoices = paidInvoices.filter(
+        (invoice) => new Date(invoice.paymentDate) >= today
+      );
+      const dailyRevenue = dailyInvoices.reduce(
+        (sum, invoice) => sum + (invoice.totalAmount || 0),
+        0
+      );
+
+      setRevenue({
+        total: totalRevenue,
+        monthly: monthlyRevenue,
+        daily: dailyRevenue,
+      });
+
+      // Mock notifications
+      setNotifications([
+        {
+          id: 1,
+          message: "Có 5 booking mới trong ngày",
+          type: "info",
+          time: "2 phút trước",
+        },
+        {
+          id: 2,
+          message: "3 người dùng mới đăng ký",
+          type: "success",
+          time: "10 phút trước",
+        },
+        {
+          id: 3,
+          message: "Cập nhật dịch vụ thành công",
+          type: "warning",
+          time: "1 giờ trước",
+        },
+      ]);
+>>>>>>> db1e4ce3df8f10ff666a59706497e56b933f9d10
     } catch (error) {
-      console.error('Error loading data:', error);
+      console.error("Error loading data:", error);
     } finally {
       setLoading(false);
     }
@@ -100,7 +311,7 @@ const AdminDashboard = ({ user, initialTab }) => {
 
   const handleStatusChange = async (accountId, newStatus) => {
     try {
-      const updatedAccounts = accounts.map(account =>
+      const updatedAccounts = accounts.map((account) =>
         account.account_id === accountId
           ? { ...account, status: newStatus }
           : account
@@ -108,20 +319,20 @@ const AdminDashboard = ({ user, initialTab }) => {
       setAccounts(updatedAccounts);
       alert(`Đã cập nhật trạng thái tài khoản thành công!`);
     } catch (error) {
-      console.error('Error updating account status:', error);
-      alert('Có lỗi xảy ra khi cập nhật trạng thái!');
+      console.error("Error updating account status:", error);
+      alert("Có lỗi xảy ra khi cập nhật trạng thái!");
     }
   };
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
-    if (searchParams.get('tab') !== tabId) {
+    if (searchParams.get("tab") !== tabId) {
       router.push(`?tab=${tabId}`, { scroll: false });
     }
   };
 
   const getActiveTabConfig = () => {
-    return tabsConfig.find(tab => tab.id === activeTab);
+    return tabsConfig.find((tab) => tab.id === activeTab);
   };
 
   if (loading) {
@@ -143,15 +354,58 @@ const AdminDashboard = ({ user, initialTab }) => {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-500 rounded-xl flex items-center justify-center">
-                <FontAwesomeIcon icon={faChartLine} className="text-white text-xl" />
+                <FontAwesomeIcon
+                  icon={faChartLine}
+                  className="text-white text-xl"
+                />
               </div>
               <div>
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 text-transparent bg-clip-text">
                   Admin Dashboard
                 </h1>
-                <p className="text-gray-600 text-sm">Chào mừng {user?.full_name} - Quản trị viên hệ thống</p>
+                <p className="text-gray-600 text-sm">
+                  Chào mừng {user?.full_name} - Quản trị viên hệ thống
+                </p>
               </div>
             </div>
+<<<<<<< HEAD
+=======
+
+            <div className="flex items-center space-x-4">
+              {/* Search */}
+              <div className="relative">
+                <FontAwesomeIcon
+                  icon={faSearch}
+                  className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                />
+                <input
+                  type="text"
+                  placeholder="Tìm kiếm..."
+                  className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent w-64"
+                />
+              </div>
+
+              {/* Notifications */}
+              <div className="relative">
+                <button className="relative p-2 text-gray-600 hover:text-purple-600 transition-colors">
+                  <FontAwesomeIcon
+                    icon={faBell}
+                    className="text-xl"
+                  />
+                  {notifications.length > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
+                      {notifications.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+
+              {/* User Avatar */}
+              <div className="w-10 h-10 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-bold">
+                {user?.full_name?.charAt(0) || "A"}
+              </div>
+            </div>
+>>>>>>> db1e4ce3df8f10ff666a59706497e56b933f9d10
           </div>
         </div>
       </div>
@@ -169,13 +423,16 @@ const AdminDashboard = ({ user, initialTab }) => {
                   className={`
                     flex items-center px-6 py-3 rounded-xl transition-all duration-300 whitespace-nowrap
                     text-sm font-medium relative overflow-hidden group
-                    ${isActive
-                      ? `bg-gradient-to-r ${tab.color} text-white shadow-lg scale-105`
-                      : 'bg-gray-50 text-gray-600 hover:bg-gray-100 hover:scale-105'
+                    ${
+                      isActive
+                        ? `bg-gradient-to-r ${tab.color} text-white shadow-lg scale-105`
+                        : "bg-gray-50 text-gray-600 hover:bg-gray-100 hover:scale-105"
                     }
-                  `}
-                >
-                  <FontAwesomeIcon icon={tab.icon} className="mr-3 text-lg" />
+                  `}>
+                  <FontAwesomeIcon
+                    icon={tab.icon}
+                    className="mr-3 text-lg"
+                  />
                   <span>{tab.label}</span>
                   {isActive && (
                     <div className="absolute inset-0 bg-white/20 rounded-xl"></div>
@@ -189,17 +446,31 @@ const AdminDashboard = ({ user, initialTab }) => {
         {/* Active Tab Indicator */}
         {getActiveTabConfig() && (
           <div className="mb-6 flex items-center space-x-3">
-            <div className={`w-8 h-8 bg-gradient-to-r ${getActiveTabConfig().color} rounded-lg flex items-center justify-center`}>
-              <FontAwesomeIcon icon={getActiveTabConfig().icon} className="text-white" />
+            <div
+              className={`w-8 h-8 bg-gradient-to-r ${
+                getActiveTabConfig().color
+              } rounded-lg flex items-center justify-center`}>
+              <FontAwesomeIcon
+                icon={getActiveTabConfig().icon}
+                className="text-white"
+              />
             </div>
-            <h2 className="text-2xl font-bold text-gray-800">{getActiveTabConfig().label}</h2>
+            <h2 className="text-2xl font-bold text-gray-800">
+              {getActiveTabConfig().label}
+            </h2>
           </div>
         )}
 
         {/* Main Content */}
         <div className="bg-white rounded-2xl shadow-xl p-8 min-h-[600px]">
-          {activeTab === 'overview' && <OverviewTab accounts={accounts} bookings={bookings} revenue={revenue} />}
-          {activeTab === 'users' && (
+          {activeTab === "overview" && (
+            <OverviewTab
+              accounts={accounts}
+              bookings={bookings}
+              revenue={revenue}
+            />
+          )}
+          {activeTab === "users" && (
             <UsersTab
               accounts={accounts}
               searchTerm={searchTerm}
@@ -209,14 +480,18 @@ const AdminDashboard = ({ user, initialTab }) => {
               onStatusChange={handleStatusChange}
             />
           )}
-          {activeTab === 'managers' && <ManagerTab />}
-          {activeTab === 'zone' && <AdminZoneTab />}
-          {activeTab === 'bookings' && <BookingsTab bookings={bookings} />}
-          {activeTab === 'services' && <ServicesTab />}
-          {activeTab === 'revenue' && <RevenueTab revenue={revenue} bookings={bookings} />}
-          {activeTab === 'blog' && <BlogTab />}
-          {activeTab === 'holiday' && <HolidayTab />}
-          {activeTab === 'settings' && <SettingsTab />}
+          {activeTab === "managers" && <ManagerTab />}
+          {activeTab === "zone" && <AdminZoneTab />}
+          {activeTab === "bookings" && (
+            <BookingsTab bookings={bookings} />
+          )}
+          {activeTab === "services" && <ServicesTab />}
+          {activeTab === "revenue" && (
+            <RevenueTab revenue={revenue} bookings={bookings} />
+          )}
+          {activeTab === "blog" && <BlogTab />}
+          {activeTab === "holiday" && <HolidayTab />}
+          {activeTab === "settings" && <SettingsTab />}
         </div>
       </div>
     </div>
@@ -224,4 +499,3 @@ const AdminDashboard = ({ user, initialTab }) => {
 };
 
 export default AdminDashboard;
-
