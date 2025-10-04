@@ -256,7 +256,7 @@ const NurseProfileTab = ({ nurseAccount }) => {
                 value={profileFormData.major === "Nurse" ? "Chuyên viên chăm sóc" :
                   profileFormData.major === "Specialist" ? "Chuyên viên tư vấn" : "-"}
               />
-              <InfoRow label="Slogan" value={isEditing ? <input type="text" name="slogan" value={profileFormData.slogan} onChange={handleProfileInputChange} className="w-full border px-2 py-1 rounded-lg" /> : profileFormData.slogan} icon={<FaQuoteLeft />} />
+              <InfoRow label="Slogan" value={isEditing ? <input type="text" name="slogan" value={profileFormData.slogan} onChange={handleProfileInputChange} className="w-full border px-2 py-1 rounded-lg" /> : profileFormData.slogan} />
             </Card>
           </div>
         </div>

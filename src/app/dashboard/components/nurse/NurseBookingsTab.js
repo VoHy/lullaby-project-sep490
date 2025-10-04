@@ -91,18 +91,16 @@ const NurseBookingsTab = () => {
     const s = (rawStatus || '').toString().toLowerCase();
     switch (s) {
       case 'paid':
-        return { label: 'Đã thanh toán', cls: 'bg-green-100 text-green-700' };
+        return { label: 'Đã thanh toán', cls: 'bg-blue-100 text-blue-700' };
       case 'pending':
         return { label: 'Chờ xử lý', cls: 'bg-yellow-100 text-yellow-700' };
       case 'completed':
         return { label: 'Hoàn thành', cls: 'bg-emerald-100 text-emerald-700' };
       case 'cancelled':
       case 'canceled':
-        return { label: 'Đã hủy', cls: 'bg-gray-200 text-gray-700' };
+        return { label: 'Đã hủy', cls: 'bg-red-200 text-red-700' };
       case 'waiting':
         return { label: 'Đang chờ', cls: 'bg-slate-100 text-slate-700' };
-      case 'isscheduled':
-        return { label: 'Đã lên lịch', cls: 'bg-indigo-100 text-indigo-700' };
       default:
         return { label: rawStatus || '-', cls: 'bg-gray-100 text-gray-700' };
     }
@@ -217,7 +215,6 @@ const NurseBookingsTab = () => {
             onChange={e => setFilterStatus(e.target.value)}
           >
             <option value="all">Tất cả</option>
-            <option value="isscheduled">Đã lên lịch</option>
             <option value="completed">Hoàn thành</option>
             <option value="cancelled">Đã hủy</option>
             <option value="paid">Đã thanh toán</option>

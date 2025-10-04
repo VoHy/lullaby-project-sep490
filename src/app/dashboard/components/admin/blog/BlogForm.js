@@ -1,12 +1,18 @@
 'use client';
-import { useState, useEffect } from 'react';
+
+import { useState, useEffect, useContext } from 'react';
 import { EditorContent, useEditor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
+import blogCategoryService from '@/services/api/blogCategoryService';
+import { AuthContext } from '@/context/AuthContext';
 
 export default function BlogForm({ initialValues = {}, onSubmit, onCancel }) {
+  const { user } = useContext(AuthContext);
   const [title, setTitle] = useState(initialValues.title || '');
-  const [category, setCategory] = useState(initialValues.category || '');
+  const [blogCategoryID, setBlogCategoryID] = useState(initialValues.blogCategoryID || '');
   const [content, setContent] = useState(initialValues.content || '');
+  const [image, setImage] = useState(initialValues.image || '');
+  const [categories, setCategories] = useState([]);
   const [error, setError] = useState('');
 
   const editor = useEditor({
@@ -65,6 +71,19 @@ export default function BlogForm({ initialValues = {}, onSubmit, onCancel }) {
     }
   }, [editor, initialValues]);
 
+  // Load blog categories
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const data = await blogCategoryService.getAllBlogCategories();
+        setCategories(data || []);
+      } catch (error) {
+        console.error('Error fetching blog categories:', error);
+      }
+    };
+    fetchCategories();
+  }, []);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     setError('');
@@ -78,8 +97,10 @@ export default function BlogForm({ initialValues = {}, onSubmit, onCancel }) {
 
     onSubmit({
       title: title.trim(),
-      category: category.trim(),
+      blogCategoryID: blogCategoryID ? parseInt(blogCategoryID) : null,
       content: htmlContent,
+      image: image.trim() || null,
+      createdByID: user?.accountID || user?.id || 1, // fallback to 1 if no user
     });
   };
 
@@ -111,13 +132,47 @@ export default function BlogForm({ initialValues = {}, onSubmit, onCancel }) {
 
           {/* Danh mục */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Danh mục</label>
-            <input
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Danh mục
+            </label>
+            <select
+              value={blogCategoryID}
+              onChange={(e) => setBlogCategoryID(e.target.value)}
               className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300"
-              placeholder="Ví dụ: Chăm sóc mẹ và bé"
+            >
+              <option value="">Không có danh mục</option>
+              {categories.map((cat) => (
+                <option key={cat.blogCategoryID} value={cat.blogCategoryID}>
+                  {cat.categoryName}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Hình ảnh */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Hình ảnh (URL)
+            </label>
+            <input
+              type="url"
+              value={image}
+              onChange={(e) => setImage(e.target.value)}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-300"
+              placeholder="Nhập URL hình ảnh..."
             />
+            {image && (
+              <div className="mt-2">
+                <img 
+                  src={image} 
+                  alt="Preview" 
+                  className="max-w-full h-32 object-cover rounded border"
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              </div>
+            )}
           </div>
 
           {/* Toolbar */}

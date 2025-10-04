@@ -164,7 +164,6 @@ const NursePatientsTab = () => {
             onChange={e => setFilterStatus(e.target.value)}
           >
             <option value="all">Tất cả</option>
-            <option value="isscheduled">Đã lên lịch</option>
             <option value="paid">Đã thanh toán</option>
             <option value="completed">Hoàn thành</option>
             <option value="cancelled">Đã hủy</option>
@@ -181,12 +180,12 @@ const NursePatientsTab = () => {
         {patientRows.map(({ booking, patient }, index) => {
           const raw = (booking.status || booking.Status || '').toString().toLowerCase();
           const mapping = {
-            paid: { label: 'Đã thanh toán', cls: 'bg-pink-100 text-green-700' },
+            paid: { label: 'Đã thanh toán', cls: 'bg-blue-100 text-blue-700' },
             pending: { label: 'Chờ xử lý', cls: 'bg-yellow-100 text-yellow-700' },
             confirmed: { label: 'Đã xác nhận', cls: 'bg-blue-100 text-blue-700' },
             completed: { label: 'Hoàn thành', cls: 'bg-emerald-100 text-emerald-700' },
-            cancelled: { label: 'Đã hủy', cls: 'bg-gray-200 text-gray-700' },
-            canceled: { label: 'Đã hủy', cls: 'bg-gray-200 text-gray-700' },
+            cancelled: { label: 'Đã hủy', cls: 'bg-red-200 text-red-700' },
+            canceled: { label: 'Đã hủy', cls: 'bg-red-200 text-red-700' },
             waiting: { label: 'Đang chờ', cls: 'bg-slate-100 text-slate-700' },
             isscheduled: { label: 'Đã lên lịch', cls: 'bg-indigo-100 text-indigo-700' },
           };

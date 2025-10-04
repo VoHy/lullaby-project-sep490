@@ -228,11 +228,6 @@ export default function NewsDetailPage() {
 
               {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-4">
-                <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-purple-500 text-white font-medium hover:bg-purple-600 transition-colors">
-                  <FaBookmark className="text-sm" />
-                  Lưu bài viết
-                </button>
-                
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-600">Chia sẻ:</span>
                   <button

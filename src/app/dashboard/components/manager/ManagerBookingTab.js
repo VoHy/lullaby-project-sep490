@@ -463,21 +463,6 @@ const ManagerBookingTab = () => {
       // Sử dụng hàm mới để lấy thông tin chi tiết
       const { serviceTasksOfBooking, careProfile, account } = getDetailedBookingInfo(detailData);
 
-      // Block updates if the booking's last task end time is already passed
-      try {
-        const latestEnd = serviceTasksOfBooking.reduce((max, t) => {
-          if (!t || !t.endTime) return max;
-          const et = new Date(t.endTime).getTime();
-          return et > max ? et : max;
-        }, 0);
-        if (latestEnd && Date.now() > latestEnd) {
-          alert('Không thể cập nhật: lịch hẹn đã quá giờ làm.');
-          return;
-        }
-      } catch (err) {
-        // ignore parsing errors and continue
-      }
-
       // Kiểm tra trạng thái booking phải là "paid" (đã thanh toán)
       const bookingStatus = String(detailData.status ?? detailData.Status).toLowerCase();
       if (bookingStatus !== 'paid') {
@@ -989,25 +974,13 @@ const ManagerBookingTab = () => {
                 </table>
               </div>
               <div className="flex justify-end mt-4">
-                {(() => {
-                  // compute whether booking time window has passed
-                  const lastEnd = serviceTasksOfBooking.reduce((max, t) => {
-                    if (!t || !t.endTime) return max;
-                    const et = new Date(t.endTime).getTime();
-                    return et > max ? et : max;
-                  }, 0);
-                  const isPast = lastEnd && Date.now() > lastEnd;
-                  return (
-                    <button
-                      onClick={handleAccept}
-                      disabled={isPast}
-                      title={isPast ? 'Lịch hẹn đã quá giờ, không thể cập nhật' : 'Cập nhật phân công cho các dịch vụ'}
-                      className={`px-8 py-2 rounded-lg ${isPast ? 'bg-gray-300 text-gray-600 cursor-not-allowed' : 'bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg'} font-semibold`}
-                    >
-                      Cập nhật
-                    </button>
-                  );
-                })()}
+                <button
+                  onClick={handleAccept}
+                  title="Cập nhật phân công cho các dịch vụ"
+                  className="px-8 py-2 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white hover:shadow-lg font-semibold"
+                >
+                  Cập nhật
+                </button>
               </div>
               {/* Popup chọn nhân sự */}
               {showStaffModal && (
