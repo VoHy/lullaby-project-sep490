@@ -51,7 +51,7 @@ export default function CareProfileSelector({
             >
               <div className="flex items-start gap-3">
                 <img
-                  src={profile.image || "/images/hero-bg.jpg"}
+                  src={profile.image || "https://i.ibb.co/zWSDrsBx/ae10a4719f321f9123ab1a3b7e02fa2b.jpg"}
                   alt={profile.profileName}
                   className="w-12 h-12 rounded-full object-cover border-2 border-gray-200"
                 />

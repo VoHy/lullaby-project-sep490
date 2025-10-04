@@ -251,23 +251,33 @@ const BookingsTab = ({ bookings }) => {
         return;
       }
       try {
-        // Kiểm tra xem tất cả task đã có nhân sự chưa (bao gồm cả nhân sự đã có và mới chọn)
-        const unassignedTasks = serviceTasksOfBooking.filter(task => {
+        // Kiểm tra các task cần cập nhật - bao gồm cả task chưa có nhân sự và task đang thay đổi nhân sự
+        const tasksNeedUpdate = serviceTasksOfBooking.filter(task => {
           const hasExistingNurse = !!task.nursingID;
+          const isChanging = selectedNurseByTask[task.customizeTaskID] !== undefined;
           const hasNewAssignment = selectedNurseByTask[task.customizeTaskID];
-          return !hasExistingNurse && !hasNewAssignment;
+          
+          // Task chưa có nhân sự và chưa chọn mới
+          if (!hasExistingNurse && !hasNewAssignment) return true;
+          
+          // Task đang trong chế độ thay đổi nhưng chưa chọn nhân sự mới
+          if (isChanging && !hasNewAssignment) return true;
+          
+          return false;
         });
 
-        if (unassignedTasks.length > 0) {
-          const unassignedList = unassignedTasks.map(task => {
+        if (tasksNeedUpdate.length > 0) {
+          const needUpdateList = tasksNeedUpdate.map(task => {
             const taskDetail = detailCustomizeTasks.find(t => t.customizeTaskID === task.customizeTaskID);
             const timeInfo = taskDetail && taskDetail.startTime && taskDetail.endTime
               ? ` (${new Date(taskDetail.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(taskDetail.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})`
               : '';
-            return `- ${task.description}${timeInfo}`;
+            const hasExistingNurse = !!task.nursingID;
+            const status = hasExistingNurse ? 'chưa chọn nhân sự thay thế' : 'chưa có nhân sự';
+            return `- ${task.description}${timeInfo} (${status})`;
           }).join('\n');
 
-          alert(`Vui lòng chọn nhân sự cho TẤT CẢ các nhiệm vụ sau:\n${unassignedList}\n\nKhông thể cập nhật khi còn nhiệm vụ chưa có nhân sự!`);
+          alert(`Vui lòng hoàn tất việc chọn nhân sự cho TẤT CẢ các nhiệm vụ sau:\n${needUpdateList}\n\nKhông thể cập nhật khi còn nhiệm vụ chưa hoàn tất!`);
           return;
         }
 
@@ -390,10 +400,18 @@ const BookingsTab = ({ bookings }) => {
           return;
         }
 
-        // Thực hiện assign cho tất cả các task đã chọn
-        await Promise.all(allAssignments.map(async ([taskId, nurseId]) => {
-          await customizeTaskService.updateNursing(taskId, nurseId);
-        }));
+        // Thực hiện cập nhật chỉ cho các task có thay đổi thực sự
+        const tasksToUpdate = allAssignments.filter(([taskId, nurseId]) => {
+          const currentTask = serviceTasksOfBooking.find(t => t.customizeTaskID === taskId);
+          // Chỉ cập nhật nếu thực sự có thay đổi (task chưa có nurse hoặc nurse khác với hiện tại)
+          return !currentTask?.nursingID || currentTask.nursingID != nurseId;
+        });
+
+        if (tasksToUpdate.length > 0) {
+          await Promise.all(tasksToUpdate.map(async ([taskId, nurseId]) => {
+            await customizeTaskService.updateNursing(taskId, nurseId);
+          }));
+        }
 
         // After assignments, send a single booking-level notification to the customer
         try {
@@ -464,7 +482,15 @@ const BookingsTab = ({ bookings }) => {
         // Hiển thị thông báo thành công
         const successMessage = document.createElement('div');
         successMessage.className = 'fixed top-4 right-4 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg z-50';
-        successMessage.textContent = '✓ Đã phân công điều dưỡng cho tất cả nhiệm vụ thành công!';
+        
+        if (tasksToUpdate.length === 0) {
+          successMessage.textContent = '✓ Không có thay đổi nào cần cập nhật!';
+        } else {
+          const changedCount = tasksToUpdate.length;
+          const totalCount = serviceTasksOfBooking.length;
+          successMessage.textContent = `✓ Đã cập nhật thành công ${changedCount}/${totalCount} nhiệm vụ!`;
+        }
+        
         document.body.appendChild(successMessage);
 
         setTimeout(() => {
@@ -786,29 +812,187 @@ const BookingsTab = ({ bookings }) => {
                               {/* Nurse Assignment */}
                               <div className="p-4">
                                 {hasNurse ? (
-                                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                                    <div className="flex items-center justify-between">
-                                      <div className="flex items-center gap-3">
-                                        <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
-                                          <FontAwesomeIcon icon={faUser} className="text-green-600" />
+                                  (() => {
+                                    // Kiểm tra xem có đang trong chế độ thay đổi không
+                                    const isChanging = selectedNurseByTask[task.customizeTaskID] !== undefined;
+                                    const selectedNurseId = selectedNurseByTask[task.customizeTaskID];
+                                    
+                                    // Nếu đang thay đổi và có chọn nurse mới
+                                    if (isChanging && selectedNurseId) {
+                                      const selectedNurse = (() => {
+                                        const taskId = task.customizeTaskID;
+                                        const pool = localNursesByTaskId[taskId] || [];
+                                        return pool.find(n => (n.nursingID ?? n.NursingID) == selectedNurseId);
+                                      })();
+                                      
+                                      return (
+                                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                                          <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                                                <FontAwesomeIcon icon={faUser} className="text-blue-600" />
+                                              </div>
+                                              <div>
+                                                <div className="font-semibold text-blue-800 flex items-center gap-2">
+                                                  Mới chọn
+                                                  <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded">Thay đổi</span>
+                                                </div>
+                                                <div className="text-blue-700">
+                                                  <span className="font-medium">{selectedNurse?.nursingFullName ?? selectedNurse?.fullName ?? selectedNurse?.FullName}</span>
+                                                  {selectedNurse?.major && (
+                                                    <span className="text-sm ml-2">
+                                                      ({nurseRoleLabels[selectedNurse.major] || selectedNurse.major})
+                                                    </span>
+                                                  )}
+                                                </div>
+                                                <div className="text-xs text-gray-600 mt-1">
+                                                  Trước đó: {task.nurseName}
+                                                </div>
+                                              </div>
+                                            </div>
+                                            <div className="flex gap-2">
+                                              <button
+                                                onClick={() => {
+                                                  const newSelection = { ...selectedNurseByTask };
+                                                  delete newSelection[task.customizeTaskID];
+                                                  setSelectedNurseByTask(newSelection);
+                                                }}
+                                                className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 border border-gray-300 rounded"
+                                              >
+                                                Hủy
+                                              </button>
+                                            </div>
+                                          </div>
                                         </div>
-                                        <div>
-                                          <div className="font-semibold text-green-800">Đã phân công</div>
-                                          <div className="text-green-700">
-                                            <span className="font-medium">{task.nurseName}</span>
-                                            {task.nurseRole && (
-                                              <span className="text-sm ml-2">
-                                                ({nurseRoleLabels[task.nurseRole] || task.nurseRole})
-                                              </span>
-                                            )}
+                                      );
+                                    }
+                                    
+                                    // Nếu đang trong chế độ thay đổi nhưng chưa chọn nurse mới
+                                    if (isChanging) {
+                                      return (
+                                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                                          <div className="flex items-center justify-between">
+                                            <div className="flex items-center gap-3">
+                                              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
+                                                <FontAwesomeIcon icon={faExclamationTriangle} className="text-yellow-600" />
+                                              </div>
+                                              <div>
+                                                <div className="font-semibold text-yellow-800">Đang thay đổi nhân sự</div>
+                                                <div className="text-yellow-700 text-sm">
+                                                  Nhân sự hiện tại: {task.nurseName}
+                                                  {(() => {
+                                                    const taskId = task.customizeTaskID;
+                                                    const pool = localNursesByTaskId[taskId] || [];
+                                                    return (
+                                                      <span className="block mt-1 text-xs text-blue-600">
+                                                        {localNursesByTaskId[taskId]
+                                                          ? (pool.length > 0 ? `${pool.length} điều dưỡng có sẵn` : 'Không có điều dưỡng phù hợp')
+                                                          : (
+                                                            <span className="flex items-center gap-1">
+                                                              <div className="w-3 h-3 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                                                              Đang tải danh sách điều dưỡng...
+                                                            </span>
+                                                          )
+                                                        }
+                                                      </span>
+                                                    );
+                                                  })()}
+                                                </div>
+                                              </div>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                              <select
+                                                className="border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-48"
+                                                value=""
+                                                onChange={(e) => {
+                                                  const nurseId = e.target.value;
+                                                  if (nurseId) {
+                                                    handleNurseSelection(task.customizeTaskID, nurseId);
+                                                  }
+                                                }}
+                                                disabled={!localNursesByTaskId[task.customizeTaskID]}
+                                              >
+                                                <option value="">
+                                                  {localNursesByTaskId[task.customizeTaskID]
+                                                    ? "Chọn điều dưỡng mới..."
+                                                    : "Đang tải..."
+                                                  }
+                                                </option>
+                                                {(() => {
+                                                  const taskId = task.customizeTaskID;
+                                                  const pool = localNursesByTaskId[taskId] || [];
+                                                  return Array.isArray(pool) ? pool.map((n) => {
+                                                    const name = (n.nursingFullName ?? n.fullName ?? n.FullName) || '';
+                                                    const majorRaw = (n.major ?? n.Major ?? '') + '';
+                                                    const majorKey = majorRaw.trim().toLowerCase();
+                                                    const majorLabel = nurseRoleLabels[majorKey] ?? majorRaw.trim();
+                                                    return (
+                                                      <option key={n.nursingID ?? n.NursingID} value={n.nursingID ?? n.NursingID}>
+                                                        {name}{majorLabel ? ` — ${majorLabel}` : ''}
+                                                      </option>
+                                                    );
+                                                  }) : null;
+                                                })()}
+                                              </select>
+                                              <button
+                                                onClick={() => {
+                                                  const newSelection = { ...selectedNurseByTask };
+                                                  delete newSelection[task.customizeTaskID];
+                                                  setSelectedNurseByTask(newSelection);
+                                                }}
+                                                className="px-3 py-2 text-sm text-gray-600 border border-gray-300 rounded-lg hover:bg-gray-50"
+                                              >
+                                                Hủy
+                                              </button>
+                                            </div>
+                                          </div>
+                                        </div>
+                                      );
+                                    }
+                                    
+                                    // Hiển thị bình thường với nút thay đổi
+                                    return (
+                                      <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                                        <div className="flex items-center justify-between">
+                                          <div className="flex items-center gap-3">
+                                            <div className="w-10 h-10 bg-green-100 rounded-full flex items-center justify-center">
+                                              <FontAwesomeIcon icon={faUser} className="text-green-600" />
+                                            </div>
+                                            <div>
+                                              <div className="font-semibold text-green-800">Đã phân công</div>
+                                              <div className="text-green-700">
+                                                <span className="font-medium">{task.nurseName}</span>
+                                                {task.nurseRole && (
+                                                  <span className="text-sm ml-2">
+                                                    ({nurseRoleLabels[task.nurseRole] || task.nurseRole})
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div className="flex gap-2">
+                                            <button
+                                              onClick={() => {
+                                                if (isCancelled) {
+                                                  alert('Không thể thay đổi nhân sự cho lịch đã hủy.');
+                                                  return;
+                                                }
+                                                // Bật chế độ thay đổi
+                                                setSelectedNurseByTask((prev) => ({ ...prev, [task.customizeTaskID]: null }));
+                                              }}
+                                              className="text-xs text-blue-600 hover:text-blue-800 px-3 py-1 border border-blue-300 rounded hover:bg-blue-50"
+                                              disabled={isCancelled}
+                                            >
+                                              Thay đổi
+                                            </button>
+                                            <div className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                                              ✓ Hoàn tất
+                                            </div>
                                           </div>
                                         </div>
                                       </div>
-                                      <div className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
-                                        ✓ Hoàn tất
-                                      </div>
-                                    </div>
-                                  </div>
+                                    );
+                                  })()
                                 ) : (
                                   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
                                     <div className="flex items-center justify-between">
@@ -888,36 +1072,75 @@ const BookingsTab = ({ bookings }) => {
                       </div>
 
                       {/* Nút cập nhật tất cả */}
-                      {serviceTasksOfBooking.some(task => !task.nursingID) && (
-                        <div className="mt-6 flex justify-end">
-                          <button
-                            onClick={handleAssignAllNurses}
-                            className="px-8 py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
-                            disabled={(() => {
-                              // Kiểm tra xem có task nào chưa có nhân sự (cả đã có và mới chọn) không
-                              const unassigned = serviceTasksOfBooking.filter(task => {
-                                const hasExistingNurse = !!task.nursingID;
-                                const hasNewAssignment = selectedNurseByTask[task.customizeTaskID];
-                                return !hasExistingNurse && !hasNewAssignment;
-                              });
-                              return unassigned.length > 0;
-                            })()}
-                            title={(() => {
-                              const unassigned = serviceTasksOfBooking.filter(task => {
-                                const hasExistingNurse = !!task.nursingID;
-                                const hasNewAssignment = selectedNurseByTask[task.customizeTaskID];
-                                return !hasExistingNurse && !hasNewAssignment;
-                              });
-                              if (unassigned.length > 0) {
-                                return `Còn ${unassigned.length} task chưa chọn nhân sự`;
-                              }
-                              return 'Cập nhật phân công cho tất cả task';
-                            })()}
-                          >
-                            Cập nhật tất cả
-                          </button>
-                        </div>
-                      )}
+                      {(() => {
+                        // Kiểm tra xem có task nào cần cập nhật không (chưa có nhân sự hoặc đang thay đổi)
+                        const hasTasksToUpdate = serviceTasksOfBooking.some(task => {
+                          const hasExistingNurse = !!task.nursingID;
+                          const isChanging = selectedNurseByTask[task.customizeTaskID] !== undefined;
+                          
+                          // Task chưa có nhân sự
+                          if (!hasExistingNurse) return true;
+                          
+                          // Task đang trong chế độ thay đổi
+                          if (isChanging) return true;
+                          
+                          return false;
+                        });
+
+                        if (!hasTasksToUpdate) return null;
+
+                        return (
+                          <div className="mt-6 flex justify-end">
+                            <button
+                              onClick={handleAssignAllNurses}
+                              className="px-8 py-3 rounded-lg bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                              disabled={(() => {
+                                // Kiểm tra xem có task nào chưa hoàn tất việc chọn nhân sự không
+                                const unfinished = serviceTasksOfBooking.filter(task => {
+                                  const hasExistingNurse = !!task.nursingID;
+                                  const isChanging = selectedNurseByTask[task.customizeTaskID] !== undefined;
+                                  const hasNewAssignment = selectedNurseByTask[task.customizeTaskID];
+                                  
+                                  // Task chưa có nhân sự và chưa chọn mới
+                                  if (!hasExistingNurse && !hasNewAssignment) return true;
+                                  
+                                  // Task đang trong chế độ thay đổi nhưng chưa chọn nhân sự mới
+                                  if (isChanging && !hasNewAssignment) return true;
+                                  
+                                  return false;
+                                });
+                                return unfinished.length > 0;
+                              })()}
+                              title={(() => {
+                                const unfinished = serviceTasksOfBooking.filter(task => {
+                                  const hasExistingNurse = !!task.nursingID;
+                                  const isChanging = selectedNurseByTask[task.customizeTaskID] !== undefined;
+                                  const hasNewAssignment = selectedNurseByTask[task.customizeTaskID];
+                                  
+                                  if (!hasExistingNurse && !hasNewAssignment) return true;
+                                  if (isChanging && !hasNewAssignment) return true;
+                                  
+                                  return false;
+                                });
+                                if (unfinished.length > 0) {
+                                  return `Còn ${unfinished.length} task chưa hoàn tất việc chọn nhân sự`;
+                                }
+                                
+                                // Kiểm tra có thay đổi thực sự không
+                                const hasRealChanges = Object.entries(selectedNurseByTask).some(([taskId, nurseId]) => {
+                                  if (!nurseId) return false;
+                                  const currentTask = serviceTasksOfBooking.find(t => t.customizeTaskID == taskId);
+                                  return !currentTask?.nursingID || currentTask.nursingID != nurseId;
+                                });
+                                
+                                return hasRealChanges ? 'Cập nhật phân công nhân sự' : 'Không có thay đổi nào';
+                              })()}
+                            >
+                              Cập nhật tất cả
+                            </button>
+                          </div>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>

@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { motion } from "framer-motion";
 import { AuthContext } from "../../../context/AuthContext";
 import accountService from '@/services/api/accountService';
+import authService from '@/services/api/authService';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -87,7 +88,7 @@ export default function RegisterPage() {
 
     try {
       // Gọi trực tiếp backend theo Swagger: /api/accounts/register/customer
-      const data = await accountService.registerCustomer({
+      const registerData = await accountService.registerCustomer({
         fullName: formData.fullName,
         phoneNumber: digitsPhone,
         email: formData.email,
@@ -95,41 +96,60 @@ export default function RegisterPage() {
         avatarUrl: formData.avatarUrl || ''
       });
 
-      if (data?.account) {
-        // Nếu backend trả token, đăng nhập luôn để đồng bộ session
-        if (data.token) {
-          login(data.account, data.token);
-        } else {
-          login(data.account);
-        }
+      // Hiển thị thông báo đăng ký thành công
+      alert('Đăng ký thành công! Chào mừng bạn đến với Lullaby.');
 
-        // Hiển thị thông báo thành công
-        alert('Đăng ký thành công! Chào mừng bạn đến với Lullaby.');
-
+      // Nếu API đăng ký trả token, sử dụng luôn
+      if (registerData?.token && registerData?.account) {
+        login(registerData.account, registerData.token);
+        
         // Lấy role từ account
-        const roleID = data.account.roleID;
+        const roleID = registerData.account.roleID;
 
         // Chuyển hướng dựa trên roleID
-        if (roleID === 1) {
-          // Admin
-          router.push('/dashboard');
-        } else if (roleID === 2) {
-          // NurseSpecialist
-          router.push('/dashboard');
-        } else if (roleID === 3) {
-          // Manager
+        if (roleID === 1 || roleID === 2 || roleID === 3) {
+          // Admin, NurseSpecialist, Manager
           router.push('/dashboard');
         } else if (roleID === 4) {
           // Customer
           router.push('/?welcome=true');
         } else {
-          // Nếu không xác định được role, về trang chủ
           router.push('/');
         }
       } else {
-        // Nếu không có account data, chuyển đến trang đăng nhập
-        alert('Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.');
-        router.push('/auth/login');
+        // Nếu API đăng ký không trả token, tự động gọi API login để lấy token
+        try {
+          const loginData = await authService.login({
+            emailOrPhoneNumber: formData.email,
+            password: formData.password
+          });
+
+          if (loginData?.token && loginData?.account) {
+            login(loginData.account, loginData.token);
+
+            // Lấy role từ account
+            const roleID = loginData.account.roleID;
+
+            // Chuyển hướng dựa trên roleID
+            if (roleID === 1 || roleID === 2 || roleID === 3) {
+              // Admin, NurseSpecialist, Manager
+              router.push('/dashboard');
+            } else if (roleID === 4) {
+              // Customer
+              router.push('/?welcome=true');
+            } else {
+              router.push('/');
+            }
+          } else {
+            // Nếu login thất bại, chuyển đến trang đăng nhập
+            alert('Vui lòng đăng nhập để tiếp tục.');
+            router.push('/auth/login');
+          }
+        } catch (loginError) {
+          console.error('Lỗi đăng nhập tự động:', loginError);
+          alert('Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.');
+          router.push('/auth/login');
+        }
       }
     } catch (err) {
       console.error('Lỗi đăng ký:', err);

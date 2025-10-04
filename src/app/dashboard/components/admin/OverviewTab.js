@@ -142,28 +142,24 @@ const OverviewTab = ({ bookings }) => {
           value={totalUsers}
           icon={faUsers}
           color="from-blue-500 to-cyan-500"
-          subtitle={viewMode === "day" ? "So với hôm qua" : "So với tháng trước"}
         />
         <StatCard
           title="Tổng lịch hẹn"
           value={totalBookings}
           icon={faCalendar}
           color="from-green-500 to-emerald-500"
-          subtitle={viewMode === "day" ? "So với hôm qua" : "So với tháng trước"}
         />
         <StatCard
           title="Doanh thu"
           value={`${totalRevenue.toLocaleString()} VNĐ`}
           icon={faMoneyBill}
           color="from-purple-500 to-pink-500"
-          subtitle={viewMode === "day" ? "So với hôm qua" : "So với tháng trước"}
         />
         <StatCard
           title="Nhân viên hoạt động"
           value={activeNurses}
           icon={faUserCheck}
           color="from-orange-500 to-red-500"
-          subtitle={viewMode === "day" ? "So với hôm qua" : "So với tháng trước"}
         />
       </div>
 

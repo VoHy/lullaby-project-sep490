@@ -470,22 +470,10 @@ const ManagerBookingTab = () => {
         return;
       }
 
-      // Kiểm tra xem tất cả dịch vụ đã có nhân sự chưa (bao gồm cả nhân sự đã có và mới chọn)
-      const unassignedTasks = serviceTasksOfBooking.filter(task => {
-        const hasExistingNurse = task.hasAssignedNurse;
-        const hasNewAssignment = (taskAssignments[task.customizeTaskId]?.nurse || taskAssignments[task.customizeTaskId]?.specialist);
-        return !hasExistingNurse && !hasNewAssignment;
-      });
-
-      if (unassignedTasks.length > 0) {
-        const unassignedList = unassignedTasks.map(task => {
-          const timeInfo = task.startTime && task.endTime
-            ? ` (${new Date(task.startTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })} - ${new Date(task.endTime).toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' })})`
-            : '';
-          return `- ${task.description}${timeInfo}`;
-        }).join('\n');
-
-        alert(`Vui lòng chọn nhân sự cho TẤT CẢ các dịch vụ sau:\n${unassignedList}\n\nKhông thể cập nhật khi còn dịch vụ chưa có nhân sự!`);
+      // Chỉ cập nhật nếu có thay đổi về nhân sự
+      const assignments = Object.entries(taskAssignments);
+      if (assignments.length === 0) {
+        alert('Không có thay đổi nào để cập nhật.');
         return;
       }
 
@@ -493,17 +481,17 @@ const ManagerBookingTab = () => {
       const timeConflictsInBooking = [];
       const nurseTaskMap = new Map(); // { nursingId: [tasks] }
 
-      // Thu thập tất cả task của từng nurse (bao gồm đã có và mới chọn)
+      // Thu thập tất cả task của từng nurse (bao gồm đã có và mới chọn/thay đổi)
       serviceTasksOfBooking.forEach(task => {
         let nursingId = null;
 
-        // Task đã có nurse
-        if (task.hasAssignedNurse && task.assignedNurseId) {
-          nursingId = task.assignedNurseId;
-        }
-        // Task mới được chọn nurse
-        else if (taskAssignments[task.customizeTaskId]) {
+        // Task có thay đổi nhân sự mới
+        if (taskAssignments[task.customizeTaskId]) {
           nursingId = taskAssignments[task.customizeTaskId]?.nurse || taskAssignments[task.customizeTaskId]?.specialist;
+        }
+        // Task đã có nurse và không thay đổi
+        else if (task.hasAssignedNurse && task.assignedNurseId) {
+          nursingId = task.assignedNurseId;
         }
 
         if (nursingId && task.startTime && task.endTime) {
@@ -553,8 +541,7 @@ const ManagerBookingTab = () => {
         return;
       }
 
-      // Kiểm tra trùng lịch với các booking khác
-      const assignments = Object.entries(taskAssignments);
+      // Kiểm tra trùng lịch với các booking khác cho các thay đổi
       const conflicts = [];
 
       for (const [taskId, sel] of assignments) {
@@ -574,7 +561,7 @@ const ManagerBookingTab = () => {
       }
 
       try {
-        // Thực hiện assign đối với các task đã chọn
+        // Thực hiện cập nhật nhân sự đối với các task có thay đổi
         if (assignments.length > 0) {
           await Promise.all(assignments.map(async ([taskId, sel]) => {
             const nursingId = sel.nurse || sel.specialist;
@@ -597,7 +584,7 @@ const ManagerBookingTab = () => {
         }
 
         setShowDetail(false);
-        alert('Đã gán nhân sự cho tất cả các dịch vụ thành công!');
+        alert('Đã cập nhật nhân sự thành công!');
 
         // Refresh dữ liệu để cập nhật trạng thái mới
         window.location.reload();
@@ -935,9 +922,8 @@ const ManagerBookingTab = () => {
                           ) : '-'}
                         </td>
                         <td className="p-2">
-                          {task.assignedNurseName ? (
-                            <span className="text-green-600 font-medium">{task.assignedNurseName} ({nurseRoleLabels[task.assignedNurseRole] || task.assignedNurseRole}) </span>
-                          ) : taskAssignments[task.customizeTaskId]?.nurse || taskAssignments[task.customizeTaskId]?.specialist ? (
+                          {/* Hiển thị nhân sự mới được chọn (ưu tiên) hoặc nhân sự đã có */}
+                          {taskAssignments[task.customizeTaskId]?.nurse || taskAssignments[task.customizeTaskId]?.specialist ? (
                             <span className="text-blue-600 font-medium">
                               {(() => {
                                 const nurseId = taskAssignments[task.customizeTaskId]?.nurse;
@@ -948,23 +934,32 @@ const ManagerBookingTab = () => {
                                 if (specialist) return `${specialist.Full_Name || specialist.fullName} (Chuyên viên)`;
                                 return 'Đã chọn nhân sự';
                               })()}
+                              <span className="ml-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Mới chọn</span>
                             </span>
+                          ) : task.assignedNurseName ? (
+                            <span className="text-green-600 font-medium">{task.assignedNurseName} ({nurseRoleLabels[task.assignedNurseRole] || task.assignedNurseRole}) </span>
                           ) : (
                             <span className="text-red-500 text-sm">Chưa có nhân sự</span>
                           )}
                         </td>
                         <td className="p-2">
-                          {!task.assignedNurseName ? (
-                            String(detailData.status ?? detailData.Status).toLowerCase() === 'paid' ? (
-                              <button
-                                className="px-3 py-1 rounded bg-purple-100 text-purple-700 hover:bg-purple-200 text-xs"
-                                onClick={() => { setShowStaffModal(true); setModalTaskId(task.customizeTaskId); fetchEligibleForTask(task.customizeTaskId); }}
-                              >Chọn nhân sự</button>
-                            ) : (
-                              <span className="text-gray-400 text-xs">Chỉ gán được khi đã thanh toán</span>
-                            )
+                          {String(detailData.status ?? detailData.Status).toLowerCase() === 'paid' ? (
+                            <button
+                              className="px-3 py-1 rounded bg-purple-100 text-purple-700 hover:bg-purple-200 text-xs"
+                              onClick={() => { setShowStaffModal(true); setModalTaskId(task.customizeTaskId); fetchEligibleForTask(task.customizeTaskId); }}
+                            >
+                              {(taskAssignments[task.customizeTaskId]?.nurse || taskAssignments[task.customizeTaskId]?.specialist) 
+                                ? 'Thay đổi lại' 
+                                : task.assignedNurseName 
+                                  ? 'Thay đổi nhân sự' 
+                                  : 'Chọn nhân sự'}
+                            </button>
                           ) : (
-                            <span className="text-gray-400 text-xs">Đã có nhân sự</span>
+                            <span className="text-gray-400 text-xs">
+                              {(taskAssignments[task.customizeTaskId]?.nurse || taskAssignments[task.customizeTaskId]?.specialist) || task.assignedNurseName 
+                                ? 'Đã có nhân sự' 
+                                : 'Chỉ gán được khi đã thanh toán'}
+                            </span>
                           )}
                         </td>
                         <td className="p-2">{statusLabels[task.status] || task.status}</td>
