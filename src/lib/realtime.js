@@ -7,6 +7,12 @@ let isConnecting = false;
 function dispatchRefreshEvent(payload = {}) {
   try {
     if (typeof window !== 'undefined') {
+      // Also push to a pending queue so components that mount later can flush
+      try {
+        window.__pendingRealtimeNotifications = window.__pendingRealtimeNotifications || [];
+        window.__pendingRealtimeNotifications.push(payload);
+        console.log('[SignalR] Added to pending queue. Queue length:', window.__pendingRealtimeNotifications.length);
+      } catch (_) {}
       window.dispatchEvent(new CustomEvent('notification:refresh', { detail: payload }));
     }
   } catch (_) {}
@@ -16,7 +22,12 @@ export async function initRealtimeNotifications(getAuthToken) {
   if (connection || isConnecting) return connection;
   isConnecting = true;
   try {
-    const hubUrl = process.env.NEXT_PUBLIC_SIGNALR_HUB || process.env.NEXT_PUBLIC_SIGNALR_URL || '';
+    // Use fallback for client-side env access
+    const hubUrl = typeof window !== 'undefined' 
+      ? (window.location ? 'https://phamlequyanh.name.vn/notificationHub' : '')
+      : (process.env.NEXT_PUBLIC_SIGNALR_HUB || process.env.NEXT_PUBLIC_SIGNALR_URL || '');
+    
+    console.log('[SignalR] Hub URL:', hubUrl);
     if (!hubUrl) {
       console.warn('[SignalR] NEXT_PUBLIC_SIGNALR_HUB/URL chưa được cấu hình. Bỏ qua realtime.');
       isConnecting = false;
@@ -35,6 +46,11 @@ export async function initRealtimeNotifications(getAuthToken) {
       .withAutomaticReconnect({ nextRetryDelayInMilliseconds: () => 3000 });
 
     connection = builder.build();
+
+    // Expose connection to window for debugging
+    if (typeof window !== 'undefined') {
+      window.signalRConnection = connection;
+    }
 
     // Register server events
     const onEvent = (eventName) => (...args) => {

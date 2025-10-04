@@ -17,7 +17,7 @@ export default function Header() {
   const [imgError, setImgError] = useState(false);
 
   // Derive avatar url and display name robustly across field variants
-  const avatarUrl = user?.avatarUrl || user?.AvatarUrl || user?.avatar || user?.Avatar || '';
+  const avatarUrl = user?.avatarUrl || user?.AvatarUrl || user?.avatar || user?.Avatar || 'https://i.ibb.co/zWSDrsBx/ae10a4719f321f9123ab1a3b7e02fa2b.jpg';
   const displayName = user?.fullName || user?.full_name || user?.FullName || user?.Full_Name || user?.email || '';
   const initial = (displayName?.trim?.()[0] || 'U').toUpperCase();
 
@@ -34,7 +34,7 @@ export default function Header() {
         if (!accountId) return;
         if (avatarUrl) return; // đã có avatar thì bỏ qua
         const fresh = await accountService.getAccountById(accountId);
-        const freshAvatar = fresh?.avatarUrl || fresh?.AvatarUrl || fresh?.avatar || fresh?.Avatar || '';
+        const freshAvatar = fresh?.avatarUrl || fresh?.AvatarUrl || fresh?.avatar || fresh?.Avatar || 'https://i.ibb.co/zWSDrsBx/ae10a4719f321f9123ab1a3b7e02fa2b.jpg';
         if (freshAvatar) {
           updateUser({ ...(user || {}), ...fresh });
         }
@@ -51,7 +51,7 @@ export default function Header() {
     let unsub;
     (async () => {
       try {
-  const { initFirebaseMessaging } = await import('@/lib/realtime');
+        const { initFirebaseMessaging } = await import('@/lib/realtime');
 
         // Optional FCM init if env provided
         const firebaseConfig = {

@@ -97,6 +97,8 @@ export default function WalletPage() {
         return 'Chờ xử lý';
       case 'cancelled':
         return 'Đã hủy';
+      case 'refunded':
+        return 'Đã hoàn tiền';
       default:
         return status;
     }

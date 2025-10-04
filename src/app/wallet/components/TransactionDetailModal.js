@@ -35,6 +35,8 @@ export default function TransactionDetailModal({ open, onClose, transaction }) {
         return 'Chờ xử lý';
       case 'cancelled':
         return 'Hủy';
+      case 'refunded':
+        return 'Đã hoàn tiền';
       default:
         return status;
     }
