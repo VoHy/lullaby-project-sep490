@@ -96,59 +96,122 @@ export default function RegisterPage() {
         avatarUrl: formData.avatarUrl || ''
       });
 
-      // Hiển thị thông báo đăng ký thành công
-      alert('Đăng ký thành công! Chào mừng bạn đến với Lullaby.');
+      // Chuẩn hóa dữ liệu trả về từ API register
+      const registerAccount = registerData?.account || registerData?.Account || null;
+      const registerToken = registerData?.token || registerData?.Token || registerAccount?.token || registerAccount?.Token;
 
       // Nếu API đăng ký trả token, sử dụng luôn
-      if (registerData?.token && registerData?.account) {
-        login(registerData.account, registerData.token);
+      if (registerToken && registerAccount) {
+        alert('Đăng ký thành công! Chào mừng bạn đến với Lullaby.');
+        login(registerAccount, registerToken);
         
         // Lấy role từ account
-        const roleID = registerData.account.roleID;
+        const roleID = registerAccount.roleID || registerAccount.RoleID;
 
         // Chuyển hướng dựa trên roleID
         if (roleID === 1 || roleID === 2 || roleID === 3) {
-          // Admin, NurseSpecialist, Manager
           router.push('/dashboard');
         } else if (roleID === 4) {
-          // Customer
           router.push('/?welcome=true');
         } else {
           router.push('/');
         }
       } else {
         // Nếu API đăng ký không trả token, tự động gọi API login để lấy token
+        
         try {
           const loginData = await authService.login({
             emailOrPhoneNumber: formData.email,
             password: formData.password
           });
 
-          if (loginData?.token && loginData?.account) {
-            login(loginData.account, loginData.token);
+          // Chuẩn hóa dữ liệu trả về (hỗ trợ cả camelCase và PascalCase từ backend)
+          const account = loginData?.account || loginData?.Account || null;
+          const token = loginData?.token || loginData?.Token || account?.token || account?.Token;
 
-            // Lấy role từ account
-            const roleID = loginData.account.roleID;
+          if (token && account) {
+            alert('Đăng ký thành công! Chào mừng bạn đến với Lullaby.');
+            login(account, token);
+
+            // Lấy role từ account (hỗ trợ cả camelCase và PascalCase)
+            const roleID = account.roleID || account.RoleID;
 
             // Chuyển hướng dựa trên roleID
             if (roleID === 1 || roleID === 2 || roleID === 3) {
-              // Admin, NurseSpecialist, Manager
               router.push('/dashboard');
             } else if (roleID === 4) {
-              // Customer
               router.push('/?welcome=true');
             } else {
               router.push('/');
             }
           } else {
-            // Nếu login thất bại, chuyển đến trang đăng nhập
-            alert('Vui lòng đăng nhập để tiếp tục.');
-            router.push('/auth/login');
+            // Response không có token hoặc account
+            console.error('❌ Login response thiếu token hoặc account:', loginData);
+            console.error('❌ Các field có sẵn:', Object.keys(loginData || {}));
+            alert('Đăng ký thành công! Đang tự động đăng nhập...');
+            // Thử chờ 1 giây rồi login lại (phòng trường hợp BE chưa kịp lưu)
+            setTimeout(async () => {
+              try {
+                const retryLoginData = await authService.login({
+                  emailOrPhoneNumber: formData.email,
+                  password: formData.password
+                });
+                
+                const retryAccount = retryLoginData?.account || retryLoginData?.Account;
+                const retryToken = retryLoginData?.token || retryLoginData?.Token || retryAccount?.token || retryAccount?.Token;
+                
+                if (retryToken && retryAccount) {
+                  login(retryAccount, retryToken);
+                  const roleID = retryAccount.roleID || retryAccount.RoleID;
+                  if (roleID === 4) {
+                    router.push('/?welcome=true');
+                  } else {
+                    router.push('/dashboard');
+                  }
+                } else {
+                  console.error('❌ Retry login cũng thất bại');
+                  alert('Vui lòng đăng nhập để tiếp tục.');
+                  router.push('/auth/login');
+                }
+              } catch (retryError) {
+                console.error('❌ Lỗi retry login:', retryError);
+                alert('Vui lòng đăng nhập để tiếp tục.');
+                router.push('/auth/login');
+              }
+            }, 1000);
           }
         } catch (loginError) {
-          console.error('Lỗi đăng nhập tự động:', loginError);
-          alert('Đăng ký thành công! Vui lòng đăng nhập để tiếp tục.');
-          router.push('/auth/login');
+          console.error('❌ Lỗi đăng nhập tự động:', loginError);
+          alert('Đăng ký thành công! Đang tự động đăng nhập...');
+          // Thử lại sau 1 giây
+          setTimeout(async () => {
+            try {
+              const retryLoginData = await authService.login({
+                emailOrPhoneNumber: formData.email,
+                password: formData.password
+              });
+              
+              const retryAccount = retryLoginData?.account || retryLoginData?.Account;
+              const retryToken = retryLoginData?.token || retryLoginData?.Token || retryAccount?.token || retryAccount?.Token;
+              
+              if (retryToken && retryAccount) {
+                login(retryAccount, retryToken);
+                const roleID = retryAccount.roleID || retryAccount.RoleID;
+                if (roleID === 4) {
+                  router.push('/?welcome=true');
+                } else {
+                  router.push('/dashboard');
+                }
+              } else {
+                alert('Vui lòng đăng nhập để tiếp tục.');
+                router.push('/auth/login');
+              }
+            } catch (retryError) {
+              console.error('❌ Lỗi retry login:', retryError);
+              alert('Vui lòng đăng nhập để tiếp tục.');
+              router.push('/auth/login');
+            }
+          }, 1000);
         }
       }
     } catch (err) {
